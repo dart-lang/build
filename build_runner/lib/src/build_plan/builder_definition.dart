@@ -129,6 +129,9 @@ class BuilderDefinition implements AbstractBuilderDefinition {
   /// Whether the builder is skipped if nothing uses its output.
   final bool isOptional;
 
+  /// The build extensions declared in `build.yaml`.
+  final Map<String, List<String>> buildExtensions;
+
   @visibleForTesting
   BuilderDefinition(
     this.key, {
@@ -138,8 +141,10 @@ class BuilderDefinition implements AbstractBuilderDefinition {
     this.outputsToArtifactTree = true,
     this.isOptional = false,
     this.targetBuilderConfigDefaults = const TargetBuilderConfigDefaults(),
+    Map<String, List<String>> buildExtensions = const {},
   }) : package = package ?? (key.contains(':') ? key.split(':').first : ''),
-       appliesBuilders = appliesBuilders.toBuiltList();
+       appliesBuilders = appliesBuilders.toBuiltList(),
+       buildExtensions = Map.unmodifiable(buildExtensions);
 
   factory BuilderDefinition.fromConfig(
     build_config.BuilderDefinition builderDefinition,
@@ -152,6 +157,7 @@ class BuilderDefinition implements AbstractBuilderDefinition {
         builderDefinition.buildTo == build_config.BuildTo.cache,
     isOptional: builderDefinition.isOptional,
     targetBuilderConfigDefaults: builderDefinition.defaults,
+    buildExtensions: builderDefinition.buildExtensions,
   );
 
   /// Whether this builder application is auto applied to [package].

@@ -107,9 +107,19 @@ class BuildProcessState {
   /// The package config URI.
   ///
   /// If not already set, sets from the current process
-  /// `Isolate.packageConfigSync`.
+  /// `Isolate.packageConfigSync` or falls back to package or workspace path.
   String get packageConfigUri =>
-      (_state['packageConfigUri'] ??= Isolate.packageConfigSync!.toString())
+      (_state['packageConfigUri'] ??=
+              Isolate.packageConfigSync?.toString() ??
+              Uri.file(
+                p.join(
+                  _buildPaths?.workspacePath ??
+                      _buildPaths?.packagePath ??
+                      Directory.current.path,
+                  '.dart_tool',
+                  'package_config.json',
+                ),
+              ).toString())
           as String;
 
   /// The [BuildPaths] used for the process lock.

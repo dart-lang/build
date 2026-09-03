@@ -159,8 +159,7 @@ class BuildPhaseCreator {
     BuilderDefinition builderDefinition,
     BuilderOptions globalOptionOverrides,
   ) {
-    final builderFactories =
-        this.builderFactories.builderFactories[builderDefinition.key]!;
+    final builderFactories = this.builderFactories.get(builderDefinition.key)!;
     final result = <InBuildPhase>[];
     for (final builderFactory in builderFactories) {
       for (final buildTarget in buildTargets) {
@@ -180,6 +179,11 @@ class BuildPhaseCreator {
           buildLog.loggerForOther(builderDefinition.key),
         );
         if (builder == null) throw const CannotBuildException();
+        if (builderDefinition.buildExtensions.isNotEmpty &&
+            builder is ConfigurableBuildExtensions) {
+          (builder as ConfigurableBuildExtensions).buildExtensions =
+              builderDefinition.buildExtensions;
+        }
         _validateBuilder(builder);
 
         result.add(
@@ -204,8 +208,9 @@ class BuildPhaseCreator {
     PostProcessBuilderDefinition builderDefinition,
     BuilderOptions globalOptionOverrides,
   ) {
-    final postProcessBuilderFactory =
-        builderFactories.postProcessBuilderFactories[builderDefinition.key]!;
+    final postProcessBuilderFactory = builderFactories.getPostProcess(
+      builderDefinition.key,
+    )!;
     final result = <PostBuildAction>[];
     for (final buildTarget in buildTargets) {
       if (!_shouldApply(builderDefinition, buildTarget)) continue;
@@ -407,4 +412,10 @@ void _validatePostProcessBuilder(PostProcessBuilder builder) {
       'assets in the `build()` method.',
     );
   }
+}
+
+/// Interface for builders that support configuring build extensions
+/// dynamically.
+abstract interface class ConfigurableBuildExtensions {
+  set buildExtensions(Map<String, List<String>> extensions);
 }

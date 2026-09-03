@@ -26,6 +26,33 @@ class BuilderFactories {
        postProcessBuilderFactories = (postProcessBuilderFactories ?? {})
            .build();
 
+  /// Gets builder factories for [key].
+  ///
+  /// Matches the exact key or suffix after colon.
+  BuiltList<BuilderFactory>? get(String key) {
+    final direct = builderFactories[key];
+    if (direct != null) return direct;
+    if (key.contains(':')) {
+      final name = key.split(':').last;
+      return builderFactories[':$name'] ?? builderFactories[name];
+    }
+    return null;
+  }
+
+  /// Gets post process builder factory for [key].
+  ///
+  /// Matches the exact key or suffix after colon.
+  PostProcessBuilderFactory? getPostProcess(String key) {
+    final direct = postProcessBuilderFactories[key];
+    if (direct != null) return direct;
+    if (key.contains(':')) {
+      final name = key.split(':').last;
+      return postProcessBuilderFactories[':$name'] ??
+          postProcessBuilderFactories[name];
+    }
+    return null;
+  }
+
   /// Whether there are factories for all definitions in [builderDefinitions].
   ///
   /// Factories must be of the correct type: post process builder or normal
@@ -34,11 +61,11 @@ class BuilderFactories {
     for (final builderDefinition in builderDefinitions) {
       switch (builderDefinition) {
         case BuilderDefinition _:
-          if (!builderFactories.containsKey(builderDefinition.key)) {
+          if (get(builderDefinition.key) == null) {
             return false;
           }
         case PostProcessBuilderDefinition _:
-          if (!postProcessBuilderFactories.containsKey(builderDefinition.key)) {
+          if (getPostProcess(builderDefinition.key) == null) {
             return false;
           }
       }

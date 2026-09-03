@@ -14,8 +14,11 @@ import 'package:yaml/yaml.dart';
 import 'bootstrap/bootstrapper.dart';
 import 'bootstrap/build_process_state.dart';
 import 'bootstrap/compile_type.dart';
+import 'bootstrap/processes.dart';
 import 'build_plan/build_options.dart';
+import 'build_plan/build_packages.dart';
 import 'build_plan/build_paths.dart';
+import 'build_plan/builder_definition.dart';
 import 'build_plan/builder_factories.dart';
 import 'build_runner_command_line.dart';
 import 'commands/build_command.dart';
@@ -32,6 +35,7 @@ import 'commands/test_command.dart';
 import 'commands/test_options.dart';
 import 'commands/watch_command.dart';
 import 'exceptions.dart';
+import 'io/reader_writer.dart';
 import 'logging/build_log.dart';
 
 /// The `build_runner` tool.
@@ -93,7 +97,7 @@ class BuildRunner {
       p.current,
       buildWorkspace: commandLine.workspace ?? false,
     );
-    if (builderFactories == null && commandLine.type != CommandType.daemon) {
+    if (!ChildProcess.isRunning && commandLine.type != CommandType.daemon) {
       await buildProcessState.takeLock(buildPaths);
     }
 
@@ -105,11 +109,25 @@ class BuildRunner {
       );
     }
 
-    if (commandLine.type.requiresBuilders && builderFactories == null) {
-      return await _runWithBuilders(
-        buildPaths: buildPaths,
-        compileStrategy: commandLine.compileStrategy,
-      );
+    var builderFactories = this.builderFactories;
+    if (commandLine.type.requiresBuilders) {
+      if (builderFactories != null) {
+        final buildPackages = await BuildPackages.forPaths(buildPaths);
+        final readerWriter = ReaderWriter(buildPackages);
+        final builderDefinitions = await AbstractBuilderDefinition.load(
+          buildPackages: buildPackages,
+          readerWriter: readerWriter,
+        );
+        if (!builderFactories.hasFactoriesFor(builderDefinitions)) {
+          builderFactories = null;
+        }
+      }
+      if (builderFactories == null) {
+        return await _runWithBuilders(
+          buildPaths: buildPaths,
+          compileStrategy: commandLine.compileStrategy,
+        );
+      }
     }
 
     final removedOptionsUsed = commandLine.removedOptionsUsed;

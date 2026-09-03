@@ -629,6 +629,9 @@ class _ApplyBuilderDefinitionToPackages implements BuilderDefinition {
   @override
   build_config.TargetBuilderConfigDefaults get targetBuilderConfigDefaults =>
       delegate.targetBuilderConfigDefaults;
+
+  @override
+  Map<String, List<String>> get buildExtensions => delegate.buildExtensions;
 }
 
 /// Returns [name] if it is not in [existingNames], or return a modified version
