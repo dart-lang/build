@@ -1,3 +1,8 @@
+## 2.16.2-wip
+
+- Bug fix: allow calling `BuildStep.canRead` on outputs written by the same
+  build step.
+
 ## 2.16.1
 
 - Clarify terminology: refer to `.dart_tool/build/generated` as the "artifact

@@ -1,3 +1,7 @@
+## 3.5.21-wip
+
+- Use `build_runner` 2.16.2-wip.
+
 ## 3.5.20
 
 - Clarify terminology: refer to `.dart_tool/build/generated` as the "artifact
