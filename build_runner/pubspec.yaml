@@ -13,7 +13,7 @@ platforms:
   macos:
 
 dependencies:
-  analyzer: '>=13.3.0 <15.0.0'
+  analyzer: '>=14.3.0 <15.0.0'
   args: ^2.5.0
   async: ^2.5.0
   build: ^4.1.0-wip

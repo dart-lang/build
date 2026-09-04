@@ -7,6 +7,7 @@
 - Prefer entrypoints closer to the root of a searched directory,
   and `main.dart` over other entrypoints alongside it.
 - Accept a list of directories for `web-assets-path`.
+- Require `analyzer` 14.3.0.
 
 ## 4.8.10
 
