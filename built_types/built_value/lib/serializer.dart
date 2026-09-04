@@ -53,7 +53,7 @@ class SerializersFor {
 
 /// Serializes all known classes.
 ///
-/// See: https://github.com/google/built_value.dart/tree/master/example
+/// See: https://github.com/dart-lang/build/tree/master/built_types/built_value_example
 abstract class Serializers {
   /// Default [Serializers] that can serialize primitives and collections.
   ///
