@@ -41,16 +41,16 @@ jobs:
       - name: mono_repo self validate
         run: dart pub global run mono_repo generate --validate
   job_002:
-    name: "analyze_and_format; linux; PKGS: _benchmark, build, build_config, build_daemon, build_runner, build_test, builder_pkgs/build_web_compilers, builder_pkgs/scratch_space, example; `dart analyze --fatal-infos .`"
+    name: "analyze_and_format; linux; PKGS: _benchmark, build, build_config, build_daemon, build_runner, build_test, builder_pkgs/build_web_compilers, builder_pkgs/scratch_space, built_types/_built_value_benchmark, built_types/_built_value_end_to_end_test, built_types/built_value, built_types/built_value_chat_example, built_types/built_value_example, built_types/built_value_generator, built_types/built_value_test, example; `dart analyze --fatal-infos .`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:3.14.0-93.0.dev;packages:_benchmark-build-build_config-build_daemon-build_runner-build_test-builder_pkgs/build_web_compilers-builder_pkgs/scratch_space-example;commands:analyze"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:3.14.0-93.0.dev;packages:_benchmark-build-build_config-build_daemon-build_runner-build_test-builder_pkgs/build_web_compilers-builder_pkgs/scratch_space-built_types/_built_value_benchmark-built_types/_built_value_end_to_end_test-built_types/built_value-built_types/built_value_chat_example-built_types/built_value_example-built_types/built_value_generator-built_types/built_value_test-example;commands:analyze"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;sdk:3.14.0-93.0.dev;packages:_benchmark-build-build_config-build_daemon-build_runner-build_test-builder_pkgs/build_web_compilers-builder_pkgs/scratch_space-example
+            os:ubuntu-latest;pub-cache-hosted;sdk:3.14.0-93.0.dev;packages:_benchmark-build-build_config-build_daemon-build_runner-build_test-builder_pkgs/build_web_compilers-builder_pkgs/scratch_space-built_types/_built_value_benchmark-built_types/_built_value_end_to_end_test-built_types/built_value-built_types/built_value_chat_example-built_types/built_value_example-built_types/built_value_generator-built_types/built_value_test-example
             os:ubuntu-latest;pub-cache-hosted;sdk:3.14.0-93.0.dev
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
@@ -135,6 +135,69 @@ jobs:
         run: dart analyze --fatal-infos .
         if: "always() && steps.builder_pkgs_scratch_space_pub_upgrade.conclusion == 'success'"
         working-directory: builder_pkgs/scratch_space
+      - id: built_types__built_value_benchmark_pub_upgrade
+        name: built_types/_built_value_benchmark; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: built_types/_built_value_benchmark
+      - name: "built_types/_built_value_benchmark; dart analyze --fatal-infos ."
+        run: dart analyze --fatal-infos .
+        if: "always() && steps.built_types__built_value_benchmark_pub_upgrade.conclusion == 'success'"
+        working-directory: built_types/_built_value_benchmark
+      - id: built_types__built_value_end_to_end_test_pub_upgrade
+        name: built_types/_built_value_end_to_end_test; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: built_types/_built_value_end_to_end_test
+      - name: "built_types/_built_value_end_to_end_test; dart analyze --fatal-infos ."
+        run: dart analyze --fatal-infos .
+        if: "always() && steps.built_types__built_value_end_to_end_test_pub_upgrade.conclusion == 'success'"
+        working-directory: built_types/_built_value_end_to_end_test
+      - id: built_types_built_value_pub_upgrade
+        name: built_types/built_value; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: built_types/built_value
+      - name: "built_types/built_value; dart analyze --fatal-infos ."
+        run: dart analyze --fatal-infos .
+        if: "always() && steps.built_types_built_value_pub_upgrade.conclusion == 'success'"
+        working-directory: built_types/built_value
+      - id: built_types_built_value_chat_example_pub_upgrade
+        name: built_types/built_value_chat_example; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: built_types/built_value_chat_example
+      - name: "built_types/built_value_chat_example; dart analyze --fatal-infos ."
+        run: dart analyze --fatal-infos .
+        if: "always() && steps.built_types_built_value_chat_example_pub_upgrade.conclusion == 'success'"
+        working-directory: built_types/built_value_chat_example
+      - id: built_types_built_value_example_pub_upgrade
+        name: built_types/built_value_example; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: built_types/built_value_example
+      - name: "built_types/built_value_example; dart analyze --fatal-infos ."
+        run: dart analyze --fatal-infos .
+        if: "always() && steps.built_types_built_value_example_pub_upgrade.conclusion == 'success'"
+        working-directory: built_types/built_value_example
+      - id: built_types_built_value_generator_pub_upgrade
+        name: built_types/built_value_generator; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: built_types/built_value_generator
+      - name: "built_types/built_value_generator; dart analyze --fatal-infos ."
+        run: dart analyze --fatal-infos .
+        if: "always() && steps.built_types_built_value_generator_pub_upgrade.conclusion == 'success'"
+        working-directory: built_types/built_value_generator
+      - id: built_types_built_value_test_pub_upgrade
+        name: built_types/built_value_test; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: built_types/built_value_test
+      - name: "built_types/built_value_test; dart analyze --fatal-infos ."
+        run: dart analyze --fatal-infos .
+        if: "always() && steps.built_types_built_value_test_pub_upgrade.conclusion == 'success'"
+        working-directory: built_types/built_value_test
       - id: example_pub_upgrade
         name: example; dart pub upgrade
         run: dart pub upgrade
@@ -145,16 +208,16 @@ jobs:
         if: "always() && steps.example_pub_upgrade.conclusion == 'success'"
         working-directory: example
   job_003:
-    name: "analyze_and_format; linux; PKGS: _benchmark, build, build_config, build_daemon, build_runner, build_test, builder_pkgs/build_web_compilers, builder_pkgs/mockito, builder_pkgs/scratch_space, example; `dart format --output=none --set-exit-if-changed .`"
+    name: "analyze_and_format; linux; PKGS: _benchmark, build, build_config, build_daemon, build_runner, build_test, builder_pkgs/build_web_compilers, builder_pkgs/mockito, builder_pkgs/scratch_space, built_types/_built_value_benchmark, built_types/_built_value_end_to_end_test, built_types/built_value, built_types/built_value_chat_example, built_types/built_value_example, built_types/built_value_generator, built_types/built_value_test, example; `dart format --output=none --set-exit-if-changed .`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:3.14.0-93.0.dev;packages:_benchmark-build-build_config-build_daemon-build_runner-build_test-builder_pkgs/build_web_compilers-builder_pkgs/mockito-builder_pkgs/scratch_space-example;commands:format"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:3.14.0-93.0.dev;packages:_benchmark-build-build_config-build_daemon-build_runner-build_test-builder_pkgs/build_web_compilers-builder_pkgs/mockito-builder_pkgs/scratch_space-built_types/_built_value_benchmark-built_types/_built_value_end_to_end_test-built_types/built_value-built_types/built_value_chat_example-built_types/built_value_example-built_types/built_value_generator-built_types/built_value_test-example;commands:format"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;sdk:3.14.0-93.0.dev;packages:_benchmark-build-build_config-build_daemon-build_runner-build_test-builder_pkgs/build_web_compilers-builder_pkgs/mockito-builder_pkgs/scratch_space-example
+            os:ubuntu-latest;pub-cache-hosted;sdk:3.14.0-93.0.dev;packages:_benchmark-build-build_config-build_daemon-build_runner-build_test-builder_pkgs/build_web_compilers-builder_pkgs/mockito-builder_pkgs/scratch_space-built_types/_built_value_benchmark-built_types/_built_value_end_to_end_test-built_types/built_value-built_types/built_value_chat_example-built_types/built_value_example-built_types/built_value_generator-built_types/built_value_test-example
             os:ubuntu-latest;pub-cache-hosted;sdk:3.14.0-93.0.dev
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
@@ -248,6 +311,69 @@ jobs:
         run: "dart format --output=none --set-exit-if-changed ."
         if: "always() && steps.builder_pkgs_scratch_space_pub_upgrade.conclusion == 'success'"
         working-directory: builder_pkgs/scratch_space
+      - id: built_types__built_value_benchmark_pub_upgrade
+        name: built_types/_built_value_benchmark; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: built_types/_built_value_benchmark
+      - name: "built_types/_built_value_benchmark; dart format --output=none --set-exit-if-changed ."
+        run: "dart format --output=none --set-exit-if-changed ."
+        if: "always() && steps.built_types__built_value_benchmark_pub_upgrade.conclusion == 'success'"
+        working-directory: built_types/_built_value_benchmark
+      - id: built_types__built_value_end_to_end_test_pub_upgrade
+        name: built_types/_built_value_end_to_end_test; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: built_types/_built_value_end_to_end_test
+      - name: "built_types/_built_value_end_to_end_test; dart format --output=none --set-exit-if-changed ."
+        run: "dart format --output=none --set-exit-if-changed ."
+        if: "always() && steps.built_types__built_value_end_to_end_test_pub_upgrade.conclusion == 'success'"
+        working-directory: built_types/_built_value_end_to_end_test
+      - id: built_types_built_value_pub_upgrade
+        name: built_types/built_value; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: built_types/built_value
+      - name: "built_types/built_value; dart format --output=none --set-exit-if-changed ."
+        run: "dart format --output=none --set-exit-if-changed ."
+        if: "always() && steps.built_types_built_value_pub_upgrade.conclusion == 'success'"
+        working-directory: built_types/built_value
+      - id: built_types_built_value_chat_example_pub_upgrade
+        name: built_types/built_value_chat_example; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: built_types/built_value_chat_example
+      - name: "built_types/built_value_chat_example; dart format --output=none --set-exit-if-changed ."
+        run: "dart format --output=none --set-exit-if-changed ."
+        if: "always() && steps.built_types_built_value_chat_example_pub_upgrade.conclusion == 'success'"
+        working-directory: built_types/built_value_chat_example
+      - id: built_types_built_value_example_pub_upgrade
+        name: built_types/built_value_example; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: built_types/built_value_example
+      - name: "built_types/built_value_example; dart format --output=none --set-exit-if-changed ."
+        run: "dart format --output=none --set-exit-if-changed ."
+        if: "always() && steps.built_types_built_value_example_pub_upgrade.conclusion == 'success'"
+        working-directory: built_types/built_value_example
+      - id: built_types_built_value_generator_pub_upgrade
+        name: built_types/built_value_generator; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: built_types/built_value_generator
+      - name: "built_types/built_value_generator; dart format --output=none --set-exit-if-changed ."
+        run: "dart format --output=none --set-exit-if-changed ."
+        if: "always() && steps.built_types_built_value_generator_pub_upgrade.conclusion == 'success'"
+        working-directory: built_types/built_value_generator
+      - id: built_types_built_value_test_pub_upgrade
+        name: built_types/built_value_test; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: built_types/built_value_test
+      - name: "built_types/built_value_test; dart format --output=none --set-exit-if-changed ."
+        run: "dart format --output=none --set-exit-if-changed ."
+        if: "always() && steps.built_types_built_value_test_pub_upgrade.conclusion == 'success'"
+        working-directory: built_types/built_value_test
       - id: example_pub_upgrade
         name: example; dart pub upgrade
         run: dart pub upgrade
@@ -516,6 +642,265 @@ jobs:
       - job_003
       - job_004
   job_011:
+    name: "test; linux; PKG: built_types/_built_value_benchmark; `dart test --test-randomize-ordering-seed=random`"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:3.14.0-93.0.dev;packages:built_types/_built_value_benchmark;commands:test_0"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;sdk:3.14.0-93.0.dev;packages:built_types/_built_value_benchmark
+            os:ubuntu-latest;pub-cache-hosted;sdk:3.14.0-93.0.dev
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
+        with:
+          sdk: "3.14.0-93.0.dev"
+      - id: checkout
+        name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - id: built_types__built_value_benchmark_pub_upgrade
+        name: built_types/_built_value_benchmark; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: built_types/_built_value_benchmark
+      - name: "built_types/_built_value_benchmark; dart test --test-randomize-ordering-seed=random"
+        run: "dart test --test-randomize-ordering-seed=random"
+        if: "always() && steps.built_types__built_value_benchmark_pub_upgrade.conclusion == 'success'"
+        working-directory: built_types/_built_value_benchmark
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+  job_012:
+    name: "test; linux; PKG: built_types/_built_value_end_to_end_test; `dart test --test-randomize-ordering-seed=random`"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:3.14.0-93.0.dev;packages:built_types/_built_value_end_to_end_test;commands:test_0"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;sdk:3.14.0-93.0.dev;packages:built_types/_built_value_end_to_end_test
+            os:ubuntu-latest;pub-cache-hosted;sdk:3.14.0-93.0.dev
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
+        with:
+          sdk: "3.14.0-93.0.dev"
+      - id: checkout
+        name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - id: built_types__built_value_end_to_end_test_pub_upgrade
+        name: built_types/_built_value_end_to_end_test; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: built_types/_built_value_end_to_end_test
+      - name: "built_types/_built_value_end_to_end_test; dart test --test-randomize-ordering-seed=random"
+        run: "dart test --test-randomize-ordering-seed=random"
+        if: "always() && steps.built_types__built_value_end_to_end_test_pub_upgrade.conclusion == 'success'"
+        working-directory: built_types/_built_value_end_to_end_test
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+  job_013:
+    name: "test; linux; PKG: built_types/built_value; `dart test --test-randomize-ordering-seed=random`"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:3.14.0-93.0.dev;packages:built_types/built_value;commands:test_0"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;sdk:3.14.0-93.0.dev;packages:built_types/built_value
+            os:ubuntu-latest;pub-cache-hosted;sdk:3.14.0-93.0.dev
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
+        with:
+          sdk: "3.14.0-93.0.dev"
+      - id: checkout
+        name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - id: built_types_built_value_pub_upgrade
+        name: built_types/built_value; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: built_types/built_value
+      - name: "built_types/built_value; dart test --test-randomize-ordering-seed=random"
+        run: "dart test --test-randomize-ordering-seed=random"
+        if: "always() && steps.built_types_built_value_pub_upgrade.conclusion == 'success'"
+        working-directory: built_types/built_value
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+  job_014:
+    name: "test; linux; PKG: built_types/built_value_chat_example; `dart test --test-randomize-ordering-seed=random`"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:3.14.0-93.0.dev;packages:built_types/built_value_chat_example;commands:test_0"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;sdk:3.14.0-93.0.dev;packages:built_types/built_value_chat_example
+            os:ubuntu-latest;pub-cache-hosted;sdk:3.14.0-93.0.dev
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
+        with:
+          sdk: "3.14.0-93.0.dev"
+      - id: checkout
+        name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - id: built_types_built_value_chat_example_pub_upgrade
+        name: built_types/built_value_chat_example; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: built_types/built_value_chat_example
+      - name: "built_types/built_value_chat_example; dart test --test-randomize-ordering-seed=random"
+        run: "dart test --test-randomize-ordering-seed=random"
+        if: "always() && steps.built_types_built_value_chat_example_pub_upgrade.conclusion == 'success'"
+        working-directory: built_types/built_value_chat_example
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+  job_015:
+    name: "test; linux; PKG: built_types/built_value_example; `dart test --test-randomize-ordering-seed=random`"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:3.14.0-93.0.dev;packages:built_types/built_value_example;commands:test_0"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;sdk:3.14.0-93.0.dev;packages:built_types/built_value_example
+            os:ubuntu-latest;pub-cache-hosted;sdk:3.14.0-93.0.dev
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
+        with:
+          sdk: "3.14.0-93.0.dev"
+      - id: checkout
+        name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - id: built_types_built_value_example_pub_upgrade
+        name: built_types/built_value_example; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: built_types/built_value_example
+      - name: "built_types/built_value_example; dart test --test-randomize-ordering-seed=random"
+        run: "dart test --test-randomize-ordering-seed=random"
+        if: "always() && steps.built_types_built_value_example_pub_upgrade.conclusion == 'success'"
+        working-directory: built_types/built_value_example
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+  job_016:
+    name: "test; linux; PKG: built_types/built_value_generator; `dart test --test-randomize-ordering-seed=random`"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:3.14.0-93.0.dev;packages:built_types/built_value_generator;commands:test_0"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;sdk:3.14.0-93.0.dev;packages:built_types/built_value_generator
+            os:ubuntu-latest;pub-cache-hosted;sdk:3.14.0-93.0.dev
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
+        with:
+          sdk: "3.14.0-93.0.dev"
+      - id: checkout
+        name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - id: built_types_built_value_generator_pub_upgrade
+        name: built_types/built_value_generator; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: built_types/built_value_generator
+      - name: "built_types/built_value_generator; dart test --test-randomize-ordering-seed=random"
+        run: "dart test --test-randomize-ordering-seed=random"
+        if: "always() && steps.built_types_built_value_generator_pub_upgrade.conclusion == 'success'"
+        working-directory: built_types/built_value_generator
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+  job_017:
+    name: "test; linux; PKG: built_types/built_value_test; `dart test --test-randomize-ordering-seed=random`"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:3.14.0-93.0.dev;packages:built_types/built_value_test;commands:test_0"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;sdk:3.14.0-93.0.dev;packages:built_types/built_value_test
+            os:ubuntu-latest;pub-cache-hosted;sdk:3.14.0-93.0.dev
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
+        with:
+          sdk: "3.14.0-93.0.dev"
+      - id: checkout
+        name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - id: built_types_built_value_test_pub_upgrade
+        name: built_types/built_value_test; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: built_types/built_value_test
+      - name: "built_types/built_value_test; dart test --test-randomize-ordering-seed=random"
+        run: "dart test --test-randomize-ordering-seed=random"
+        if: "always() && steps.built_types_built_value_test_pub_upgrade.conclusion == 'success'"
+        working-directory: built_types/built_value_test
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+  job_018:
     name: "test; linux; PKG: build_runner; `../tool/leak_check.sh`"
     runs-on: ubuntu-latest
     steps:
@@ -552,7 +937,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_012:
+  job_019:
     name: "test; linux; PKG: build_runner; `dart test -t integration1 --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -589,7 +974,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_013:
+  job_020:
     name: "test; linux; PKG: build_runner; `dart test -t integration2 --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -626,7 +1011,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_014:
+  job_021:
     name: "test; linux; PKG: build_runner; `dart test -t integration3 --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -663,7 +1048,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_015:
+  job_022:
     name: "test; linux; PKG: build_runner; `dart test -t integration4 --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -700,7 +1085,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_016:
+  job_023:
     name: "test; linux; PKG: build_runner; `dart test -x integration1 -x integration2 -x integration3 -x integration4 --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -737,7 +1122,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_017:
+  job_024:
     name: "test; linux; PKG: builder_pkgs/mockito; `dart run build_runner build --force-jit --only-check`, `dart test --test-randomize-ordering-seed=random`, `dart test --test-randomize-ordering-seed=random -p chrome`, `dart test --test-randomize-ordering-seed=random -p chrome -c dart2wasm`"
     runs-on: ubuntu-latest
     steps:
@@ -786,7 +1171,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_018:
+  job_025:
     name: "test; macos; PKG: build_daemon; `dart test --test-randomize-ordering-seed=random`"
     runs-on: macos-latest
     steps:
@@ -823,7 +1208,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_019:
+  job_026:
     name: "test; macos; PKG: build_runner; `dart test -t integration1 --test-randomize-ordering-seed=random`"
     runs-on: macos-latest
     steps:
@@ -860,7 +1245,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_020:
+  job_027:
     name: "test; macos; PKG: build_runner; `dart test -t integration2 --test-randomize-ordering-seed=random`"
     runs-on: macos-latest
     steps:
@@ -897,7 +1282,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_021:
+  job_028:
     name: "test; macos; PKG: build_runner; `dart test -t integration3 --test-randomize-ordering-seed=random`"
     runs-on: macos-latest
     steps:
@@ -934,7 +1319,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_022:
+  job_029:
     name: "test; macos; PKG: build_runner; `dart test -t integration4 --test-randomize-ordering-seed=random`"
     runs-on: macos-latest
     steps:
@@ -971,7 +1356,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_023:
+  job_030:
     name: "test; windows; PKG: build_daemon; `dart test --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -998,7 +1383,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_024:
+  job_031:
     name: "test; windows; PKG: build_runner; `dart test -t integration1 --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -1025,7 +1410,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_025:
+  job_032:
     name: "test; windows; PKG: build_runner; `dart test -t integration2 --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -1052,7 +1437,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_026:
+  job_033:
     name: "test; windows; PKG: build_runner; `dart test -t integration3 --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -1079,7 +1464,7 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_027:
+  job_034:
     name: "test; windows; PKG: build_runner; `dart test -t integration4 --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:

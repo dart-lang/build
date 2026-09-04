@@ -7,6 +7,11 @@ import 'package:_built_value_end_to_end_test/values.dart';
 import 'package:test/test.dart';
 
 void main() {
+  tearDown(() {
+    newBuiltValueToStringHelper = (className) =>
+        IndentingBuiltValueToStringHelper(className);
+  });
+
   group('toString', () {
     test('omits nulls', () {
       final value = CompoundValue((b) => b..simpleValue.anInt = 1);
