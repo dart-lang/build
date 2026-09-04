@@ -237,6 +237,7 @@ class BuildSeries {
           .checkCompileFreshness(digestsAreFresh: false);
       if (!kernelFreshness.outputIsFresh) {
         final result = BuildResult.buildScriptChanged();
+        _currentBuildResult = Future.value(result);
         _buildResultsController.add(result);
         await close();
         return result;
@@ -249,6 +250,7 @@ class BuildSeries {
       // needs a restart to change the build script.
       if (_buildPlan.buildSpec.restartIsNeeded) {
         final result = BuildResult.buildScriptChanged();
+        _currentBuildResult = Future.value(result);
         _buildResultsController.add(result);
         await close();
         return result;
