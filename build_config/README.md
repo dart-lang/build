@@ -64,7 +64,7 @@ configuration may have the following keys:
   Omit this key if you want the default behavior based on the builder's
   `auto_apply` configuration. Builders which are manually applied
   (`auto_apply: none`) are only ever used when there is a target specifying the
-  builder with `enabled: True`.
+  builder with `enabled: true`.
 - **generate_for**: List of String or Map, Optional:. The subset of files within
   the target's `sources` which should have this Builder applied. See `sources`
   configuration above for how to configure this.
@@ -138,7 +138,8 @@ the following keys:
   builders should be run on any target which will run this Builder.
 - **is_optional**: Optional, boolean. Specifies whether a Builder can be run
   lazily, such that it won't execute until one of it's outputs is requested by a
-  later Builder. This option should be rare. Defaults to `False`.
+  later Builder. This option should be rare. Defaults to `false`. Cannot be
+  used with `adds_to_library`.
 - **build_to**: Optional. The location that generated assets should be output
   to. The possibilities are:
   - `"source"`: Outputs are written at their package paths. They're written
@@ -150,6 +151,10 @@ the following keys:
   will never run on any package other than the root - but does not necessarily
   need to use the "root_package" value for "auto_apply". If it would otherwise
   run on a non-root package it will be filtered out.
+- **adds_to_library**: Optional, boolean. Specifies whether this builder adds
+  code to a library using `BuildStep.librarySourceSink`. If `true`, the builder
+  can access `buildStep.librarySourceSink` to contribute source and imports to
+  a shared part file. Defaults to `false`. Cannot be used with `is_optional`.
 - **defaults**: Optional: Default values to apply when a user does not specify
   the corresponding key in their `builders` section. May contain the following
   keys:

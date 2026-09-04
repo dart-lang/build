@@ -68,6 +68,9 @@ class InBuildPhase extends BuildPhase implements BuildAction {
   @override
   final bool outputsToArtifactTree;
 
+  /// Whether this phase is capable of contributing to part files.
+  final bool addsToLibrary;
+
   InBuildPhase._(
     this.package,
     this.builder,
@@ -78,6 +81,7 @@ class InBuildPhase extends BuildPhase implements BuildAction {
     required this.key,
     this.isOptional = false,
     this.outputsToArtifactTree = false,
+    this.addsToLibrary = false,
   });
 
   /// Creates an [BuildPhase] for a normal [Builder].
@@ -91,6 +95,9 @@ class InBuildPhase extends BuildPhase implements BuildAction {
   ///
   /// [outputsToArtifactTree] specifies that the generated assets should be
   /// placed in the artifact tree rather than at their package paths.
+  ///
+  /// [addsToLibrary] specifies that the builder is capable of contributing to
+  /// part files.
   InBuildPhase({
     required Builder builder,
     required String key,
@@ -100,6 +107,7 @@ class InBuildPhase extends BuildPhase implements BuildAction {
     BuilderOptions options = const BuilderOptions({}),
     bool isOptional = false,
     bool outputsToArtifactTree = false,
+    bool addsToLibrary = false,
   }) : this._(
          package,
          builder,
@@ -110,6 +118,7 @@ class InBuildPhase extends BuildPhase implements BuildAction {
          displayName: _simpleBuilderKey(key),
          isOptional: isOptional,
          outputsToArtifactTree: outputsToArtifactTree,
+         addsToLibrary: addsToLibrary,
        );
 
   @override
@@ -117,6 +126,7 @@ class InBuildPhase extends BuildPhase implements BuildAction {
     final settings = <String>[];
     if (isOptional) settings.add('optional');
     if (outputsToArtifactTree) settings.add('artifactTree');
+    if (addsToLibrary) settings.add('addsToLibrary');
     var result = '$displayName on $targetSources in $package';
     if (settings.isNotEmpty) result += ' $settings';
     return result;
@@ -131,6 +141,7 @@ class InBuildPhase extends BuildPhase implements BuildAction {
     generateFor,
     isOptional,
     outputsToArtifactTree,
+    addsToLibrary,
   ]);
 }
 
