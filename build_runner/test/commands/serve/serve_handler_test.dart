@@ -275,6 +275,87 @@ void main() {
     expect(() => serveHandler.handlerFor('.'), throwsArgumentError);
   });
 
+  group('restrictToLoopback', () {
+    test('rejects requests with a missing host', () async {
+      addSource('a|web/index.html', 'content');
+      final response = await serveHandler.handlerFor(
+        'web',
+        restrictToLoopback: true,
+      )(Request('GET', Uri.parse('http://localhost/index.html')));
+      expect(response.statusCode, HttpStatus.forbidden);
+    });
+
+    test('rejects requests with a non-loopback host', () async {
+      addSource('a|web/index.html', 'content');
+      final response =
+          await serveHandler.handlerFor('web', restrictToLoopback: true)(
+            Request(
+              'GET',
+              Uri.parse('http://localhost/index.html'),
+              headers: {'host': 'attacker.example.com'},
+            ),
+          );
+      expect(response.statusCode, HttpStatus.forbidden);
+    });
+
+    test('rejects requests with a non-loopback origin', () async {
+      addSource('a|web/index.html', 'content');
+      final response =
+          await serveHandler.handlerFor('web', restrictToLoopback: true)(
+            Request(
+              'GET',
+              Uri.parse('http://localhost/index.html'),
+              headers: {
+                'host': 'localhost',
+                'origin': 'http://attacker.example.com',
+              },
+            ),
+          );
+      expect(response.statusCode, HttpStatus.forbidden);
+    });
+
+    test('serves requests with a loopback host', () async {
+      addSource('a|web/index.html', 'content');
+      final response =
+          await serveHandler.handlerFor('web', restrictToLoopback: true)(
+            Request(
+              'GET',
+              Uri.parse('http://localhost/index.html'),
+              headers: {'host': 'localhost'},
+            ),
+          );
+      expect(response.statusCode, HttpStatus.ok);
+      expect(await response.readAsString(), 'content');
+    });
+
+    test('serves requests with a loopback host and origin', () async {
+      addSource('a|web/index.html', 'content');
+      final response =
+          await serveHandler.handlerFor('web', restrictToLoopback: true)(
+            Request(
+              'GET',
+              Uri.parse('http://localhost/index.html'),
+              headers: {'host': 'localhost', 'origin': 'http://localhost:8080'},
+            ),
+          );
+      expect(response.statusCode, HttpStatus.ok);
+      expect(await response.readAsString(), 'content');
+    });
+
+    test('does not restrict when disabled (default)', () async {
+      addSource('a|web/index.html', 'content');
+      final response = await serveHandler.handlerFor('web')(
+        Request(
+          'GET',
+          Uri.parse('http://localhost/index.html'),
+          headers: {'host': 'attacker.example.com'},
+        ),
+      );
+      expect(response.statusCode, HttpStatus.ok);
+      expect(await response.readAsString(), 'content');
+    });
+  });
+
   group('build failures', () {
     setUp(() async {
       final primaryId = AssetId('a', 'web/main.dart');
@@ -546,34 +627,6 @@ void main() {
         );
         await clientChannel1.sink.close();
         await clientChannel2.sink.close();
-      });
-
-      group('Origin checks', () {
-        test('rejects cross-origin requests', () async {
-          final request = Request(
-            'GET',
-            Uri.parse('http://localhost/'),
-            headers: {'origin': 'http://example.com'},
-          );
-          final response = await handler.createHandlerByRootDir('web')(request);
-          expect(response.statusCode, 403);
-        });
-
-        test('allows localhost origin requests', () async {
-          final request = Request(
-            'GET',
-            Uri.parse('http://localhost/'),
-            headers: {'origin': 'http://localhost:8080'},
-          );
-          final response = await handler.createHandlerByRootDir('web')(request);
-          expect(response.statusCode, 200);
-        });
-
-        test('allows missing origin requests', () async {
-          final request = Request('GET', Uri.parse('http://localhost/'));
-          final response = await handler.createHandlerByRootDir('web')(request);
-          expect(response.statusCode, 200);
-        });
       });
 
       test('deletes listeners on disconnect', () async {

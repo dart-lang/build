@@ -1,5 +1,7 @@
 ## 2.16.2-wip
 
+- The `serve` command now rejects non-loopback `Host` and `Origin` headers when
+  bound to a loopback interface.
 - Require `build` 4.1.0.
 - Require `build_config` 1.4.0.
 - Bug fix: allow calling `BuildStep.canRead` on outputs written by the same
