@@ -21,7 +21,7 @@ void main() {
 
 // Note: this is not the right way to use EnumClass!
 //
-// See https://github.com/google/built_value.dart/tree/master/example
+// See https://github.com/dart-lang/build/tree/master/built_types/built_value_example
 class YesNoEnum extends EnumClass {
   static const YesNoEnum yes = YesNoEnum._('yes');
   static const YesNoEnum no = YesNoEnum._('no');
