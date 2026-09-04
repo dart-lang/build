@@ -43,15 +43,15 @@ See the [API docs](https://pub.dev/documentation/built_value/latest/built_value/
 ## Examples
 
 For an end to end example see the
-[chat example](https://github.com/google/built_value.dart/tree/master/chat_example), which was
+[chat example](https://github.com/dart-lang/build/tree/master/built_types/built_value_chat_example), which was
 [demoed](https://www.youtube.com/watch?v=TMeJxWltoVo) at the Dart Summit 2016.
 The
-[data model](https://github.com/google/built_value.dart/blob/master/chat_example/lib/data_model/data_model.dart),
+[data model](https://github.com/dart-lang/build/blob/master/built_types/built_value_chat_example/lib/data_model/data_model.dart),
 used both client and server side, uses value types, enums and serialization from
 built_value.
 
 Simple examples are
-[here](https://github.com/google/built_value.dart/tree/master/example/lib/example.dart).
+[here](https://github.com/dart-lang/build/tree/master/built_types/built_value_example/lib/example.dart).
 
 ## Codegen
 
@@ -60,7 +60,7 @@ Codegen is done using `dart run build_runner build` for one-off builds.
 To continuously watch your source and update the generated output when it changes, use `dart run build_runner watch`.
 
 Note that you need a dev dependency on `built_value_generator` and `build_runner`. See the example
-[pubspec.yaml](https://github.com/google/built_value.dart/blob/master/example/pubspec.yaml).
+[pubspec.yaml](https://github.com/dart-lang/build/blob/master/built_types/built_value_example/pubspec.yaml).
 
 ## Value Types
 
@@ -133,7 +133,7 @@ Design:
 Built Values comes with JSON serialization support which allows you to
 serialize a complete data model of Built Values, Enum Classes and
 Built Collections. The
-[chat example](https://github.com/google/built_value.dart/tree/master/chat_example) shows 
+[chat example](https://github.com/dart-lang/build/tree/master/built_types/built_value_chat_example) shows 
 how easy this makes building a full application with Dart on the server and
 client.
 
@@ -171,7 +171,7 @@ guarantees about what they can do. Other libraries also support validation
 but usually in a less prominent way.
 
 It's _pluggable_. You can add serializers for your own types, and you can add
-[plugins](https://github.com/google/built_value.dart/blob/master/built_value/lib/standard_json_plugin.dart)
+[plugins](https://github.com/dart-lang/build/blob/master/built_types/built_value/lib/standard_json_plugin.dart)
 which run before and after all serializers. This could be used to
 interoperate with other tools or to add hand coded high performance serializers
 for specific classes. Some other libraries are not so extensible.
@@ -185,7 +185,7 @@ support in more languages.
 ## Common Usage
 
 While full, compiled examples are available in
-[`example/lib`](https://github.com/google/built_value.dart/tree/master/example/lib),
+[`example/lib`](https://github.com/dart-lang/build/tree/master/built_types/built_value_example/lib),
 a common usage example is shown here. This example assumes that you are writing
 a client for a JSON API representing a person that looks like the following:
 

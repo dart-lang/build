@@ -12,7 +12,7 @@ import 'package:source_gen/source_gen.dart';
 
 /// Generator for Enum Class and Built Values.
 ///
-/// See https://github.com/google/built_value.dart/tree/master/example
+/// See https://github.com/dart-lang/build/tree/master/built_types/built_value_example
 class BuiltValueGenerator extends Generator {
   // Allow creating via `const` as well as enforces immutability here.
   const BuiltValueGenerator();

@@ -413,9 +413,7 @@ void main() {
 
     test('empty plan', () {
       expect(plan.transitiveDeclaredOutputsOf([]), isEmpty);
-      expect(plan.transitiveDeclaredOutputsOf([makeAssetId('foo|a')]), {
-        makeAssetId('foo|a'),
-      });
+      expect(plan.transitiveDeclaredOutputsOf([makeAssetId('foo|a')]), isEmpty);
     });
 
     test('chain: a -> b -> c', () {
@@ -429,9 +427,9 @@ void main() {
           ..declaredOutputsByPrimaryInput.addValues(b, [c]),
       );
 
-      expect(plan.transitiveDeclaredOutputsOf([a]), unorderedEquals({a, b, c}));
-      expect(plan.transitiveDeclaredOutputsOf([b]), unorderedEquals({b, c}));
-      expect(plan.transitiveDeclaredOutputsOf([c]), unorderedEquals({c}));
+      expect(plan.transitiveDeclaredOutputsOf([a]), unorderedEquals({b, c}));
+      expect(plan.transitiveDeclaredOutputsOf([b]), unorderedEquals({c}));
+      expect(plan.transitiveDeclaredOutputsOf([c]), isEmpty);
     });
 
     test('diamond: a -> b, c; b -> d; c -> d', () {
@@ -447,10 +445,7 @@ void main() {
           ..declaredOutputsByPrimaryInput.addValues(c, [d]),
       );
 
-      expect(
-        plan.transitiveDeclaredOutputsOf([a]),
-        unorderedEquals({a, b, c, d}),
-      );
+      expect(plan.transitiveDeclaredOutputsOf([a]), unorderedEquals({b, c, d}));
     });
 
     test('multiple inputs', () {
@@ -465,10 +460,7 @@ void main() {
           ..declaredOutputsByPrimaryInput.addValues(c, [d]),
       );
 
-      expect(
-        plan.transitiveDeclaredOutputsOf([a, c]),
-        unorderedEquals({a, b, c, d}),
-      );
+      expect(plan.transitiveDeclaredOutputsOf([a, c]), unorderedEquals({b, d}));
     });
   });
 }

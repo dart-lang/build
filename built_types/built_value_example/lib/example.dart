@@ -70,7 +70,7 @@ void example() {
     assert(serializers.deserialize(serialized) == object);
   }
 
-  // See chat_example and end_to_end_test for more complex usage!
+  // See built_value_chat_example and _built_value_end_to_end_test for more complex usage!
 }
 
 /// Examples of using StandardJsonPlugin.

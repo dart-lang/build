@@ -9,7 +9,7 @@ import 'package:meta/meta_meta.dart';
 /// Then use built_value_generator.dart code generation functionality to
 /// provide the rest of the implementation.
 ///
-/// See https://github.com/google/built_value.dart/tree/master/example
+/// See https://github.com/dart-lang/build/tree/master/built_types/built_value_example
 abstract class Built<V extends Built<V, B>, B extends Builder<V, B>> {
   /// Rebuilds the instance.
   ///
@@ -32,7 +32,7 @@ abstract class Built<V extends Built<V, B>, B extends Builder<V, B>> {
 /// Usually you don't need to create one by hand; it will be generated
 /// for you.
 ///
-/// See <https://github.com/google/built_value.dart/tree/master/example>
+/// See <https://github.com/dart-lang/build/tree/master/built_types/built_value_example>
 abstract class Builder<V extends Built<V, B>, B extends Builder<V, B>> {
   /// Replaces the value in the builder with a new one.
   ///
@@ -284,7 +284,7 @@ class BuiltValueHook {
 /// Extend this class then use the built_value.dart code generation
 /// functionality to provide the rest of the implementation.
 ///
-/// See https://github.com/google/built_value.dart/tree/master/example
+/// See https://github.com/dart-lang/build/tree/master/built_types/built_value_example
 class EnumClass {
   final String name;
 

@@ -154,12 +154,16 @@ abstract class BuildStepPlan
   Iterable<AssetId> declaredOutputsOf(AssetId id) =>
       declaredOutputsByPrimaryInput[id];
 
+  /// Returns all transitive declared outputs produced from [ids].
+  ///
+  /// Does not include [ids] themselves unless an asset is also declared as an
+  /// output of one of the steps.
   Set<AssetId> transitiveDeclaredOutputsOf(Iterable<AssetId> ids) {
     final results = <AssetId>{};
 
     void addTransitive(AssetId id) {
-      if (results.add(id)) {
-        for (final output in declaredOutputsOf(id)) {
+      for (final output in declaredOutputsOf(id)) {
+        if (results.add(output)) {
           addTransitive(output);
         }
       }

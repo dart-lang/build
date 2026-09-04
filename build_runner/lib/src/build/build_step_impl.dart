@@ -251,6 +251,10 @@ class BuildStepImpl implements BuildStep {
   void reportUnusedAssets(Iterable<AssetId> assets) {
     _reportUnusedAssets?.call(assets);
   }
+
+  @override
+  Future<LibrarySourceSink?> get librarySourceSink =>
+      throw UnsupportedError('librarySourceSink is not implemented.');
 }
 
 final _lib = Uri.parse('lib/');
