@@ -768,8 +768,7 @@ class Build {
         }
       } else {
         // If a primary input source file is deleted, the build is skipped.
-        if (buildInputs.deletedSources.contains(primaryInput) ||
-            buildInputs.invalidOutputs.contains(primaryInput)) {
+        if (buildInputs.deletedSources.contains(primaryInput)) {
           return StepAction.skipMissingPrimaryInput;
         }
       }
@@ -799,8 +798,7 @@ class Build {
       }
 
       for (final output in outputs) {
-        if (buildInputs.deletedSources.contains(output) ||
-            buildInputs.invalidOutputs.contains(output)) {
+        if (buildInputs.invalidOutputs.contains(output)) {
           return StepAction.run;
         }
       }
