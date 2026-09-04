@@ -227,10 +227,21 @@ abstract class PreviousBuild
     b.buildStepPlan.replace(finishedBuildState.buildStepPlan);
     b.phasedAssetDeps = previousPhasedAssetDeps.toBuilder();
     b.phaseOptionsChangedList.replace(
-      List.filled(phaseOptionsChangedList.length, false),
+      List.filled(
+        finishedBuildState.buildStepPlan.buildPhases.inBuildPhases.length,
+        false,
+      ),
     );
     b.postBuildOptionsChangedList.replace(
-      List.filled(postBuildOptionsChangedList.length, false),
+      List.filled(
+        finishedBuildState
+            .buildStepPlan
+            .buildPhases
+            .postBuildPhase
+            .builderActions
+            .length,
+        false,
+      ),
     );
     b.incompatibleBuildOutputsToDelete.clear();
   });
