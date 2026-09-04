@@ -2,10 +2,14 @@
 
 - The `serve` command now rejects non-loopback `Host` and `Origin` headers when
   bound to a loopback interface.
+- Require `build_config` 1.4.0.
 - Bug fix: allow calling `BuildStep.canRead` on outputs written by the same
   build step.
 - Bug fix: run post-process builder on incremental builds when no prior step
   result exists.
+- Bug fix: preserve analyzer dependency information on unhandled build failures,
+  preventing subsequent incremental builds from missing changes to transitively
+  imported files.
 
 ## 2.16.1
 

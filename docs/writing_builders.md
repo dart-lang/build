@@ -237,6 +237,8 @@ builders:
     auto_apply: dependents
 ```
 
+A builder that sets `adds_to_library: true` cannot be `is_optional: true`.
+
 #### 2. Writing code in the builder
 
 Inside `build(BuildStep buildStep)`:

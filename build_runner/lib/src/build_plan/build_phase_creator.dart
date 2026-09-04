@@ -192,6 +192,7 @@ class BuildPhaseCreator {
             options: options,
             outputsToArtifactTree: builderDefinition.outputsToArtifactTree,
             isOptional: builderDefinition.isOptional,
+            addsToLibrary: builderDefinition.addsToLibrary,
           ),
         );
       }

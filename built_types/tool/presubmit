@@ -6,7 +6,7 @@
 set -e
 
 directories="built_value built_value_generator built_value_test \
-    end_to_end_test benchmark example chat_example"
+    _built_value_end_to_end_test _built_value_benchmark built_value_example built_value_chat_example"
 
 parent_directory=$PWD
 
@@ -61,7 +61,7 @@ done
 
 
 echo "*** Preparing to benchmark build..."
-cd "$parent_directory/end_to_end_test"
+cd "$parent_directory/_built_value_end_to_end_test"
 cat << 'EOF' > lib/many_values.dart
 import 'package:built_value/built_value.dart';
 part 'many_values.g.dart';
@@ -79,5 +79,5 @@ done
 echo "*** Benchmarking build, should be ~30s..."
 dart run build_runner build
 
-rm "$parent_directory/end_to_end_test/lib/many_values.dart"
-rm "$parent_directory/end_to_end_test/lib/many_values.g.dart"
+rm "$parent_directory/_built_value_end_to_end_test/lib/many_values.dart"
+rm "$parent_directory/_built_value_end_to_end_test/lib/many_values.g.dart"
