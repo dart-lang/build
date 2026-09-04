@@ -2,6 +2,7 @@
 
 * Emit `// dart format off` in generated mock files to prevent reformatting.
   [#4597](https://github.com/dart-lang/build/issues/4597)
+- Require `analyzer` 14.3.0.
 
 ## 5.8.1
 

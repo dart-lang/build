@@ -11,6 +11,7 @@
 - Bug fix: preserve analyzer dependency information on unhandled build failures,
   preventing subsequent incremental builds from missing changes to transitively
   imported files.
+- Require `analyzer` 14.3.0.
 
 ## 2.16.1
 
