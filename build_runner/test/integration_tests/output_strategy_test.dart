@@ -111,4 +111,77 @@ void main() async {
     await watch.expect(BuildLog.successPattern);
     await watch.kill();
   });
+
+  test('output strategy with part builder', () async {
+    final pubspecs = await Pubspecs.load();
+    final tester = BuildRunnerTester(pubspecs);
+
+    tester.writePackage(
+      name: 'write_part_pkg',
+      dependencies: ['build', 'build_runner'],
+      files: {
+        'build.yaml': '''
+builders:
+  write_part_builder:
+    import: 'package:write_part_pkg/builder.dart'
+    builder_factories: ['writePartBuilderFactory']
+    build_extensions: {'.dart': []}
+    auto_apply: 'root_package'
+    build_to: 'cache'
+    adds_to_library: true
+''',
+        'lib/builder.dart': '''
+import 'package:build/build.dart';
+
+Builder writePartBuilderFactory(BuilderOptions options) => WritePartBuilder();
+
+class WritePartBuilder implements Builder {
+  @override
+  Map<String, List<String>> get buildExtensions => {'.dart': []};
+
+  @override
+  Future<void> build(BuildStep buildStep) async {
+    (await buildStep.librarySourceSink)?.add('// part content');
+  }
+}
+''',
+      },
+    );
+
+    tester.writePackage(
+      name: 'root_pkg',
+      dependencies: ['build_runner'],
+      pathDependencies: ['write_part_pkg'],
+      files: {'lib/a.dart': 'class A {}'},
+    );
+
+    await tester.run('root_pkg', 'dart run build_runner build --force-jit');
+    expect(
+      tester.read('root_pkg/lib/_br_/a.dart'),
+      contains('// part content'),
+    );
+
+    // Default output strategy "overwrite" fixes manually modified output.
+    tester.write('root_pkg/lib/_br_/a.dart', '// User modified part');
+    await tester.run('root_pkg', 'dart run build_runner build --force-jit');
+    expect(
+      tester.read('root_pkg/lib/_br_/a.dart'),
+      contains('// part content'),
+    );
+
+    // With --keep-modified-outputs, manually modified output is kept.
+    tester.write('root_pkg/lib/_br_/a.dart', '// User modified part');
+    await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit --keep-modified-outputs',
+    );
+    expect(tester.read('root_pkg/lib/_br_/a.dart'), '// User modified part');
+
+    // With --only-check after an "overwrite" build, passes.
+    await tester.run('root_pkg', 'dart run build_runner build --force-jit');
+    await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit --only-check',
+    );
+  });
 }

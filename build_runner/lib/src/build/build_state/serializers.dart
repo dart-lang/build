@@ -10,6 +10,7 @@ import 'package:built_value/serializer.dart';
 import 'package:crypto/crypto.dart';
 
 import '../../build_plan/build_spec_digest.dart';
+import '../asset_content.dart';
 import '../library_cycle_graph/asset_deps.dart';
 import '../library_cycle_graph/phased_asset_deps.dart';
 import '../library_cycle_graph/phased_value.dart';
@@ -44,7 +45,12 @@ final identityAssetIdSerializer = IdentitySerializer<AssetId>(
 final Serializers serializers =
     (_$serializers.toBuilder()
           ..add(identityAssetIdSerializer)
+          ..add(AssetContentSerializer())
           ..add(DigestSerializer())
+          ..addBuilderFactory(
+            const FullType(Map, [FullType(int), FullType(AssetContent)]),
+            () => <int, AssetContent>{},
+          )
           ..addBuilderFactory(
             const FullType(BuiltSet, [FullType(AssetId)]),
             SetBuilder<AssetId>.new,
@@ -137,6 +143,35 @@ class AssetIdSerializer implements PrimitiveSerializer<AssetId> {
     AssetId object, {
     FullType specifiedType = FullType.unspecified,
   }) => object.toString();
+}
+
+/// Serializer for [AssetContent].
+class AssetContentSerializer implements PrimitiveSerializer<AssetContent> {
+  @override
+  Iterable<Type> get types => [AssetContent];
+
+  @override
+  String get wireName => 'AssetContent';
+
+  @override
+  AssetContent deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => AssetContent.digest(
+    serializers.deserialize(serialized, specifiedType: const FullType(Digest))
+        as Digest,
+  );
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    AssetContent object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => serializers.serialize(
+    object.digest,
+    specifiedType: const FullType(Digest),
+  )!;
 }
 
 /// Serializer for [Digest].

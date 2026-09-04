@@ -8,6 +8,7 @@ import 'dart:math';
 
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
+import 'package:build_runner/src/build/br_outputs.dart';
 import 'package:build_runner/src/build/resolver/resolvers_impl.dart';
 import 'package:build_runner/src/constants.dart';
 import 'package:build_runner/src/logging/build_log.dart';
@@ -269,6 +270,9 @@ class InvalidationTester {
       visibleOutputBuilders: _builders
           .where((b) => b.outputAtPackagePath)
           .toSet(),
+      addsToLibraryBuilders: _builders
+          .where((b) => b.partWrite != null)
+          .toSet(),
       testingBuilderConfig: false,
       resolvers: discardResolver ? ResolversImpl.custom() : null,
     );
@@ -409,6 +413,11 @@ class TestBuilderBuilder {
     if (_logSetup) _setupLog.add('builder.writes($extension)');
     _builder.writes.add('$extension.dart');
   }
+
+  void writesPart(String content) {
+    if (_logSetup) _setupLog.add('builder.writesPart($content)');
+    _builder.partWrite = content;
+  }
 }
 
 /// A builder that does reads and writes according to test setup.
@@ -447,6 +456,8 @@ class TestBuilder implements Builder {
   /// The extensions are applied to the primary input asset ID with
   /// [AssetIdExtension.replaceExtensions].
   List<String> writes = [];
+
+  String? partWrite;
 
   TestBuilder(
     this._tester,
@@ -566,6 +577,14 @@ class TestBuilder implements Builder {
       if (_tester._failureStrategies[writeId] == FailureStrategy.fail) {
         throw StateError('Failing as requested by test setup.');
       }
+    }
+
+    if (partWrite != null) {
+      final actualContent = partWrite! == '_digest'
+          ? recordedInput.map((l) => '// $l\n').join('')
+          : partWrite!;
+      (await buildStep.librarySourceSink)?.add(actualContent);
+      _tester._generatedOutputsWritten.add(buildStep.inputId.sharedPartId);
     }
   }
 

@@ -8,6 +8,8 @@ import 'package:meta/meta.dart';
 
 import '../../build_plan/build_step_plan.dart';
 import '../asset_content.dart';
+import '../br_outputs.dart';
+import '../finished_shared_part.dart';
 import 'build_step_id.dart';
 import 'build_step_result.dart';
 import 'incremental_build_state.dart';
@@ -33,18 +35,23 @@ class FinishedBuildState {
   /// [IncrementalBuildState] does not store file content.
   final BuiltMap<AssetId, AssetContent> contents;
 
+  /// Shared parts from the build.
+  final BuiltMap<AssetId, FinishedSharedPart> sharedParts;
+
   FinishedBuildState({
     required this.buildStepPlan,
     required this.incremental,
     required this.contents,
-  });
+    BuiltMap<AssetId, FinishedSharedPart>? sharedParts,
+  }) : sharedParts = sharedParts ?? BuiltMap<AssetId, FinishedSharedPart>();
 
   /// An empty [FinishedBuildState] with no sources and an empty plan.
   @visibleForTesting
   FinishedBuildState.empty()
     : buildStepPlan = BuildStepPlan.empty(),
       incremental = IncrementalBuildState(),
-      contents = BuiltMap<AssetId, AssetContent>();
+      contents = BuiltMap<AssetId, AssetContent>(),
+      sharedParts = BuiltMap<AssetId, FinishedSharedPart>();
 
   BuiltSet<AssetId> get sources => incremental.sources;
   BuiltMap<BuildStepId, BuildStepResult> get buildStepResults =>
@@ -97,6 +104,20 @@ class FinishedBuildState {
   bool isInArtifactTree(AssetId id) =>
       buildStepPlan.isDeclaredOutputInArtifactTree(id) ||
       _isArtifactTreePostProcessOutput(id);
+
+  // -- Shared parts.
+
+  Iterable<AssetId> get sharedPartLibraryIds => sharedParts.keys;
+
+  Iterable<AssetId> get sharedPartIds =>
+      sharedPartLibraryIds.map((id) => id.sharedPartId);
+
+  bool hasSharedPart(AssetId id) =>
+      sharedParts.containsKey(id.sharedPartLibraryId ?? id);
+
+  FinishedSharedPart? sharedPartOrNull(AssetId id) =>
+      sharedParts[id.sharedPartLibraryId ?? id];
+
   AssetContent? contentOf(AssetId id) => contents[id];
 
   Iterable<MapEntry<AssetId, AssetContent>> get sourceContents =>

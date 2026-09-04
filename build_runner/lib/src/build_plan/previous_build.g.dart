@@ -14,6 +14,8 @@ class _$PreviousBuild extends PreviousBuild {
   @override
   final PhasedAssetDeps? phasedAssetDeps;
   @override
+  final BuiltMap<AssetId, FinishedSharedPart> sharedParts;
+  @override
   final bool triggersChanged;
   @override
   final BuiltList<bool> phaseOptionsChangedList;
@@ -30,6 +32,7 @@ class _$PreviousBuild extends PreviousBuild {
     this.incrementalState,
     this.buildStepPlan,
     this.phasedAssetDeps,
+    required this.sharedParts,
     required this.triggersChanged,
     required this.phaseOptionsChangedList,
     required this.postBuildOptionsChangedList,
@@ -53,6 +56,7 @@ class _$PreviousBuild extends PreviousBuild {
         incrementalState == other.incrementalState &&
         buildStepPlan == other.buildStepPlan &&
         phasedAssetDeps == other.phasedAssetDeps &&
+        sharedParts == other.sharedParts &&
         triggersChanged == other.triggersChanged &&
         phaseOptionsChangedList == other.phaseOptionsChangedList &&
         postBuildOptionsChangedList == other.postBuildOptionsChangedList &&
@@ -66,6 +70,7 @@ class _$PreviousBuild extends PreviousBuild {
     _$hash = $jc(_$hash, incrementalState.hashCode);
     _$hash = $jc(_$hash, buildStepPlan.hashCode);
     _$hash = $jc(_$hash, phasedAssetDeps.hashCode);
+    _$hash = $jc(_$hash, sharedParts.hashCode);
     _$hash = $jc(_$hash, triggersChanged.hashCode);
     _$hash = $jc(_$hash, phaseOptionsChangedList.hashCode);
     _$hash = $jc(_$hash, postBuildOptionsChangedList.hashCode);
@@ -80,6 +85,7 @@ class _$PreviousBuild extends PreviousBuild {
           ..add('incrementalState', incrementalState)
           ..add('buildStepPlan', buildStepPlan)
           ..add('phasedAssetDeps', phasedAssetDeps)
+          ..add('sharedParts', sharedParts)
           ..add('triggersChanged', triggersChanged)
           ..add('phaseOptionsChangedList', phaseOptionsChangedList)
           ..add('postBuildOptionsChangedList', postBuildOptionsChangedList)
@@ -112,6 +118,12 @@ class PreviousBuildBuilder
       _$this._phasedAssetDeps ??= PhasedAssetDepsBuilder();
   set phasedAssetDeps(PhasedAssetDepsBuilder? phasedAssetDeps) =>
       _$this._phasedAssetDeps = phasedAssetDeps;
+
+  MapBuilder<AssetId, FinishedSharedPart>? _sharedParts;
+  MapBuilder<AssetId, FinishedSharedPart> get sharedParts =>
+      _$this._sharedParts ??= MapBuilder<AssetId, FinishedSharedPart>();
+  set sharedParts(MapBuilder<AssetId, FinishedSharedPart>? sharedParts) =>
+      _$this._sharedParts = sharedParts;
 
   bool? _triggersChanged;
   bool? get triggersChanged => _$this._triggersChanged;
@@ -147,6 +159,7 @@ class PreviousBuildBuilder
       _incrementalState = $v.incrementalState?.toBuilder();
       _buildStepPlan = $v.buildStepPlan?.toBuilder();
       _phasedAssetDeps = $v.phasedAssetDeps?.toBuilder();
+      _sharedParts = $v.sharedParts.toBuilder();
       _triggersChanged = $v.triggersChanged;
       _phaseOptionsChangedList = $v.phaseOptionsChangedList.toBuilder();
       _postBuildOptionsChangedList = $v.postBuildOptionsChangedList.toBuilder();
@@ -179,6 +192,7 @@ class PreviousBuildBuilder
             incrementalState: _incrementalState?.build(),
             buildStepPlan: _buildStepPlan?.build(),
             phasedAssetDeps: _phasedAssetDeps?.build(),
+            sharedParts: sharedParts.build(),
             triggersChanged: BuiltValueNullFieldError.checkNotNull(
               triggersChanged,
               r'PreviousBuild',
@@ -198,6 +212,8 @@ class PreviousBuildBuilder
         _buildStepPlan?.build();
         _$failedField = 'phasedAssetDeps';
         _phasedAssetDeps?.build();
+        _$failedField = 'sharedParts';
+        sharedParts.build();
 
         _$failedField = 'phaseOptionsChangedList';
         phaseOptionsChangedList.build();

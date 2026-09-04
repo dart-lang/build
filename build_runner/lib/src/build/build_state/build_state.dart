@@ -5,14 +5,15 @@
 import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
-
 import 'package:meta/meta.dart';
 
 import '../../build_plan/build_phases.dart';
 import '../../build_plan/build_step_plan.dart';
 import '../../build_plan/phase.dart';
 import '../asset_content.dart';
-
+import '../br_outputs.dart';
+import '../finished_shared_part.dart';
+import '../shared_part_accumulator.dart';
 import 'build_step_id.dart';
 import 'build_step_result.dart';
 import 'finished_build_state.dart';
@@ -55,6 +56,9 @@ class BuildState {
 
   /// All post process build step outputs by the step that created them.
   final Map<AssetId, PostProcessBuildStepId> _postProcessOutputs;
+
+  /// Source added using `buildStep.librarySourceSink`.
+  final Map<AssetId, SharedPartAccumulator> _partData = {};
 
   BuildState({
     required this.buildStepPlan,
@@ -99,11 +103,12 @@ class BuildState {
   /// Whether [id] is a source file that was accessed but did not exist.
   bool isMissingSource(AssetId id) => _missingSources.contains(id);
 
-  /// Whether [id] is one of: source, declared output or actual post process
-  /// output.
+  /// Whether [id] is one of: source, declared output, `_br_` output, or actual
+  /// post process output.
   bool isKnownAsset(AssetId id) =>
       isSource(id) ||
       buildStepPlan.isDeclaredOutput(id) ||
+      id.isBrOutput ||
       isActualPostOutput(id);
 
   /// Actual build step outputs.
@@ -165,10 +170,16 @@ class BuildState {
   /// The content of [id].
   ///
   /// Returns `null` if it is an unread source or has not been generated.
-  AssetContent? contentOf(AssetId id) => _contents[id];
+  AssetContent? contentOf(AssetId id) {
+    if (id.isBrOutput) return sharedPartContent(id);
+    return _contents[id];
+  }
 
   /// The digest of [id], or `null` if not known.
-  Digest? digestOf(AssetId id) => _contents[id]?.digest;
+  Digest? digestOf(AssetId id) {
+    if (id.isBrOutput) return sharedPartContent(id)?.digest;
+    return _contents[id]?.digest;
+  }
 
   @visibleForTesting
   IncrementalBuildState toIncrementalBuildState() {
@@ -201,14 +212,27 @@ class BuildState {
 
     builder.globResults.addAll(_globResults);
 
+    for (final entry in _partData.entries) {
+      final partContent = entry.value.contentAt();
+      builder.digests[entry.key.sharedPartId] = partContent.digest;
+    }
+
     return builder.build();
   }
 
   FinishedBuildState toFinishedBuildState() {
+    final contents = Map<AssetId, AssetContent>.from(_contents);
+    for (final entry in _partData.entries) {
+      contents[entry.key.sharedPartId] = entry.value.contentAt();
+    }
     return FinishedBuildState(
       buildStepPlan: buildStepPlan,
       incremental: toIncrementalBuildState(),
-      contents: _contents.build(),
+      contents: contents.build(),
+      sharedParts: BuiltMap<AssetId, FinishedSharedPart>({
+        for (final entry in _partData.entries)
+          entry.key: entry.value.toFinishedSharedPart(),
+      }),
     );
   }
 
@@ -257,6 +281,81 @@ class BuildState {
     }
     results[step.phaseNumber] = result;
     _contents.addAll(contents);
+  }
+
+  // -- Shared parts.
+
+  /// Adds [sharedPart].
+  ///
+  /// Throws if a shared part for the same library already exists.
+  void addSharedPart(SharedPartAccumulator sharedPart) {
+    if (_partData.containsKey(sharedPart.libraryId)) {
+      throw StateError(
+        'SharedPart for ${sharedPart.libraryId} already exists.',
+      );
+    }
+    _partData[sharedPart.libraryId] = sharedPart;
+  }
+
+  /// Whether the library [libraryId] has a shared part.
+  bool hasSharedPart(AssetId libraryId) => _partData.containsKey(libraryId);
+
+  /// The shared part accumulator for [libraryId], or `null` if it has none.
+  SharedPartAccumulator? sharedPartOrNull(AssetId libraryId) =>
+      _partData[libraryId];
+
+  /// Returns the content of the shared part for [libraryId], or `null` if it
+  /// does not exist.
+  ///
+  /// If passed a shared part AssetId, looks up the content for its
+  /// library.
+  AssetContent? sharedPartContent(AssetId libraryId, {int? upToPhase}) {
+    final actualLibraryId = libraryId.sharedPartLibraryId ?? libraryId;
+    final partData = _partData[actualLibraryId];
+    if (partData == null) return null;
+    return partData.contentAt(phase: upToPhase);
+  }
+
+  /// All libraries that have a shared part.
+  Iterable<AssetId> get sharedPartLibraryIds => _partData.keys;
+
+  /// All generated shared part file IDs.
+  Iterable<AssetId> get sharedPartIds =>
+      sharedPartLibraryIds.map((id) => id.sharedPartId);
+
+  void updatePartContribution(
+    AssetId libraryId,
+    int phase,
+    List<String> imports,
+    String contribution,
+  ) {
+    _partData[libraryId]!.updateContribution(phase, imports, contribution);
+  }
+
+  void copyPartContribution({
+    required FinishedSharedPart? fromPart,
+    required AssetId libraryId,
+    required int phase,
+    required String? languageVersion,
+  }) {
+    if (fromPart == null) return;
+    if (!hasSharedPart(libraryId)) {
+      addSharedPart(
+        SharedPartAccumulator(
+          libraryId,
+          languageVersion ?? fromPart.languageVersion,
+        ),
+      );
+    }
+    final imports = fromPart.imports[phase];
+    final contribution = fromPart.contributions[phase];
+    if (imports == null && contribution == null) return;
+    updatePartContribution(
+      libraryId,
+      phase,
+      imports?.toList() ?? const [],
+      contribution ?? '',
+    );
   }
 
   // -- Globs.

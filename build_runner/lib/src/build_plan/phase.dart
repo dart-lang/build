@@ -70,7 +70,6 @@ class InBuildPhase extends BuildPhase implements BuildAction {
 
   /// Whether this phase is capable of contributing to part files.
   final bool addsToLibrary;
-
   InBuildPhase._(
     this.package,
     this.builder,
