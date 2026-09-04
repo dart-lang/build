@@ -346,5 +346,29 @@ void main() {
         expect(secondResult.outputs, contains(outputId));
       });
     });
+
+    group('currentBuildResult', () {
+      test('completes with early exit result when build configuration requires '
+          'restart', () async {
+        final planWithBuilderDefinitions = await loadPlan(
+          TestingOverrides(
+            builderDefinitions: [
+              BuilderDefinition('extra:builder', outputsToArtifactTree: false),
+            ].build(),
+            readerWriter: readerWriter,
+            buildPackages: buildPackages,
+            checkBuilderFreshness: false,
+          ),
+        );
+        final series = BuildSeries(planWithBuilderDefinitions);
+        final configId = AssetId('a', 'build.yaml');
+        final result = await series.run({
+          configId,
+        }, recentlyBootstrapped: false);
+
+        expect(result.failureType, FailureType.buildScriptChanged);
+        expect(await series.currentBuildResult, result);
+      });
+    });
   });
 }
