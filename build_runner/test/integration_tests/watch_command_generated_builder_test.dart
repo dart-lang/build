@@ -20,7 +20,7 @@ void main() async {
   //  - Generated outputs. These are deleted and written during the build.
   test('watch command generated builder', () async {
     final pubspecs = await Pubspecs.load();
-    final tester = BuildRunnerTester(pubspecs);
+    final tester = BuildRunnerTester(pubspecs, bootstrap: true);
 
     // The `builder.g.dart` content that the builder writes.
     final partContent = '''
