@@ -11,9 +11,9 @@ import '../../build_plan/build_phases.dart';
 import '../../build_plan/build_step_plan.dart';
 import '../../build_plan/phase.dart';
 import '../asset_content.dart';
-
 import '../br_outputs.dart';
-import '../shared_part.dart';
+import '../finished_shared_part.dart';
+import '../shared_part_accumulator.dart';
 import 'build_step_id.dart';
 import 'build_step_result.dart';
 import 'finished_build_state.dart';
@@ -58,7 +58,7 @@ class BuildState {
   final Map<AssetId, PostProcessBuildStepId> _postProcessOutputs;
 
   /// Source added using `buildStep.librarySourceSink`.
-  final Map<AssetId, SharedPart> _partData = {};
+  final Map<AssetId, SharedPartAccumulator> _partData = {};
 
   BuildState({
     required this.buildStepPlan,
@@ -216,17 +216,23 @@ class BuildState {
       final partContent = entry.value.contentAt();
       builder.digests[entry.key.sharedPartId] = partContent.digest;
     }
-    builder.partData.addAll(_partData);
 
     return builder.build();
   }
 
   FinishedBuildState toFinishedBuildState() {
+    final contents = Map<AssetId, AssetContent>.from(_contents);
+    for (final entry in _partData.entries) {
+      contents[entry.key.sharedPartId] = entry.value.contentAt();
+    }
     return FinishedBuildState(
       buildStepPlan: buildStepPlan,
       incremental: toIncrementalBuildState(),
-      contents: _contents.build(),
-      partData: _partData.build(),
+      contents: contents.build(),
+      sharedParts: BuiltMap<AssetId, FinishedSharedPart>({
+        for (final entry in _partData.entries)
+          entry.key: entry.value.toFinishedSharedPart(),
+      }),
     );
   }
 
@@ -282,7 +288,7 @@ class BuildState {
   /// Adds [sharedPart].
   ///
   /// Throws if a shared part for the same library already exists.
-  void addSharedPart(SharedPart sharedPart) {
+  void addSharedPart(SharedPartAccumulator sharedPart) {
     if (_partData.containsKey(sharedPart.libraryId)) {
       throw StateError(
         'SharedPart for ${sharedPart.libraryId} already exists.',
@@ -294,8 +300,9 @@ class BuildState {
   /// Whether the library [libraryId] has a shared part.
   bool hasSharedPart(AssetId libraryId) => _partData.containsKey(libraryId);
 
-  /// The shared part for [libraryId], or `null` if it has none.
-  SharedPart? sharedPartOrNull(AssetId libraryId) => _partData[libraryId];
+  /// The shared part accumulator for [libraryId], or `null` if it has none.
+  SharedPartAccumulator? sharedPartOrNull(AssetId libraryId) =>
+      _partData[libraryId];
 
   /// Returns the content of the shared part for [libraryId], or `null` if it
   /// does not exist.
@@ -326,7 +333,7 @@ class BuildState {
   }
 
   void copyPartContribution({
-    required SharedPart? fromPart,
+    required FinishedSharedPart? fromPart,
     required AssetId libraryId,
     required int phase,
     required String? languageVersion,
@@ -334,7 +341,10 @@ class BuildState {
     if (fromPart == null) return;
     if (!hasSharedPart(libraryId)) {
       addSharedPart(
-        SharedPart(libraryId, languageVersion ?? fromPart.languageVersion),
+        SharedPartAccumulator(
+          libraryId,
+          languageVersion ?? fromPart.languageVersion,
+        ),
       );
     }
     final imports = fromPart.imports[phase];
@@ -343,7 +353,7 @@ class BuildState {
     updatePartContribution(
       libraryId,
       phase,
-      imports ?? const [],
+      imports?.toList() ?? const [],
       contribution ?? '',
     );
   }

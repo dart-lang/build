@@ -21,8 +21,9 @@ import '../build/build_state/glob_result.dart';
 import '../build/build_state/incremental_build_state.dart';
 import '../build/build_state/post_process_build_step_id.dart';
 import '../build/build_state/post_process_build_step_result.dart';
+import '../build/finished_shared_part.dart';
 import '../build/library_cycle_graph/phased_asset_deps.dart';
-import '../build/shared_part.dart';
+import '../build/shared_part_accumulator.dart';
 import '../constants.dart';
 
 import 'build_packages.dart';
@@ -45,6 +46,9 @@ abstract class PreviousBuild
 
   /// Phased asset dependencies from the previous run, or null.
   PhasedAssetDeps? get phasedAssetDeps;
+
+  /// Finished shared parts from the previous build.
+  BuiltMap<AssetId, FinishedSharedPart> get sharedParts;
 
   /// Whether the configuration triggers changed since the last run.
   bool get triggersChanged;
@@ -130,32 +134,26 @@ abstract class PreviousBuild
       isActualPostOutput(id) ||
       id.isBrOutput;
 
-  Digest? digestOf(AssetId id) {
-    if (id.isBrOutput) return sharedPartContent(id)?.digest;
-    return digests[id];
-  }
+  Digest? digestOf(AssetId id) => digests[id];
 
   // -- Shared parts.
 
-  BuiltMap<AssetId, SharedPart> get partData =>
-      incrementalState?.partData ?? BuiltMap<AssetId, SharedPart>();
-
-  Iterable<AssetId> get sharedPartLibraryIds => partData.keys;
-
   Iterable<AssetId> get sharedPartIds =>
-      sharedPartLibraryIds.map((id) => id.sharedPartId);
+      digests.keys.where((id) => id.isBrSharedPart);
+
+  Iterable<AssetId> get sharedPartLibraryIds =>
+      sharedPartIds.map((id) => id.sharedPartLibraryId!).whereType<AssetId>();
 
   bool hasSharedPart(AssetId id) =>
-      partData.containsKey(id.sharedPartLibraryId ?? id);
+      sharedPartLibraryIds.contains(id.sharedPartLibraryId ?? id);
 
-  SharedPart? sharedPartOrNull(AssetId id) =>
-      partData[id.sharedPartLibraryId ?? id];
+  FinishedSharedPart? sharedPartOrNull(AssetId id) =>
+      sharedParts[id.sharedPartLibraryId ?? id];
 
   AssetContent? sharedPartContent(AssetId id, {int? upToPhase}) {
-    final actualLibraryId = id.sharedPartLibraryId ?? id;
-    final part = partData[actualLibraryId];
+    final part = sharedPartOrNull(id);
     if (part == null) return null;
-    return part.contentAt(phase: upToPhase);
+    return SharedPartAccumulator.fromFinished(part).contentAt(phase: upToPhase);
   }
 
   /// Deserializes information about the previous build and compares it to
@@ -225,6 +223,25 @@ abstract class PreviousBuild
     final postBuildOptionsChanged = buildPlanDigest
         .computeChangedPostBuildOptions(previousBuildPlanDigest);
 
+    final previousSharedParts = <AssetId, FinishedSharedPart>{};
+    if (incrementalBuildState != null) {
+      for (final id in incrementalBuildState.digests.keys) {
+        if (id.isBrSharedPart) {
+          final libraryId = id.sharedPartLibraryId;
+          if (libraryId != null && await readerWriter.canRead(id)) {
+            try {
+              final content = await readerWriter.readAsString(id);
+              previousSharedParts[libraryId] =
+                  SharedPartAccumulator.parseContent(
+                    content,
+                    libraryId,
+                  ).toFinishedSharedPart();
+            } catch (_) {}
+          }
+        }
+      }
+    }
+
     return PreviousBuild((b) {
       b.incrementalState = incrementalBuildState?.toBuilder();
       if (previousBuildStepPlan != null) {
@@ -233,6 +250,7 @@ abstract class PreviousBuild
       if (previousPhasedAssetDeps != null) {
         b.phasedAssetDeps.replace(previousPhasedAssetDeps);
       }
+      b.sharedParts.addAll(previousSharedParts);
       b.triggersChanged = triggersChanged;
       b.phaseOptionsChangedList.replace(phaseOptionsChanged);
       b.postBuildOptionsChangedList.replace(postBuildOptionsChanged);
@@ -256,6 +274,7 @@ abstract class PreviousBuild
     b.incrementalState.replace(finishedBuildState.incremental);
     b.buildStepPlan.replace(finishedBuildState.buildStepPlan);
     b.phasedAssetDeps = previousPhasedAssetDeps.toBuilder();
+    b.sharedParts.replace(finishedBuildState.sharedParts);
     b.phaseOptionsChangedList.replace(
       List.filled(
         finishedBuildState.buildStepPlan.buildPhases.inBuildPhases.length,

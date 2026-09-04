@@ -9,7 +9,7 @@ import 'package:meta/meta.dart';
 import '../../build_plan/build_step_plan.dart';
 import '../asset_content.dart';
 import '../br_outputs.dart';
-import '../shared_part.dart';
+import '../finished_shared_part.dart';
 import 'build_step_id.dart';
 import 'build_step_result.dart';
 import 'incremental_build_state.dart';
@@ -35,15 +35,15 @@ class FinishedBuildState {
   /// [IncrementalBuildState] does not store file content.
   final BuiltMap<AssetId, AssetContent> contents;
 
-  /// Part data from the build.
-  final BuiltMap<AssetId, SharedPart> partData;
+  /// Shared parts from the build.
+  final BuiltMap<AssetId, FinishedSharedPart> sharedParts;
 
   FinishedBuildState({
     required this.buildStepPlan,
     required this.incremental,
     required this.contents,
-    BuiltMap<AssetId, SharedPart>? partData,
-  }) : partData = partData ?? BuiltMap<AssetId, SharedPart>();
+    BuiltMap<AssetId, FinishedSharedPart>? sharedParts,
+  }) : sharedParts = sharedParts ?? BuiltMap<AssetId, FinishedSharedPart>();
 
   /// An empty [FinishedBuildState] with no sources and an empty plan.
   @visibleForTesting
@@ -51,7 +51,7 @@ class FinishedBuildState {
     : buildStepPlan = BuildStepPlan.empty(),
       incremental = IncrementalBuildState(),
       contents = BuiltMap<AssetId, AssetContent>(),
-      partData = BuiltMap<AssetId, SharedPart>();
+      sharedParts = BuiltMap<AssetId, FinishedSharedPart>();
 
   BuiltSet<AssetId> get sources => incremental.sources;
   BuiltMap<BuildStepId, BuildStepResult> get buildStepResults =>
@@ -107,28 +107,18 @@ class FinishedBuildState {
 
   // -- Shared parts.
 
-  Iterable<AssetId> get sharedPartLibraryIds => partData.keys;
+  Iterable<AssetId> get sharedPartLibraryIds => sharedParts.keys;
 
   Iterable<AssetId> get sharedPartIds =>
       sharedPartLibraryIds.map((id) => id.sharedPartId);
 
   bool hasSharedPart(AssetId id) =>
-      partData.containsKey(id.sharedPartLibraryId ?? id);
+      sharedParts.containsKey(id.sharedPartLibraryId ?? id);
 
-  SharedPart? sharedPartOrNull(AssetId id) =>
-      partData[id.sharedPartLibraryId ?? id];
+  FinishedSharedPart? sharedPartOrNull(AssetId id) =>
+      sharedParts[id.sharedPartLibraryId ?? id];
 
-  AssetContent? sharedPartContent(AssetId id, {int? upToPhase}) {
-    final actualLibraryId = id.sharedPartLibraryId ?? id;
-    final part = partData[actualLibraryId];
-    if (part == null) return null;
-    return part.contentAt(phase: upToPhase);
-  }
-
-  AssetContent? contentOf(AssetId id) {
-    if (id.isBrOutput) return sharedPartContent(id);
-    return contents[id];
-  }
+  AssetContent? contentOf(AssetId id) => contents[id];
 
   Iterable<MapEntry<AssetId, AssetContent>> get sourceContents =>
       contents.entries.where((e) => isSource(e.key));

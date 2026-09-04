@@ -385,12 +385,11 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
             : null;
         if (existing != null) {
           if (buildSpec.buildOptions.outputStrategy == OutputStrategy.keep) {
-            existing.restoreContent(newContent.stringValue());
             buildInputs.retainedOutputContents[id] = AssetContent.bytes(
               newContent.bytes,
               digest: oldDigest,
             );
-          } else if (changed || !existing.tryRestore(newContent)) {
+          } else if (changed) {
             buildInputs.invalidOutputs.add(id);
           } else {
             buildInputs.retainedOutputContents[id] = newContent;

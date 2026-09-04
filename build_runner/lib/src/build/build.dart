@@ -49,7 +49,7 @@ import 'library_cycle_graph/phased_asset_deps.dart';
 import 'post_process_build_step_impl.dart';
 import 'resolver/analysis_driver_model.dart';
 import 'resolver/resolvers_impl.dart';
-import 'shared_part.dart';
+import 'shared_part_accumulator.dart';
 
 final ResolversImpl _defaultResolvers = ResolversImpl(
   analysisDriverModel: AnalysisDriverModel(),
@@ -1168,7 +1168,9 @@ class Build {
       ..wrotePartContribution = step.wrotePartContribution;
     if (step.wrotePartContribution) {
       if (!buildState.hasSharedPart(input)) {
-        buildState.addSharedPart(SharedPart(input, step.languageVersion));
+        buildState.addSharedPart(
+          SharedPartAccumulator(input, step.languageVersion),
+        );
       }
       buildState.updatePartContribution(
         input,

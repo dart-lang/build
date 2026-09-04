@@ -1,11 +1,11 @@
 import 'package:build/build.dart';
-import 'package:build_runner/src/build/shared_part.dart';
+import 'package:build_runner/src/build/shared_part_accumulator.dart';
 
 import 'package:dart_style/dart_style.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('SharedPart', () {
+  group('SharedPartAccumulator', () {
     String formatGolden(String raw) {
       String formatted;
       try {
@@ -19,7 +19,7 @@ void main() {
     }
 
     test('generateContent uses correct relative path', () {
-      final p1 = SharedPart(AssetId('a', 'lib/b.dart'), null);
+      final p1 = SharedPartAccumulator(AssetId('a', 'lib/b.dart'), null);
       p1.contributions[0] = '// c1';
       expect(
         p1.generateContent(),
@@ -28,7 +28,7 @@ void main() {
         ),
       );
 
-      final p2 = SharedPart(AssetId('a', 'lib/foo/bar.dart'), null);
+      final p2 = SharedPartAccumulator(AssetId('a', 'lib/foo/bar.dart'), null);
       p2.contributions[0] = '// c1';
       expect(
         p2.generateContent(),
@@ -37,7 +37,7 @@ void main() {
         ),
       );
 
-      final p3 = SharedPart(AssetId('a', 'test/foo.dart'), null);
+      final p3 = SharedPartAccumulator(AssetId('a', 'test/foo.dart'), null);
       p3.contributions[0] = '// c1';
       expect(
         p3.generateContent(),
@@ -46,7 +46,7 @@ void main() {
         ),
       );
 
-      final p4 = SharedPart(AssetId('a', 'root.dart'), null);
+      final p4 = SharedPartAccumulator(AssetId('a', 'root.dart'), null);
       p4.contributions[0] = '// c1';
       expect(
         p4.generateContent(),
@@ -55,7 +55,7 @@ void main() {
         ),
       );
 
-      final p5 = SharedPart(AssetId('a', 'root.dart'), null);
+      final p5 = SharedPartAccumulator(AssetId('a', 'root.dart'), null);
       p5.imports[0] = [
         "import 'package:foo/foo.dart';",
         "import 'package:bar/bar.dart';",
@@ -70,7 +70,7 @@ void main() {
     });
 
     test('contentAt caches AssetContent by phase', () {
-      final part = SharedPart(AssetId('a', 'lib/b.dart'), null);
+      final part = SharedPartAccumulator(AssetId('a', 'lib/b.dart'), null);
       part.contributions[0] = '// c0';
       part.contributions[1] = '// c1';
       final c0 = part.contentAt(phase: 0);
@@ -81,6 +81,19 @@ void main() {
       final cMax = part.contentAt();
       expect(cMax.stringValue(), contains('// c0'));
       expect(cMax.stringValue(), contains('// c1'));
+    });
+
+    test('toFinishedSharedPart produces immutable FinishedSharedPart', () {
+      final part = SharedPartAccumulator(AssetId('a', 'lib/b.dart'), null);
+      part.imports[0] = ["import 'package:foo/foo.dart';"];
+      part.contributions[0] = '// c0';
+      final finished = part.toFinishedSharedPart();
+      expect(finished.libraryId, AssetId('a', 'lib/b.dart'));
+      expect(finished.imports[0], ["import 'package:foo/foo.dart';"]);
+      expect(finished.contributions[0], '// c0');
+
+      final fromFinished = SharedPartAccumulator.fromFinished(finished);
+      expect(fromFinished.generateContent(), part.generateContent());
     });
   });
 }
