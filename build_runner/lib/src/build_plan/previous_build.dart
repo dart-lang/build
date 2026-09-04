@@ -61,8 +61,6 @@ abstract class PreviousBuild
       incrementalState?.sources ?? BuiltSet<AssetId>();
   BuiltMap<AssetId, Digest> get digests =>
       incrementalState?.digests ?? BuiltMap<AssetId, Digest>();
-  BuiltSet<AssetId> get missingSources =>
-      incrementalState?.missingSources ?? BuiltSet<AssetId>();
   BuiltMap<BuildStepId, BuildStepResult> get buildStepResults =>
       incrementalState?.buildStepResults ??
       BuiltMap<BuildStepId, BuildStepResult>();
@@ -84,8 +82,22 @@ abstract class PreviousBuild
     return builder.build();
   }
 
+  @memoized
+  BuiltSet<AssetId> get trackedInputs {
+    final builder = SetBuilder<AssetId>();
+    for (final result in buildStepResults.values) {
+      builder.addAll(result.inputs);
+    }
+    for (final result in globResults.values) {
+      builder.addAll(result.inputs);
+    }
+    return builder.build();
+  }
+
   bool isSource(AssetId id) => sources.contains(id);
-  bool isMissingSource(AssetId id) => missingSources.contains(id);
+
+  /// Whether [id] was tracked as an input to any build step or glob.
+  bool wasTrackedInput(AssetId id) => trackedInputs.contains(id);
 
   BuildStepResult? stepResultOrNull(BuildStepId step) => buildStepResults[step];
   BuildStepResult stepResult(BuildStepId step) => stepResultOrNull(step)!;

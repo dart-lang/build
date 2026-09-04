@@ -154,12 +154,17 @@ class BuildSeries {
 
       // Changes to files that are part of the build.
 
-      // If not copying to a merged output directory, ignore changes to sources
-      // with no outputs.
+      // If not copying to a merged output directory, ignore modifications to
+      // sources with no outputs.
       if (!_buildPlan.buildSpec.buildOptions.anyMergedOutputDirectory &&
           previousBuild.isSource(id) &&
           previousBuild.digestOf(id) == null) {
-        rejected.add(change);
+        // If its existence was tracked, removal invalidates the build.
+        if (change.type == .REMOVE && previousBuild.wasTrackedInput(id)) {
+          accepted.add(change);
+        } else {
+          rejected.add(change);
+        }
         continue;
       }
 
@@ -170,7 +175,7 @@ class BuildSeries {
         continue;
       }
 
-      // It's an add of a "missing source" or a deletion of an input.
+      // It's a deletion of an input or an update.
       accepted.add(change);
     }
 

@@ -161,7 +161,6 @@ class BuilderFilesystem {
 
     if (Placeholders.isPlaceholderPath(id.path)) return false;
     if (!buildState.isKnownAsset(id)) {
-      buildState.addMissingSource(id);
       return false;
     }
 
@@ -233,9 +232,6 @@ class BuilderFilesystem {
   /// empty string is returned for its content.
   Future<PhasedValue<String>> readPhased(int phase, AssetId id) async {
     if (!buildState.isKnownAsset(id)) {
-      buildState.addMissingSource(id);
-      return PhasedValue.fixed('');
-    } else if (buildState.isMissingSource(id)) {
       return PhasedValue.fixed('');
     }
 

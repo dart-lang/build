@@ -100,5 +100,5 @@ class AssetGraphJson {
 }
 
 /// Increment whenever older `asset_graph.json` files should be rejected.
-const _version = 47;
+const _version = 48;
 final jsonUtf8 = json.fuse(utf8);

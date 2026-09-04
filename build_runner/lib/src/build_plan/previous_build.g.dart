@@ -22,6 +22,7 @@ class _$PreviousBuild extends PreviousBuild {
   @override
   final BuiltList<AssetId> incompatibleBuildOutputsToDelete;
   BuiltMap<AssetId, PostProcessBuildStepId>? __postProcessOutputs;
+  BuiltSet<AssetId>? __trackedInputs;
 
   factory _$PreviousBuild([void Function(PreviousBuildBuilder)? updates]) =>
       (PreviousBuildBuilder()..update(updates))._build();
@@ -38,6 +39,9 @@ class _$PreviousBuild extends PreviousBuild {
   @override
   BuiltMap<AssetId, PostProcessBuildStepId> get postProcessOutputs =>
       __postProcessOutputs ??= super.postProcessOutputs;
+  @override
+  BuiltSet<AssetId> get trackedInputs =>
+      __trackedInputs ??= super.trackedInputs;
 
   @override
   PreviousBuild rebuild(void Function(PreviousBuildBuilder) updates) =>

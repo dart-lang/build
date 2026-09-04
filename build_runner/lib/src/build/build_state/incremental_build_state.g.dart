@@ -41,13 +41,6 @@ class _$IncrementalBuildStateSerializer
           const FullType(Digest),
         ]),
       ),
-      'missingSources',
-      serializers.serialize(
-        object.missingSources,
-        specifiedType: const FullType(BuiltSet, const [
-          const FullType(AssetId),
-        ]),
-      ),
       'buildStepResults',
       serializers.serialize(
         object.buildStepResults,
@@ -113,17 +106,6 @@ class _$IncrementalBuildStateSerializer
             )!,
           );
           break;
-        case 'missingSources':
-          result.missingSources.replace(
-            serializers.deserialize(
-                  value,
-                  specifiedType: const FullType(BuiltSet, const [
-                    const FullType(AssetId),
-                  ]),
-                )!
-                as BuiltSet<Object?>,
-          );
-          break;
         case 'buildStepResults':
           result.buildStepResults.replace(
             serializers.deserialize(
@@ -170,8 +152,6 @@ class _$IncrementalBuildState extends IncrementalBuildState {
   @override
   final BuiltMap<AssetId, Digest> digests;
   @override
-  final BuiltSet<AssetId> missingSources;
-  @override
   final BuiltMap<BuildStepId, BuildStepResult> buildStepResults;
   @override
   final BuiltMap<PostProcessBuildStepId, PostProcessBuildStepResult>
@@ -186,7 +166,6 @@ class _$IncrementalBuildState extends IncrementalBuildState {
   _$IncrementalBuildState._({
     required this.sources,
     required this.digests,
-    required this.missingSources,
     required this.buildStepResults,
     required this.postProcessResults,
     required this.globResults,
@@ -206,7 +185,6 @@ class _$IncrementalBuildState extends IncrementalBuildState {
     return other is IncrementalBuildState &&
         sources == other.sources &&
         digests == other.digests &&
-        missingSources == other.missingSources &&
         buildStepResults == other.buildStepResults &&
         postProcessResults == other.postProcessResults &&
         globResults == other.globResults;
@@ -217,7 +195,6 @@ class _$IncrementalBuildState extends IncrementalBuildState {
     var _$hash = 0;
     _$hash = $jc(_$hash, sources.hashCode);
     _$hash = $jc(_$hash, digests.hashCode);
-    _$hash = $jc(_$hash, missingSources.hashCode);
     _$hash = $jc(_$hash, buildStepResults.hashCode);
     _$hash = $jc(_$hash, postProcessResults.hashCode);
     _$hash = $jc(_$hash, globResults.hashCode);
@@ -230,7 +207,6 @@ class _$IncrementalBuildState extends IncrementalBuildState {
     return (newBuiltValueToStringHelper(r'IncrementalBuildState')
           ..add('sources', sources)
           ..add('digests', digests)
-          ..add('missingSources', missingSources)
           ..add('buildStepResults', buildStepResults)
           ..add('postProcessResults', postProcessResults)
           ..add('globResults', globResults))
@@ -251,12 +227,6 @@ class IncrementalBuildStateBuilder
       _$this._digests ??= MapBuilder<AssetId, Digest>();
   set digests(MapBuilder<AssetId, Digest>? digests) =>
       _$this._digests = digests;
-
-  SetBuilder<AssetId>? _missingSources;
-  SetBuilder<AssetId> get missingSources =>
-      _$this._missingSources ??= SetBuilder<AssetId>();
-  set missingSources(SetBuilder<AssetId>? missingSources) =>
-      _$this._missingSources = missingSources;
 
   MapBuilder<BuildStepId, BuildStepResult>? _buildStepResults;
   MapBuilder<BuildStepId, BuildStepResult> get buildStepResults =>
@@ -288,7 +258,6 @@ class IncrementalBuildStateBuilder
     if ($v != null) {
       _sources = $v.sources.toBuilder();
       _digests = $v.digests.toBuilder();
-      _missingSources = $v.missingSources.toBuilder();
       _buildStepResults = $v.buildStepResults.toBuilder();
       _postProcessResults = $v.postProcessResults.toBuilder();
       _globResults = $v.globResults.toBuilder();
@@ -318,7 +287,6 @@ class IncrementalBuildStateBuilder
           _$IncrementalBuildState._(
             sources: sources.build(),
             digests: digests.build(),
-            missingSources: missingSources.build(),
             buildStepResults: buildStepResults.build(),
             postProcessResults: postProcessResults.build(),
             globResults: globResults.build(),
@@ -330,8 +298,6 @@ class IncrementalBuildStateBuilder
         sources.build();
         _$failedField = 'digests';
         digests.build();
-        _$failedField = 'missingSources';
-        missingSources.build();
         _$failedField = 'buildStepResults';
         buildStepResults.build();
         _$failedField = 'postProcessResults';
