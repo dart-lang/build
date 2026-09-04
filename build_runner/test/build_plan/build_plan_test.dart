@@ -137,13 +137,11 @@ void main() {
       buildPlan = await loadPlan();
 
       expect(
-        {
-          ...buildPlan.buildInputs.updatedSources,
-          ...buildPlan.buildInputs.deletedSources,
-          ...buildPlan.buildInputs.invalidOutputs,
-        },
-        {assetId, assetId2, assetId3, outputId},
+        buildPlan.buildInputs.updatedSources,
+        unorderedEquals([assetId2, assetId3]),
       );
+      expect(buildPlan.buildInputs.deletedSources, [assetId]);
+      expect(buildPlan.buildInputs.invalidOutputs, [outputId]);
     });
 
     test('keep output strategy preserves manual changes to outputs '
