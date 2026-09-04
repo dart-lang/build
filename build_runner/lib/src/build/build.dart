@@ -178,6 +178,19 @@ class Build {
     return result;
   }
 
+  PhasedAssetDeps _computeUpdatedPhasedAssetDeps() {
+    // Combine previous phased asset deps, if any, with the newly loaded
+    // deps. Because of skipped builds, the newly loaded deps might just
+    // say "not generated yet", in which case the old value is retained.
+    final currentPhasedAssetDeps =
+        resolversImpl?.phasedAssetDeps() ?? PhasedAssetDeps();
+    return buildPlan.previousBuild.phasedAssetDeps == null
+        ? currentPhasedAssetDeps
+        : buildPlan.previousBuild.phasedAssetDeps!.update(
+            currentPhasedAssetDeps,
+          );
+  }
+
   Future<BuildResult> _safeBuild() {
     final done = Completer<BuildResult>();
     runZonedGuarded(
@@ -188,20 +201,9 @@ class Build {
         );
         final result = await _runPhases();
 
-        // Combine previous phased asset deps, if any, with the newly loaded
-        // deps. Because of skipped builds, the newly loaded deps might just
-        // say "not generated yet", in which case the old value is retained.
-        final currentPhasedAssetDeps =
-            resolversImpl?.phasedAssetDeps() ?? PhasedAssetDeps();
-        final updatedPhasedAssetDeps =
-            buildPlan.previousBuild.phasedAssetDeps == null
-            ? currentPhasedAssetDeps
-            : buildPlan.previousBuild.phasedAssetDeps!.update(
-                currentPhasedAssetDeps,
-              );
         if (!done.isCompleted) {
           done.complete(
-            result.copyWith(phasedAssetDeps: updatedPhasedAssetDeps),
+            result.copyWith(phasedAssetDeps: _computeUpdatedPhasedAssetDeps()),
           );
         }
       },
@@ -215,6 +217,7 @@ class Build {
             BuildResult(
               status: BuildStatus.failure,
               outputs: BuiltList(),
+              phasedAssetDeps: _computeUpdatedPhasedAssetDeps(),
               buildState: finishedBuildState,
               buildOutputReader: BuildOutputReader(
                 buildPackages: buildPackages,
