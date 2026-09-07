@@ -5,7 +5,8 @@
 - Support shared parts written using `BuildStep.librarySourceSink` when builders
   opt in with `adds_to_library: true` in `build.yaml`.
 - The `serve` command now rejects non-loopback `Host` and `Origin` headers when
-  bound to a loopback interface.
+  bound to a loopback interface, and validates them against `--hostname` when a
+  specific host is given.
 - Require `build` 4.1.0.
 - Require `build_config` 1.4.0.
 - Bug fix: allow calling `BuildStep.canRead` on outputs written by the same
