@@ -1,4 +1,6 @@
-[![Build](https://github.com/google/built_value.dart/actions/workflows/build.yaml/badge.svg)](https://github.com/google/built_value.dart/actions/workflows/build.yaml)
+_Questions? Suggestions? Found a bug? Please
+[file an issue](https://github.com/dart-lang/build/issues) or
+[start a discussion](https://github.com/dart-lang/build/discussions)._
 
 ## Built Values for Dart - Introduction
 
@@ -279,4 +281,4 @@ them.
 
 Please file feature requests and bugs at the [issue tracker][tracker].
 
-[tracker]: https://github.com/google/built_value.dart/issues
+[tracker]: https://github.com/dart-lang/build/issues
