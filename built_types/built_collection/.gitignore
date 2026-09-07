@@ -1,0 +1,7 @@
+pubspec.lock
+packages
+.dart_tool
+.idea
+.packages
+.pub
+**/*.iml
