@@ -3,7 +3,6 @@ version: 8.13.0
 publish_to: none
 description: >
   Tests, not for publishing.
-homepage: https://github.com/google/built_value.dart
 resolution: workspace
 
 environment:
