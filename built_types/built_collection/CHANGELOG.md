@@ -1,6 +1,6 @@
 # Changelog
 
-## 6.0.0 (unreleased)
+## 6.0.0-wip
 
 - Remove `from` constructor from `BuiltList`.
 - Add `of` constructors to `ListBuilder` and `SetBuilder`.

@@ -1,5 +1,5 @@
 name: built_collection
-version: 6.0.0-dev
+version: 6.0.0-wip
 description: >
   Immutable collections based on the SDK collections. Each SDK collection class
   is split into a new immutable collection class and a corresponding mutable
