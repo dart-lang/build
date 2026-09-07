@@ -11,6 +11,8 @@
 - Bug fix: preserve analyzer dependency information on unhandled build failures,
   preventing subsequent incremental builds from missing changes to transitively
   imported files.
+- Bug fix: complete the active building future in daemon mode when the build
+  script is updated, preventing asset server requests from hanging.
 
 ## 2.16.1
 

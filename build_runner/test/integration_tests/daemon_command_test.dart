@@ -170,6 +170,14 @@ void main() {
     // Builder change causes shutdown.
     final shutdownNotificationFuture = client.shutdownNotifications.first;
     tester.update('builder_pkg/lib/builder.dart', (script) => '$script\n');
+    // An asset server request arriving after the builder update must complete
+    // rather than hanging on an uncompleted building future.
+    final scriptUpdateResponse = await (await httpClient.get(
+      'localhost',
+      port,
+      'packages/root_pkg/message.dart',
+    )).close();
+    expect(scriptUpdateResponse.statusCode, HttpStatus.ok);
     final shutdownNotification = await shutdownNotificationFuture.timeout(
       const Duration(seconds: 4),
     );
