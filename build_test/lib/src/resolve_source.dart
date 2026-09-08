@@ -208,7 +208,7 @@ Future<T> _resolveAssets<T>(
     packageConfig: packageConfig,
   );
   if (assetReaderChecks != null) {
-    assetReaderChecks(readerWriter);
+    await assetReaderChecks(readerWriter);
   }
 
   if (resolveBuilder.error == null) {
