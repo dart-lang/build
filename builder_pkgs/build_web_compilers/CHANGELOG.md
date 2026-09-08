@@ -7,6 +7,7 @@
 - Prefer entrypoints closer to the root of a searched directory,
   and `main.dart` over other entrypoints alongside it.
 - Accept a list of directories for `web-assets-path`.
+- Fix `DdcFrontendServerBuilder` to support the same custom sdk build options as `DevCompilerBuilder`.
 
 ## 4.8.10
 

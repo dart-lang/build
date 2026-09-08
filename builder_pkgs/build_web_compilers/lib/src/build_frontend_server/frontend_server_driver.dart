@@ -388,8 +388,7 @@ class PersistentFrontendServer {
       '--filesystem-scheme=$multiRootScheme',
       '--filesystem-root=${fileSystemRoot.toFilePath()}',
       if (roots != null)
-        for (final root in roots)
-          '--filesystem-root=${root.toFilePath()}',
+        for (final root in roots) '--filesystem-root=${root.toFilePath()}',
       if (librariesPath != null) '--libraries-spec=$librariesPath',
       if (platformSdk != null) '--platform-sdk=$platformSdk',
       if (sdkKernelPath != null) '--sdk-kernel-path=$sdkKernelPath',
