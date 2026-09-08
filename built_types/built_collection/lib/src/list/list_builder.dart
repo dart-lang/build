@@ -15,11 +15,6 @@ class ListBuilder<E> {
   late List<E> _list;
   _BuiltList<E>? _listOwner;
 
-  /// Instantiates with elements from an [Iterable<E>].
-  factory ListBuilder.of(Iterable<E> iterable) {
-    return ListBuilder<E>._uninitialized().._replaceOf(iterable);
-  }
-
   /// Instantiates with elements from an [Iterable].
   factory ListBuilder([Iterable iterable = const []]) {
     return ListBuilder<E>._uninitialized()..replace(iterable);
@@ -47,15 +42,6 @@ class ListBuilder<E> {
       _setOwner(iterable);
     } else {
       _setSafeList(List<E>.from(iterable));
-    }
-  }
-
-  /// Replaces all elements with elements from an [Iterable<E>].
-  void _replaceOf(Iterable<E> iterable) {
-    if (iterable is _BuiltList<E>) {
-      _setOwner(iterable);
-    } else {
-      _setSafeList(List<E>.of(iterable));
     }
   }
 
