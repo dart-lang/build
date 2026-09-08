@@ -12,6 +12,8 @@
   preventing subsequent incremental builds from missing changes to transitively
   imported files.
 - Require `analyzer` 14.3.0.
+- Bug fix: complete the active building future in daemon mode when the build
+  script is updated, preventing asset server requests from hanging.
 
 ## 2.16.1
 

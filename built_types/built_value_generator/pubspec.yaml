@@ -3,7 +3,7 @@ version: 8.13.0
 description: >
   Value types with builders, Dart classes as enums, and serialization.
   This library is the dev dependency.
-repository: https://github.com/google/built_value.dart/tree/master/built_value_generator
+repository: https://github.com/dart-lang/build/tree/master/built_types/built_value_generator
 topics:
  - built-value
  - codegen

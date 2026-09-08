@@ -151,6 +151,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
         buildFilters: buildFilters.build(),
       );
       if (result.failureType == core.FailureType.buildScriptChanged) {
+        _buildingCompleter?.complete();
         if (!_buildScriptUpdateCompleter.isCompleted) {
           _buildScriptUpdateCompleter.complete();
         }

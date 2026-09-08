@@ -18,7 +18,6 @@ jobs:
     with:
       write-comments: false
       sdk: dev
-      ignore-packages: 'built_types/**'
     permissions:
       id-token: write
       pull-requests: write
