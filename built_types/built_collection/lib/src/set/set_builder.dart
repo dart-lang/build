@@ -17,11 +17,6 @@ class SetBuilder<E> {
   late Set<E> _set;
   _BuiltSet<E>? _setOwner;
 
-  /// Instantiates with elements from an [Iterable<E>].
-  factory SetBuilder.of(Iterable<E> iterable) {
-    return SetBuilder<E>._uninitialized().._replaceOf(iterable);
-  }
-
   /// Instantiates with elements from an [Iterable].
   factory SetBuilder([Iterable iterable = const []]) {
     return SetBuilder<E>._uninitialized()..replace(iterable);
@@ -56,15 +51,6 @@ class SetBuilder<E> {
         }
       }
       _setSafeSet(set);
-    }
-  }
-
-  /// Replaces all elements with elements from an [Iterable<E>].
-  void _replaceOf(Iterable<E> iterable) {
-    if (iterable is _BuiltSet<E> && iterable._setFactory == _setFactory) {
-      _withOwner(iterable);
-    } else {
-      _setSafeSet(_createSet()..addAll(iterable));
     }
   }
 

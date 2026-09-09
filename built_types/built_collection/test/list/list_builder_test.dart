@@ -219,10 +219,6 @@ void main() {
       expect((ListBuilder<int>()..replace([0, 1, 2])).build(), [0, 1, 2]);
     });
 
-    test('can be created with .of constructor', () {
-      expect(ListBuilder.of([1, 2, 3]).build(), [1, 2, 3]);
-    });
-
     // Lazy copies.
 
     test('does not mutate BuiltList when modifying ListBuilder assign', () {

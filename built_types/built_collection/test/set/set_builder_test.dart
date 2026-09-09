@@ -123,10 +123,6 @@ void main() {
       expect(builder.build(), orderedEquals([2, 0, 1]));
     });
 
-    test('can be created with .of constructor', () {
-      expect(SetBuilder.of([1, 2, 3]).build(), {1, 2, 3});
-    });
-
     // Lazy copies.
 
     test('does not mutate BuiltSet following reuse of underlying Set', () {

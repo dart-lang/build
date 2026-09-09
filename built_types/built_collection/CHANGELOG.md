@@ -1,10 +1,5 @@
 # Changelog
 
-## 6.0.0-wip
-
-- Remove `from` constructor from `BuiltList`.
-- Add `of` constructors to `ListBuilder` and `SetBuilder`.
-
 ## 5.1.1
 
 - Test fix for new analyzer hint.
