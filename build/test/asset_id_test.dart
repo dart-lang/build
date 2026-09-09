@@ -16,7 +16,9 @@ void main() {
       expect(() => AssetId('a.', 'a'), throwsArgumentError);
       expect(() => AssetId('a/b', 'a'), throwsArgumentError);
       expect(() => AssetId('a\\b', 'a'), throwsArgumentError);
-      expect(() => AssetId('a-b', 'a'), throwsArgumentError);
+      // Hyphens are not valid in published packages but are allowed for
+      // google3.
+      expect(AssetId('a-b', 'a').package, 'a-b');
 
       // Dots are valid in package names, just not in published packages.
       expect(AssetId('a.b', 'a').package, 'a.b');

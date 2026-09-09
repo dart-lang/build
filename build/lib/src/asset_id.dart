@@ -166,4 +166,4 @@ Uri _constructUri(AssetId id) {
   return Uri(scheme: scheme, pathSegments: [id.package, ...pathSegments]);
 }
 
-final _packageRegExp = RegExp(r'^([a-zA-Z0-9_$]+(\.[a-zA-Z0-9_$]+)*)?$');
+final _packageRegExp = RegExp(r'^([a-zA-Z0-9_$-]+(\.[a-zA-Z0-9_$-]+)*)?$');
