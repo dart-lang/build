@@ -68,7 +68,8 @@ abstract class BuiltSet<E> implements Iterable<E>, BuiltIterable<E> {
   @override
   int get hashCode {
     _hashCode ??= hashObjects(
-        _set.map((e) => e.hashCode).toList(growable: false)..sort());
+      _set.map((e) => e.hashCode).toList(growable: false)..sort(),
+    );
     return _hashCode!;
   }
 
@@ -229,7 +230,7 @@ abstract class BuiltSet<E> implements Iterable<E>, BuiltIterable<E> {
 /// Default implementation of the public [BuiltSet] interface.
 class _BuiltSet<E> extends BuiltSet<E> {
   _BuiltSet.withSafeSet(_SetFactory<E>? setFactory, Set<E> set)
-      : super._(setFactory, set);
+    : super._(setFactory, set);
 
   _BuiltSet.from(Iterable iterable) : super._(null, Set<E>.from(iterable)) {
     _maybeCheckForNull();

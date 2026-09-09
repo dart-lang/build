@@ -83,10 +83,12 @@ abstract class BuiltMap<K, V> {
   /// pairs in any order. Then, the `hashCode` is guaranteed to be the same.
   @override
   int get hashCode {
-    _hashCode ??= hashObjects(_map.keys
-        .map((key) => hash2(key.hashCode, _map[key].hashCode))
-        .toList(growable: false)
-      ..sort());
+    _hashCode ??= hashObjects(
+      _map.keys
+          .map((key) => hash2(key.hashCode, _map[key].hashCode))
+          .toList(growable: false)
+        ..sort(),
+    );
     return _hashCode!;
   }
 
@@ -162,10 +164,10 @@ abstract class BuiltMap<K, V> {
 /// Default implementation of the public [BuiltMap] interface.
 class _BuiltMap<K, V> extends BuiltMap<K, V> {
   _BuiltMap.withSafeMap(_MapFactory<K, V>? mapFactory, Map<K, V> map)
-      : super._(mapFactory, map);
+    : super._(mapFactory, map);
 
   _BuiltMap.copyAndCheckTypes(Iterable keys, Function lookup)
-      : super._(null, <K, V>{}) {
+    : super._(null, <K, V>{}) {
     for (var key in keys) {
       if (key is K) {
         var value = lookup(key);
@@ -181,7 +183,7 @@ class _BuiltMap<K, V> extends BuiltMap<K, V> {
   }
 
   _BuiltMap.copyAndCheckForNull(Iterable<K> keys, V Function(K) lookup)
-      : super._(null, <K, V>{}) {
+    : super._(null, <K, V>{}) {
     var checkKeys = !isSoundMode && null is! K;
     var checkValues = !isSoundMode && null is! V;
     for (var key in keys) {

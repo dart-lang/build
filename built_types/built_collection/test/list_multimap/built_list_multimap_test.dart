@@ -28,14 +28,13 @@ void main() {
 
     test('reports non-emptiness', () {
       var map = BuiltListMultimap<int, String>({
-        1: ['1']
+        1: ['1'],
       });
       expect(map.isEmpty, isFalse);
       expect(map.isNotEmpty, isTrue);
     });
 
-    test(
-        'can be instantiated from ListMultimap '
+    test('can be instantiated from ListMultimap '
         'then converted back to equal ListMultimap', () {
       var mutableMultimap = _ListMultimap<int, String>();
       mutableMultimap.add(1, '1');
@@ -45,10 +44,11 @@ void main() {
 
     test('throws on wrong type key', () {
       expect(
-          () => BuiltListMultimap<int, String>({
-                '1': ['1']
-              }),
-          throwsA(anything));
+        () => BuiltListMultimap<int, String>({
+          '1': ['1'],
+        }),
+        throwsA(anything),
+      );
     });
 
     test('throws on wrong type value iterable', () {
@@ -57,10 +57,11 @@ void main() {
 
     test('throws on wrong type value', () {
       expect(
-          () => BuiltListMultimap<int, String>({
-                1: [1]
-              }),
-          throwsA(anything));
+        () => BuiltListMultimap<int, String>({
+          1: [1],
+        }),
+        throwsA(anything),
+      );
     });
 
     test('does not keep a mutable ListMultimap', () {
@@ -69,7 +70,7 @@ void main() {
       var multimap = BuiltListMultimap<int, String>(mutableMultimap);
       mutableMultimap.clear();
       expect(multimap.toMap(), {
-        1: ['1']
+        1: ['1'],
       });
     });
 
@@ -117,78 +118,87 @@ void main() {
     });
 
     test(
-        'can be converted to ListMultimapBuilder<K, V> and back to ListMultimap<K, V>',
-        () {
-      expect(
-        BuiltListMultimap<int, String>().toBuilder().build(),
-        const TypeMatcher<BuiltListMultimap<int, String>>(),
-      );
-      expect(
-        BuiltListMultimap<int, String>().toBuilder().build(),
-        isNot(const TypeMatcher<BuiltListMultimap<int, int>>()),
-      );
-      expect(
-        BuiltListMultimap<int, String>().toBuilder().build(),
-        isNot(const TypeMatcher<BuiltListMultimap<String, String>>()),
-      );
-    });
+      'can be converted to ListMultimapBuilder<K, V> and back to ListMultimap<K, V>',
+      () {
+        expect(
+          BuiltListMultimap<int, String>().toBuilder().build(),
+          const TypeMatcher<BuiltListMultimap<int, String>>(),
+        );
+        expect(
+          BuiltListMultimap<int, String>().toBuilder().build(),
+          isNot(const TypeMatcher<BuiltListMultimap<int, int>>()),
+        );
+        expect(
+          BuiltListMultimap<int, String>().toBuilder().build(),
+          isNot(const TypeMatcher<BuiltListMultimap<String, String>>()),
+        );
+      },
+    );
 
     test('throws on null keys', () {
       expect(
-          () => BuiltListMultimap<int, String>({
-                null: ['1']
-              }),
-          throwsA(anything));
+        () => BuiltListMultimap<int, String>({
+          null: ['1'],
+        }),
+        throwsA(anything),
+      );
     });
 
     test('nullable does not throw on null keys', () {
       expect(
-          BuiltListMultimap<int?, String>({
-            null: ['1']
-          }).asMap(),
-          {
-            null: ['1']
-          });
+        BuiltListMultimap<int?, String>({
+          null: ['1'],
+        }).asMap(),
+        {
+          null: ['1'],
+        },
+      );
     });
 
     test('throws on null value iterables', () {
       expect(
-          () => BuiltListMultimap<int, String>({1: null}), throwsA(anything));
+        () => BuiltListMultimap<int, String>({1: null}),
+        throwsA(anything),
+      );
     });
 
     test('nullable also throws on null value iterables', () {
       expect(
-          () => BuiltListMultimap<int, String?>({1: null}), throwsA(anything));
+        () => BuiltListMultimap<int, String?>({1: null}),
+        throwsA(anything),
+      );
     });
 
     test('throws on null values', () {
       expect(
-          () => BuiltListMultimap<int, String>({
-                1: [null]
-              }),
-          throwsA(anything));
+        () => BuiltListMultimap<int, String>({
+          1: [null],
+        }),
+        throwsA(anything),
+      );
     });
 
     test('nullable does not throw on null values', () {
       expect(
-          BuiltListMultimap<int, String?>({
-            1: [null]
-          }).asMap(),
-          {
-            1: [null]
-          });
+        BuiltListMultimap<int, String?>({
+          1: [null],
+        }).asMap(),
+        {
+          1: [null],
+        },
+      );
     });
 
     test('hashes to same value for same contents', () {
       var multimap1 = BuiltListMultimap<int, String>({
         1: ['1'],
         2: ['2', '2'],
-        3: ['3']
+        3: ['3'],
       });
       var multimap2 = BuiltListMultimap<int, String>({
         1: ['1'],
         2: ['2', '2'],
-        3: ['3']
+        3: ['3'],
       });
 
       expect(multimap1.hashCode, multimap2.hashCode);
@@ -198,12 +208,12 @@ void main() {
       var multimap1 = BuiltListMultimap<int, String>({
         1: ['1'],
         2: ['2', '2'],
-        3: ['3']
+        3: ['3'],
       });
       var multimap2 = BuiltListMultimap<int, String>({
         1: ['1'],
         2: ['2', '2'],
-        4: ['3']
+        4: ['3'],
       });
 
       expect(multimap1.hashCode, isNot(multimap2.hashCode));
@@ -213,12 +223,12 @@ void main() {
       var multimap1 = BuiltListMultimap<int, String>({
         1: ['1'],
         2: ['2', '2'],
-        3: ['3']
+        3: ['3'],
       });
       var multimap2 = BuiltListMultimap<int, String>({
         1: ['1'],
         2: ['2', '3'],
-        3: ['3']
+        3: ['3'],
       });
 
       expect(multimap1.hashCode, isNot(multimap2.hashCode));
@@ -227,7 +237,7 @@ void main() {
     test('caches hash', () {
       var hashCodeSpy = HashCodeSpy();
       var multimap = BuiltListMultimap<Object, Object>({
-        1: [hashCodeSpy]
+        1: [hashCodeSpy],
       });
 
       hashCodeSpy.hashCodeSeen = 0;
@@ -240,7 +250,7 @@ void main() {
       var multimap = BuiltListMultimap<int, String>({
         1: ['1'],
         2: ['2', '2'],
-        3: ['3']
+        3: ['3'],
       });
 
       expect(multimap == multimap, isTrue);
@@ -250,12 +260,12 @@ void main() {
       var multimap1 = BuiltListMultimap<int, String>({
         1: ['1'],
         2: ['2', '2'],
-        3: ['3']
+        3: ['3'],
       });
       var multimap2 = BuiltListMultimap<int, String>({
         1: ['1'],
         2: ['2', '2'],
-        3: ['3']
+        3: ['3'],
       });
 
       expect(multimap1 == multimap2, isTrue);
@@ -263,96 +273,106 @@ void main() {
 
     test('compares not equal to different type', () {
       expect(
-          BuiltListMultimap<int, String>({
-                1: ['1'],
-                2: ['2'],
-                3: ['3']
-              }) ==
-              '',
-          isFalse);
+        BuiltListMultimap<int, String>({
+              1: ['1'],
+              2: ['2'],
+              3: ['3'],
+            }) ==
+            '',
+        isFalse,
+      );
     });
 
     test('compares not equal to different length BuiltListMultimap', () {
       expect(
-          BuiltListMultimap<int, String>({
-                1: ['1'],
-                2: ['2'],
-                3: ['3']
-              }) ==
-              BuiltListMultimap<int, String>({
-                1: ['1'],
-                2: ['2']
-              }),
-          isFalse);
+        BuiltListMultimap<int, String>({
+              1: ['1'],
+              2: ['2'],
+              3: ['3'],
+            }) ==
+            BuiltListMultimap<int, String>({
+              1: ['1'],
+              2: ['2'],
+            }),
+        isFalse,
+      );
     });
 
     test('compares not equal to different hashcode BuiltListMultimap', () {
       expect(
-          BuiltCollectionTestHelpers.overridenHashcodeBuiltListMultimap({
-                1: ['1'],
-                2: ['2'],
-                3: ['3']
-              }, 0) ==
-              BuiltCollectionTestHelpers.overridenHashcodeBuiltListMultimap({
-                1: ['1'],
-                2: ['2'],
-                3: ['3']
-              }, 1),
-          isFalse);
+        BuiltCollectionTestHelpers.overridenHashcodeBuiltListMultimap({
+              1: ['1'],
+              2: ['2'],
+              3: ['3'],
+            }, 0) ==
+            BuiltCollectionTestHelpers.overridenHashcodeBuiltListMultimap({
+              1: ['1'],
+              2: ['2'],
+              3: ['3'],
+            }, 1),
+        isFalse,
+      );
     });
 
     test('compares not equal to different content BuiltListMultimap', () {
       expect(
-          BuiltCollectionTestHelpers.overridenHashcodeBuiltListMultimap({
-                1: ['1'],
-                2: ['2'],
-                3: ['3']
-              }, 0) ==
-              BuiltCollectionTestHelpers.overridenHashcodeBuiltListMultimap({
-                1: ['1'],
-                2: ['2'],
-                3: ['3', '4']
-              }, 0),
-          isFalse);
+        BuiltCollectionTestHelpers.overridenHashcodeBuiltListMultimap({
+              1: ['1'],
+              2: ['2'],
+              3: ['3'],
+            }, 0) ==
+            BuiltCollectionTestHelpers.overridenHashcodeBuiltListMultimap({
+              1: ['1'],
+              2: ['2'],
+              3: ['3', '4'],
+            }, 0),
+        isFalse,
+      );
     });
 
     test('compares without throwing for same hashcode different key type', () {
       expect(
-          BuiltCollectionTestHelpers.overridenHashcodeBuiltListMultimap({
-                1: ['1']
-              }, 0) ==
-              BuiltCollectionTestHelpers
-                  .overridenHashcodeBuiltListMultimapWithStringKeys({
-                '1': ['1']
-              }, 0),
-          false);
+        BuiltCollectionTestHelpers.overridenHashcodeBuiltListMultimap({
+              1: ['1'],
+            }, 0) ==
+            BuiltCollectionTestHelpers.overridenHashcodeBuiltListMultimapWithStringKeys(
+              {
+                '1': ['1'],
+              },
+              0,
+            ),
+        false,
+      );
     });
 
     test('provides toString() for debugging', () {
       expect(
-          BuiltListMultimap<int, String>({
-            1: ['1'],
-            2: ['2'],
-            3: ['3']
-          }).toString(),
-          '{1: [1], 2: [2], 3: [3]}');
+        BuiltListMultimap<int, String>({
+          1: ['1'],
+          2: ['2'],
+          3: ['3'],
+        }).toString(),
+        '{1: [1], 2: [2], 3: [3]}',
+      );
     });
 
     test('preserves key order', () {
       expect(
-          BuiltListMultimap<int, String>({
-            1: ['1'],
-            2: ['2'],
-            3: ['3']
-          }).keys,
-          [1, 2, 3]);
+        BuiltListMultimap<int, String>({
+          1: ['1'],
+          2: ['2'],
+          3: ['3'],
+        }).keys,
+        [1, 2, 3],
+      );
       expect(
-          BuiltListMultimap<int, String>({
-            3: ['3'],
-            2: ['2'],
-            1: ['1']
-          }).keys,
-          [3, 2, 1]);
+        BuiltListMultimap<int, String>({
+          3: ['3'],
+          2: ['2'],
+          1: ['1'],
+        }).keys,
+        [3, 2, 1],
+      );
     });
 
     // Lazy copies.
@@ -363,20 +383,23 @@ void main() {
       expect(multimap1, same(multimap2));
     });
 
-    test('does not reuse BuiltListMultimap instances with subtype key type',
-        () {
-      var multimap1 = BuiltListMultimap<_ExtendsA, String>();
-      var multimap2 = BuiltListMultimap<_A, String>(multimap1);
-      expect(multimap1, isNot(same(multimap2)));
-    });
+    test(
+      'does not reuse BuiltListMultimap instances with subtype key type',
+      () {
+        var multimap1 = BuiltListMultimap<_ExtendsA, String>();
+        var multimap2 = BuiltListMultimap<_A, String>(multimap1);
+        expect(multimap1, isNot(same(multimap2)));
+      },
+    );
 
     test(
-        'does not reuse BuiltListMultimultimap instances with subtype value type',
-        () {
-      var multimap1 = BuiltListMultimap<String, _ExtendsA>();
-      var multimap2 = BuiltListMultimap<String, _A>(multimap1);
-      expect(multimap1, isNot(same(multimap2)));
-    });
+      'does not reuse BuiltListMultimultimap instances with subtype value type',
+      () {
+        var multimap1 = BuiltListMultimap<String, _ExtendsA>();
+        var multimap2 = BuiltListMultimap<String, _A>(multimap1);
+        expect(multimap1, isNot(same(multimap2)));
+      },
+    );
 
     test('can be reused via ListMultimapBuilder if there are no changes', () {
       var multimap1 = BuiltListMultimap<Object, Object>();
@@ -384,21 +407,25 @@ void main() {
       expect(multimap1, same(multimap2));
     });
 
-    test('converts to ListMultimapBuilder from correct type without copying',
-        () {
-      var makeLongListMultimap = () {
-        var result = ListMultimapBuilder<int, int>();
-        for (var i = 0; i != 100000; ++i) {
-          result.add(i, i);
-        }
-        return result.build();
-      };
-      var longListMultimap = makeLongListMultimap();
-      var longListMultimapToListMultimapBuilder = longListMultimap.toBuilder;
+    test(
+      'converts to ListMultimapBuilder from correct type without copying',
+      () {
+        var makeLongListMultimap = () {
+          var result = ListMultimapBuilder<int, int>();
+          for (var i = 0; i != 100000; ++i) {
+            result.add(i, i);
+          }
+          return result.build();
+        };
+        var longListMultimap = makeLongListMultimap();
+        var longListMultimapToListMultimapBuilder = longListMultimap.toBuilder;
 
-      expectMuchFaster(
-          longListMultimapToListMultimapBuilder, makeLongListMultimap);
-    });
+        expectMuchFaster(
+          longListMultimapToListMultimapBuilder,
+          makeLongListMultimap,
+        );
+      },
+    );
 
     test('converts to ListMultimapBuilder from wrong type by copying', () {
       var makeLongListMultimap = () {
@@ -409,11 +436,13 @@ void main() {
         return result.build();
       };
       var longListMultimap = makeLongListMultimap();
-      var longListMultimapToListMultimapBuilder =
-          () => ListMultimapBuilder<int, int>(longListMultimap);
+      var longListMultimapToListMultimapBuilder = () =>
+          ListMultimapBuilder<int, int>(longListMultimap);
 
       expectNotMuchFaster(
-          longListMultimapToListMultimapBuilder, makeLongListMultimap);
+        longListMultimapToListMultimapBuilder,
+        makeLongListMultimap,
+      );
     });
 
     test('has fast toMap', () {
@@ -441,8 +470,10 @@ void main() {
       var longListMultimap = makeLongListMultimap();
       var otherLongListMultimap = makeLongListMultimap();
 
-      expectMuchFaster(() => longListMultimap == longListMultimap,
-          () => longListMultimap == otherLongListMultimap);
+      expectMuchFaster(
+        () => longListMultimap == longListMultimap,
+        () => longListMultimap == otherLongListMultimap,
+      );
     });
 
     test('is not mutated when Map from toMap is mutated', () {
@@ -453,39 +484,44 @@ void main() {
 
     test('has build constructor', () {
       expect(
-          BuiltListMultimap<int, String>.build((b) => b.add(0, '0')).toMap(), {
-        0: ['0']
-      });
+        BuiltListMultimap<int, String>.build((b) => b.add(0, '0')).toMap(),
+        {
+          0: ['0'],
+        },
+      );
     });
 
     test('has rebuild method', () {
       expect(
-          BuiltListMultimap<int, String>({
-            0: ['0']
-          }).rebuild((b) => b.add(1, '1')).toMap(),
-          {
-            0: ['0'],
-            1: ['1']
-          });
+        BuiltListMultimap<int, String>({
+          0: ['0'],
+        }).rebuild((b) => b.add(1, '1')).toMap(),
+        {
+          0: ['0'],
+          1: ['1'],
+        },
+      );
     });
 
     // ListMultimap.
 
     test('has a method like ListMultimap[]', () {
       expect(
-          BuiltListMultimap<int, String>({
-            1: ['1'],
-            2: ['2'],
-            3: ['3']
-          })[2],
-          ['2']);
+        BuiltListMultimap<int, String>({
+          1: ['1'],
+          2: ['2'],
+          3: ['3'],
+        })[2],
+        ['2'],
+      );
       expect(
-          BuiltListMultimap<int, String>({
-            1: ['1'],
-            2: ['2'],
-            3: ['3']
-          })[4],
-          []);
+        BuiltListMultimap<int, String>({
+          1: ['1'],
+          2: ['2'],
+          3: ['3'],
+        })[4],
+        [],
+      );
     });
 
     test('returns stable empty BuiltLists', () {
@@ -496,46 +532,51 @@ void main() {
 
     test('has a method like ListMultimap.length', () {
       expect(
-          BuiltListMultimap<int, String>({
-            1: ['1'],
-            2: ['2'],
-            3: ['3']
-          }).length,
-          3);
+        BuiltListMultimap<int, String>({
+          1: ['1'],
+          2: ['2'],
+          3: ['3'],
+        }).length,
+        3,
+      );
     });
 
     test('has a method like ListMultimap.containsKey', () {
       expect(
-          BuiltListMultimap<int, String>({
-            1: ['1'],
-            2: ['2'],
-            3: ['3']
-          }).containsKey(3),
-          isTrue);
+        BuiltListMultimap<int, String>({
+          1: ['1'],
+          2: ['2'],
+          3: ['3'],
+        }).containsKey(3),
+        isTrue,
+      );
       expect(
-          BuiltListMultimap<int, String>({
-            1: ['1'],
-            2: ['2'],
-            3: ['3']
-          }).containsKey(4),
-          isFalse);
+        BuiltListMultimap<int, String>({
+          1: ['1'],
+          2: ['2'],
+          3: ['3'],
+        }).containsKey(4),
+        isFalse,
+      );
     });
 
     test('has a method like ListMultimap.containsValue', () {
       expect(
-          BuiltListMultimap<int, String>({
-            1: ['1'],
-            2: ['2'],
-            3: ['3']
-          }).containsValue('3'),
-          isTrue);
+        BuiltListMultimap<int, String>({
+          1: ['1'],
+          2: ['2'],
+          3: ['3'],
+        }).containsValue('3'),
+        isTrue,
+      );
       expect(
-          BuiltListMultimap<int, String>({
-            1: ['1'],
-            2: ['2'],
-            3: ['3']
-          }).containsValue('4'),
-          isFalse);
+        BuiltListMultimap<int, String>({
+          1: ['1'],
+          2: ['2'],
+          3: ['3'],
+        }).containsValue('4'),
+        isFalse,
+      );
     });
 
     test('has a method like ListMultimap.forEach', () {
@@ -544,7 +585,7 @@ void main() {
       BuiltListMultimap<int, String>({
         1: ['1'],
         2: ['2'],
-        3: ['3', '4']
+        3: ['3', '4'],
       }).forEach((key, value) {
         totalKeys += key;
         concatenatedValues += value;
@@ -560,7 +601,7 @@ void main() {
       BuiltListMultimap<int, String>({
         1: ['1'],
         2: ['2'],
-        3: ['3', '4']
+        3: ['3', '4'],
       }).forEachKey((key, values) {
         totalKeys += key;
         concatenatedValues += values.reduce((x, y) => x + y);
@@ -572,29 +613,31 @@ void main() {
 
     test('has a method like ListMultimap.keys', () {
       expect(
-          BuiltListMultimap<int, String>({
-            1: ['1'],
-            2: ['2'],
-            3: ['3']
-          }).keys,
-          [1, 2, 3]);
+        BuiltListMultimap<int, String>({
+          1: ['1'],
+          2: ['2'],
+          3: ['3'],
+        }).keys,
+        [1, 2, 3],
+      );
     });
 
     test('has a method like ListMultimap.values', () {
       expect(
-          BuiltListMultimap<int, String>({
-            1: ['1'],
-            2: ['2', '2'],
-            3: ['3']
-          }).values,
-          ['1', '2', '2', '3']);
+        BuiltListMultimap<int, String>({
+          1: ['1'],
+          2: ['2', '2'],
+          3: ['3'],
+        }).values,
+        ['1', '2', '2', '3'],
+      );
     });
 
     test('has stable keys', () {
       var multimap = BuiltListMultimap<int, String>({
         1: ['1'],
         2: ['2'],
-        3: ['3']
+        3: ['3'],
       });
       expect(multimap.keys, same(multimap.keys));
     });
@@ -603,7 +646,7 @@ void main() {
       var multimap = BuiltListMultimap<int, String>({
         1: ['1'],
         2: ['2'],
-        3: ['3']
+        3: ['3'],
       });
       expect(multimap.values, same(multimap.values));
     });

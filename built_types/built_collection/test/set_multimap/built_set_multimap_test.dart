@@ -28,14 +28,13 @@ void main() {
 
     test('reports non-emptiness', () {
       var map = BuiltSetMultimap<int, String>({
-        1: ['1']
+        1: ['1'],
       });
       expect(map.isEmpty, isFalse);
       expect(map.isNotEmpty, isTrue);
     });
 
-    test(
-        'can be instantiated from SetMultimap '
+    test('can be instantiated from SetMultimap '
         'then converted back to equal SetMultimap', () {
       var mutableMultimap = _SetMultimap<int, String>();
       mutableMultimap.add(1, '1');
@@ -45,10 +44,11 @@ void main() {
 
     test('throws on wrong type key', () {
       expect(
-          () => BuiltSetMultimap<int, String>({
-                '1': ['1']
-              }),
-          throwsA(anything));
+        () => BuiltSetMultimap<int, String>({
+          '1': ['1'],
+        }),
+        throwsA(anything),
+      );
     });
 
     test('throws on wrong type value iterable', () {
@@ -57,10 +57,11 @@ void main() {
 
     test('throws on wrong type value', () {
       expect(
-          () => BuiltSetMultimap<int, String>({
-                1: [1]
-              }),
-          throwsA(anything));
+        () => BuiltSetMultimap<int, String>({
+          1: [1],
+        }),
+        throwsA(anything),
+      );
     });
 
     test('does not keep a mutable SetMultimap', () {
@@ -69,7 +70,7 @@ void main() {
       var multimap = BuiltSetMultimap<int, String>(mutableMultimap);
       mutableMultimap.clear();
       expect(multimap.toMap(), {
-        1: ['1']
+        1: ['1'],
       });
     });
 
@@ -117,38 +118,41 @@ void main() {
     });
 
     test(
-        'can be converted to SetMultimapBuilder<K, V> and back to SetMultimap<K, V>',
-        () {
-      expect(
-        BuiltSetMultimap<int, String>().toBuilder().build(),
-        const TypeMatcher<BuiltSetMultimap<int, String>>(),
-      );
-      expect(
-        BuiltSetMultimap<int, String>().toBuilder().build(),
-        isNot(const TypeMatcher<BuiltSetMultimap<int, int>>()),
-      );
-      expect(
-        BuiltSetMultimap<int, String>().toBuilder().build(),
-        isNot(const TypeMatcher<BuiltSetMultimap<String, String>>()),
-      );
-    });
+      'can be converted to SetMultimapBuilder<K, V> and back to SetMultimap<K, V>',
+      () {
+        expect(
+          BuiltSetMultimap<int, String>().toBuilder().build(),
+          const TypeMatcher<BuiltSetMultimap<int, String>>(),
+        );
+        expect(
+          BuiltSetMultimap<int, String>().toBuilder().build(),
+          isNot(const TypeMatcher<BuiltSetMultimap<int, int>>()),
+        );
+        expect(
+          BuiltSetMultimap<int, String>().toBuilder().build(),
+          isNot(const TypeMatcher<BuiltSetMultimap<String, String>>()),
+        );
+      },
+    );
 
     test('throws on null keys', () {
       expect(
-          () => BuiltSetMultimap<int, String>({
-                null: ['1']
-              }),
-          throwsA(anything));
+        () => BuiltSetMultimap<int, String>({
+          null: ['1'],
+        }),
+        throwsA(anything),
+      );
     });
 
     test('nullable does not throw on null keys', () {
       expect(
-          BuiltSetMultimap<int?, String>({
-            null: ['1']
-          }).asMap(),
-          {
-            null: ['1']
-          });
+        BuiltSetMultimap<int?, String>({
+          null: ['1'],
+        }).asMap(),
+        {
+          null: ['1'],
+        },
+      );
     });
 
     test('throws on null value iterables', () {
@@ -157,37 +161,41 @@ void main() {
 
     test('nullable also throws on null value iterables', () {
       expect(
-          () => BuiltSetMultimap<int, String?>({1: null}), throwsA(anything));
+        () => BuiltSetMultimap<int, String?>({1: null}),
+        throwsA(anything),
+      );
     });
 
     test('throws on null values', () {
       expect(
-          () => BuiltSetMultimap<int, String>({
-                1: [null]
-              }),
-          throwsA(anything));
+        () => BuiltSetMultimap<int, String>({
+          1: [null],
+        }),
+        throwsA(anything),
+      );
     });
 
     test('nullable does not throw on null values', () {
       expect(
-          BuiltSetMultimap<int, String?>({
-            1: [null]
-          }).asMap(),
-          {
-            1: [null]
-          });
+        BuiltSetMultimap<int, String?>({
+          1: [null],
+        }).asMap(),
+        {
+          1: [null],
+        },
+      );
     });
 
     test('hashes to same value for same contents', () {
       var multimap1 = BuiltSetMultimap<int, String>({
         1: ['1'],
         2: ['2', '2'],
-        3: ['3']
+        3: ['3'],
       });
       var multimap2 = BuiltSetMultimap<int, String>({
         1: ['1'],
         2: ['2', '2'],
-        3: ['3']
+        3: ['3'],
       });
 
       expect(multimap1.hashCode, multimap2.hashCode);
@@ -197,12 +205,12 @@ void main() {
       var multimap1 = BuiltSetMultimap<int, String>({
         1: ['1'],
         2: ['2', '2'],
-        3: ['3']
+        3: ['3'],
       });
       var multimap2 = BuiltSetMultimap<int, String>({
         1: ['1'],
         2: ['2', '2'],
-        4: ['3']
+        4: ['3'],
       });
 
       expect(multimap1.hashCode, isNot(multimap2.hashCode));
@@ -212,12 +220,12 @@ void main() {
       var multimap1 = BuiltSetMultimap<int, String>({
         1: ['1'],
         2: ['2', '2'],
-        3: ['3']
+        3: ['3'],
       });
       var multimap2 = BuiltSetMultimap<int, String>({
         1: ['1'],
         2: ['2', '3'],
-        3: ['3']
+        3: ['3'],
       });
 
       expect(multimap1.hashCode, isNot(multimap2.hashCode));
@@ -226,7 +234,7 @@ void main() {
     test('caches hash', () {
       var hashCodeSpy = HashCodeSpy();
       var multimap = BuiltSetMultimap<Object, Object>({
-        1: [hashCodeSpy]
+        1: [hashCodeSpy],
       });
 
       hashCodeSpy.hashCodeSeen = 0;
@@ -239,7 +247,7 @@ void main() {
       var multimap = BuiltSetMultimap<int, String>({
         1: ['1'],
         2: ['2', '2'],
-        3: ['3']
+        3: ['3'],
       });
 
       expect(multimap == multimap, isTrue);
@@ -249,12 +257,12 @@ void main() {
       var multimap1 = BuiltSetMultimap<int, String>({
         1: ['1'],
         2: ['2', '2'],
-        3: ['3']
+        3: ['3'],
       });
       var multimap2 = BuiltSetMultimap<int, String>({
         1: ['1'],
         2: ['2', '2'],
-        3: ['3']
+        3: ['3'],
       });
 
       expect(multimap1 == multimap2, isTrue);
@@ -262,96 +270,106 @@ void main() {
 
     test('compares not equal to different type', () {
       expect(
-          BuiltSetMultimap<int, String>({
-                1: ['1'],
-                2: ['2'],
-                3: ['3']
-              }) ==
-              '',
-          isFalse);
+        BuiltSetMultimap<int, String>({
+              1: ['1'],
+              2: ['2'],
+              3: ['3'],
+            }) ==
+            '',
+        isFalse,
+      );
     });
 
     test('compares not equal to different length BuiltSetMultimap', () {
       expect(
-          BuiltSetMultimap<int, String>({
-                1: ['1'],
-                2: ['2'],
-                3: ['3']
-              }) ==
-              BuiltSetMultimap<int, String>({
-                1: ['1'],
-                2: ['2']
-              }),
-          isFalse);
+        BuiltSetMultimap<int, String>({
+              1: ['1'],
+              2: ['2'],
+              3: ['3'],
+            }) ==
+            BuiltSetMultimap<int, String>({
+              1: ['1'],
+              2: ['2'],
+            }),
+        isFalse,
+      );
     });
 
     test('compares not equal to different hashcode BuiltSetMultimap', () {
       expect(
-          BuiltCollectionTestHelpers.overridenHashcodeBuiltSetMultimap({
-                1: ['1'],
-                2: ['2'],
-                3: ['3']
-              }, 0) ==
-              BuiltCollectionTestHelpers.overridenHashcodeBuiltSetMultimap({
-                1: ['1'],
-                2: ['2'],
-                3: ['3']
-              }, 1),
-          isFalse);
+        BuiltCollectionTestHelpers.overridenHashcodeBuiltSetMultimap({
+              1: ['1'],
+              2: ['2'],
+              3: ['3'],
+            }, 0) ==
+            BuiltCollectionTestHelpers.overridenHashcodeBuiltSetMultimap({
+              1: ['1'],
+              2: ['2'],
+              3: ['3'],
+            }, 1),
+        isFalse,
+      );
     });
 
     test('compares not equal to different content BuiltSetMultimap', () {
       expect(
-          BuiltCollectionTestHelpers.overridenHashcodeBuiltSetMultimap({
-                1: ['1'],
-                2: ['2'],
-                3: ['3']
-              }, 0) ==
-              BuiltCollectionTestHelpers.overridenHashcodeBuiltSetMultimap({
-                1: ['1'],
-                2: ['2'],
-                3: ['3', '4']
-              }, 0),
-          isFalse);
+        BuiltCollectionTestHelpers.overridenHashcodeBuiltSetMultimap({
+              1: ['1'],
+              2: ['2'],
+              3: ['3'],
+            }, 0) ==
+            BuiltCollectionTestHelpers.overridenHashcodeBuiltSetMultimap({
+              1: ['1'],
+              2: ['2'],
+              3: ['3', '4'],
+            }, 0),
+        isFalse,
+      );
     });
 
     test('compares without throwing for same hashcode different key type', () {
       expect(
-          BuiltCollectionTestHelpers.overridenHashcodeBuiltSetMultimap({
-                1: ['1']
-              }, 0) ==
-              BuiltCollectionTestHelpers
-                  .overridenHashcodeBuiltSetMultimapWithStringKeys({
-                '1': ['1']
-              }, 0),
-          false);
+        BuiltCollectionTestHelpers.overridenHashcodeBuiltSetMultimap({
+              1: ['1'],
+            }, 0) ==
+            BuiltCollectionTestHelpers.overridenHashcodeBuiltSetMultimapWithStringKeys(
+              {
+                '1': ['1'],
+              },
+              0,
+            ),
+        false,
+      );
     });
 
     test('provides toString() for debugging', () {
       expect(
-          BuiltSetMultimap<int, String>({
-            1: ['1'],
-            2: ['2'],
-            3: ['3']
-          }).toString(),
-          '{1: {1}, 2: {2}, 3: {3}}');
+        BuiltSetMultimap<int, String>({
+          1: ['1'],
+          2: ['2'],
+          3: ['3'],
+        }).toString(),
+        '{1: {1}, 2: {2}, 3: {3}}',
+      );
     });
 
     test('preserves key order', () {
       expect(
-          BuiltSetMultimap<int, String>({
-            1: ['1'],
-            2: ['2'],
-            3: ['3']
-          }).keys,
-          [1, 2, 3]);
+        BuiltSetMultimap<int, String>({
+          1: ['1'],
+          2: ['2'],
+          3: ['3'],
+        }).keys,
+        [1, 2, 3],
+      );
       expect(
-          BuiltSetMultimap<int, String>({
-            3: ['3'],
-            2: ['2'],
-            1: ['1']
-          }).keys,
-          [3, 2, 1]);
+        BuiltSetMultimap<int, String>({
+          3: ['3'],
+          2: ['2'],
+          1: ['1'],
+        }).keys,
+        [3, 2, 1],
+      );
     });
 
     // Lazy copies.
@@ -369,12 +387,13 @@ void main() {
     });
 
     test(
-        'does not reuse BuiltSetMultimultimap instances with subtype value type',
-        () {
-      var multimap1 = BuiltSetMultimap<String, _ExtendsA>();
-      var multimap2 = BuiltSetMultimap<String, _A>(multimap1);
-      expect(multimap1, isNot(same(multimap2)));
-    });
+      'does not reuse BuiltSetMultimultimap instances with subtype value type',
+      () {
+        var multimap1 = BuiltSetMultimap<String, _ExtendsA>();
+        var multimap2 = BuiltSetMultimap<String, _A>(multimap1);
+        expect(multimap1, isNot(same(multimap2)));
+      },
+    );
 
     test('can be reused via SetMultimapBuilder if there are no changes', () {
       var multimap1 = BuiltSetMultimap<Object, Object>();
@@ -382,21 +401,25 @@ void main() {
       expect(multimap1, same(multimap2));
     });
 
-    test('converts to SetMultimapBuilder from correct type without copying',
-        () {
-      var makeLongSetMultimap = () {
-        var result = SetMultimapBuilder<int, int>();
-        for (var i = 0; i != 100000; ++i) {
-          result.add(i, i);
-        }
-        return result.build();
-      };
-      var longSetMultimap = makeLongSetMultimap();
-      var longSetMultimapToSetMultimapBuilder = longSetMultimap.toBuilder;
+    test(
+      'converts to SetMultimapBuilder from correct type without copying',
+      () {
+        var makeLongSetMultimap = () {
+          var result = SetMultimapBuilder<int, int>();
+          for (var i = 0; i != 100000; ++i) {
+            result.add(i, i);
+          }
+          return result.build();
+        };
+        var longSetMultimap = makeLongSetMultimap();
+        var longSetMultimapToSetMultimapBuilder = longSetMultimap.toBuilder;
 
-      expectMuchFaster(
-          longSetMultimapToSetMultimapBuilder, makeLongSetMultimap);
-    });
+        expectMuchFaster(
+          longSetMultimapToSetMultimapBuilder,
+          makeLongSetMultimap,
+        );
+      },
+    );
 
     test('converts to SetMultimapBuilder from wrong type by copying', () {
       var makeLongSetMultimap = () {
@@ -407,11 +430,13 @@ void main() {
         return result.build();
       };
       var longSetMultimap = makeLongSetMultimap();
-      var longSetMultimapToSetMultimapBuilder =
-          () => SetMultimapBuilder<int, int>(longSetMultimap);
+      var longSetMultimapToSetMultimapBuilder = () =>
+          SetMultimapBuilder<int, int>(longSetMultimap);
 
       expectNotMuchFaster(
-          longSetMultimapToSetMultimapBuilder, makeLongSetMultimap);
+        longSetMultimapToSetMultimapBuilder,
+        makeLongSetMultimap,
+      );
     });
 
     test('has fast toMap', () {
@@ -439,8 +464,10 @@ void main() {
       var longSetMultimap = makeLongSetMultimap();
       var otherLongSetMultimap = makeLongSetMultimap();
 
-      expectMuchFaster(() => longSetMultimap == longSetMultimap,
-          () => longSetMultimap == otherLongSetMultimap);
+      expectMuchFaster(
+        () => longSetMultimap == longSetMultimap,
+        () => longSetMultimap == otherLongSetMultimap,
+      );
     });
 
     test('is not mutated when Map from toMap is mutated', () {
@@ -451,39 +478,44 @@ void main() {
 
     test('has build constructor', () {
       expect(
-          BuiltSetMultimap<int, String>.build((b) => b.add(0, '0')).toMap(), {
-        0: ['0']
-      });
+        BuiltSetMultimap<int, String>.build((b) => b.add(0, '0')).toMap(),
+        {
+          0: ['0'],
+        },
+      );
     });
 
     test('has rebuild method', () {
       expect(
-          BuiltSetMultimap<int, String>({
-            0: ['0']
-          }).rebuild((b) => b.add(1, '1')).toMap(),
-          {
-            0: ['0'],
-            1: ['1']
-          });
+        BuiltSetMultimap<int, String>({
+          0: ['0'],
+        }).rebuild((b) => b.add(1, '1')).toMap(),
+        {
+          0: ['0'],
+          1: ['1'],
+        },
+      );
     });
 
     // SetMultimap.
 
     test('has a method like SetMultimap[]', () {
       expect(
-          BuiltSetMultimap<int, String>({
-            1: ['1'],
-            2: ['2'],
-            3: ['3']
-          })[2],
-          ['2']);
+        BuiltSetMultimap<int, String>({
+          1: ['1'],
+          2: ['2'],
+          3: ['3'],
+        })[2],
+        ['2'],
+      );
       expect(
-          BuiltSetMultimap<int, String>({
-            1: ['1'],
-            2: ['2'],
-            3: ['3']
-          })[4],
-          []);
+        BuiltSetMultimap<int, String>({
+          1: ['1'],
+          2: ['2'],
+          3: ['3'],
+        })[4],
+        [],
+      );
     });
 
     test('returns stable empty BuiltSets', () {
@@ -494,46 +526,51 @@ void main() {
 
     test('has a method like SetMultimap.length', () {
       expect(
-          BuiltSetMultimap<int, String>({
-            1: ['1'],
-            2: ['2'],
-            3: ['3']
-          }).length,
-          3);
+        BuiltSetMultimap<int, String>({
+          1: ['1'],
+          2: ['2'],
+          3: ['3'],
+        }).length,
+        3,
+      );
     });
 
     test('has a method like SetMultimap.containsKey', () {
       expect(
-          BuiltSetMultimap<int, String>({
-            1: ['1'],
-            2: ['2'],
-            3: ['3']
-          }).containsKey(3),
-          isTrue);
+        BuiltSetMultimap<int, String>({
+          1: ['1'],
+          2: ['2'],
+          3: ['3'],
+        }).containsKey(3),
+        isTrue,
+      );
       expect(
-          BuiltSetMultimap<int, String>({
-            1: ['1'],
-            2: ['2'],
-            3: ['3']
-          }).containsKey(4),
-          isFalse);
+        BuiltSetMultimap<int, String>({
+          1: ['1'],
+          2: ['2'],
+          3: ['3'],
+        }).containsKey(4),
+        isFalse,
+      );
     });
 
     test('has a method like SetMultimap.containsValue', () {
       expect(
-          BuiltSetMultimap<int, String>({
-            1: ['1'],
-            2: ['2'],
-            3: ['3']
-          }).containsValue('3'),
-          isTrue);
+        BuiltSetMultimap<int, String>({
+          1: ['1'],
+          2: ['2'],
+          3: ['3'],
+        }).containsValue('3'),
+        isTrue,
+      );
       expect(
-          BuiltSetMultimap<int, String>({
-            1: ['1'],
-            2: ['2'],
-            3: ['3']
-          }).containsValue('4'),
-          isFalse);
+        BuiltSetMultimap<int, String>({
+          1: ['1'],
+          2: ['2'],
+          3: ['3'],
+        }).containsValue('4'),
+        isFalse,
+      );
     });
 
     test('has a method like SetMultimap.forEach', () {
@@ -542,7 +579,7 @@ void main() {
       BuiltSetMultimap<int, String>({
         1: ['1'],
         2: ['2'],
-        3: ['3', '4']
+        3: ['3', '4'],
       }).forEach((key, value) {
         totalKeys += key;
         concatenatedValues += value;
@@ -558,7 +595,7 @@ void main() {
       BuiltSetMultimap<int, String>({
         1: ['1'],
         2: ['2'],
-        3: ['3', '4']
+        3: ['3', '4'],
       }).forEachKey((key, values) {
         totalKeys += key;
         concatenatedValues += values.reduce((x, y) => x + y);
@@ -570,29 +607,31 @@ void main() {
 
     test('has a method like SetMultimap.keys', () {
       expect(
-          BuiltSetMultimap<int, String>({
-            1: ['1'],
-            2: ['2'],
-            3: ['3']
-          }).keys,
-          [1, 2, 3]);
+        BuiltSetMultimap<int, String>({
+          1: ['1'],
+          2: ['2'],
+          3: ['3'],
+        }).keys,
+        [1, 2, 3],
+      );
     });
 
     test('has a method like SetMultimap.values', () {
       expect(
-          BuiltSetMultimap<int, String>({
-            1: ['1'],
-            2: ['2', '2'],
-            3: ['3']
-          }).values,
-          ['1', '2', '3']);
+        BuiltSetMultimap<int, String>({
+          1: ['1'],
+          2: ['2', '2'],
+          3: ['3'],
+        }).values,
+        ['1', '2', '3'],
+      );
     });
 
     test('has stable keys', () {
       var multimap = BuiltSetMultimap<int, String>({
         1: ['1'],
         2: ['2'],
-        3: ['3']
+        3: ['3'],
       });
       expect(multimap.keys, same(multimap.keys));
     });
@@ -601,7 +640,7 @@ void main() {
       var multimap = BuiltSetMultimap<int, String>({
         1: ['1'],
         2: ['2'],
-        3: ['3']
+        3: ['3'],
       });
       expect(multimap.values, same(multimap.values));
     });

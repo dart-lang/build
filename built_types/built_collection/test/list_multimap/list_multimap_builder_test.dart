@@ -18,8 +18,10 @@ void main() {
     });
 
     test('throws on null key add', () {
-      expect(() => ListMultimapBuilder<int, String>().add(null as dynamic, '0'),
-          throwsA(anything));
+      expect(
+        () => ListMultimapBuilder<int, String>().add(null as dynamic, '0'),
+        throwsA(anything),
+      );
     });
 
     test('nullable does not throw on null key add', () {
@@ -29,8 +31,10 @@ void main() {
     });
 
     test('throws on null value add', () {
-      expect(() => ListMultimapBuilder<int, String>().add(0, null as dynamic),
-          throwsA(anything));
+      expect(
+        () => ListMultimapBuilder<int, String>().add(0, null as dynamic),
+        throwsA(anything),
+      );
     });
 
     test('nullable does not throw on null value add', () {
@@ -41,86 +45,95 @@ void main() {
 
     test('throws on wrong type value addValues', () {
       expect(
-          () => ListMultimapBuilder<int, String>()
-              .addValues(0, List<String>.from([0])),
-          throwsA(anything));
+        () => ListMultimapBuilder<int, String>().addValues(
+          0,
+          List<String>.from([0]),
+        ),
+        throwsA(anything),
+      );
     });
 
     test('has replace method that replaces all data', () {
       expect(
-          (ListMultimapBuilder<int, String>()
-                ..replace({
-                  1: ['1'],
-                  2: ['2']
-                }))
-              .build()
-              .toMap(),
-          {
-            1: ['1'],
-            2: ['2']
-          });
+        (ListMultimapBuilder<int, String>()..replace({
+              1: ['1'],
+              2: ['2'],
+            }))
+            .build()
+            .toMap(),
+        {
+          1: ['1'],
+          2: ['2'],
+        },
+      );
     });
 
     test('has addIterable method like Map.fromIterable', () {
       expect(
-          (ListMultimapBuilder<int, int>()..addIterable([1, 2, 3]))
-              .build()
-              .toMap(),
-          {
-            1: [1],
-            2: [2],
-            3: [3]
-          });
+        (ListMultimapBuilder<int, int>()..addIterable([1, 2, 3]))
+            .build()
+            .toMap(),
+        {
+          1: [1],
+          2: [2],
+          3: [3],
+        },
+      );
       expect(
-          (ListMultimapBuilder<int, int>()
-                ..addIterable([1, 2, 3], key: (int element) => element + 1))
-              .build()
-              .toMap(),
-          {
-            2: [1],
-            3: [2],
-            4: [3]
-          });
+        (ListMultimapBuilder<int, int>()
+              ..addIterable([1, 2, 3], key: (int element) => element + 1))
+            .build()
+            .toMap(),
+        {
+          2: [1],
+          3: [2],
+          4: [3],
+        },
+      );
       expect(
-          (ListMultimapBuilder<int, int>()
-                ..addIterable([1, 2, 3], value: (int element) => element + 1))
-              .build()
-              .toMap(),
-          {
-            1: [2],
-            2: [3],
-            3: [4]
-          });
+        (ListMultimapBuilder<int, int>()
+              ..addIterable([1, 2, 3], value: (int element) => element + 1))
+            .build()
+            .toMap(),
+        {
+          1: [2],
+          2: [3],
+          3: [4],
+        },
+      );
       expect(
-          (ListMultimapBuilder<int, int>()
-                ..addIterable([1, 2, 3],
-                    values: (int element) => <int>[element, element + 1]))
-              .build()
-              .toMap(),
-          {
-            1: [1, 2],
-            2: [2, 3],
-            3: [3, 4]
-          });
+        (ListMultimapBuilder<int, int>()..addIterable([
+              1,
+              2,
+              3,
+            ], values: (int element) => <int>[element, element + 1]))
+            .build()
+            .toMap(),
+        {
+          1: [1, 2],
+          2: [2, 3],
+          3: [3, 4],
+        },
+      );
     });
 
     // Lazy copies.
 
-    test('does not mutate BuiltListMultimap following reuse of underlying Map',
-        () {
-      var multimap = BuiltListMultimap<int, String>({
-        1: ['1'],
-        2: ['2']
-      });
-      var multimapBuilder = multimap.toBuilder();
-      multimapBuilder.add(3, '3');
-      expect(
-          multimap.toMap(),
-          ({
-            1: ['1'],
-            2: ['2']
-          }));
-    });
+    test(
+      'does not mutate BuiltListMultimap following reuse of underlying Map',
+      () {
+        var multimap = BuiltListMultimap<int, String>({
+          1: ['1'],
+          2: ['2'],
+        });
+        var multimapBuilder = multimap.toBuilder();
+        multimapBuilder.add(3, '3');
+        expect(multimap.toMap(), ({
+          1: ['1'],
+          2: ['2'],
+        }));
+      },
+    );
 
     test('converts to BuiltListMultimap without copying', () {
       var makeLongListMultimapBuilder = () {
@@ -134,59 +147,51 @@ void main() {
       var buildLongListMultimapBuilder = () => longListMultimapBuilder.build();
 
       expectMuchFaster(
-          buildLongListMultimapBuilder, makeLongListMultimapBuilder);
+        buildLongListMultimapBuilder,
+        makeLongListMultimapBuilder,
+      );
     });
 
     test('does not mutate BuiltListMultimap following mutates after build', () {
       var multimapBuilder = ListMultimapBuilder<int, String>({
         1: ['1'],
-        2: ['2']
+        2: ['2'],
       });
 
       var map1 = multimapBuilder.build();
-      expect(
-          map1.toMap(),
-          ({
-            1: ['1'],
-            2: ['2']
-          }));
+      expect(map1.toMap(), ({
+        1: ['1'],
+        2: ['2'],
+      }));
 
       multimapBuilder.add(3, '3');
-      expect(
-          map1.toMap(),
-          ({
-            1: ['1'],
-            2: ['2']
-          }));
+      expect(map1.toMap(), ({
+        1: ['1'],
+        2: ['2'],
+      }));
 
       multimapBuilder.build();
-      expect(
-          map1.toMap(),
-          ({
-            1: ['1'],
-            2: ['2']
-          }));
+      expect(map1.toMap(), ({
+        1: ['1'],
+        2: ['2'],
+      }));
 
       multimapBuilder.add(4, '4');
-      expect(
-          map1.toMap(),
-          ({
-            1: ['1'],
-            2: ['2']
-          }));
+      expect(map1.toMap(), ({
+        1: ['1'],
+        2: ['2'],
+      }));
 
       multimapBuilder.build();
-      expect(
-          map1.toMap(),
-          ({
-            1: ['1'],
-            2: ['2']
-          }));
+      expect(map1.toMap(), ({
+        1: ['1'],
+        2: ['2'],
+      }));
     });
 
     test('returns identical BuiltListMultimap on repeated build', () {
       var multimapBuilder = ListMultimapBuilder<int, String>({
-        1: ['1', '2', '3']
+        1: ['1', '2', '3'],
       });
       expect(multimapBuilder.build(), same(multimapBuilder.build()));
     });
@@ -195,28 +200,28 @@ void main() {
 
     test('adds to copied lists', () {
       var multimap = BuiltListMultimap<int, String>({
-        1: ['1']
+        1: ['1'],
       });
       var multimapBuilder = multimap.toBuilder();
       expect((multimapBuilder..add(1, '2')).build().toMap(), {
-        1: ['1', '2']
+        1: ['1', '2'],
       });
     });
 
     test('removes from copied lists', () {
       var multimap = BuiltListMultimap<int, String>({
-        1: ['1', '2', '3']
+        1: ['1', '2', '3'],
       });
       var multimapBuilder = multimap.toBuilder();
       expect(multimapBuilder.remove(1, '2'), true);
       expect(multimapBuilder.build().toMap(), {
-        1: ['1', '3']
+        1: ['1', '3'],
       });
     });
 
     test('removes from copied lists to empty', () {
       var multimap = BuiltListMultimap<int, String>({
-        1: ['1']
+        1: ['1'],
       });
       var multimapBuilder = multimap.toBuilder();
       expect(multimapBuilder.remove(1, '1'), true);
@@ -233,7 +238,7 @@ void main() {
 
     test('clears copied lists', () {
       var multimap = BuiltListMultimap<int, String>({
-        1: ['1', '2', '3']
+        1: ['1', '2', '3'],
       });
       var multimapBuilder = multimap.toBuilder();
       expect((multimapBuilder..clear()).build().toMap(), {});
@@ -243,103 +248,91 @@ void main() {
 
     test('has a method like ListMultimap.add', () {
       expect(
-          (ListMultimapBuilder<int, String>({
-            1: ['1']
-          })
-                ..add(2, '2'))
-              .build()
-              .toMap(),
-          ({
-            1: ['1'],
-            2: ['2']
-          }));
+        (ListMultimapBuilder<int, String>({
+          1: ['1'],
+        })..add(2, '2')).build().toMap(),
+        ({
+          1: ['1'],
+          2: ['2'],
+        }),
+      );
       expect(
-          (BuiltListMultimap<int, String>({
-            1: ['1']
-          }).toBuilder()
-                ..add(2, '2'))
-              .build()
-              .toMap(),
-          ({
-            1: ['1'],
-            2: ['2']
-          }));
+        (BuiltListMultimap<int, String>({
+          1: ['1'],
+        }).toBuilder()..add(2, '2')).build().toMap(),
+        ({
+          1: ['1'],
+          2: ['2'],
+        }),
+      );
     });
 
     test('has a method like ListMultimap.addValues', () {
       expect(
-          (ListMultimapBuilder<int, String>({
-            1: ['1']
-          })
-                ..addValues(2, ['2', '3']))
-              .build()
-              .toMap(),
-          ({
-            1: ['1'],
-            2: ['2', '3']
-          }));
+        (ListMultimapBuilder<int, String>({
+          1: ['1'],
+        })..addValues(2, ['2', '3'])).build().toMap(),
+        ({
+          1: ['1'],
+          2: ['2', '3'],
+        }),
+      );
       expect(
-          (BuiltListMultimap<int, String>({
-            1: ['1']
-          }).toBuilder()
-                ..addValues(2, ['2', '3']))
-              .build()
-              .toMap(),
-          ({
-            1: ['1'],
-            2: ['2', '3']
-          }));
+        (BuiltListMultimap<int, String>({
+          1: ['1'],
+        }).toBuilder()..addValues(2, ['2', '3'])).build().toMap(),
+        ({
+          1: ['1'],
+          2: ['2', '3'],
+        }),
+      );
     });
 
     test('has a method like ListMultimap.remove', () {
       var builder = ListMultimapBuilder<int, String>({
         1: ['1'],
-        2: ['2', '3']
+        2: ['2', '3'],
       });
       expect(builder.remove(2, '3'), true);
       expect(builder.remove(2, '3'), false);
       expect(builder.remove(2, '7'), false);
       expect(builder.build().toMap(), {
         1: ['1'],
-        2: ['2']
+        2: ['2'],
       });
       expect(
-          (BuiltListMultimap<int, String>({
-            1: ['1'],
-            2: ['2', '3']
-          }).toBuilder()
-                ..remove(2, '3'))
-              .build()
-              .toMap(),
-          {
-            1: ['1'],
-            2: ['2']
-          });
+        (BuiltListMultimap<int, String>({
+          1: ['1'],
+          2: ['2', '3'],
+        }).toBuilder()..remove(2, '3')).build().toMap(),
+        {
+          1: ['1'],
+          2: ['2'],
+        },
+      );
     });
 
     test('has a method like ListMultimap.removeAll', () {
       var value = ['2', '3'];
       var builder = ListMultimapBuilder<int, String>({
         1: ['1'],
-        2: value
+        2: value,
       });
       expect(builder.removeAll(2).toList(), value);
       expect(builder.removeAll(2).toList(), []);
       expect(builder.removeAll(3).toList(), []);
       expect(builder.build().toMap(), {
-        1: ['1']
+        1: ['1'],
       });
       expect(
-          (BuiltListMultimap<int, String>({
-            1: ['1'],
-            2: value
-          }).toBuilder()
-                ..removeAll(2))
-              .build()
-              .toMap(),
-          {
-            1: ['1']
-          });
+        (BuiltListMultimap<int, String>({
+          1: ['1'],
+          2: value,
+        }).toBuilder()..removeAll(2)).build().toMap(),
+        {
+          1: ['1'],
+        },
+      );
     });
 
     test('removeAll does not detach ListBuilder', () {
@@ -357,48 +350,50 @@ void main() {
 
     test('has a method like ListMultimap.clear', () {
       expect(
-          (ListMultimapBuilder<int, String>({
-            1: ['1'],
-            2: ['2']
-          })
-                ..clear())
-              .build()
-              .toMap(),
-          {});
+        (ListMultimapBuilder<int, String>({
+          1: ['1'],
+          2: ['2'],
+        })..clear()).build().toMap(),
+        {},
+      );
       expect(
-          (BuiltListMultimap<int, String>({
-            1: ['1'],
-            2: ['2']
-          }).toBuilder()
-                ..clear())
-              .build()
-              .toMap(),
-          {});
+        (BuiltListMultimap<int, String>({
+          1: ['1'],
+          2: ['2'],
+        }).toBuilder()..clear()).build().toMap(),
+        {},
+      );
     });
 
-    test('has a method like ListMultimap[] which can be used to read values',
-        () {
-      expect(
+    test(
+      'has a method like ListMultimap[] which can be used to read values',
+      () {
+        expect(
           BuiltListMultimap<int, String>({
             1: ['1'],
             2: ['2'],
-            3: ['3']
+            3: ['3'],
           }).toBuilder()[2].build().toList(),
-          ['2']);
-      expect(
+          ['2'],
+        );
+        expect(
           BuiltListMultimap<int, String>({
             1: ['1'],
             2: ['2'],
-            3: ['3']
+            3: ['3'],
           }).toBuilder()[4].build().toList(),
-          []);
-    });
+          [],
+        );
+      },
+    );
 
-    test('has a method like ListMultimap[] which can be used to write values',
-        () {
-      var builder = BuiltListMultimap<int, String>().toBuilder();
-      builder[1].add('1');
-      expect(builder.build()[1], ['1']);
-    });
+    test(
+      'has a method like ListMultimap[] which can be used to write values',
+      () {
+        var builder = BuiltListMultimap<int, String>().toBuilder();
+        builder[1].add('1');
+        expect(builder.build()[1], ['1']);
+      },
+    );
   });
 }

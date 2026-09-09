@@ -185,13 +185,15 @@ class SetBuilder<E> {
   SetBuilder._uninitialized();
 
   SetBuilder._fromBuiltSet(_BuiltSet<E> set)
-      : _setFactory = set._setFactory,
-        _set = set._set,
-        _setOwner = set;
+    : _setFactory = set._setFactory,
+      _set = set._set,
+      _setOwner = set;
 
   void _withOwner(_BuiltSet<E> setOwner) {
-    assert(setOwner._setFactory == _setFactory,
-        "Can't reuse a built set that uses a different base");
+    assert(
+      setOwner._setFactory == _setFactory,
+      "Can't reuse a built set that uses a different base",
+    );
     _set = setOwner._set;
     _setOwner = setOwner;
   }

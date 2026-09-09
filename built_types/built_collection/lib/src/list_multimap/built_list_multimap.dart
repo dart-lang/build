@@ -42,8 +42,8 @@ abstract class BuiltListMultimap<K, V> {
 
   /// Creates a [ListMultimapBuilder], applies updates to it, and builds.
   factory BuiltListMultimap.build(
-          Function(ListMultimapBuilder<K, V>) updates) =>
-      (ListMultimapBuilder<K, V>()..update(updates)).build();
+    Function(ListMultimapBuilder<K, V>) updates,
+  ) => (ListMultimapBuilder<K, V>()..update(updates)).build();
 
   /// Converts to a [ListMultimapBuilder] for modification.
   ///
@@ -52,8 +52,8 @@ abstract class BuiltListMultimap<K, V> {
 
   /// Converts to a [ListMultimapBuilder], applies updates to it, and builds.
   BuiltListMultimap<K, V> rebuild(
-          Function(ListMultimapBuilder<K, V>) updates) =>
-      (toBuilder()..update(updates)).build();
+    Function(ListMultimapBuilder<K, V>) updates,
+  ) => (toBuilder()..update(updates)).build();
 
   /// Converts to a [Map].
   ///
@@ -72,10 +72,12 @@ abstract class BuiltListMultimap<K, V> {
   /// to be the same.
   @override
   int get hashCode {
-    _hashCode ??= hashObjects(_map.keys
-        .map((key) => hash2(key.hashCode, _map[key].hashCode))
-        .toList(growable: false)
-      ..sort());
+    _hashCode ??= hashObjects(
+      _map.keys
+          .map((key) => hash2(key.hashCode, _map[key].hashCode))
+          .toList(growable: false)
+        ..sort(),
+    );
     return _hashCode!;
   }
 
@@ -167,7 +169,7 @@ class _BuiltListMultimap<K, V> extends BuiltListMultimap<K, V> {
   _BuiltListMultimap.withSafeMap(Map<K, BuiltList<V>> map) : super._(map);
 
   _BuiltListMultimap.copy(Iterable keys, Function lookup)
-      : super._(<K, BuiltList<V>>{}) {
+    : super._(<K, BuiltList<V>>{}) {
     for (var key in keys) {
       if (key is K) {
         _map[key] = BuiltList<V>(lookup(key));

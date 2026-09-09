@@ -89,8 +89,11 @@ class MapBuilder<K, V> {
   /// As [Map.fromIterable] but adds.
   ///
   /// [key] and [value] default to the identity function.
-  void addIterable<T>(Iterable<T> iterable,
-      {K Function(T)? key, V Function(T)? value}) {
+  void addIterable<T>(
+    Iterable<T> iterable, {
+    K Function(T)? key,
+    V Function(T)? value,
+  }) {
     key ??= (T x) => x as K;
     value ??= (T x) => x as V;
     for (var element in iterable) {
@@ -168,13 +171,15 @@ class MapBuilder<K, V> {
   MapBuilder._uninitialized();
 
   MapBuilder._fromBuiltMap(_BuiltMap<K, V> map)
-      : _mapFactory = map._mapFactory,
-        _map = map._map,
-        _mapOwner = map;
+    : _mapFactory = map._mapFactory,
+      _map = map._map,
+      _mapOwner = map;
 
   void _setOwner(_BuiltMap<K, V> mapOwner) {
-    assert(mapOwner._mapFactory == _mapFactory,
-        "Can't reuse a built map that uses a different base");
+    assert(
+      mapOwner._mapFactory == _mapFactory,
+      "Can't reuse a built map that uses a different base",
+    );
     _mapOwner = mapOwner;
     _map = mapOwner._map;
   }

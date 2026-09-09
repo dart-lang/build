@@ -59,20 +59,16 @@ void main() {
     });
 
     test('can be converted to Set<E>', () {
-      expect(
-        BuiltSet<int>().toSet(),
-        const TypeMatcher<Set<int>>(),
-      );
-      expect(
-        BuiltSet<int>().toSet(),
-        isNot(const TypeMatcher<Set<String>>()),
-      );
+      expect(BuiltSet<int>().toSet(), const TypeMatcher<Set<int>>());
+      expect(BuiltSet<int>().toSet(), isNot(const TypeMatcher<Set<String>>()));
     });
 
     test('uses same base when converted with toSet', () {
-      var built = BuiltSet<int>.build((b) => b
-        ..withBase(() => SplayTreeSet<int>())
-        ..addAll([1, 3]));
+      var built = BuiltSet<int>.build(
+        (b) => b
+          ..withBase(() => SplayTreeSet<int>())
+          ..addAll([1, 3]),
+      );
       var set = built.toSet()..addAll([2, 4]);
       expect(set, [1, 2, 3, 4]);
     });
@@ -85,10 +81,7 @@ void main() {
     });
 
     test('can be converted to SetBuilder<E>', () {
-      expect(
-        BuiltSet<int>().toBuilder(),
-        const TypeMatcher<SetBuilder<int>>(),
-      );
+      expect(BuiltSet<int>().toBuilder(), const TypeMatcher<SetBuilder<int>>());
       expect(
         BuiltSet<int>().toBuilder(),
         isNot(const TypeMatcher<SetBuilder<String>>()),
@@ -107,9 +100,11 @@ void main() {
     });
 
     test('passes along its base when converted to SetBuilder', () {
-      var set = BuiltSet<int>.build((b) => b
-        ..withBase(() => SplayTreeSet<int>())
-        ..addAll([10, 15, 5]));
+      var set = BuiltSet<int>.build(
+        (b) => b
+          ..withBase(() => SplayTreeSet<int>())
+          ..addAll([10, 15, 5]),
+      );
       var builder = set.toBuilder()..addAll([2, 12]);
       expect(builder.build(), orderedEquals([2, 5, 10, 12, 15]));
     });
@@ -171,18 +166,18 @@ void main() {
 
     test('compares not equal to different hashcode BuiltSet', () {
       expect(
-          BuiltCollectionTestHelpers.overridenHashcodeBuiltSet([1, 2, 3], 0) ==
-              BuiltCollectionTestHelpers.overridenHashcodeBuiltSet(
-                  [1, 2, 3], 1),
-          isFalse);
+        BuiltCollectionTestHelpers.overridenHashcodeBuiltSet([1, 2, 3], 0) ==
+            BuiltCollectionTestHelpers.overridenHashcodeBuiltSet([1, 2, 3], 1),
+        isFalse,
+      );
     });
 
     test('compares not equal to different content BuiltSet', () {
       expect(
-          BuiltCollectionTestHelpers.overridenHashcodeBuiltSet([1, 2, 3], 0) ==
-              BuiltCollectionTestHelpers.overridenHashcodeBuiltSet(
-                  [1, 2, 4], 0),
-          isFalse);
+        BuiltCollectionTestHelpers.overridenHashcodeBuiltSet([1, 2, 3], 0) ==
+            BuiltCollectionTestHelpers.overridenHashcodeBuiltSet([1, 2, 4], 0),
+        isFalse,
+      );
     });
 
     test('provides toString() for debugging', () {
@@ -199,8 +194,14 @@ void main() {
     });
 
     test('has rebuild method', () {
-      expect(BuiltSet<int>([0, 1, 2]).rebuild((b) => b.addAll([3, 4, 5])),
-          [0, 1, 2, 3, 4, 5]);
+      expect(BuiltSet<int>([0, 1, 2]).rebuild((b) => b.addAll([3, 4, 5])), [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+      ]);
     });
 
     test('converts to BuiltList with toBuiltList', () {
@@ -313,14 +314,8 @@ void main() {
     });
 
     test('implements Iterable<E>', () {
-      expect(
-        BuiltSet<int>(),
-        const TypeMatcher<Iterable<int>>(),
-      );
-      expect(
-        BuiltSet<int>(),
-        isNot(const TypeMatcher<Iterable<String>>()),
-      );
+      expect(BuiltSet<int>(), const TypeMatcher<Iterable<int>>());
+      expect(BuiltSet<int>(), isNot(const TypeMatcher<Iterable<String>>()));
     });
 
     test('implements Iterable.map', () {
@@ -352,13 +347,18 @@ void main() {
 
     test('implements Iterable.fold', () {
       expect(
-          BuiltSet<int>([1, 2]).fold('', (x, y) => x.toString() + y.toString()),
-          '12');
+        BuiltSet<int>([1, 2]).fold('', (x, y) => x.toString() + y.toString()),
+        '12',
+      );
     });
 
     test('implements Iterable.followedBy', () {
-      expect(BuiltSet<int>([1, 2]).followedBy(BuiltSet<int>([3, 4])),
-          [1, 2, 3, 4]);
+      expect(BuiltSet<int>([1, 2]).followedBy(BuiltSet<int>([3, 4])), [
+        1,
+        2,
+        3,
+        4,
+      ]);
     });
 
     test('implements Iterable.every', () {
@@ -416,28 +416,42 @@ void main() {
 
     test('implements Iterable.firstWhere', () {
       expect(BuiltSet<int>([1, 2]).firstWhere((x) => x == 2), 2);
-      expect(() => BuiltSet<int>([1, 2]).firstWhere((x) => x == 3),
-          throwsA(anything));
       expect(
-          BuiltSet<int>([1, 2]).firstWhere((x) => x == 3, orElse: () => 4), 4);
+        () => BuiltSet<int>([1, 2]).firstWhere((x) => x == 3),
+        throwsA(anything),
+      );
+      expect(
+        BuiltSet<int>([1, 2]).firstWhere((x) => x == 3, orElse: () => 4),
+        4,
+      );
     });
 
     test('implements Iterable.lastWhere', () {
       expect(BuiltSet<int>([1, 2]).lastWhere((x) => x == 2), 2);
-      expect(() => BuiltSet<int>([1, 2]).lastWhere((x) => x == 3),
-          throwsA(anything));
       expect(
-          BuiltSet<int>([1, 2]).lastWhere((x) => x == 3, orElse: () => 4), 4);
+        () => BuiltSet<int>([1, 2]).lastWhere((x) => x == 3),
+        throwsA(anything),
+      );
+      expect(
+        BuiltSet<int>([1, 2]).lastWhere((x) => x == 3, orElse: () => 4),
+        4,
+      );
     });
 
     test('implements Iterable.singleWhere', () {
       expect(BuiltSet<int>([1, 2]).singleWhere((x) => x == 2), 2);
-      expect(() => BuiltSet<int>([1, 2]).singleWhere((x) => x == 3),
-          throwsA(anything));
-      expect(() => BuiltSet<int>([1, 2]).singleWhere((x) => true),
-          throwsA(anything));
       expect(
-          BuiltSet<int>([1, 2]).singleWhere((x) => false, orElse: () => 7), 7);
+        () => BuiltSet<int>([1, 2]).singleWhere((x) => x == 3),
+        throwsA(anything),
+      );
+      expect(
+        () => BuiltSet<int>([1, 2]).singleWhere((x) => true),
+        throwsA(anything),
+      );
+      expect(
+        BuiltSet<int>([1, 2]).singleWhere((x) => false, orElse: () => 7),
+        7,
+      );
     });
 
     test('implements Iterable.elementAt', () {
@@ -445,8 +459,10 @@ void main() {
     });
 
     test('implements Iterable.cast', () {
-      expect(BuiltSet<int>([1, 2]).cast<Object>(),
-          const TypeMatcher<Iterable<Object>>());
+      expect(
+        BuiltSet<int>([1, 2]).cast<Object>(),
+        const TypeMatcher<Iterable<Object>>(),
+      );
       expect(BuiltSet<int>([1, 2]).cast<Object>(), [1, 2]);
     });
 
@@ -455,10 +471,7 @@ void main() {
     });
 
     test('can be created from`Set` using extension methods', () {
-      expect(
-        {1, 2, 3}.build(),
-        const TypeMatcher<BuiltSet<int>>(),
-      );
+      expect({1, 2, 3}.build(), const TypeMatcher<BuiltSet<int>>());
       expect({1, 2, 3}.build(), [1, 2, 3]);
     });
 
