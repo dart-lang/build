@@ -1539,8 +1539,9 @@ class _MockClassInfo {
         ..name = mockTarget.mockName
         ..extend = referImported('Mock', 'package:mockito/mockito.dart')
         // TODO(srawlins): Refer to [classToMock] properly, which will yield the
-        // appropriate import prefix.
-        ..docs.add('/// A class which mocks [$className].')
+            // appropriate import prefix.
+            ..docs
+            .add('/// A class which mocks [$className].')
         ..docs.add('///')
         ..docs.add(
           '/// See the documentation for Mockito\'s code generation '
