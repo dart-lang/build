@@ -20,7 +20,7 @@ class OverriddenHashcodeBuiltList<T> extends _BuiltList<T> {
   final int _overridenHashCode;
 
   OverriddenHashcodeBuiltList(Iterable iterable, this._overridenHashCode)
-      : super.from(iterable);
+    : super.from(iterable);
 
   @override
   // ignore: hash_and_equals

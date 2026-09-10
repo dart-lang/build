@@ -58,10 +58,7 @@ void main() {
     });
 
     test('can be converted to List<E>', () {
-      expect(
-        BuiltList<int>().toList(),
-        const TypeMatcher<List<int>>(),
-      );
+      expect(BuiltList<int>().toList(), const TypeMatcher<List<int>>());
       expect(
         BuiltList<int>().toList(),
         isNot(const TypeMatcher<List<String>>()),
@@ -147,23 +144,25 @@ void main() {
 
     test('compares not equal to different length BuiltList', () {
       expect(
-          BuiltList<int>([1, 2, 3]) == BuiltList<int>([1, 2, 3, 4]), isFalse);
+        BuiltList<int>([1, 2, 3]) == BuiltList<int>([1, 2, 3, 4]),
+        isFalse,
+      );
     });
 
     test('compares not equal to different hashcode BuiltList', () {
       expect(
-          BuiltCollectionTestHelpers.overridenHashcodeBuiltList([1, 2, 3], 0) ==
-              BuiltCollectionTestHelpers.overridenHashcodeBuiltList(
-                  [1, 2, 3], 1),
-          isFalse);
+        BuiltCollectionTestHelpers.overridenHashcodeBuiltList([1, 2, 3], 0) ==
+            BuiltCollectionTestHelpers.overridenHashcodeBuiltList([1, 2, 3], 1),
+        isFalse,
+      );
     });
 
     test('compares not equal to different content BuiltList', () {
       expect(
-          BuiltCollectionTestHelpers.overridenHashcodeBuiltList([1, 2, 3], 0) ==
-              BuiltCollectionTestHelpers.overridenHashcodeBuiltList(
-                  [1, 2, 4], 0),
-          isFalse);
+        BuiltCollectionTestHelpers.overridenHashcodeBuiltList([1, 2, 3], 0) ==
+            BuiltCollectionTestHelpers.overridenHashcodeBuiltList([1, 2, 4], 0),
+        isFalse,
+      );
     });
 
     test('provides toString() for debugging', () {
@@ -229,7 +228,9 @@ void main() {
       var otherLongList = makeLongList();
 
       expectMuchFaster(
-          () => longList == longList, () => longList == otherLongList);
+        () => longList == longList,
+        () => longList == otherLongList,
+      );
     });
 
     test('is not mutated when List from toList is mutated', () {
@@ -243,8 +244,14 @@ void main() {
     });
 
     test('has rebuild method', () {
-      expect(BuiltList<int>([0, 1, 2]).rebuild((b) => b.addAll([3, 4, 5])),
-          [0, 1, 2, 3, 4, 5]);
+      expect(BuiltList<int>([0, 1, 2]).rebuild((b) => b.addAll([3, 4, 5])), [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+      ]);
     });
 
     test('returns identical BuiltList on repeated build', () {
@@ -263,8 +270,14 @@ void main() {
     });
 
     test('has a method like List+', () {
-      expect(BuiltList<int>([1, 2, 3]) + BuiltList<int>([4, 5, 6]),
-          [1, 2, 3, 4, 5, 6]);
+      expect(BuiltList<int>([1, 2, 3]) + BuiltList<int>([4, 5, 6]), [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+      ]);
     });
 
     test('has a method like List.length', () {
@@ -348,14 +361,18 @@ void main() {
 
     test('implements Iterable.fold', () {
       expect(
-          BuiltList<int>([1, 2])
-              .fold('', (x, y) => x.toString() + y.toString()),
-          '12');
+        BuiltList<int>([1, 2]).fold('', (x, y) => x.toString() + y.toString()),
+        '12',
+      );
     });
 
     test('implements Iterable.followedBy', () {
-      expect(BuiltList<int>([1, 2]).followedBy(BuiltList<int>([3, 4])),
-          [1, 2, 3, 4]);
+      expect(BuiltList<int>([1, 2]).followedBy(BuiltList<int>([3, 4])), [
+        1,
+        2,
+        3,
+        4,
+      ]);
     });
 
     test('implements Iterable.every', () {
@@ -408,29 +425,43 @@ void main() {
 
     test('implements Iterable.firstWhere', () {
       expect(BuiltList<int>([1, 2]).firstWhere((x) => x == 2), 2);
-      expect(() => BuiltList<int>([1, 2]).firstWhere((x) => x == 3),
-          throwsA(anything));
       expect(
-          BuiltList<int>([1, 2]).firstWhere((x) => x == 3, orElse: () => 4), 4);
+        () => BuiltList<int>([1, 2]).firstWhere((x) => x == 3),
+        throwsA(anything),
+      );
+      expect(
+        BuiltList<int>([1, 2]).firstWhere((x) => x == 3, orElse: () => 4),
+        4,
+      );
     });
 
     test('implements Iterable.lastWhere', () {
       expect(BuiltList<int>([1, 2]).lastWhere((x) => x == 2), 2);
-      expect(() => BuiltList<int>([1, 2]).lastWhere((x) => x == 3),
-          throwsA(anything));
       expect(
-          BuiltList<int>([1, 2]).lastWhere((x) => x == 3, orElse: () => 4), 4);
+        () => BuiltList<int>([1, 2]).lastWhere((x) => x == 3),
+        throwsA(anything),
+      );
+      expect(
+        BuiltList<int>([1, 2]).lastWhere((x) => x == 3, orElse: () => 4),
+        4,
+      );
     });
 
     test('implements Iterable.singleWhere', () {
       expect(BuiltList<int>([1, 2]).singleWhere((x) => x == 2), 2);
-      expect(() => BuiltList<int>([1, 2]).singleWhere((x) => x == 3),
-          throwsA(anything));
-      expect(() => BuiltList<int>([1, 2]).singleWhere((x) => true),
-          throwsA(anything));
+      expect(
+        () => BuiltList<int>([1, 2]).singleWhere((x) => x == 3),
+        throwsA(anything),
+      );
+      expect(
+        () => BuiltList<int>([1, 2]).singleWhere((x) => true),
+        throwsA(anything),
+      );
       expect(BuiltList<int>([1, 2]).singleWhere((x) => x == 2), 2);
       expect(
-          BuiltList<int>([1, 2]).singleWhere((x) => false, orElse: () => 7), 7);
+        BuiltList<int>([1, 2]).singleWhere((x) => false, orElse: () => 7),
+        7,
+      );
     });
 
     test('implements Iterable.elementAt', () {
@@ -438,8 +469,10 @@ void main() {
     });
 
     test('implements Iterable.cast', () {
-      expect(BuiltList<int>([1, 2]).cast<Object>(),
-          const TypeMatcher<Iterable<Object>>());
+      expect(
+        BuiltList<int>([1, 2]).cast<Object>(),
+        const TypeMatcher<Iterable<Object>>(),
+      );
       expect(BuiltList<int>([1, 2]).cast<Object>(), [1, 2]);
     });
 

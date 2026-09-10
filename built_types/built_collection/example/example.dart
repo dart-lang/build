@@ -33,9 +33,11 @@ void main() {
   // corresponding builder type.
 
   // For example, to add some elements then sort:
-  builtList = builtList.rebuild((b) => b
-    ..addAll([7, 6, 5])
-    ..sort());
+  builtList = builtList.rebuild(
+    (b) => b
+      ..addAll([7, 6, 5])
+      ..sort(),
+  );
 
   // Generally, built collections match the SDK collections, except that the
   // API has been split in two: read only methods go on the `Built` collection

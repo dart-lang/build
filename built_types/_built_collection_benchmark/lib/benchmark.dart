@@ -6,7 +6,7 @@ import 'package:built_collection/built_collection.dart';
 
 class BuiltCollectionBenchmark {
   final Map<String, void Function(ListBuilder<int>, Iterable<int>)>
-      listBuilderFunctions = {
+  listBuilderFunctions = {
     'addAll': (b, iterable) => b.addAll(iterable),
     'insertAll': (b, iterable) => b.insertAll(0, iterable),
     'setAll': (b, iterable) => b.setAll(0, iterable),
@@ -15,9 +15,7 @@ class BuiltCollectionBenchmark {
   };
 
   final Map<String, void Function(SetBuilder<int>, Iterable<int>)>
-      setBuilderFunctions = {
-    'addAll': (b, iterable) => b.addAll(iterable),
-  };
+  setBuilderFunctions = {'addAll': (b, iterable) => b.addAll(iterable)};
 
   Future<void> run() async {
     await benchmarkListBuilder();
@@ -35,10 +33,18 @@ class BuiltCollectionBenchmark {
       var builderFactory = () => ListBuilder<int>()..addAll(list);
 
       _benchmark('ListBuilder.$name,list', function, builderFactory, list);
-      _benchmark('ListBuilder.$name,fast lazy iterable', function,
-          builderFactory, fastLazyIterable);
-      _benchmark('ListBuilder.$name,slow lazy iterable', function,
-          builderFactory, slowLazyIterable);
+      _benchmark(
+        'ListBuilder.$name,fast lazy iterable',
+        function,
+        builderFactory,
+        fastLazyIterable,
+      );
+      _benchmark(
+        'ListBuilder.$name,slow lazy iterable',
+        function,
+        builderFactory,
+        slowLazyIterable,
+      );
     }
   }
 
@@ -53,16 +59,28 @@ class BuiltCollectionBenchmark {
       var builderFactory = () => SetBuilder<int>();
 
       _benchmark('SetBuilder.$name,list', function, builderFactory, list);
-      _benchmark('SetBuilder.$name,fast lazy iterable', function,
-          builderFactory, fastLazyIterable);
-      _benchmark('SetBuilder.$name,slow lazy iterable', function,
-          builderFactory, slowLazyIterable);
+      _benchmark(
+        'SetBuilder.$name,fast lazy iterable',
+        function,
+        builderFactory,
+        fastLazyIterable,
+      );
+      _benchmark(
+        'SetBuilder.$name,slow lazy iterable',
+        function,
+        builderFactory,
+        slowLazyIterable,
+      );
     }
   }
 }
 
-void _benchmark<B, D>(String name, void Function(B, D) function,
-    B Function() builderFactory, D data) {
+void _benchmark<B, D>(
+  String name,
+  void Function(B, D) function,
+  B Function() builderFactory,
+  D data,
+) {
   var counts = <int>[];
 
   /// Run four times; first is to warm up, remaining three are reported.

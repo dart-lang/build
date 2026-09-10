@@ -246,12 +246,12 @@ class _BuiltList<E> extends BuiltList<E> {
   _BuiltList.withSafeList(List<E> list) : super._(list);
 
   _BuiltList.from([Iterable iterable = const []])
-      : super._(List<E>.from(iterable, growable: false)) {
+    : super._(List<E>.from(iterable, growable: false)) {
     _maybeCheckForNull();
   }
 
   _BuiltList.of(Iterable<E> iterable)
-      : super._(List<E>.from(iterable, growable: false)) {
+    : super._(List<E>.from(iterable, growable: false)) {
     _maybeCheckForNull();
   }
 

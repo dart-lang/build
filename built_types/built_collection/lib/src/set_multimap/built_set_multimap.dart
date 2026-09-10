@@ -32,13 +32,19 @@ abstract class BuiltSetMultimap<K, V> {
       return multimap as BuiltSetMultimap<K, V>;
     } else if (multimap is Map) {
       return _BuiltSetMultimap<K, V>.copyAndCheck(
-          multimap.keys, (k) => multimap[k]);
+        multimap.keys,
+        (k) => multimap[k],
+      );
     } else if (multimap is BuiltSetMultimap) {
       return _BuiltSetMultimap<K, V>.copyAndCheck(
-          multimap.keys, (k) => multimap[k]);
+        multimap.keys,
+        (k) => multimap[k],
+      );
     } else {
       return _BuiltSetMultimap<K, V>.copyAndCheck(
-          multimap.keys, (k) => multimap[k]);
+        multimap.keys,
+        (k) => multimap[k],
+      );
     }
   }
 
@@ -72,10 +78,12 @@ abstract class BuiltSetMultimap<K, V> {
   /// to be the same.
   @override
   int get hashCode {
-    _hashCode ??= hashObjects(_map.keys
-        .map((key) => hash2(key.hashCode, _map[key].hashCode))
-        .toList(growable: false)
-      ..sort());
+    _hashCode ??= hashObjects(
+      _map.keys
+          .map((key) => hash2(key.hashCode, _map[key].hashCode))
+          .toList(growable: false)
+        ..sort(),
+    );
     return _hashCode!;
   }
 
@@ -167,7 +175,7 @@ class _BuiltSetMultimap<K, V> extends BuiltSetMultimap<K, V> {
   _BuiltSetMultimap.withSafeMap(Map<K, BuiltSet<V>> map) : super._(map);
 
   _BuiltSetMultimap.copyAndCheck(Iterable keys, Function lookup)
-      : super._(<K, BuiltSet<V>>{}) {
+    : super._(<K, BuiltSet<V>>{}) {
     for (var key in keys) {
       if (key is K) {
         _map[key] = BuiltSet<V>(lookup(key));

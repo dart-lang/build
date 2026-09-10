@@ -16,6 +16,7 @@ This repo also hosts the following builders and packages for use by builders.
 
 - [build_modules](https://pub.dev/packages/build_modules)
 - [build_web_compilers](https://pub.dev/packages/build_web_compilers)
+- [built_collection](https://pub.dev/packages/built_collection)
 - [built_value](https://pub.dev/packages/built_value)
 - [mockito](https://pub.dev/packages/mockito)
 - [scratch_space](https://pub.dev/packages/scratch_space)

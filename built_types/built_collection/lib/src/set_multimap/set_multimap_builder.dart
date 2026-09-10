@@ -71,10 +71,12 @@ class SetMultimapBuilder<K, V> {
   ///
   /// [key] and [value] default to the identity function. [values] is ignored
   /// if not specified.
-  void addIterable<T>(Iterable<T> iterable,
-      {K Function(T)? key,
-      V Function(T)? value,
-      Iterable<V> Function(T)? values}) {
+  void addIterable<T>(
+    Iterable<T> iterable, {
+    K Function(T)? key,
+    V Function(T)? value,
+    Iterable<V> Function(T)? values,
+  }) {
     if (value != null && values != null) {
       throw ArgumentError('expected value or values to be set, got both');
     }
@@ -180,7 +182,8 @@ class SetMultimapBuilder<K, V> {
             add(key, value);
           } else {
             throw ArgumentError(
-                'map contained invalid value: $value, for key $key');
+              'map contained invalid value: $value, for key $key',
+            );
           }
         }
       } else {

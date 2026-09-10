@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.1.2-wip
+
+- Moved repository to `dart-lang/build`.
+- Require Dart SDK `^3.11.0`.
+- Fix unnecessary non-null assertions in internal copy-on-write collections.
+
 ## 5.1.1
 
 - Test fix for new analyzer hint.
