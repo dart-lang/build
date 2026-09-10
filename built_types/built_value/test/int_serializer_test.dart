@@ -8,12 +8,12 @@ import 'package:built_value/serializer.dart';
 import 'package:test/test.dart';
 
 void main() {
-  var serializers = Serializers();
+  final serializers = Serializers();
 
   group('int with known specifiedType', () {
-    var data = 42;
-    var serialized = 42;
-    var specifiedType = const FullType(int);
+    final data = 42;
+    final serialized = 42;
+    final specifiedType = const FullType(int);
 
     test('can be serialized', () {
       expect(serializers.serialize(data, specifiedType: specifiedType),
@@ -27,9 +27,9 @@ void main() {
   });
 
   group('int with unknown specifiedType', () {
-    var data = 42;
-    var serialized = json.decode(json.encode(['int', 42])) as Object;
-    var specifiedType = FullType.unspecified;
+    final data = 42;
+    final serialized = json.decode(json.encode(['int', 42])) as Object;
+    final specifiedType = FullType.unspecified;
 
     test('can be serialized', () {
       expect(serializers.serialize(data, specifiedType: specifiedType),

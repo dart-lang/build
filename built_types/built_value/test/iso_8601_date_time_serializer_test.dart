@@ -9,13 +9,13 @@ import 'package:built_value/serializer.dart';
 import 'package:test/test.dart';
 
 void main() {
-  var serializers =
+  final serializers =
       (Serializers().toBuilder()..add(Iso8601DateTimeSerializer())).build();
 
   group('DateTime with known specifiedType', () {
-    var data = DateTime.utc(1980, 1, 2, 3, 4, 5, 6, 7);
-    var serialized = '1980-01-02T03:04:05.006007Z';
-    var specifiedType = const FullType(DateTime);
+    final data = DateTime.utc(1980, 1, 2, 3, 4, 5, 6, 7);
+    final serialized = '1980-01-02T03:04:05.006007Z';
+    final specifiedType = const FullType(DateTime);
 
     test('can be serialized', () {
       expect(serializers.serialize(data, specifiedType: specifiedType),
@@ -34,11 +34,11 @@ void main() {
   });
 
   group('DateTime with unknown specifiedType', () {
-    var data = DateTime.utc(1980, 1, 2, 3, 4, 5, 6, 7);
-    var serialized =
+    final data = DateTime.utc(1980, 1, 2, 3, 4, 5, 6, 7);
+    final serialized =
         json.decode(json.encode(['DateTime', '1980-01-02T03:04:05.006007Z']))
             as Object;
-    var specifiedType = FullType.unspecified;
+    final specifiedType = FullType.unspecified;
 
     test('can be serialized', () {
       expect(serializers.serialize(data, specifiedType: specifiedType),

@@ -2,17 +2,17 @@
 // All rights reserved. Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-library built_value_generator.source_library;
+library;
 
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
-import 'package:built_value_generator/src/parsed_library_results.dart';
-import 'package:built_value_generator/src/serializer_source_class.dart';
 import 'package:source_gen/source_gen.dart';
 
 import 'dart_types.dart';
+import 'parsed_library_results.dart';
+import 'serializer_source_class.dart';
 
 part 'serializer_source_library.g.dart';
 
@@ -42,8 +42,8 @@ abstract class SerializerSourceLibrary
   /// and the values are the `@SerializersFor` annotations.
   @memoized
   BuiltMap<String, ElementAnnotation> get serializersForAnnotations {
-    var result = MapBuilder<String, ElementAnnotation>();
-    var accessors = element.library.topLevelVariables
+    final result = MapBuilder<String, ElementAnnotation>();
+    final accessors = element.library.topLevelVariables
         .where(
           (element) =>
               element.getter != null &&
@@ -51,7 +51,7 @@ abstract class SerializerSourceLibrary
         )
         .toList();
 
-    for (var accessor in accessors) {
+    for (final accessor in accessors) {
       final annotations = accessor.metadata.annotations
           .where(
             (annotation) =>
@@ -73,8 +73,8 @@ abstract class SerializerSourceLibrary
   /// return type.
   @memoized
   BuiltList<String> get wrongSerializersDeclarations {
-    var result = ListBuilder<String>();
-    var accessors = element.topLevelVariables
+    final result = ListBuilder<String>();
+    final accessors = element.topLevelVariables
         .where(
           (element) =>
               element.getter != null &&
@@ -82,7 +82,7 @@ abstract class SerializerSourceLibrary
         )
         .toList();
 
-    for (var accessor in accessors) {
+    for (final accessor in accessors) {
       final annotations = accessor.metadata.annotations
           .where(
             (annotation) =>
@@ -105,9 +105,9 @@ abstract class SerializerSourceLibrary
   /// generated for each, except where the serializer is marked `custom`.
   @memoized
   BuiltSet<SerializerSourceClass> get sourceClasses {
-    var result = SetBuilder<SerializerSourceClass>();
-    var classElements = element.classes;
-    for (var classElement in classElements) {
+    final result = SetBuilder<SerializerSourceClass>();
+    final classElements = element.classes;
+    for (final classElement in classElements) {
       final sourceClass = SerializerSourceClass(
         parsedLibraryResults,
         classElement,
@@ -123,9 +123,9 @@ abstract class SerializerSourceLibrary
   /// that each serializer is required to be able to serialize.
   @memoized
   BuiltSetMultimap<String, SerializerSourceClass> get serializeForClasses {
-    var result = SetMultimapBuilder<String, SerializerSourceClass>();
+    final result = SetMultimapBuilder<String, SerializerSourceClass>();
 
-    for (var field in serializersForAnnotations.keys) {
+    for (final field in serializersForAnnotations.keys) {
       final serializersForAnnotation = serializersForAnnotations[field]!;
 
       final types = serializersForAnnotation
@@ -159,9 +159,9 @@ abstract class SerializerSourceLibrary
   @memoized
   BuiltSetMultimap<String, SerializerSourceClass>
       get serializeForTransitiveClasses {
-    var result = SetMultimapBuilder<String, SerializerSourceClass>();
+    final result = SetMultimapBuilder<String, SerializerSourceClass>();
 
-    for (var field in serializersForAnnotations.keys) {
+    for (final field in serializersForAnnotations.keys) {
       var currentResult = BuiltSet<SerializerSourceClass>(
         serializeForClasses[field]!.where(
           (serializerSourceClass) => serializerSourceClass.isSerializable,
@@ -192,7 +192,7 @@ abstract class SerializerSourceLibrary
   bool get needsBuiltJson => sourceClasses.isNotEmpty;
 
   Iterable<String> computeErrors() {
-    var result = <String>[];
+    final result = <String>[];
 
     if (wrongSerializersDeclarations.isNotEmpty) {
       result.add(
@@ -207,9 +207,9 @@ abstract class SerializerSourceLibrary
 
   /// Generates serializer source for this library.
   String generateCode() {
-    var errors = [
+    final errors = [
       ...computeErrors(),
-      for (var sourceClass in sourceClasses) ...sourceClass.computeErrors(),
+      for (final sourceClass in sourceClasses) ...sourceClass.computeErrors(),
     ];
 
     if (errors.isNotEmpty) throw _makeError(errors);
@@ -228,31 +228,20 @@ abstract class SerializerSourceLibrary
   String _generateSerializersTopLevelFields() => serializersForAnnotations.keys
       .map(
         (field) =>
-            'Serializers _\$$field = (Serializers().toBuilder()' +
-            (serializeForTransitiveClasses[field]!
-                    .map(
-                      (sourceClass) =>
-                          sourceClass.generateTransitiveSerializerAdder(),
-                    )
-                    .toList()
-                  ..sort())
-                .join('\n') +
-            (serializeForTransitiveClasses[field]!
-                    .map(
-                      (sourceClass) => sourceClass.generateBuilderFactoryAdders(
-                        element.library.firstFragment,
-                      ),
-                    )
-                    .toList()
-                  ..sort())
-                .join('\n') +
-            ').build();',
+            'Serializers _\$$field = (Serializers().toBuilder()${(serializeForTransitiveClasses[field]!.map(
+                  (sourceClass) =>
+                      sourceClass.generateTransitiveSerializerAdder(),
+                ).toList()..sort()).join('\n')}${(serializeForTransitiveClasses[field]!.map(
+                  (sourceClass) => sourceClass.generateBuilderFactoryAdders(
+                    element.library.firstFragment,
+                  ),
+                ).toList()..sort()).join('\n')}).build();',
       )
       .join('\n');
 }
 
 InvalidGenerationSourceError _makeError(Iterable<String> todos) {
-  var message = StringBuffer(
+  final message = StringBuffer(
     'Please make the following changes to use built_value serialization:\n',
   );
   for (var i = 0; i != todos.length; ++i) {

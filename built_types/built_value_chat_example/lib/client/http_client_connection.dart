@@ -5,8 +5,9 @@
 import 'dart:async';
 import 'dart:js_interop';
 
-import 'package:built_value_chat_example/client/client_connection.dart';
 import 'package:web/web.dart';
+
+import 'client_connection.dart';
 
 /// [ClientConnection] using a web socket.
 class HttpClientConnection implements ClientConnection {

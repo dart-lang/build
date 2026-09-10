@@ -9,12 +9,12 @@ import 'package:fixnum/fixnum.dart';
 import 'package:test/test.dart';
 
 void main() {
-  var serializers = Serializers();
+  final serializers = Serializers();
 
   group('int32 with known specifiedType', () {
-    var data = Int32.MAX_VALUE;
-    var serialized = Int32.MAX_VALUE.toInt();
-    var specifiedType = const FullType(Int32);
+    final data = Int32.MAX_VALUE;
+    final serialized = Int32.MAX_VALUE.toInt();
+    final specifiedType = const FullType(Int32);
 
     test('can be serialized', () {
       expect(serializers.serialize(data, specifiedType: specifiedType),
@@ -28,10 +28,10 @@ void main() {
   });
 
   group('int32 with unknown specifiedType', () {
-    var data = Int32.MIN_VALUE;
-    var serialized =
+    final data = Int32.MIN_VALUE;
+    final serialized =
         json.decode(json.encode(['Int32', Int32.MIN_VALUE.toInt()])) as Object;
-    var specifiedType = FullType.unspecified;
+    final specifiedType = FullType.unspecified;
 
     test('can be serialized', () {
       expect(serializers.serialize(data, specifiedType: specifiedType),

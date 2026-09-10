@@ -4,11 +4,12 @@
 
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
-import 'package:built_value_generator/src/enum_source_library.dart';
-import 'package:built_value_generator/src/parsed_library_results.dart';
-import 'package:built_value_generator/src/serializer_source_library.dart';
-import 'package:built_value_generator/src/value_source_class.dart';
 import 'package:source_gen/source_gen.dart';
+
+import 'src/enum_source_library.dart';
+import 'src/parsed_library_results.dart';
+import 'src/serializer_source_library.dart';
+import 'src/value_source_class.dart';
 
 /// Generator for Enum Class and Built Values.
 ///
@@ -19,7 +20,7 @@ class BuiltValueGenerator extends Generator {
 
   @override
   Future<String?> generate(LibraryReader library, BuildStep buildStep) async {
-    var parsedLibraryResults = ParsedLibraryResults();
+    final parsedLibraryResults = ParsedLibraryResults();
 
     // Workaround for https://github.com/google/built_value.dart/issues/941.
     LibraryElement libraryElement;
@@ -40,7 +41,7 @@ class BuiltValueGenerator extends Generator {
       }
     }
 
-    var result = StringBuffer();
+    final result = StringBuffer();
     try {
       final enumCode = EnumSourceLibrary(
         parsedLibraryResults,
@@ -73,7 +74,7 @@ class BuiltValueGenerator extends Generator {
       );
     }
 
-    for (var element in libraryElement.classes) {
+    for (final element in libraryElement.classes) {
       if (ValueSourceClass.needsBuiltValue(element)) {
         try {
           result.writeln(
@@ -99,7 +100,7 @@ class BuiltValueGenerator extends Generator {
 }
 
 String _error(Object error) {
-  var lines = '$error'.split('\n');
-  var indented = lines.skip(1).map((l) => '//        $l'.trim()).join('\n');
+  final lines = '$error'.split('\n');
+  final indented = lines.skip(1).map((l) => '//        $l'.trim()).join('\n');
   return '// Error: ${lines.first}\n$indented';
 }

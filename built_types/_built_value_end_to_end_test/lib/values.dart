@@ -5,9 +5,10 @@
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
-import 'package:_built_value_end_to_end_test/enums.dart' as using_import_as;
-import 'package:_built_value_end_to_end_test/mixins_src.dart';
 import 'package:fixnum/fixnum.dart';
+
+import 'enums.dart' as using_import_as;
+import 'mixins_src.dart';
 
 part 'values.g.dart';
 
@@ -958,7 +959,7 @@ abstract class ValueWithAwkwardNestedBuilderBuilder
         > {
   SimpleValueBuilder? value1;
   SimpleValueBuilder? _value2;
-  SimpleValueBuilder? get value2 => (_value2 ??= SimpleValueBuilder());
+  SimpleValueBuilder? get value2 => _value2 ??= SimpleValueBuilder();
   set value2(SimpleValueBuilder? b) => _value2 = b;
   ListBuilder<int>? values = ListBuilder<int>();
   MapBuilder<int, String>? map = MapBuilder<int, String>();
@@ -997,7 +998,7 @@ abstract class NewConstructorValue
 
   new _();
 
-  factory NewConstructorValue.new([
+  factory NewConstructorValue([
     void Function(NewConstructorValueBuilder) updates,
   ]) = _$NewConstructorValue;
 }
@@ -1008,5 +1009,5 @@ abstract class NewConstructorValueBuilder
 
   new _();
 
-  factory NewConstructorValueBuilder.new() = _$NewConstructorValueBuilder;
+  factory NewConstructorValueBuilder() = _$NewConstructorValueBuilder;
 }

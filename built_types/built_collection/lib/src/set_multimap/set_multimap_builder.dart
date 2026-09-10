@@ -30,8 +30,8 @@ class SetMultimapBuilder<K, V> {
   /// Converts to a [BuiltSetMultimap].
   BuiltSetMultimap<K, V> build() {
     if (_builtMapOwner == null) {
-      for (var key in _builderMap.keys) {
-        var builtSet = _builderMap[key]!.build();
+      for (final key in _builderMap.keys) {
+        final builtSet = _builderMap[key]!.build();
         if (builtSet.isEmpty) {
           _builtMap.remove(key);
         } else {
@@ -84,12 +84,12 @@ class SetMultimapBuilder<K, V> {
     key ??= (T x) => x as K;
 
     if (values != null) {
-      for (var element in iterable) {
+      for (final element in iterable) {
         addValues(key(element), values(element));
       }
     } else {
       value ??= (T x) => x as V;
-      for (var element in iterable) {
+      for (final element in iterable) {
         add(key(element), value(element));
       }
     }
@@ -108,9 +108,9 @@ class SetMultimapBuilder<K, V> {
   /// As [SetMultimap.addValues].
   void addValues(K key, Iterable<V> values) {
     // _disown is called in add.
-    values.forEach((value) {
+    for (final value in values) {
       add(key, value);
-    });
+    }
   }
 
   /// As [SetMultimap.remove] but returns nothing.
@@ -144,7 +144,7 @@ class SetMultimapBuilder<K, V> {
   SetBuilder<V> _getValuesBuilder(K key) {
     var result = _builderMap[key];
     if (result == null) {
-      var builtValues = _builtMap[key];
+      final builtValues = _builtMap[key];
       if (builtValues == null) {
         result = SetBuilder<V>();
       } else {
@@ -175,9 +175,9 @@ class SetMultimapBuilder<K, V> {
     _builtMap = <K, BuiltSet<V>>{};
     _builderMap = <K, SetBuilder<V>>{};
 
-    for (var key in keys) {
+    for (final key in keys) {
       if (key is K) {
-        for (var value in lookup(key)) {
+        for (final value in lookup(key)) {
           if (value is V) {
             add(key, value);
           } else {

@@ -5,6 +5,7 @@
 - Moved repository to `dart-lang/build`.
 - Require Dart SDK `^3.11.0`.
 - Fix unnecessary non-null assertions in internal copy-on-write collections.
+- Migrate to `package:dart_flutter_team_lints`.
 
 ## 5.1.1
 

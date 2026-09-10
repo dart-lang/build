@@ -11,8 +11,8 @@ import 'package:test/test.dart';
 
 void main() {
   group('TestEnum', () {
-    var data = TestEnum.yes;
-    var serialized = json.decode(json.encode(['TestEnum', 'yes'])) as Object;
+    final data = TestEnum.yes;
+    final serialized = json.decode(json.encode(['TestEnum', 'yes'])) as Object;
 
     test('can be serialized', () {
       expect(serializers.serialize(data), serialized);
@@ -24,8 +24,8 @@ void main() {
   });
 
   group('NewConstructorEnum', () {
-    var data = NewConstructorEnum.yes;
-    var serialized =
+    final data = NewConstructorEnum.yes;
+    final serialized =
         json.decode(json.encode(['NewConstructorEnum', 'yes'])) as Object;
 
     test('can be serialized', () {
@@ -38,8 +38,8 @@ void main() {
   });
 
   group('WireNameEnum', () {
-    var data = WireNameEnum.yes;
-    var serialized = json.decode(json.encode(['E', 'y'])) as Object;
+    final data = WireNameEnum.yes;
+    final serialized = json.decode(json.encode(['E', 'y'])) as Object;
 
     test('can be serialized', () {
       expect(serializers.serialize(data), serialized);
@@ -51,8 +51,9 @@ void main() {
   });
 
   group('WireNumberEnum', () {
-    var data = WireNumberEnum.yes;
-    var serialized = json.decode(json.encode(['WireNumberEnum', 1])) as Object;
+    final data = WireNumberEnum.yes;
+    final serialized =
+        json.decode(json.encode(['WireNumberEnum', 1])) as Object;
 
     test('can be serialized', () {
       expect(serializers.serialize(data), serialized);
@@ -64,8 +65,8 @@ void main() {
   });
 
   group('FallbackEnum', () {
-    var data = FallbackEnum.no;
-    var serialized =
+    final data = FallbackEnum.no;
+    final serialized =
         json.decode(json.encode(['FallbackEnum', 'some_unrecognized_value']))
             as Object;
 
@@ -75,8 +76,8 @@ void main() {
   });
 
   group('FallbackNumberEnum', () {
-    var data = FallbackNumberEnum.no;
-    var serialized =
+    final data = FallbackNumberEnum.no;
+    final serialized =
         json.decode(json.encode(['FallbackNumberEnum', 75])) as Object;
 
     test('deserializes using fallback', () {

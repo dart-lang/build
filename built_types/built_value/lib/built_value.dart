@@ -319,7 +319,7 @@ typedef BuiltValueToStringHelperProvider = BuiltValueToStringHelper Function(
 /// are [IndentingBuiltValueToStringHelper], which is the default, and
 /// [FlatBuiltValueToStringHelper].
 BuiltValueToStringHelperProvider newBuiltValueToStringHelper =
-    (String className) => IndentingBuiltValueToStringHelper(className);
+    IndentingBuiltValueToStringHelper.new;
 
 /// Interface for built_value toString() output helpers.
 ///
@@ -364,7 +364,7 @@ class IndentingBuiltValueToStringHelper implements BuiltValueToStringHelper {
     _result!
       ..write(' ' * _indentingBuiltValueToStringHelperIndent)
       ..write('}');
-    var stringResult = _result.toString();
+    final stringResult = _result.toString();
     _result = null;
     return stringResult;
   }
@@ -398,7 +398,7 @@ class FlatBuiltValueToStringHelper implements BuiltValueToStringHelper {
   @override
   String toString() {
     _result!.write('}');
-    var stringResult = _result.toString();
+    final stringResult = _result.toString();
     _result = null;
     return stringResult;
   }

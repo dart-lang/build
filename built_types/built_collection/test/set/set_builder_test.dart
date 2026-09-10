@@ -20,43 +20,43 @@ void main() {
     });
 
     test('throws on null add', () {
-      var builder = SetBuilder<int>();
+      final builder = SetBuilder<int>();
       expect(() => builder.add(null as dynamic), throwsA(anything));
       expect(builder.build(), isEmpty);
     });
 
     test('nullable does not throw on null add', () {
-      var builder = SetBuilder<int?>();
+      final builder = SetBuilder<int?>();
       builder.add(null);
       expect(builder.build(), {null});
     });
 
     test('throws on null addAll', () {
-      var builder = SetBuilder<int>();
+      final builder = SetBuilder<int>();
       expect(() => builder.addAll([0, 1, null as dynamic]), throwsA(anything));
       expect(builder.build(), isEmpty);
     });
 
     test('nullable does not throw on null addAll', () {
-      var builder = SetBuilder<int?>();
+      final builder = SetBuilder<int?>();
       builder.addAll([0, 1, null]);
       expect(builder.build(), orderedEquals([0, 1, null]));
     });
 
     test('throws on null map', () {
-      var builder = SetBuilder<int>([0, 1, 2]);
+      final builder = SetBuilder<int>([0, 1, 2]);
       expect(() => builder.map((x) => null as dynamic), throwsA(anything));
       expect(builder.build(), orderedEquals([0, 1, 2]));
     });
 
     test('nullable does not throw on null map', () {
-      var builder = SetBuilder<int?>([0, 1, 2]);
+      final builder = SetBuilder<int?>([0, 1, 2]);
       builder.map((x) => null);
       expect(builder.build(), orderedEquals([null]));
     });
 
     test('throws on null expand', () {
-      var builder = SetBuilder<int>([0, 1, 2]);
+      final builder = SetBuilder<int>([0, 1, 2]);
       expect(
         () => builder.expand((x) => [x, null as dynamic]),
         throwsA(anything),
@@ -65,13 +65,13 @@ void main() {
     });
 
     test('nullable does not throw on null expand', () {
-      var builder = SetBuilder<int?>([0, 1, 2]);
+      final builder = SetBuilder<int?>([0, 1, 2]);
       builder.expand((x) => [x, null]);
       expect(builder.build(), orderedEquals([0, null, 1, 2]));
     });
 
     test('throws on null withBase', () {
-      var builder = SetBuilder<int>([2, 0, 1]);
+      final builder = SetBuilder<int>([2, 0, 1]);
       expect(() => builder.withBase(null as dynamic), throwsA(anything));
       expect(builder.build(), orderedEquals([2, 0, 1]));
     });
@@ -81,7 +81,7 @@ void main() {
       // type is allowed; just pass.
       if (!isSoundMode) return;
 
-      var builder = SetBuilder<int>();
+      final builder = SetBuilder<int>();
       expect(
         () => builder.addAll(List<int>.from([0, 1, '0'])),
         throwsA(anything),
@@ -94,13 +94,13 @@ void main() {
     });
 
     test('reuses BuiltSet passed to replace if it has the same base', () {
-      var treeSetBase = () => SplayTreeSet<int>();
-      var set = BuiltSet<int>.build(
+      final treeSetBase = SplayTreeSet<int>.new;
+      final set = BuiltSet<int>.build(
         (b) => b
           ..withBase(treeSetBase)
           ..addAll([1, 2]),
       );
-      var builder = SetBuilder<int>()
+      final builder = SetBuilder<int>()
         ..withBase(treeSetBase)
         ..replace(set);
       expect(builder.build(), same(set));
@@ -109,25 +109,25 @@ void main() {
     test(
       "doesn't reuse BuiltSet passed to replace if it has a different base",
       () {
-        var set = BuiltSet<int>.build(
+        final set = BuiltSet<int>.build(
           (b) => b
-            ..withBase(() => SplayTreeSet<int>())
+            ..withBase(SplayTreeSet<int>.new)
             ..addAll([1, 2]),
         );
-        var builder = SetBuilder<int>()..replace(set);
+        final builder = SetBuilder<int>()..replace(set);
         expect(builder.build(), isNot(same(set)));
       },
     );
 
     test('has withBase method that changes the underlying set type', () {
-      var builder = SetBuilder<int>([2, 0, 1]);
-      builder.withBase(() => SplayTreeSet<int>());
+      final builder = SetBuilder<int>([2, 0, 1]);
+      builder.withBase(SplayTreeSet<int>.new);
       expect(builder.build(), orderedEquals([0, 1, 2]));
     });
 
     test('has withDefaultBase method that resets the underlying set type', () {
-      var builder = SetBuilder<int>()
-        ..withBase(() => SplayTreeSet<int>())
+      final builder = SetBuilder<int>()
+        ..withBase(SplayTreeSet<int>.new)
         ..withDefaultBase()
         ..addAll([2, 0, 1]);
       expect(builder.build(), orderedEquals([2, 0, 1]));
@@ -136,25 +136,25 @@ void main() {
     // Lazy copies.
 
     test('does not mutate BuiltSet following reuse of underlying Set', () {
-      var set = BuiltSet<int>([1, 2]);
-      var setBuilder = set.toBuilder();
+      final set = BuiltSet<int>([1, 2]);
+      final setBuilder = set.toBuilder();
       setBuilder.add(3);
       expect(set, [1, 2]);
     });
 
     test('converts to BuiltSet without copying', () {
-      var makeLongSetBuilder = () =>
+      final makeLongSetBuilder = () =>
           SetBuilder<int>(Set<int>.from(List<int>.generate(100000, (x) => x)));
-      var longSetBuilder = makeLongSetBuilder();
-      var buildLongSetBuilder = () => longSetBuilder.build();
+      final longSetBuilder = makeLongSetBuilder();
+      final buildLongSetBuilder = longSetBuilder.build;
 
       expectMuchFaster(buildLongSetBuilder, makeLongSetBuilder);
     });
 
     test('does not mutate BuiltSet following mutates after build', () {
-      var setBuilder = SetBuilder<int>([1, 2]);
+      final setBuilder = SetBuilder<int>([1, 2]);
 
-      var set1 = setBuilder.build();
+      final set1 = setBuilder.build();
       expect(set1, [1, 2]);
 
       setBuilder.add(3);
@@ -162,7 +162,7 @@ void main() {
     });
 
     test('returns identical BuiltSet on repeated build', () {
-      var setBuilder = SetBuilder<int>([1, 2]);
+      final setBuilder = SetBuilder<int>([1, 2]);
       expect(setBuilder.build(), same(setBuilder.build()));
     });
 

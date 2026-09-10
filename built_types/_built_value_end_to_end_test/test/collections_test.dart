@@ -3,8 +3,8 @@
 // license that can be found in the LICENSE file.
 // @dart=2.12
 
-import 'package:built_collection/src/internal/hash.dart';
 import 'package:_built_value_end_to_end_test/collections.dart';
+import 'package:built_collection/src/internal/hash.dart';
 import 'package:test/test.dart';
 
 void main() {

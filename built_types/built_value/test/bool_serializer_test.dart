@@ -8,12 +8,12 @@ import 'package:built_value/serializer.dart';
 import 'package:test/test.dart';
 
 void main() {
-  var serializers = Serializers();
+  final serializers = Serializers();
 
   group('bool with known specifiedType', () {
-    var data = true;
-    var serialized = true;
-    var specifiedType = const FullType(bool);
+    final data = true;
+    final serialized = true;
+    final specifiedType = const FullType(bool);
 
     test('can be serialized', () {
       expect(serializers.serialize(data, specifiedType: specifiedType),
@@ -27,9 +27,9 @@ void main() {
   });
 
   group('bool with unknown specifiedType', () {
-    var data = true;
-    var serialized = json.decode(json.encode(['bool', true])) as Object;
-    var specifiedType = FullType.unspecified;
+    final data = true;
+    final serialized = json.decode(json.encode(['bool', true])) as Object;
+    final specifiedType = FullType.unspecified;
 
     test('can be serialized', () {
       expect(serializers.serialize(data, specifiedType: specifiedType),

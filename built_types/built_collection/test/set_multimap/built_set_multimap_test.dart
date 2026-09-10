@@ -3,9 +3,9 @@
 // license that can be found in the LICENSE file.
 // ignore_for_file: unrelated_type_equality_checks
 
+import 'package:built_collection/src/internal/test_helpers.dart';
 import 'package:built_collection/src/set.dart';
 import 'package:built_collection/src/set_multimap.dart';
-import 'package:built_collection/src/internal/test_helpers.dart';
 import 'package:test/test.dart';
 
 import '../performance.dart';
@@ -13,7 +13,7 @@ import '../performance.dart';
 void main() {
   group('BuiltSetMultimap', () {
     test('instantiates empty by default', () {
-      var multimap = BuiltSetMultimap<int, String>();
+      final multimap = BuiltSetMultimap<int, String>();
       expect(multimap.isEmpty, isTrue);
       expect(multimap.isNotEmpty, isFalse);
     });
@@ -27,7 +27,7 @@ void main() {
     });
 
     test('reports non-emptiness', () {
-      var map = BuiltSetMultimap<int, String>({
+      final map = BuiltSetMultimap<int, String>({
         1: ['1'],
       });
       expect(map.isEmpty, isFalse);
@@ -36,9 +36,9 @@ void main() {
 
     test('can be instantiated from SetMultimap '
         'then converted back to equal SetMultimap', () {
-      var mutableMultimap = _SetMultimap<int, String>();
+      final mutableMultimap = _SetMultimap<int, String>();
       mutableMultimap.add(1, '1');
-      var multimap = BuiltSetMultimap<int, String>(mutableMultimap);
+      final multimap = BuiltSetMultimap<int, String>(mutableMultimap);
       expect(multimap.toMap(), mutableMultimap.asMap());
     });
 
@@ -65,9 +65,9 @@ void main() {
     });
 
     test('does not keep a mutable SetMultimap', () {
-      var mutableMultimap = _SetMultimap<int, String>();
+      final mutableMultimap = _SetMultimap<int, String>();
       mutableMultimap.add(1, '1');
-      var multimap = BuiltSetMultimap<int, String>(mutableMultimap);
+      final multimap = BuiltSetMultimap<int, String>(mutableMultimap);
       mutableMultimap.clear();
       expect(multimap.toMap(), {
         1: ['1'],
@@ -75,8 +75,8 @@ void main() {
     });
 
     test('copies from BuiltSetMultimap instances of different type', () {
-      var multimap1 = BuiltSetMultimap<Object, Object>();
-      var multimap2 = BuiltSetMultimap<int, String>(multimap1);
+      final multimap1 = BuiltSetMultimap<Object, Object>();
+      final multimap2 = BuiltSetMultimap<int, String>(multimap1);
       expect(multimap1, isNot(same(multimap2)));
     });
 
@@ -96,7 +96,7 @@ void main() {
     });
 
     test('can be converted to an UnmodifiableMapView', () {
-      var immutableMap = BuiltSetMultimap<int, String>().asMap();
+      final immutableMap = BuiltSetMultimap<int, String>().asMap();
       expect(immutableMap, const TypeMatcher<Map<int, Iterable<String>>>());
       expect(() => immutableMap[1] = ['Hello'], throwsUnsupportedError);
       expect(immutableMap, isEmpty);
@@ -187,12 +187,12 @@ void main() {
     });
 
     test('hashes to same value for same contents', () {
-      var multimap1 = BuiltSetMultimap<int, String>({
+      final multimap1 = BuiltSetMultimap<int, String>({
         1: ['1'],
         2: ['2', '2'],
         3: ['3'],
       });
-      var multimap2 = BuiltSetMultimap<int, String>({
+      final multimap2 = BuiltSetMultimap<int, String>({
         1: ['1'],
         2: ['2', '2'],
         3: ['3'],
@@ -202,12 +202,12 @@ void main() {
     });
 
     test('hashes to different value for different keys', () {
-      var multimap1 = BuiltSetMultimap<int, String>({
+      final multimap1 = BuiltSetMultimap<int, String>({
         1: ['1'],
         2: ['2', '2'],
         3: ['3'],
       });
-      var multimap2 = BuiltSetMultimap<int, String>({
+      final multimap2 = BuiltSetMultimap<int, String>({
         1: ['1'],
         2: ['2', '2'],
         4: ['3'],
@@ -217,12 +217,12 @@ void main() {
     });
 
     test('hashes to different value for different values', () {
-      var multimap1 = BuiltSetMultimap<int, String>({
+      final multimap1 = BuiltSetMultimap<int, String>({
         1: ['1'],
         2: ['2', '2'],
         3: ['3'],
       });
-      var multimap2 = BuiltSetMultimap<int, String>({
+      final multimap2 = BuiltSetMultimap<int, String>({
         1: ['1'],
         2: ['2', '3'],
         3: ['3'],
@@ -232,8 +232,8 @@ void main() {
     });
 
     test('caches hash', () {
-      var hashCodeSpy = HashCodeSpy();
-      var multimap = BuiltSetMultimap<Object, Object>({
+      final hashCodeSpy = HashCodeSpy();
+      final multimap = BuiltSetMultimap<Object, Object>({
         1: [hashCodeSpy],
       });
 
@@ -244,7 +244,7 @@ void main() {
     });
 
     test('compares equal to same instance', () {
-      var multimap = BuiltSetMultimap<int, String>({
+      final multimap = BuiltSetMultimap<int, String>({
         1: ['1'],
         2: ['2', '2'],
         3: ['3'],
@@ -254,12 +254,12 @@ void main() {
     });
 
     test('compares equal to same contents', () {
-      var multimap1 = BuiltSetMultimap<int, String>({
+      final multimap1 = BuiltSetMultimap<int, String>({
         1: ['1'],
         2: ['2', '2'],
         3: ['3'],
       });
-      var multimap2 = BuiltSetMultimap<int, String>({
+      final multimap2 = BuiltSetMultimap<int, String>({
         1: ['1'],
         2: ['2', '2'],
         3: ['3'],
@@ -375,44 +375,44 @@ void main() {
     // Lazy copies.
 
     test('reuses BuiltSetMultimap instances of the same type', () {
-      var multimap1 = BuiltSetMultimap<int, String>();
-      var multimap2 = BuiltSetMultimap<int, String>(multimap1);
+      final multimap1 = BuiltSetMultimap<int, String>();
+      final multimap2 = BuiltSetMultimap<int, String>(multimap1);
       expect(multimap1, same(multimap2));
     });
 
     test('does not reuse BuiltSetMultimap instances with subtype key type', () {
-      var multimap1 = BuiltSetMultimap<_ExtendsA, String>();
-      var multimap2 = BuiltSetMultimap<_A, String>(multimap1);
+      final multimap1 = BuiltSetMultimap<_ExtendsA, String>();
+      final multimap2 = BuiltSetMultimap<_A, String>(multimap1);
       expect(multimap1, isNot(same(multimap2)));
     });
 
     test(
       'does not reuse BuiltSetMultimultimap instances with subtype value type',
       () {
-        var multimap1 = BuiltSetMultimap<String, _ExtendsA>();
-        var multimap2 = BuiltSetMultimap<String, _A>(multimap1);
+        final multimap1 = BuiltSetMultimap<String, _ExtendsA>();
+        final multimap2 = BuiltSetMultimap<String, _A>(multimap1);
         expect(multimap1, isNot(same(multimap2)));
       },
     );
 
     test('can be reused via SetMultimapBuilder if there are no changes', () {
-      var multimap1 = BuiltSetMultimap<Object, Object>();
-      var multimap2 = multimap1.toBuilder().build();
+      final multimap1 = BuiltSetMultimap<Object, Object>();
+      final multimap2 = multimap1.toBuilder().build();
       expect(multimap1, same(multimap2));
     });
 
     test(
       'converts to SetMultimapBuilder from correct type without copying',
       () {
-        var makeLongSetMultimap = () {
-          var result = SetMultimapBuilder<int, int>();
+        final makeLongSetMultimap = () {
+          final result = SetMultimapBuilder<int, int>();
           for (var i = 0; i != 100000; ++i) {
             result.add(i, i);
           }
           return result.build();
         };
-        var longSetMultimap = makeLongSetMultimap();
-        var longSetMultimapToSetMultimapBuilder = longSetMultimap.toBuilder;
+        final longSetMultimap = makeLongSetMultimap();
+        final longSetMultimapToSetMultimapBuilder = longSetMultimap.toBuilder;
 
         expectMuchFaster(
           longSetMultimapToSetMultimapBuilder,
@@ -422,15 +422,15 @@ void main() {
     );
 
     test('converts to SetMultimapBuilder from wrong type by copying', () {
-      var makeLongSetMultimap = () {
-        var result = SetMultimapBuilder<Object, Object>();
+      final makeLongSetMultimap = () {
+        final result = SetMultimapBuilder<Object, Object>();
         for (var i = 0; i != 100000; ++i) {
           result.add(i, i);
         }
         return result.build();
       };
-      var longSetMultimap = makeLongSetMultimap();
-      var longSetMultimapToSetMultimapBuilder = () =>
+      final longSetMultimap = makeLongSetMultimap();
+      final longSetMultimapToSetMultimapBuilder = () =>
           SetMultimapBuilder<int, int>(longSetMultimap);
 
       expectNotMuchFaster(
@@ -440,29 +440,29 @@ void main() {
     });
 
     test('has fast toMap', () {
-      var makeLongSetMultimap = () {
-        var result = SetMultimapBuilder<int, int>();
+      final makeLongSetMultimap = () {
+        final result = SetMultimapBuilder<int, int>();
         for (var i = 0; i != 100000; ++i) {
           result.add(i, i);
         }
         return result.build();
       };
-      var longSetMultimap = makeLongSetMultimap();
-      var longSetMultimapToSetMultimap = () => longSetMultimap.toMap();
+      final longSetMultimap = makeLongSetMultimap();
+      final longSetMultimapToSetMultimap = longSetMultimap.toMap;
 
       expectMuchFaster(longSetMultimapToSetMultimap, makeLongSetMultimap);
     });
 
     test('checks for reference identity', () {
-      var makeLongSetMultimap = () {
-        var result = SetMultimapBuilder<int, int>();
+      final makeLongSetMultimap = () {
+        final result = SetMultimapBuilder<int, int>();
         for (var i = 0; i != 100000; ++i) {
           result.add(i, i);
         }
         return result.build();
       };
-      var longSetMultimap = makeLongSetMultimap();
-      var otherLongSetMultimap = makeLongSetMultimap();
+      final longSetMultimap = makeLongSetMultimap();
+      final otherLongSetMultimap = makeLongSetMultimap();
 
       expectMuchFaster(
         () => longSetMultimap == longSetMultimap,
@@ -471,7 +471,7 @@ void main() {
     });
 
     test('is not mutated when Map from toMap is mutated', () {
-      var multimap = BuiltSetMultimap<int, String>();
+      final multimap = BuiltSetMultimap<int, String>();
       multimap.toMap()[1] = BuiltSet<String>(['1']);
       expect(multimap.isEmpty, isTrue);
     });
@@ -519,7 +519,7 @@ void main() {
     });
 
     test('returns stable empty BuiltSets', () {
-      var multimap = BuiltSetMultimap<int, String>();
+      final multimap = BuiltSetMultimap<int, String>();
       expect(multimap[1], same(multimap[1]));
       expect(multimap[1], same(multimap[2]));
     });
@@ -628,7 +628,7 @@ void main() {
     });
 
     test('has stable keys', () {
-      var multimap = BuiltSetMultimap<int, String>({
+      final multimap = BuiltSetMultimap<int, String>({
         1: ['1'],
         2: ['2'],
         3: ['3'],
@@ -637,7 +637,7 @@ void main() {
     });
 
     test('has stable values', () {
-      var multimap = BuiltSetMultimap<int, String>({
+      final multimap = BuiltSetMultimap<int, String>({
         1: ['1'],
         2: ['2'],
         3: ['3'],

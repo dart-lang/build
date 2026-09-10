@@ -2,10 +2,12 @@
 // All rights reserved. Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-import 'package:built_collection/built_collection.dart';
-import 'package:built_value/json_object.dart';
-import 'package:built_value/serializer.dart';
 import 'dart:convert' show json;
+
+import 'package:built_collection/built_collection.dart';
+
+import 'json_object.dart';
+import 'serializer.dart';
 
 /// Switches to "standard" JSON format.
 ///
@@ -88,7 +90,7 @@ class StandardJsonPlugin implements SerializerPlugin {
   /// Converts serialization output, a `List`, to a `Map`, when the serialized
   /// type is known statically.
   Map _toMap(List list, bool needsEncodedKeys) {
-    var result = <String, Object?>{};
+    final result = <String, Object?>{};
     for (var i = 0; i != list.length ~/ 2; ++i) {
       final key = list[i * 2];
       final value = list[i * 2 + 1];
@@ -130,7 +132,7 @@ class StandardJsonPlugin implements SerializerPlugin {
       }
     }
 
-    var result = <String, Object>{discriminator: type};
+    final result = <String, Object>{discriminator: type};
     for (var i = 0; i != (list.length - 1) ~/ 2; ++i) {
       final key = needToEncodeKeys
           ? _encodeKey(list[i * 2 + 1])
@@ -154,9 +156,9 @@ class StandardJsonPlugin implements SerializerPlugin {
   /// the map is an actual map with nullable values, so they should be kept.
   List<Object?> _toList(Map map, bool hasEncodedKeys,
       {bool keepNulls = false}) {
-    var nullValueCount =
+    final nullValueCount =
         keepNulls ? 0 : map.values.where((value) => value == null).length;
-    var result = List<Object?>.filled(
+    final result = List<Object?>.filled(
         (map.length - nullValueCount) * 2, 0 /* Will be overwritten. */);
     var i = 0;
     map.forEach((key, value) {
@@ -196,13 +198,13 @@ class StandardJsonPlugin implements SerializerPlugin {
     // A type name of `encoded_map` indicates that the map has non-String keys
     // that have been serialized and JSON-encoded; decode the keys when
     // converting back to a `List`.
-    var needToDecodeKeys = type == 'encoded_map';
+    final needToDecodeKeys = type == 'encoded_map';
     if (needToDecodeKeys) {
       type = 'map';
     }
 
-    var nullValueCount = map.values.where((value) => value == null).length;
-    var result = List<Object>.filled(
+    final nullValueCount = map.values.where((value) => value == null).length;
+    final result = List<Object>.filled(
         (map.length - nullValueCount) * 2 - 1, 0 /* Will be overwritten. */);
     result[0] = type;
 

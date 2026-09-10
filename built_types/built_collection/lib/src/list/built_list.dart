@@ -243,7 +243,7 @@ abstract class BuiltList<E> implements Iterable<E>, BuiltIterable<E> {
 
 /// Default implementation of the public [BuiltList] interface.
 class _BuiltList<E> extends BuiltList<E> {
-  _BuiltList.withSafeList(List<E> list) : super._(list);
+  _BuiltList.withSafeList(super.list) : super._();
 
   _BuiltList.from([Iterable iterable = const []])
     : super._(List<E>.from(iterable, growable: false)) {
@@ -259,7 +259,7 @@ class _BuiltList<E> extends BuiltList<E> {
 
   void _maybeCheckForNull() {
     if (!_needsNullCheck) return;
-    for (var element in _list) {
+    for (final element in _list) {
       if (identical(element, null)) {
         throw ArgumentError('iterable contained invalid element: null');
       }

@@ -8,7 +8,7 @@ import 'package:test/test.dart';
 void main() {
   group('CopyOnWriteMap', () {
     test('has toString equal to Map.toString', () {
-      var map = <int, String>{1: 'one', 2: 'two', 3: 'three'};
+      final map = <int, String>{1: 'one', 2: 'two', 3: 'three'};
       expect(CopyOnWriteMap(map).toString(), map.toString());
     });
   });

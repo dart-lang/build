@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 
 import 'package:built_collection/built_collection.dart';
-import 'package:built_value/serializer.dart';
+import '../serializer.dart';
 
 class BuiltListMultimapSerializer
     implements StructuredSerializer<BuiltListMultimap> {
@@ -18,19 +18,19 @@ class BuiltListMultimapSerializer
   Iterable<Object?> serialize(
       Serializers serializers, BuiltListMultimap builtListMultimap,
       {FullType specifiedType = FullType.unspecified}) {
-    var isUnderspecified =
+    final isUnderspecified =
         specifiedType.isUnspecified || specifiedType.parameters.isEmpty;
     if (!isUnderspecified) serializers.expectBuilder(specifiedType);
 
-    var keyType = specifiedType.parameters.isEmpty
+    final keyType = specifiedType.parameters.isEmpty
         ? FullType.unspecified
         : specifiedType.parameters[0];
-    var valueType = specifiedType.parameters.isEmpty
+    final valueType = specifiedType.parameters.isEmpty
         ? FullType.unspecified
         : specifiedType.parameters[1];
 
-    var result = <Object?>[];
-    for (var key in builtListMultimap.keys) {
+    final result = <Object?>[];
+    for (final key in builtListMultimap.keys) {
       result.add(serializers.serialize(key, specifiedType: keyType));
       result.add(builtListMultimap[key]
           .map(
@@ -44,17 +44,17 @@ class BuiltListMultimapSerializer
   BuiltListMultimap deserialize(
       Serializers serializers, Iterable<Object?> serialized,
       {FullType specifiedType = FullType.unspecified}) {
-    var isUnderspecified =
+    final isUnderspecified =
         specifiedType.isUnspecified || specifiedType.parameters.isEmpty;
 
-    var keyType = specifiedType.parameters.isEmpty
+    final keyType = specifiedType.parameters.isEmpty
         ? FullType.unspecified
         : specifiedType.parameters[0];
-    var valueType = specifiedType.parameters.isEmpty
+    final valueType = specifiedType.parameters.isEmpty
         ? FullType.unspecified
         : specifiedType.parameters[1];
 
-    var result = isUnderspecified
+    final result = isUnderspecified
         ? ListMultimapBuilder<Object, Object>()
         : serializers.newBuilder(specifiedType) as ListMultimapBuilder;
 
@@ -67,7 +67,7 @@ class BuiltListMultimapSerializer
           specifiedType: keyType);
       final values = (serialized.elementAt(i + 1) as Iterable<Object?>).map(
           (value) => serializers.deserialize(value, specifiedType: valueType));
-      for (var value in values) {
+      for (final value in values) {
         result.add(key, value);
       }
     }
