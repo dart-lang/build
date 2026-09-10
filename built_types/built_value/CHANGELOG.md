@@ -1,5 +1,9 @@
 # Changelog
 
+## 8.13.1-wip
+
+- Migrate to `package:dart_flutter_team_lints`.
+
 ## 8.13.0
 
 - Support generating from classes and enums that use the `new` syntax for
