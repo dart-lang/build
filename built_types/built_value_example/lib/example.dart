@@ -1,8 +1,8 @@
 import 'package:built_value/standard_json_plugin.dart';
-import 'package:built_value_example/generics.dart';
-import 'package:built_value_example/polymorphism.dart';
-import 'package:built_value_example/serializers.dart';
-import 'package:built_value_example/values.dart';
+import 'generics.dart';
+import 'polymorphism.dart';
+import 'serializers.dart';
+import 'values.dart';
 
 /// Simple usage examples for built_value.
 void example() {
@@ -53,7 +53,7 @@ void example() {
       .toList();
 
   // Everything is serializable.
-  for (var object in [
+  for (final object in [
     value,
     value2,
     value3,
@@ -65,7 +65,7 @@ void example() {
     modifiedAnimals[0],
     modifiedAnimals[1],
   ]) {
-    var serialized = serializers.serialize(object);
+    final serialized = serializers.serialize(object);
     print(serialized);
     assert(serializers.deserialize(serialized) == object);
   }

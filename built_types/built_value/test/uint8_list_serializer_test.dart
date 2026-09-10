@@ -9,13 +9,13 @@ import 'package:built_value/serializer.dart';
 import 'package:test/test.dart';
 
 void main() {
-  var serializers = Serializers();
+  final serializers = Serializers();
 
   group('Uint8List with known specifiedType', () {
-    var serialized =
+    final serialized =
         'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
-    var data = base64Decode(serialized);
-    var specifiedType = const FullType(Uint8List);
+    final data = base64Decode(serialized);
+    final specifiedType = const FullType(Uint8List);
 
     test('can be serialized', () {
       expect(serializers.serialize(data, specifiedType: specifiedType),
@@ -29,16 +29,17 @@ void main() {
   });
 
   group('UInt8List with unknown specifiedType', () {
-    var rawData =
+    final rawData =
         'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
-    var serialized = json.decode(json.encode(['UInt8List', rawData])) as Object;
-    var data = base64Decode(rawData.toString());
-    var specifiedType = FullType.unspecified;
+    final serialized =
+        json.decode(json.encode(['UInt8List', rawData])) as Object;
+    final data = base64Decode(rawData.toString());
+    final specifiedType = FullType.unspecified;
 
     test('can be serialized', () {
-      var serialized_by =
+      final serializedBy =
           serializers.serialize(data, specifiedType: specifiedType);
-      expect(serialized_by, serialized);
+      expect(serializedBy, serialized);
     });
 
     test('can be deserialized', () {

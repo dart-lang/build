@@ -446,10 +446,8 @@ class TestEnum extends EnumClass {
     test('allows new constructor naming syntax with string parameter',
         () async {
       expect(
-          await generate('// @dart=3.14\n' +
-              correctInput.replaceAll(
-                  'const TestEnum._(String name) : super(name);',
-                  'const new _(String name) : super(name);')),
+          await generate(
+              '// @dart=3.14\n${correctInput.replaceAll('const TestEnum._(String name) : super(name);', 'const new _(String name) : super(name);')}'),
           contains(correctOutput.replaceFirst(
               'abstract class _\$TestEnumMixin', 'mixin _\$TestEnumMixin')));
     });
@@ -634,7 +632,7 @@ final String pkgName = 'pkg';
 
 // Recreate BuiltValueGenerator for each test because we repeatedly create
 // enums with the same name in the same library, which will clash.
-Builder get builder => PartBuilder([BuiltValueGenerator()], '.g.dart');
+Builder get builder => PartBuilder([const BuiltValueGenerator()], '.g.dart');
 
 Future<String> generate(String source) async {
   final srcs = <String, String>{

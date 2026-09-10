@@ -5,17 +5,17 @@
 
 import 'dart:convert';
 
-import 'package:built_collection/built_collection.dart';
 import 'package:_built_value_end_to_end_test/polymorphism.dart';
 import 'package:_built_value_end_to_end_test/serializers.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:test/test.dart';
 
 void main() {
   group('Cat', () {
-    var data = Cat((b) => b
+    final data = Cat((b) => b
       ..legs = 4
       ..tail = true);
-    var serialized = json.decode(json.encode([
+    final serialized = json.decode(json.encode([
       'Cat',
       'tail',
       true,
@@ -41,10 +41,10 @@ void main() {
   });
 
   group('Robot', () {
-    var data = Robot((b) => b
+    final data = Robot((b) => b
       ..legs = 4
       ..fins = 3);
-    var serialized = json.decode(json.encode([
+    final serialized = json.decode(json.encode([
       'Robot',
       'fins',
       3,
@@ -62,8 +62,8 @@ void main() {
   });
 
   group('StandardCat', () {
-    var data = StandardCat((b) => b..tail = true);
-    var serialized = json.decode(json.encode([
+    final data = StandardCat((b) => b..tail = true);
+    final serialized = json.decode(json.encode([
       'StandardCat',
       'tail',
       true,
@@ -79,11 +79,11 @@ void main() {
   });
 
   group('HasField', () {
-    var data = BuiltList<HasField<dynamic>>(<Object>[
+    final data = BuiltList<HasField<dynamic>>(<Object>[
       HasString((b) => b..field = 'hello'),
       HasDouble((b) => b..field = 3.14)
     ]);
-    var serialized = json.decode(json.encode([
+    final serialized = json.decode(json.encode([
       'list',
       ['HasString', 'field', 'hello'],
       ['HasDouble', 'field', 3.14]
@@ -99,14 +99,14 @@ void main() {
   });
 
   group('Cage', () {
-    var data = Cage((b) => b
+    final data = Cage((b) => b
       ..inhabitant = Cat((b) => b
         ..tail = true
         ..legs = 4)
       ..otherInhabitants.add(Fish((b) => b
         ..legs = 0
         ..fins = 4)));
-    var serialized = json.decode(json.encode([
+    final serialized = json.decode(json.encode([
       'Cage',
       'inhabitant',
       ['Cat', 'tail', true, 'legs', 4],
@@ -126,8 +126,8 @@ void main() {
   });
 
   group('UsesHandCoded', () {
-    var data = UsesHandCoded((b) => b..fieldInBaseBuilder = 4);
-    var serialized = json.decode(json.encode([
+    final data = UsesHandCoded((b) => b..fieldInBaseBuilder = 4);
+    final serialized = json.decode(json.encode([
       'UsesHandCoded',
       'fieldInBaseBuilder',
       4,

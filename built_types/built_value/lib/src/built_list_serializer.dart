@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 
 import 'package:built_collection/built_collection.dart';
-import 'package:built_value/serializer.dart';
+import '../serializer.dart';
 
 class BuiltListSerializer implements StructuredSerializer<BuiltList> {
   final bool structured = true;
@@ -16,11 +16,11 @@ class BuiltListSerializer implements StructuredSerializer<BuiltList> {
   @override
   Iterable<Object?> serialize(Serializers serializers, BuiltList builtList,
       {FullType specifiedType = FullType.unspecified}) {
-    var isUnderspecified =
+    final isUnderspecified =
         specifiedType.isUnspecified || specifiedType.parameters.isEmpty;
     if (!isUnderspecified) serializers.expectBuilder(specifiedType);
 
-    var elementType = specifiedType.parameters.isEmpty
+    final elementType = specifiedType.parameters.isEmpty
         ? FullType.unspecified
         : specifiedType.parameters[0];
 
@@ -31,14 +31,14 @@ class BuiltListSerializer implements StructuredSerializer<BuiltList> {
   @override
   BuiltList deserialize(Serializers serializers, Iterable serialized,
       {FullType specifiedType = FullType.unspecified}) {
-    var isUnderspecified =
+    final isUnderspecified =
         specifiedType.isUnspecified || specifiedType.parameters.isEmpty;
 
-    var elementType = specifiedType.parameters.isEmpty
+    final elementType = specifiedType.parameters.isEmpty
         ? FullType.unspecified
         : specifiedType.parameters[0];
 
-    var result = isUnderspecified
+    final result = isUnderspecified
         ? ListBuilder<Object>()
         : serializers.newBuilder(specifiedType) as ListBuilder;
 

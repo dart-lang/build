@@ -4,19 +4,8 @@
 
 import 'package:built_collection/built_collection.dart';
 import 'package:built_collection/src/internal/hash.dart';
-import 'package:built_value/src/big_int_serializer.dart';
-import 'package:built_value/src/date_time_serializer.dart';
-import 'package:built_value/src/duration_serializer.dart';
-import 'package:built_value/src/int32_serializer.dart';
-import 'package:built_value/src/int64_serializer.dart';
-import 'package:built_value/src/json_object_serializer.dart';
-import 'package:built_value/src/list_serializer.dart';
-import 'package:built_value/src/map_serializer.dart';
-import 'package:built_value/src/num_serializer.dart';
-import 'package:built_value/src/set_serializer.dart';
-import 'package:built_value/src/uint8_list_serializer.dart';
-import 'package:built_value/src/uri_serializer.dart';
 
+import 'src/big_int_serializer.dart';
 import 'src/bool_serializer.dart';
 import 'src/built_json_serializers.dart';
 import 'src/built_list_multimap_serializer.dart';
@@ -24,11 +13,22 @@ import 'src/built_list_serializer.dart';
 import 'src/built_map_serializer.dart';
 import 'src/built_set_multimap_serializer.dart';
 import 'src/built_set_serializer.dart';
+import 'src/date_time_serializer.dart';
 import 'src/double_serializer.dart';
+import 'src/duration_serializer.dart';
+import 'src/int32_serializer.dart';
+import 'src/int64_serializer.dart';
 import 'src/int_serializer.dart';
+import 'src/json_object_serializer.dart';
+import 'src/list_serializer.dart';
+import 'src/map_serializer.dart';
 import 'src/null_serializer.dart';
+import 'src/num_serializer.dart';
 import 'src/regexp_serializer.dart';
+import 'src/set_serializer.dart';
 import 'src/string_serializer.dart';
+import 'src/uint8_list_serializer.dart';
+import 'src/uri_serializer.dart';
 
 /// Annotation to trigger code generation of a [Serializers] instance.
 ///
@@ -84,20 +84,20 @@ abstract class Serializers {
           ..add(Uint8ListSerializer())
           ..add(UriSerializer())
           ..addBuilderFactory(const FullType(BuiltList, [FullType.object]),
-              () => ListBuilder<Object>())
+              ListBuilder<Object>.new)
           ..addBuilderFactory(
               const FullType(
                   BuiltListMultimap, [FullType.object, FullType.object]),
-              () => ListMultimapBuilder<Object, Object>())
+              ListMultimapBuilder<Object, Object>.new)
           ..addBuilderFactory(
               const FullType(BuiltMap, [FullType.object, FullType.object]),
-              () => MapBuilder<Object, Object>())
+              MapBuilder<Object, Object>.new)
           ..addBuilderFactory(const FullType(BuiltSet, [FullType.object]),
-              () => SetBuilder<Object>())
+              SetBuilder<Object>.new)
           ..addBuilderFactory(
               const FullType(
                   BuiltSetMultimap, [FullType.object, FullType.object]),
-              () => SetMultimapBuilder<Object, Object>()))
+              SetMultimapBuilder<Object, Object>.new))
         .build();
   }
 
@@ -303,8 +303,8 @@ class FullType {
   String get _nullabilitySuffix => nullable ? '?' : '';
 
   static String _getRawName(Type? type) {
-    var name = type.toString();
-    var genericsStart = name.indexOf('<');
+    final name = type.toString();
+    final genericsStart = name.indexOf('<');
     return genericsStart == -1 ? name : name.substring(0, genericsStart);
   }
 }

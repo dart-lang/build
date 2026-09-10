@@ -229,8 +229,7 @@ abstract class BuiltSet<E> implements Iterable<E>, BuiltIterable<E> {
 
 /// Default implementation of the public [BuiltSet] interface.
 class _BuiltSet<E> extends BuiltSet<E> {
-  _BuiltSet.withSafeSet(_SetFactory<E>? setFactory, Set<E> set)
-    : super._(setFactory, set);
+  _BuiltSet.withSafeSet(super.setFactory, super.set) : super._();
 
   _BuiltSet.from(Iterable iterable) : super._(null, Set<E>.from(iterable)) {
     _maybeCheckForNull();
@@ -244,7 +243,7 @@ class _BuiltSet<E> extends BuiltSet<E> {
 
   void _maybeCheckForNull() {
     if (!_needsNullCheck) return;
-    for (var element in _set) {
+    for (final element in _set) {
       if (identical(element, null)) {
         throw ArgumentError('iterable contained invalid element: null');
       }

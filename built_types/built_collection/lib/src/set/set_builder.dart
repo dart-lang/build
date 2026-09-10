@@ -42,8 +42,8 @@ class SetBuilder<E> {
       _withOwner(iterable);
     } else {
       // Can't use addAll because it requires an Iterable<E>.
-      var set = _createSet();
-      for (var element in iterable) {
+      final set = _createSet();
+      for (final element in iterable) {
         if (element is E) {
           set.add(element);
         } else {
@@ -141,7 +141,7 @@ class SetBuilder<E> {
 
   /// As [Iterable.map], but updates the builder in place. Returns nothing.
   void map(E Function(E) f) {
-    var result = _createSet()..addAll(_set.map(f));
+    final result = _createSet()..addAll(_set.map(f));
     _maybeCheckElements(result);
     _setSafeSet(result);
   }
@@ -153,7 +153,7 @@ class SetBuilder<E> {
 
   /// As [Iterable.expand], but updates the builder in place. Returns nothing.
   void expand(Iterable<E> Function(E) f) {
-    var result = _createSet()..addAll(_set.expand(f));
+    final result = _createSet()..addAll(_set.expand(f));
     _maybeCheckElements(result);
     _setSafeSet(result);
   }
@@ -227,7 +227,7 @@ class SetBuilder<E> {
 
   void _maybeCheckElements(Iterable<E> elements) {
     if (!_needsNullCheck) return;
-    for (var element in elements) {
+    for (final element in elements) {
       _checkElement(element);
     }
   }

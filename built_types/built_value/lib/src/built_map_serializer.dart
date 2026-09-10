@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 
 import 'package:built_collection/built_collection.dart';
-import 'package:built_value/serializer.dart';
+import '../serializer.dart';
 
 class BuiltMapSerializer implements StructuredSerializer<BuiltMap> {
   final bool structured = true;
@@ -16,19 +16,19 @@ class BuiltMapSerializer implements StructuredSerializer<BuiltMap> {
   @override
   Iterable<Object?> serialize(Serializers serializers, BuiltMap builtMap,
       {FullType specifiedType = FullType.unspecified}) {
-    var isUnderspecified =
+    final isUnderspecified =
         specifiedType.isUnspecified || specifiedType.parameters.isEmpty;
     if (!isUnderspecified) serializers.expectBuilder(specifiedType);
 
-    var keyType = specifiedType.parameters.isEmpty
+    final keyType = specifiedType.parameters.isEmpty
         ? FullType.unspecified
         : specifiedType.parameters[0];
-    var valueType = specifiedType.parameters.isEmpty
+    final valueType = specifiedType.parameters.isEmpty
         ? FullType.unspecified
         : specifiedType.parameters[1];
 
-    var result = <Object?>[];
-    for (var key in builtMap.keys) {
+    final result = <Object?>[];
+    for (final key in builtMap.keys) {
       result.add(serializers.serialize(key, specifiedType: keyType));
       final value = builtMap[key];
       result.add(serializers.serialize(value, specifiedType: valueType));
@@ -39,17 +39,17 @@ class BuiltMapSerializer implements StructuredSerializer<BuiltMap> {
   @override
   BuiltMap deserialize(Serializers serializers, Iterable serialized,
       {FullType specifiedType = FullType.unspecified}) {
-    var isUnderspecified =
+    final isUnderspecified =
         specifiedType.isUnspecified || specifiedType.parameters.isEmpty;
 
-    var keyType = specifiedType.parameters.isEmpty
+    final keyType = specifiedType.parameters.isEmpty
         ? FullType.unspecified
         : specifiedType.parameters[0];
-    var valueType = specifiedType.parameters.isEmpty
+    final valueType = specifiedType.parameters.isEmpty
         ? FullType.unspecified
         : specifiedType.parameters[1];
 
-    var result = isUnderspecified
+    final result = isUnderspecified
         ? MapBuilder<Object, Object>()
         : serializers.newBuilder(specifiedType) as MapBuilder;
 

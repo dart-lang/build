@@ -22,7 +22,7 @@ BuiltList<PropertyInducingElement> collectFields(InterfaceElement element) =>
 /// If a field is overridden then just the closest (overriding) field is
 /// returned.
 BuiltList<PropertyInducingElement> collectFieldsForType(InterfaceType type) {
-  var fields = <PropertyInducingElement>[];
+  final fields = <PropertyInducingElement>[];
   // Add fields from this class before interfaces, so they're added to the set
   // first below. Re-added fields from interfaces are ignored.
   fields.addAll(_fieldElementsForType(type));
@@ -33,7 +33,7 @@ BuiltList<PropertyInducingElement> collectFieldsForType(InterfaceType type) {
 
   // Overridden fields have multiple declarations, so deduplicate by adding
   // to a set that compares on field name.
-  var fieldSet = LinkedHashSet<PropertyInducingElement>(
+  final fieldSet = LinkedHashSet<PropertyInducingElement>(
     equals: (a, b) => a.displayName == b.displayName,
     hashCode: (a) => a.displayName.hashCode,
   );
@@ -59,8 +59,8 @@ BuiltList<PropertyInducingElement> collectFieldsForType(InterfaceType type) {
 }
 
 BuiltList<PropertyInducingElement> _fieldElementsForType(InterfaceType type) {
-  var result = ListBuilder<PropertyInducingElement>();
-  for (var accessor in type.getters) {
+  final result = ListBuilder<PropertyInducingElement>();
+  for (final accessor in type.getters) {
     result.add(accessor.variable);
   }
   return result.build();

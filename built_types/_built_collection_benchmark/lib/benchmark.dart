@@ -23,14 +23,14 @@ class BuiltCollectionBenchmark {
   }
 
   Future<void> benchmarkListBuilder() async {
-    for (var entry in listBuilderFunctions.entries) {
-      var name = entry.key;
-      var function = entry.value;
+    for (final entry in listBuilderFunctions.entries) {
+      final name = entry.key;
+      final function = entry.value;
 
-      Iterable<int> list = List<int>.generate(1000, (x) => x);
-      var fastLazyIterable = list.map((x) => x + 1);
-      var slowLazyIterable = list.map(_shortDelay);
-      var builderFactory = () => ListBuilder<int>()..addAll(list);
+      final Iterable<int> list = List<int>.generate(1000, (x) => x);
+      final fastLazyIterable = list.map((x) => x + 1);
+      final slowLazyIterable = list.map(_shortDelay);
+      final builderFactory = () => ListBuilder<int>()..addAll(list);
 
       _benchmark('ListBuilder.$name,list', function, builderFactory, list);
       _benchmark(
@@ -49,14 +49,14 @@ class BuiltCollectionBenchmark {
   }
 
   Future<void> benchmarkSetBuilder() async {
-    for (var entry in setBuilderFunctions.entries) {
-      var name = entry.key;
-      var function = entry.value;
+    for (final entry in setBuilderFunctions.entries) {
+      final name = entry.key;
+      final function = entry.value;
 
-      Iterable<int> list = List<int>.generate(1000, (x) => x);
-      var fastLazyIterable = list.map((x) => x + 1);
-      var slowLazyIterable = list.map(_shortDelay);
-      var builderFactory = () => SetBuilder<int>();
+      final Iterable<int> list = List<int>.generate(1000, (x) => x);
+      final fastLazyIterable = list.map((x) => x + 1);
+      final slowLazyIterable = list.map(_shortDelay);
+      final builderFactory = SetBuilder<int>.new;
 
       _benchmark('SetBuilder.$name,list', function, builderFactory, list);
       _benchmark(
@@ -81,15 +81,15 @@ void _benchmark<B, D>(
   B Function() builderFactory,
   D data,
 ) {
-  var counts = <int>[];
+  final counts = <int>[];
 
   /// Run four times; first is to warm up, remaining three are reported.
   for (var runs = 0; runs != 4; ++runs) {
     /// Run for one second and count how many iterations are completed.
-    var stopwatch = Stopwatch()..start();
+    final stopwatch = Stopwatch()..start();
     var count = 0;
     while (stopwatch.elapsedMilliseconds < 1000) {
-      var builder = builderFactory();
+      final builder = builderFactory();
       for (var j = 0; j != 100; ++j) {
         function(builder, data);
       }

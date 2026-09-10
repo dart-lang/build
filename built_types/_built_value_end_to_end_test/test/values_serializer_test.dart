@@ -5,22 +5,22 @@
 
 import 'dart:convert';
 
-import 'package:built_value/serializer.dart';
-import 'package:built_value/standard_json_plugin.dart';
 import 'package:_built_value_end_to_end_test/enums.dart';
 import 'package:_built_value_end_to_end_test/errors_matchers.dart';
 import 'package:_built_value_end_to_end_test/serializers.dart';
 import 'package:_built_value_end_to_end_test/values.dart';
+import 'package:built_value/serializer.dart';
+import 'package:built_value/standard_json_plugin.dart';
 import 'package:fixnum/fixnum.dart';
 import 'package:test/test.dart';
 
 void main() {
   group('SimpleValue', () {
-    var data = SimpleValue((b) => b
+    final data = SimpleValue((b) => b
       ..anInt = 1
       ..aString = 'two'
       ..$mustBeEscaped = true);
-    var serialized = json.decode(json.encode([
+    final serialized = json.decode(json.encode([
       'SimpleValue',
       'anInt',
       1,
@@ -39,10 +39,10 @@ void main() {
     });
 
     test('can be deserialized from json with explicit null', () {
-      var data = SimpleValue((b) => b
+      final data = SimpleValue((b) => b
         ..anInt = 1
         ..$mustBeEscaped = true);
-      var serialized = json.decode(json.encode([
+      final serialized = json.decode(json.encode([
         'SimpleValue',
         'anInt',
         1,
@@ -57,10 +57,10 @@ void main() {
   });
 
   group('SimpleValue with null nullable field', () {
-    var data = SimpleValue((b) => b
+    final data = SimpleValue((b) => b
       ..anInt = 1
       ..$mustBeEscaped = true);
-    var serialized = json.decode(json.encode([
+    final serialized = json.decode(json.encode([
       'SimpleValue',
       'anInt',
       1,
@@ -75,11 +75,11 @@ void main() {
   });
 
   group('CompoundValue', () {
-    var data = CompoundValue((b) => b
+    final data = CompoundValue((b) => b
       ..simpleValue.anInt = 1
       ..simpleValue.aString = 'two'
       ..validatedValue = ValidatedValue((b) => b.anInt = 3).toBuilder());
-    var serialized = json.decode(json.encode([
+    final serialized = json.decode(json.encode([
       'CompoundValue',
       'simpleValue',
       [
@@ -130,12 +130,12 @@ void main() {
   });
 
   group('CompoundValueNoNesting', () {
-    var data = CompoundValueNoNesting((b) => b
+    final data = CompoundValueNoNesting((b) => b
       ..simpleValue = SimpleValue((b) => b
         ..anInt = 1
         ..aString = 'two')
       ..validatedValue = ValidatedValue((b) => b.anInt = 3));
-    var serialized = json.decode(json.encode([
+    final serialized = json.decode(json.encode([
       'CompoundValueNoNesting',
       'simpleValue',
       [
@@ -161,9 +161,9 @@ void main() {
   });
 
   group('CompoundValueNoAutoNesting', () {
-    var data =
+    final data =
         CompoundValueNoAutoNesting((b) => b..value = NoFieldsValueBuilder());
-    var serialized = json.decode(json.encode([
+    final serialized = json.decode(json.encode([
       'CompoundValueNoAutoNesting',
       'value',
       <String>[],
@@ -179,7 +179,7 @@ void main() {
   });
 
   group('CompoundValueNoNestingField', () {
-    var data = CompoundValueNoNestingField((b) => b
+    final data = CompoundValueNoNestingField((b) => b
       ..simpleValue = SimpleValue((b) => b
         ..anInt = 1
         ..aString = 'two')
@@ -187,7 +187,7 @@ void main() {
       ..simpleValueWithNested.anInt = 1
       ..simpleValueWithNested.aString = 'two'
       ..validatedValueWithNested.anInt = 3);
-    var serialized = json.decode(json.encode([
+    final serialized = json.decode(json.encode([
       'CompoundValueNoNestingField',
       'simpleValue',
       [
@@ -225,7 +225,7 @@ void main() {
   });
 
   group('CompoundValueNestingField', () {
-    var data = CompoundValueNestingField((b) => b
+    final data = CompoundValueNestingField((b) => b
       ..simpleValue = SimpleValue((b) => b
         ..anInt = 1
         ..aString = 'two')
@@ -233,7 +233,7 @@ void main() {
       ..simpleValueWithNested.anInt = 1
       ..simpleValueWithNested.aString = 'two'
       ..validatedValueWithNested.anInt = 3);
-    var serialized = json.decode(json.encode([
+    final serialized = json.decode(json.encode([
       'CompoundValueNestingField',
       'simpleValue',
       [
@@ -271,9 +271,9 @@ void main() {
   });
 
   group('CompoundValueNoAutoNestingField', () {
-    var data = CompoundValueNoAutoNestingField(
+    final data = CompoundValueNoAutoNestingField(
         (b) => b..value = NoFieldsValueBuilder());
-    var serialized = json.decode(json.encode([
+    final serialized = json.decode(json.encode([
       'CompoundValueNoAutoNestingField',
       'value',
       <String>[],
@@ -291,9 +291,9 @@ void main() {
   });
 
   group('CompoundValueAutoNestingField', () {
-    var data =
+    final data =
         CompoundValueAutoNestingField((b) => b..value = NoFieldsValueBuilder());
-    var serialized = json.decode(json.encode([
+    final serialized = json.decode(json.encode([
       'CompoundValueAutoNestingField',
       'value',
       <String>[],
@@ -311,12 +311,12 @@ void main() {
   });
 
   group('CompoundValueExplicitNoNesting', () {
-    var data = CompoundValueExplicitNoNesting((b) => b
+    final data = CompoundValueExplicitNoNesting((b) => b
       ..simpleValue.replace(SimpleValue((b) => b
         ..anInt = 1
         ..aString = 'two'))
       ..validatedValue = ValidatedValue((b) => b.anInt = 3));
-    var serialized = json.decode(json.encode([
+    final serialized = json.decode(json.encode([
       'CompoundValueExplicitNoNesting',
       'simpleValue',
       [
@@ -342,14 +342,14 @@ void main() {
   });
 
   group('CompoundValue using StandardJsonPlugin', () {
-    var data = CompoundValue((b) => b
+    final data = CompoundValue((b) => b
       ..simpleValue.anInt = 1
       ..simpleValue.aString = 'two'
       ..validatedValue = ValidatedValue((b) => b.anInt = 3).toBuilder());
-    var specifiedType = const FullType(CompoundValue);
-    var serializersWithPlugin =
+    final specifiedType = const FullType(CompoundValue);
+    final serializersWithPlugin =
         (serializers.toBuilder()..addPlugin(StandardJsonPlugin())).build();
-    var serialized = {
+    final serialized = {
       'simpleValue': {
         'anInt': 1,
         'aString': 'two',
@@ -374,8 +374,8 @@ void main() {
   });
 
   group('ValueUsingImportAs', () {
-    var data = ValueUsingImportAs((b) => b.value = TestEnum.yes);
-    var serialized = json.decode(json.encode([
+    final data = ValueUsingImportAs((b) => b.value = TestEnum.yes);
+    final serialized = json.decode(json.encode([
       'ValueUsingImportAs',
       'value',
       'yes',
@@ -391,7 +391,7 @@ void main() {
   });
 
   group('PrimitivesValue', () {
-    var data = PrimitivesValue((b) => b
+    final data = PrimitivesValue((b) => b
       ..boolean = true
       ..integer = 42
       ..int64 = Int64.MAX_VALUE
@@ -399,11 +399,11 @@ void main() {
       ..number = 17.5
       ..string = 'test'
       ..dateTime = DateTime.fromMillisecondsSinceEpoch(1000, isUtc: true)
-      ..duration = Duration(microseconds: 12345)
+      ..duration = const Duration(microseconds: 12345)
       ..regExp = RegExp(r'\w+@\d+')
       ..uri = Uri.parse('https://github.com/google/built_value.dart')
       ..bigInt = BigInt.parse('123456789012345678901234567890'));
-    var serialized = json.decode(json.encode([
+    final serialized = json.decode(json.encode([
       'PrimitivesValue',
       'boolean',
       true,
@@ -439,8 +439,8 @@ void main() {
   });
 
   group('NamedFactoryValue', () {
-    var data = NamedFactoryValue(3);
-    var serialized =
+    final data = NamedFactoryValue(3);
+    final serialized =
         json.decode(json.encode(['NamedFactoryValue', 'value', 3])) as Object;
 
     test('can be serialized', () {
@@ -453,10 +453,10 @@ void main() {
   });
 
   group('FieldDiscoveryValue', () {
-    var data = FieldDiscoveryValue((b) => b
+    final data = FieldDiscoveryValue((b) => b
       ..value.value.value = 1
       ..values.add(ThirdDiscoverableValue((b) => b..value = 4)));
-    var serialized = json.decode(json.encode([
+    final serialized = json.decode(json.encode([
       'FieldDiscoveryValue',
       'value',
       [
@@ -482,10 +482,10 @@ void main() {
   });
 
   group('PartiallySerializableValue', () {
-    var data = PartiallySerializableValue((b) => b
+    final data = PartiallySerializableValue((b) => b
       ..value = 1
       ..transientValue = 2);
-    var serialized = json.decode(json.encode([
+    final serialized = json.decode(json.encode([
       'PartiallySerializableValue',
       'value',
       1,
@@ -502,8 +502,8 @@ void main() {
   });
 
   group('WireNameValue', () {
-    var data = WireNameValue((b) => b..value = 1);
-    var serialized = json.decode(json.encode([
+    final data = WireNameValue((b) => b..value = 1);
+    final serialized = json.decode(json.encode([
       r'$V',
       r'$v',
       1,
@@ -519,8 +519,8 @@ void main() {
   });
 
   group('ValueWithCustomSerializer', () {
-    var data = ValueWithCustomSerializer((b) => b..value = 1);
-    var serialized =
+    final data = ValueWithCustomSerializer((b) => b..value = 1);
+    final serialized =
         json.decode(json.encode(['ValueWithCustomSerializer', 1])) as Object;
 
     test('can be serialized', () {
@@ -533,8 +533,8 @@ void main() {
   });
 
   group('OtherValue', () {
-    var data = OtherValue((b) => b..other = 1);
-    var serialized =
+    final data = OtherValue((b) => b..other = 1);
+    final serialized =
         json.decode(json.encode(['OtherValue', 'other', 1])) as Object;
 
     test('can be serialized', () {
@@ -547,10 +547,10 @@ void main() {
   });
 
   group('ValuesWithBuilderInitializer', () {
-    var data = ValueWithBuilderInitializer((b) => b
+    final data = ValueWithBuilderInitializer((b) => b
       ..anInt = 1
       ..nestedValue.anInt = 2);
-    var serialized = json.decode(json.encode([
+    final serialized = json.decode(json.encode([
       'ValueWithBuilderInitializer',
       'anInt',
       1,
@@ -575,7 +575,7 @@ void main() {
     });
 
     test('adds defaults for missing fields on deserialization', () {
-      var serializedWithoutDefaults = [
+      final serializedWithoutDefaults = [
         'ValueWithBuilderInitializer',
         'anInt',
         1,
@@ -587,8 +587,8 @@ void main() {
   });
 
   group('ValueWithBuilderFinalizer', () {
-    var data = ValueWithBuilderFinalizer((b) => b..anInt = 1);
-    var serialized =
+    final data = ValueWithBuilderFinalizer((b) => b..anInt = 1);
+    final serialized =
         json.decode(json.encode(['ValueWithBuilderFinalizer', 'anInt', 1]))
             as Object;
 
@@ -601,7 +601,7 @@ void main() {
     });
 
     test('runs hook on deserialize', () {
-      var serializedWhichTriggersHook = [
+      final serializedWhichTriggersHook = [
         'ValueWithBuilderFinalizer', 'anInt',
         // Hook will change 0 to 1.
         0,
@@ -655,7 +655,7 @@ void main() {
   });
 
   group(r'$ValueSpecial', () {
-    var data = $ValueSpecial(
+    final data = $ValueSpecial(
       (b) => b
         ..aString = 'String'
         ..anInt = 42
@@ -676,7 +676,7 @@ void main() {
             ..aString = '1',
         ).toBuilder(),
     );
-    var serialized = json.decode(json.encode([
+    final serialized = json.decode(json.encode([
       r'$ValueSpecial',
       'anInt',
       42,
@@ -702,8 +702,8 @@ void main() {
   });
 
   group('NewConstructorValue', () {
-    var data = NewConstructorValue((b) => b..anInt = 1);
-    var serialized = json.decode(json.encode([
+    final data = NewConstructorValue((b) => b..anInt = 1);
+    final serialized = json.decode(json.encode([
       'NewConstructorValue',
       'anInt',
       1,

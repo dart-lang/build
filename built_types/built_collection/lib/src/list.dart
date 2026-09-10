@@ -4,13 +4,12 @@
 
 import 'dart:math' show Random;
 
-import 'package:built_collection/src/iterable.dart' show BuiltIterable;
-import 'package:built_collection/src/set.dart' show BuiltSet;
-
 import 'internal/copy_on_write_list.dart';
 import 'internal/hash.dart';
 import 'internal/iterables.dart';
 import 'internal/null_safety.dart';
+import 'iterable.dart' show BuiltIterable;
+import 'set.dart' show BuiltSet;
 
 part 'list/built_list.dart';
 part 'list/list_builder.dart';
@@ -19,8 +18,8 @@ part 'list/list_builder.dart';
 class OverriddenHashcodeBuiltList<T> extends _BuiltList<T> {
   final int _overridenHashCode;
 
-  OverriddenHashcodeBuiltList(Iterable iterable, this._overridenHashCode)
-    : super.from(iterable);
+  OverriddenHashcodeBuiltList(super.iterable, this._overridenHashCode)
+    : super.from();
 
   @override
   // ignore: hash_and_equals

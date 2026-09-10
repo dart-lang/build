@@ -13,10 +13,10 @@ import 'package:test/test.dart';
 // tests with "list" replaced by "set".
 void main() {
   group('BuiltSet with known specifiedType but missing builder', () {
-    var data = BuiltSet<int>([1, 2, 3]);
-    var specifiedType = const FullType(BuiltSet, [FullType(int)]);
-    var serializers = Serializers();
-    var serialized = json.decode(json.encode([1, 2, 3])) as Object;
+    final data = BuiltSet<int>([1, 2, 3]);
+    final specifiedType = const FullType(BuiltSet, [FullType(int)]);
+    final serializers = Serializers();
+    final serialized = json.decode(json.encode([1, 2, 3])) as Object;
 
     test('serialize throws', () {
       expect(() => serializers.serialize(data, specifiedType: specifiedType),
@@ -32,12 +32,12 @@ void main() {
   });
 
   group('BuiltSet with known specifiedType and correct builder', () {
-    var data = BuiltSet<int>([1, 2, 3]);
-    var specifiedType = const FullType(BuiltSet, [FullType(int)]);
-    var serializers = (Serializers().toBuilder()
-          ..addBuilderFactory(specifiedType, () => SetBuilder<int>()))
+    final data = BuiltSet<int>([1, 2, 3]);
+    final specifiedType = const FullType(BuiltSet, [FullType(int)]);
+    final serializers = (Serializers().toBuilder()
+          ..addBuilderFactory(specifiedType, SetBuilder<int>.new))
         .build();
-    var serialized = json.decode(json.encode([1, 2, 3])) as Object;
+    final serialized = json.decode(json.encode([1, 2, 3])) as Object;
 
     test('can be serialized', () {
       expect(serializers.serialize(data, specifiedType: specifiedType),
@@ -59,20 +59,20 @@ void main() {
   });
 
   group('BuiltSet nested with known specifiedType and correct builders', () {
-    var data = BuiltSet<BuiltSet<int>>([
+    final data = BuiltSet<BuiltSet<int>>([
       BuiltSet<int>([1, 2, 3]),
       BuiltSet<int>([4, 5, 6]),
       BuiltSet<int>([7, 8, 9])
     ]);
-    var specifiedType = const FullType(BuiltSet, [
+    final specifiedType = const FullType(BuiltSet, [
       FullType(BuiltSet, [FullType(int)])
     ]);
-    var serializers = (Serializers().toBuilder()
-          ..addBuilderFactory(specifiedType, () => SetBuilder<BuiltSet<int>>())
-          ..addBuilderFactory(const FullType(BuiltSet, [FullType(int)]),
-              () => SetBuilder<int>()))
+    final serializers = (Serializers().toBuilder()
+          ..addBuilderFactory(specifiedType, SetBuilder<BuiltSet<int>>.new)
+          ..addBuilderFactory(
+              const FullType(BuiltSet, [FullType(int)]), SetBuilder<int>.new))
         .build();
-    var serialized = json.decode(json.encode([
+    final serialized = json.decode(json.encode([
       [1, 2, 3],
       [4, 5, 6],
       [7, 8, 9]
@@ -90,10 +90,10 @@ void main() {
   });
 
   group('BuiltSet with unknown specifiedType and no builders', () {
-    var data = BuiltSet<int>([1, 2, 3]);
-    var specifiedType = FullType.unspecified;
-    var serializers = Serializers();
-    var serialized = json.decode(json.encode([
+    final data = BuiltSet<int>([1, 2, 3]);
+    final specifiedType = FullType.unspecified;
+    final serializers = Serializers();
+    final serialized = json.decode(json.encode([
       'set',
       ['int', 1],
       ['int', 2],

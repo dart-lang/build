@@ -14,14 +14,14 @@ class ParsedLibraryResults {
   ParsedLibraryResult parsedLibraryResultOrThrowingMock(
     LibraryElement element,
   ) {
-    var uri = element.uri;
+    final uri = element.uri;
     return _results[uri] ??= _parsedLibraryResultOrThrowingMock(element);
   }
 
   ParsedLibraryResult _parsedLibraryResultOrThrowingMock(
     LibraryElement element,
   ) {
-    var result = element.session.getParsedLibraryByElement(element);
+    final result = element.session.getParsedLibraryByElement(element);
     if (result is ParsedLibraryResult) {
       return result;
     }

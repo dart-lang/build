@@ -12,7 +12,7 @@ void main() {
     });
 
     test('allows access to Map<String?, dynamic>', () {
-      var map = JsonObject(<String?, dynamic>{'one': 1});
+      final map = JsonObject(<String?, dynamic>{'one': 1});
       expect(map.asMap['one'], 1);
     });
   });

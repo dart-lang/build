@@ -8,12 +8,12 @@ import 'package:built_value/serializer.dart';
 import 'package:test/test.dart';
 
 void main() {
-  var serializers = Serializers();
+  final serializers = Serializers();
 
   group('DateTime with known specifiedType', () {
-    var data = DateTime.utc(1980, 1, 2, 3, 4, 5, 6, 7);
-    var serialized = data.microsecondsSinceEpoch;
-    var specifiedType = const FullType(DateTime);
+    final data = DateTime.utc(1980, 1, 2, 3, 4, 5, 6, 7);
+    final serialized = data.microsecondsSinceEpoch;
+    final specifiedType = const FullType(DateTime);
 
     test('can be serialized', () {
       expect(serializers.serialize(data, specifiedType: specifiedType),
@@ -32,11 +32,11 @@ void main() {
   });
 
   group('DateTime with unknown specifiedType', () {
-    var data = DateTime.utc(1980, 1, 2, 3, 4, 5, 6, 7);
-    var serialized =
+    final data = DateTime.utc(1980, 1, 2, 3, 4, 5, 6, 7);
+    final serialized =
         json.decode(json.encode(['DateTime', data.microsecondsSinceEpoch]))
             as Object;
-    var specifiedType = FullType.unspecified;
+    final specifiedType = FullType.unspecified;
 
     test('can be serialized', () {
       expect(serializers.serialize(data, specifiedType: specifiedType),

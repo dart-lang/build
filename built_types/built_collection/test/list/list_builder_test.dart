@@ -20,79 +20,79 @@ void main() {
     });
 
     test('throws on null assign', () {
-      var builder = ListBuilder<int>([0]);
+      final builder = ListBuilder<int>([0]);
       expect(() => builder[0] = null as dynamic, throwsA(anything));
       expect(builder.build(), orderedEquals([0]));
     });
 
     test('nullable does not throw on null assign', () {
-      var builder = ListBuilder<int?>([0]);
+      final builder = ListBuilder<int?>([0]);
       builder[0] = null;
       expect(builder.build(), orderedEquals([null]));
     });
 
     test('throws on null first', () {
-      var builder = ListBuilder<int>([0]);
+      final builder = ListBuilder<int>([0]);
       expect(() => builder.first = null as dynamic, throwsA(anything));
       expect(builder.build(), orderedEquals([0]));
     });
 
     test('nullable does not throw on null first', () {
-      var builder = ListBuilder<int?>([0]);
+      final builder = ListBuilder<int?>([0]);
       builder.first = null;
       expect(builder.build(), orderedEquals([null]));
     });
 
     test('throws on null last', () {
-      var builder = ListBuilder<int>([0]);
+      final builder = ListBuilder<int>([0]);
       expect(() => builder.last = null as dynamic, throwsA(anything));
       expect(builder.build(), orderedEquals([0]));
     });
 
     test('nullable does not throw on null last', () {
-      var builder = ListBuilder<int?>([0]);
+      final builder = ListBuilder<int?>([0]);
       builder.last = null;
       expect(builder.build(), orderedEquals([null]));
     });
 
     test('throws on null add', () {
-      var builder = ListBuilder<int>();
+      final builder = ListBuilder<int>();
       expect(() => builder.add(null as dynamic), throwsA(anything));
       expect(builder.build(), isEmpty);
     });
 
     test('nullable does not throw on null add', () {
-      var builder = ListBuilder<int?>();
+      final builder = ListBuilder<int?>();
       builder.add(null);
       expect(builder.build(), [null]);
     });
 
     test('throws on null addAll', () {
-      var builder = ListBuilder<int>();
+      final builder = ListBuilder<int>();
       expect(() => builder.addAll([0, 1, null as dynamic]), throwsA(anything));
       expect(builder.build(), isEmpty);
     });
 
     test('nullable does not throw on null addAll', () {
-      var builder = ListBuilder<int?>();
+      final builder = ListBuilder<int?>();
       builder.addAll([0, 1, null]);
       expect(builder.build(), [0, 1, null]);
     });
 
     test('throws on null insert', () {
-      var builder = ListBuilder<int>();
+      final builder = ListBuilder<int>();
       expect(() => builder.insert(0, null as dynamic), throwsA(anything));
       expect(builder.build(), isEmpty);
     });
 
     test('nullable does not throw on null insert', () {
-      var builder = ListBuilder<int?>();
+      final builder = ListBuilder<int?>();
       builder.insert(0, null);
       expect(builder.build(), [null]);
     });
 
     test('throws on null insertAll', () {
-      var builder = ListBuilder<int>();
+      final builder = ListBuilder<int>();
       expect(
         () => builder.insertAll(0, [0, 1, null as dynamic]),
         throwsA(anything),
@@ -101,13 +101,13 @@ void main() {
     });
 
     test('nullable does not throw on null insertAll', () {
-      var builder = ListBuilder<int?>();
+      final builder = ListBuilder<int?>();
       builder.insertAll(0, [0, 1, null]);
       expect(builder.build(), [0, 1, null]);
     });
 
     test('throws on null setAll', () {
-      var builder = ListBuilder<int>([0, 1, 2]);
+      final builder = ListBuilder<int>([0, 1, 2]);
       expect(
         () => builder.setAll(0, [0, 1, null as dynamic]),
         throwsA(anything),
@@ -116,13 +116,13 @@ void main() {
     });
 
     test('nullable does not throw on null setAll', () {
-      var builder = ListBuilder<int?>([0, 1, 2]);
+      final builder = ListBuilder<int?>([0, 1, 2]);
       builder.setAll(0, [0, 1, null]);
       expect(builder.build(), orderedEquals([0, 1, null]));
     });
 
     test('throws on null setRange', () {
-      var builder = ListBuilder<int>([0, 1, 2]);
+      final builder = ListBuilder<int>([0, 1, 2]);
       expect(
         () => builder.setRange(0, 3, [0, 1, null as dynamic]),
         throwsA(anything),
@@ -131,25 +131,25 @@ void main() {
     });
 
     test('nullable does not throw on null setRange', () {
-      var builder = ListBuilder<int?>([0, 1, 2]);
+      final builder = ListBuilder<int?>([0, 1, 2]);
       builder.setRange(0, 3, [0, 1, null]);
       expect(builder.build(), orderedEquals([0, 1, null]));
     });
 
     test('throws on null fillRange', () {
-      var builder = ListBuilder<int>([0, 1, 2]);
+      final builder = ListBuilder<int>([0, 1, 2]);
       expect(() => builder.fillRange(0, 3, null as dynamic), throwsA(anything));
       expect(builder.build(), orderedEquals([0, 1, 2]));
     });
 
     test('nullable does not throw on null fillRange', () {
-      var builder = ListBuilder<int?>([0, 1, 2]);
+      final builder = ListBuilder<int?>([0, 1, 2]);
       builder.fillRange(0, 3, null);
       expect(builder.build(), orderedEquals([null, null, null]));
     });
 
     test('throws on null replaceRange', () {
-      var builder = ListBuilder<int>([0, 1, 2]);
+      final builder = ListBuilder<int>([0, 1, 2]);
       expect(
         () => builder.replaceRange(0, 3, [0, 1, null as dynamic]),
         throwsA(anything),
@@ -158,25 +158,25 @@ void main() {
     });
 
     test('nullable does not throw on null replaceRange', () {
-      var builder = ListBuilder<int?>([0, 1, 2]);
+      final builder = ListBuilder<int?>([0, 1, 2]);
       builder.replaceRange(0, 3, [0, 1, null]);
       expect(builder.build(), orderedEquals([0, 1, null]));
     });
 
     test('throws on null map', () {
-      var builder = ListBuilder<int>([0, 1, 2]);
+      final builder = ListBuilder<int>([0, 1, 2]);
       expect(() => builder.map((x) => null as dynamic), throwsA(anything));
       expect(builder.build(), orderedEquals([0, 1, 2]));
     });
 
     test('nullable does not throw on null map', () {
-      var builder = ListBuilder<int?>([0, 1, 2]);
+      final builder = ListBuilder<int?>([0, 1, 2]);
       builder.map((x) => null);
       expect(builder.build(), orderedEquals([null, null, null]));
     });
 
     test('throws on null expand', () {
-      var builder = ListBuilder<int>([0, 1, 2]);
+      final builder = ListBuilder<int>([0, 1, 2]);
       expect(
         () => builder.expand((x) => [x, null as dynamic]),
         throwsA(anything),
@@ -185,13 +185,13 @@ void main() {
     });
 
     test('nullable does not throw on null expand', () {
-      var builder = ListBuilder<int?>([0, 1, 2]);
+      final builder = ListBuilder<int?>([0, 1, 2]);
       builder.expand((x) => [x, null]);
       expect(builder.build(), orderedEquals([0, null, 1, null, 2, null]));
     });
 
     test('throws on wrong type addAll', () {
-      var builder = ListBuilder<int>();
+      final builder = ListBuilder<int>();
       expect(
         () => builder.addAll(List<int>.from([0, 1, '0'])),
         throwsA(anything),
@@ -200,7 +200,7 @@ void main() {
     });
 
     test('throws on wrong type insertAll', () {
-      var builder = ListBuilder<int>();
+      final builder = ListBuilder<int>();
       expect(
         () => builder.insertAll(0, List<int>.from([0, 1, '0'])),
         throwsA(anything),
@@ -209,7 +209,7 @@ void main() {
     });
 
     test('throws on wrong type setAll', () {
-      var builder = ListBuilder<int>([0, 1, 2]);
+      final builder = ListBuilder<int>([0, 1, 2]);
       expect(
         () => builder.setAll(0, List<int>.from([0, 1, '0'])),
         throwsA(anything),
@@ -218,7 +218,7 @@ void main() {
     });
 
     test('throws on wrong type setRange', () {
-      var builder = ListBuilder<int>([0, 1, 2]);
+      final builder = ListBuilder<int>([0, 1, 2]);
       expect(
         () => builder.setRange(0, 2, List<int>.from([0, 1, '0'])),
         throwsA(anything),
@@ -227,7 +227,7 @@ void main() {
     });
 
     test('throws on wrong type replaceRange', () {
-      var builder = ListBuilder<int>([0, 1, 2]);
+      final builder = ListBuilder<int>([0, 1, 2]);
       expect(
         () => builder.replaceRange(0, 2, List<int>.from([0, 1, '0'])),
         throwsA(anything),
@@ -242,71 +242,71 @@ void main() {
     // Lazy copies.
 
     test('does not mutate BuiltList when modifying ListBuilder assign', () {
-      var list = BuiltList<int>([1, 2]);
-      var listBuilder = list.toBuilder();
+      final list = BuiltList<int>([1, 2]);
+      final listBuilder = list.toBuilder();
       listBuilder[0] = 3;
       expect(list, [1, 2]);
     });
 
     test('does not mutate BuiltList when modifying ListBuilder first', () {
-      var list = BuiltList<int>([1, 2]);
-      var listBuilder = list.toBuilder();
+      final list = BuiltList<int>([1, 2]);
+      final listBuilder = list.toBuilder();
       listBuilder.first = 3;
       expect(list, [1, 2]);
     });
 
     test('does not mutate BuiltList when modifying ListBuilder last', () {
-      var list = BuiltList<int>([1, 2]);
-      var listBuilder = list.toBuilder();
+      final list = BuiltList<int>([1, 2]);
+      final listBuilder = list.toBuilder();
       listBuilder.last = 3;
       expect(list, [1, 2]);
     });
 
     test('does not mutate BuiltList when modifying ListBuilder add', () {
-      var list = BuiltList<int>([1, 2]);
-      var listBuilder = list.toBuilder();
+      final list = BuiltList<int>([1, 2]);
+      final listBuilder = list.toBuilder();
       listBuilder.add(3);
       expect(list, [1, 2]);
     });
 
     test('does not mutate BuiltList when modifying ListBuilder addAll', () {
-      var list = BuiltList<int>([1, 2]);
-      var listBuilder = list.toBuilder();
+      final list = BuiltList<int>([1, 2]);
+      final listBuilder = list.toBuilder();
       listBuilder.addAll([3, 4]);
       expect(list, [1, 2]);
     });
 
     test('does not mutate BuiltList when modifying ListBuilder insert', () {
-      var list = BuiltList<int>([1, 2]);
-      var listBuilder = list.toBuilder();
+      final list = BuiltList<int>([1, 2]);
+      final listBuilder = list.toBuilder();
       listBuilder.insert(0, 3);
       expect(list, [1, 2]);
     });
 
     test('does not mutate BuiltList when modifying ListBuilder insertAll', () {
-      var list = BuiltList<int>([1, 2]);
-      var listBuilder = list.toBuilder();
+      final list = BuiltList<int>([1, 2]);
+      final listBuilder = list.toBuilder();
       listBuilder.insertAll(0, [3, 4]);
       expect(list, [1, 2]);
     });
 
     test('does not mutate BuiltList when modifying ListBuilder setAll', () {
-      var list = BuiltList<int>([1, 2]);
-      var listBuilder = list.toBuilder();
+      final list = BuiltList<int>([1, 2]);
+      final listBuilder = list.toBuilder();
       listBuilder.setAll(0, [3, 4]);
       expect(list, [1, 2]);
     });
 
     test('does not mutate BuiltList when modifying ListBuilder setRange', () {
-      var list = BuiltList<int>([1, 2]);
-      var listBuilder = list.toBuilder();
+      final list = BuiltList<int>([1, 2]);
+      final listBuilder = list.toBuilder();
       listBuilder.setRange(0, 2, [3, 4, 5]);
       expect(list, [1, 2]);
     });
 
     test('does not mutate BuiltList when modifying ListBuilder fillRange', () {
-      var list = BuiltList<int>([1, 2]);
-      var listBuilder = list.toBuilder();
+      final list = BuiltList<int>([1, 2]);
+      final listBuilder = list.toBuilder();
       listBuilder.fillRange(0, 2, 3);
       expect(list, [1, 2]);
     });
@@ -314,40 +314,40 @@ void main() {
     test(
       'does not mutate BuiltList when modifying ListBuilder replaceRange',
       () {
-        var list = BuiltList<int>([1, 2]);
-        var listBuilder = list.toBuilder();
+        final list = BuiltList<int>([1, 2]);
+        final listBuilder = list.toBuilder();
         listBuilder.replaceRange(0, 2, [3, 4]);
         expect(list, [1, 2]);
       },
     );
 
     test('does not mutate BuiltList when modifying ListBuilder map', () {
-      var list = BuiltList<int>([1, 2]);
-      var listBuilder = list.toBuilder();
+      final list = BuiltList<int>([1, 2]);
+      final listBuilder = list.toBuilder();
       listBuilder.map((x) => 3);
       expect(list, [1, 2]);
     });
 
     test('does not mutate BuiltList when modifying ListBuilder expand', () {
-      var list = BuiltList<int>([1, 2]);
-      var listBuilder = list.toBuilder();
+      final list = BuiltList<int>([1, 2]);
+      final listBuilder = list.toBuilder();
       listBuilder.expand((x) => [3, 4]);
       expect(list, [1, 2]);
     });
 
     test('converts to BuiltList without copying', () {
-      var makeLongListBuilder = () =>
+      final makeLongListBuilder = () =>
           ListBuilder<int>(List<int>.filled(1000000, 0));
-      var longListBuilder = makeLongListBuilder();
-      var buildLongListBuilder = () => longListBuilder.build();
+      final longListBuilder = makeLongListBuilder();
+      final buildLongListBuilder = longListBuilder.build;
 
       expectMuchFaster(buildLongListBuilder, makeLongListBuilder);
     });
 
     test('does not mutate BuiltList following mutates after build', () {
-      var listBuilder = ListBuilder<int>([1, 2]);
+      final listBuilder = ListBuilder<int>([1, 2]);
 
-      var list1 = listBuilder.build();
+      final list1 = listBuilder.build();
       expect(list1, [1, 2]);
 
       listBuilder.add(3);
@@ -357,7 +357,7 @@ void main() {
     // List.
 
     test('has a method like List[]', () {
-      var listBuilder = ListBuilder<int>([1, 2]);
+      final listBuilder = ListBuilder<int>([1, 2]);
       ++listBuilder[0];
       --listBuilder[1];
       expect(listBuilder.build(), [2, 1]);
@@ -369,14 +369,14 @@ void main() {
     });
 
     test('has a property like List.first', () {
-      var builder = BuiltList<int>([1, 2, 3]).toBuilder();
+      final builder = BuiltList<int>([1, 2, 3]).toBuilder();
       expect(builder.first, 1);
       builder.first = 2;
       expect(builder.build().first, 2);
     });
 
     test('has a property like List.last', () {
-      var builder = BuiltList<int>([1, 2, 3]).toBuilder();
+      final builder = BuiltList<int>([1, 2, 3]).toBuilder();
       expect(builder.last, 3);
       builder.last = 2;
       expect(builder.build().last, 2);

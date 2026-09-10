@@ -2,7 +2,7 @@
 // All rights reserved. Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-library built_value_generator.source_field;
+library;
 
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/ast/ast.dart';
@@ -11,12 +11,11 @@ import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
-import 'package:built_value_generator/src/dart_types.dart';
-import 'package:built_value_generator/src/field_mixin.dart';
-import 'package:built_value_generator/src/metadata.dart'
-    show metadataToStringValue;
-import 'package:built_value_generator/src/parsed_library_results.dart';
-import 'package:built_value_generator/src/strings.dart';
+import 'dart_types.dart';
+import 'field_mixin.dart';
+import 'metadata.dart' show metadataToStringValue;
+import 'parsed_library_results.dart';
+import 'strings.dart';
 
 part 'serializer_source_field.g.dart';
 
@@ -64,13 +63,13 @@ abstract class SerializerSourceField
 
   @memoized
   BuiltValueField get builtValueField {
-    var annotations = element.getter!.metadata.annotations
+    final annotations = element.getter!.metadata.annotations
         .map((annotation) => annotation.computeConstantValue())
         .where(
           (value) => DartTypes.tryGetName(value?.type) == 'BuiltValueField',
         );
     if (annotations.isEmpty) return const BuiltValueField();
-    var annotation = annotations.single!;
+    final annotation = annotations.single!;
     return BuiltValueField(
       compare: annotation.getField('compare')?.toBoolValue(),
       serialize: annotation.getField('serialize')?.toBoolValue(),
@@ -117,12 +116,12 @@ abstract class SerializerSourceField
   /// The [type] plus any import prefix, without any nullability suffix.
   @memoized
   String get typeWithPrefixAndNullabilitySuffix {
-    var declaration =
+    final declaration =
         parsedLibrary.getFragmentDeclaration(element.getter!.firstFragment)!;
-    var typeFromAst =
+    final typeFromAst =
         (declaration.node as MethodDeclaration).returnType?.toString() ??
             'dynamic';
-    var typeFromElement = typeWithNullabilitySuffix;
+    final typeFromElement = typeWithNullabilitySuffix;
 
     // If the type is a function, we can't use the element result; it is
     // formatted incorrectly.
@@ -243,7 +242,7 @@ abstract class SerializerSourceField
     BuiltMap<String, String> classGenericBounds, {
     bool forReplace = false,
   }) {
-    var result = _generateCast(
+    final result = _generateCast(
       typeInLibraryFragment(libraryFragment),
       classGenericBounds,
       forReplace: forReplace,
@@ -252,7 +251,7 @@ abstract class SerializerSourceField
   }
 
   String generateBuilder() {
-    var bareType = _getBareType(type);
+    final bareType = _getBareType(type);
     if (typesWithBuilder.containsKey(bareType)) {
       return '${typesWithBuilder[bareType]}<${_getGenerics(type)}>()';
     } else {
@@ -265,10 +264,10 @@ abstract class SerializerSourceField
     BuiltSet<String> classGenericParameters, {
     bool includeNullability = false,
   }) {
-    var bareType = _getBareType(type);
-    var generics = _getGenerics(type);
-    var genericItems = _splitOnTopLevelCommas(generics);
-    var maybeNullability =
+    final bareType = _getBareType(type);
+    final generics = _getGenerics(type);
+    final genericItems = _splitOnTopLevelCommas(generics);
+    final maybeNullability =
         includeNullability && type.endsWith('?') ? '.nullable' : '';
 
     if (generics.isEmpty) {
@@ -299,8 +298,9 @@ abstract class SerializerSourceField
     bool topLevel = true,
     bool forReplace = false,
   }) {
-    var resultNullabilitySuffix = (!topLevel && type.endsWith('?')) ? '?' : '';
-    var bareType = _getBareType(type);
+    final resultNullabilitySuffix =
+        (!topLevel && type.endsWith('?')) ? '?' : '';
+    final bareType = _getBareType(type);
 
     // `built_collection` `replace` methods don't care about the full generic
     // type, so we can be less precise about the cast. This doesn't add any
@@ -331,7 +331,7 @@ abstract class SerializerSourceField
       generics = _getGenerics(type);
     }
 
-    var genericItems = _splitOnTopLevelCommas(generics);
+    final genericItems = _splitOnTopLevelCommas(generics);
 
     if (generics.isEmpty) {
       if (classGenericBounds.keys.contains(bareType)) {
@@ -349,15 +349,15 @@ abstract class SerializerSourceField
   }
 
   static String _getBareType(String name) {
-    var genericsStart = name.indexOf('<');
+    final genericsStart = name.indexOf('<');
     var result = genericsStart == -1 ? name : name.substring(0, genericsStart);
     if (result.endsWith('?')) result = result.substring(0, result.length - 1);
     return result;
   }
 
   static String _getGenerics(String name) {
-    var genericsStart = name.indexOf('<');
-    var hasNullableSuffix = name.endsWith('?');
+    final genericsStart = name.indexOf('<');
+    final hasNullableSuffix = name.endsWith('?');
     return genericsStart == -1
         ? ''
         : name.substring(genericsStart + 1).substring(
@@ -369,8 +369,8 @@ abstract class SerializerSourceField
   /// Splits a generic parameter string on top level commas; that means
   /// commas nested inside '<' and '>' are ignored.
   static BuiltList<String> _splitOnTopLevelCommas(String string) {
-    var result = ListBuilder<String>();
-    var accumulator = StringBuffer();
+    final result = ListBuilder<String>();
+    final accumulator = StringBuffer();
     var depth = 0;
     for (var i = 0; i != string.length; ++i) {
       if (string[i] == '<') ++depth;

@@ -11,12 +11,12 @@ import 'package:test/test.dart';
 
 void main() {
   group('BuiltList', () {
-    var data = BuiltList<int>([1, 2, 3]);
-    var specifiedType = const FullType(BuiltList, [FullType(int)]);
-    var serializers = (Serializers().toBuilder()
-          ..addBuilderFactory(specifiedType, () => ListBuilder<int>()))
+    final data = BuiltList<int>([1, 2, 3]);
+    final specifiedType = const FullType(BuiltList, [FullType(int)]);
+    final serializers = (Serializers().toBuilder()
+          ..addBuilderFactory(specifiedType, ListBuilder<int>.new))
         .build();
-    var serialized = json.decode(json.encode([1, 2, 3])) as Iterable;
+    final serialized = json.decode(json.encode([1, 2, 3])) as Iterable;
 
     test('can be deserialized asynchronously', () async {
       final deserialized = await BuiltListAsyncDeserializer()
