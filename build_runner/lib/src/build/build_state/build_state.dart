@@ -26,7 +26,7 @@ import 'post_process_build_step_result.dart';
 /// [IncrementalBuildState] and [FinishedBuildState] for serialization and
 /// follow-on incremental builds.
 ///
-/// - Sources and their digests; missing sources.
+/// - Sources and their digests.
 /// - Glob results.
 /// - Build step results.
 /// - Post process build step results.
@@ -36,9 +36,6 @@ class BuildState {
 
   /// Sources.
   final Set<AssetId> _sources;
-
-  /// Sources that were missing when a builder tried to access them.
-  final Set<AssetId> _missingSources;
 
   /// Contents of sources and outputs populated during the build.
   final Map<AssetId, AssetContent> _contents;
@@ -60,7 +57,6 @@ class BuildState {
     required this.buildStepPlan,
     required Map<AssetId, AssetContent?> sources,
   }) : _sources = sources.keys.toSet(),
-       _missingSources = {},
        _contents = {
          for (final entry in sources.entries)
            if (entry.value != null) entry.key: entry.value!,
@@ -95,9 +91,6 @@ class BuildState {
 
   /// Whether [id] is a source file.
   bool isSource(AssetId id) => _sources.contains(id);
-
-  /// Whether [id] is a source file that was accessed but did not exist.
-  bool isMissingSource(AssetId id) => _missingSources.contains(id);
 
   /// Whether [id] is one of: source, declared output or actual post process
   /// output.
@@ -172,9 +165,7 @@ class BuildState {
 
   @visibleForTesting
   IncrementalBuildState toIncrementalBuildState() {
-    final builder = IncrementalBuildStateBuilder()
-      ..sources.addAll(_sources)
-      ..missingSources.addAll(_missingSources);
+    final builder = IncrementalBuildStateBuilder()..sources.addAll(_sources);
 
     for (final entry in _contents.entries) {
       builder.digests[entry.key] = entry.value.digest;
@@ -211,14 +202,6 @@ class BuildState {
       contents: _contents.build(),
     );
   }
-
-  // -- Missing sources.
-
-  /// Adds a source that a builder tried to access but was missing.
-  ///
-  /// The builder must check and find there is no declared output or
-  /// source before calling this.
-  void addMissingSource(AssetId id) => _missingSources.add(id);
 
   // -- Build steps.
 

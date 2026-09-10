@@ -9,6 +9,8 @@ import 'package:build_runner/src/build/build_series.dart';
 import 'package:build_runner/src/build/build_state/asset_graph_json.dart';
 import 'package:build_runner/src/build/build_state/build_state.dart';
 import 'package:build_runner/src/build/build_state/build_step_result.dart';
+import 'package:build_runner/src/build/build_state/glob_id.dart';
+import 'package:build_runner/src/build/build_state/glob_result.dart';
 import 'package:build_runner/src/build/library_cycle_graph/phased_asset_deps.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
@@ -22,6 +24,7 @@ import 'package:build_runner/src/commands/watch/asset_change.dart';
 import 'package:build_runner/src/constants.dart';
 import 'package:build_runner/src/io/reader_writer.dart';
 import 'package:built_collection/built_collection.dart';
+import 'package:crypto/crypto.dart';
 import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
 
@@ -111,6 +114,60 @@ void main() {
         expect(filtered.accepted, isEmpty);
         expect(filtered.rejected, [change]);
       });
+
+      test(
+        'accepts removal of unread source whose existence was tracked',
+        () async {
+          final unreadSourceId = AssetId('a', 'lib/no_outputs.txt');
+          await readerWriter.writeAsString(unreadSourceId, '// no outputs');
+          final globId = GlobId(
+            package: 'a',
+            glob: 'lib/*.txt',
+            phaseNumber: 0,
+          );
+          final globResult = GlobResult(
+            (b) => b
+              ..inputs.add(unreadSourceId)
+              ..results.add(unreadSourceId)
+              ..digest = Digest([]),
+          );
+          final buildState = BuildState(
+            buildStepPlan: buildPlan.buildStepPlan,
+            sources: {assetId: null, unreadSourceId: null},
+          );
+          buildState.updateGlobResult(globId, globResult);
+          await writeBuildStateAndPlan(buildState, buildPlan);
+          final loadedPlan = await loadPlan();
+          final buildSeries = BuildSeries(loadedPlan);
+
+          final change = AssetChange(unreadSourceId, ChangeType.REMOVE);
+          final filtered = await buildSeries.filterChanges([change]);
+
+          expect(filtered.accepted, [change]);
+          expect(filtered.rejected, isEmpty);
+        },
+      );
+
+      test(
+        'rejects removal of unread source whose existence was not tracked',
+        () async {
+          final unreadSourceId = AssetId('a', 'lib/no_outputs.txt');
+          await readerWriter.writeAsString(unreadSourceId, '// no outputs');
+          final buildState = BuildState(
+            buildStepPlan: buildPlan.buildStepPlan,
+            sources: {assetId: null, unreadSourceId: null},
+          );
+          await writeBuildStateAndPlan(buildState, buildPlan);
+          final loadedPlan = await loadPlan();
+          final buildSeries = BuildSeries(loadedPlan);
+
+          final change = AssetChange(unreadSourceId, ChangeType.REMOVE);
+          final filtered = await buildSeries.filterChanges([change]);
+
+          expect(filtered.accepted, isEmpty);
+          expect(filtered.rejected, [change]);
+        },
+      );
 
       test('accepts change to read source', () async {
         final buildState = BuildState(
