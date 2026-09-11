@@ -12,7 +12,7 @@ import '../common/common.dart';
 void main() async {
   test('build command AOT', () async {
     final pubspecs = await Pubspecs.load();
-    final tester = BuildRunnerTester(pubspecs);
+    final tester = BuildRunnerTester(pubspecs, bootstrap: true);
 
     // Basic AOT build and rebuild on change.
     tester.writeFixturePackage(FixturePackages.copyBuilder());

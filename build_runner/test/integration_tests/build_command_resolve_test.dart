@@ -170,7 +170,11 @@ class TestBuilder implements Builder {
       files: {'lib/a.dart': ''},
     );
 
-    await tester.run('root_pkg', 'dart run build_runner build --force-jit');
+    await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+      bootstrap: true,
+    );
     expect(tester.read('root_pkg/lib/a.g.dart'), 'library x;');
   });
 }

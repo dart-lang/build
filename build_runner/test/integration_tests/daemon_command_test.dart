@@ -26,7 +26,7 @@ void main() async {
 
   test('daemon command', () async {
     final pubspecs = await Pubspecs.load();
-    final tester = BuildRunnerTester(pubspecs);
+    final tester = BuildRunnerTester(pubspecs, bootstrap: true);
 
     tester.writeFixturePackage(FixturePackages.copyBuilder());
 

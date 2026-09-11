@@ -15,7 +15,7 @@ void main() async {
   // support testing like this outside the `build_runner` package.
   test('DDC compiled with the Frontend Server', () async {
     final pubspecs = await Pubspecs.load();
-    final tester = BuildRunnerTester(pubspecs);
+    final tester = BuildRunnerTester(pubspecs, bootstrap: true);
 
     tester.writeFixturePackage(FixturePackages.copyBuilder());
 
