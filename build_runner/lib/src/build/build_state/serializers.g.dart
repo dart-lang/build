@@ -70,10 +70,6 @@ Serializers _$serializers =
             () => MapBuilder<AssetId, Digest>(),
           )
           ..addBuilderFactory(
-            const FullType(BuiltSet, const [const FullType(AssetId)]),
-            () => SetBuilder<AssetId>(),
-          )
-          ..addBuilderFactory(
             const FullType(BuiltMap, const [
               const FullType(BuildStepId),
               const FullType(BuildStepResult),

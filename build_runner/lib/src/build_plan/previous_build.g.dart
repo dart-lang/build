@@ -39,6 +39,7 @@ class _$PreviousBuild extends PreviousBuild {
   @override
   BuiltMap<AssetId, PostProcessBuildStepId> get postProcessOutputs =>
       __postProcessOutputs ??= super.postProcessOutputs;
+
   @override
   BuiltSet<AssetId> get trackedInputs =>
       __trackedInputs ??= super.trackedInputs;
