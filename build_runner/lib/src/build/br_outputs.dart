@@ -30,8 +30,8 @@ extension AssetIdBrOutputsExtension on AssetId {
   /// `build_runner`.
   bool get isBrSharedPart => isBrOutput && path.endsWith(_partDartExtension);
 
-  /// Returns the corresponding shared part `.part.dart` AssetId if this is a
-  /// Dart library outside the `_br_` namespace.
+  /// The corresponding shared part `.part.dart` AssetId if this is a Dart
+  /// library outside the `_br_` namespace.
   AssetId? get sharedPartId {
     if (!path.endsWith(_dartExtension) || isBrOutput) return null;
     final segments = pathSegments;
@@ -52,8 +52,8 @@ extension AssetIdBrOutputsExtension on AssetId {
     return AssetId(package, p.posix.joinAll(newSegments));
   }
 
-  /// Returns the corresponding library `.dart` AssetId if this is a generated
-  /// shared part.
+  /// The corresponding library `.dart` AssetId if this is a generated shared
+  /// part.
   AssetId? get sharedPartLibraryId {
     if (!isBrSharedPart) return null;
     final segments = pathSegments;

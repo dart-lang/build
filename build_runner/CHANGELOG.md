@@ -1,5 +1,7 @@
 ## 2.16.2-wip
 
+- Add `SharedPartAccumulator` and `SharedPartAccumulatorCodec` for shared part
+  outputs.
 - The `serve` command now rejects non-loopback `Host` and `Origin` headers when
   bound to a loopback interface.
 - Require `build` 4.1.0.

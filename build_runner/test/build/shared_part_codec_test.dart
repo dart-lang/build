@@ -250,5 +250,19 @@ class B {}
       expect(decoded.imports, isEmpty);
       expect(decoded.contributions, isEmpty);
     });
+
+    test('formats contribution code at ingest', () {
+      final part = SharedPartAccumulator(AssetId('a', 'lib/b.dart'), null);
+      part.addContribution(
+        0,
+        'b0',
+        BuiltList(),
+        'class Foo{   final int  x ; Foo ( this.x ) ; }',
+      );
+      expect(part.contributions[0], '''class Foo {
+  final int x;
+  Foo(this.x);
+}''');
+    });
   });
 }
