@@ -238,6 +238,23 @@ void main() {
       expect(Directory(tmpDir.path).listSync(), isEmpty);
     });
 
+    test('errors if conflicting directories are spelled differently', () async {
+      final success = await createMergedOutputDirectories(
+        buildDirs: {
+          BuildDirectory('web', outputLocation: OutputLocation(tmpDir.path)),
+          BuildDirectory(
+            'foo',
+            outputLocation: OutputLocation('${tmpDir.path}${p.separator}'),
+          ),
+        }.build(),
+        buildPackages: buildPackages,
+        buildOutputReader: buildOutputReader,
+        outputSymlinksOnly: false,
+      );
+      expect(success, isFalse);
+      expect(Directory(tmpDir.path).listSync(), isEmpty);
+    });
+
     test('succeeds if no output directory requested ', () async {
       final success = await createMergedOutputDirectories(
         buildDirs: {BuildDirectory('web'), BuildDirectory('foo')}.build(),
