@@ -103,5 +103,33 @@ builders:
       tester.read('root_pkg/$entrypointScriptPath'),
       contains("import '../../../tool/missing_builder.dart'"),
     );
+
+    // Builder with adds_to_library: true and is_optional: true is rejected.
+    tester.write('root_pkg/build.yaml', r'''
+builders:
+  part_builder:
+    import: 'tool/builder.dart'
+    builder_factories: ['partFactory']
+    build_extensions: {'.dart': []}
+    auto_apply: root_package
+    adds_to_library: true
+    is_optional: true
+''');
+    tester.write('root_pkg/tool/builder.dart', r'''
+import 'package:build/build.dart';
+Builder partFactory(BuilderOptions options) => throw UnimplementedError();
+''');
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+      expectExitCode: ExitCode.config.code,
+    );
+    expect(
+      output,
+      contains(
+        'A builder cannot set both `adds_to_library: true` and '
+        '`is_optional: true`.',
+      ),
+    );
   });
 }

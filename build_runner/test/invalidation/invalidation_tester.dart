@@ -8,6 +8,7 @@ import 'dart:math';
 
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
+import 'package:build_runner/src/build/br_outputs.dart';
 import 'package:build_runner/src/build/resolver/resolvers_impl.dart';
 import 'package:build_runner/src/constants.dart';
 import 'package:build_runner/src/logging/build_log.dart';
@@ -40,6 +41,12 @@ class InvalidationTester {
   /// If an asset has an entry here then sources and generated sources will
   /// start with the import statements specified.
   final Map<String, List<String>> _importGraph = {};
+
+  /// Part statements.
+  ///
+  /// If an asset has an entry here then sources and generated sources will
+  /// start with the part statements specified.
+  final Map<String, List<String>> _partGraph = {};
 
   /// The builders that will run.
   final List<TestBuilder> _builders = [];
@@ -118,6 +125,13 @@ class InvalidationTester {
     _importGraph.addAll(importGraph);
   }
 
+  // Sets the part graph for source files and generated files.
+  void partGraph(Map<String, List<String>> partGraph) {
+    if (_logSetup) _setupLog.add('tester.partGraph($partGraph)');
+    _partGraph.clear();
+    _partGraph.addAll(partGraph);
+  }
+
   /// Adds a builder to the test.
   ///
   /// [from] and [to] are the input and output extension of the builder,
@@ -192,9 +206,19 @@ class InvalidationTester {
 
   String _imports(AssetId id) {
     final imports = _importGraph[_assetIdToName(id)];
-    return imports == null
-        ? ''
-        : imports.map((i) => "import '${i.pathForImport}';").join('\n');
+    final parts = _partGraph[_assetIdToName(id)];
+    final buffer = StringBuffer();
+    if (imports != null) {
+      for (final i in imports) {
+        buffer.writeln("import '${i.pathForImport}';");
+      }
+    }
+    if (parts != null) {
+      for (final p in parts) {
+        buffer.writeln("part '${p.pathForImport}';");
+      }
+    }
+    return buffer.toString();
   }
 
   /// Does a build.
@@ -268,6 +292,9 @@ class InvalidationTester {
       optionalBuilders: _builders.where((b) => b.isOptional).toSet(),
       visibleOutputBuilders: _builders
           .where((b) => b.outputAtPackagePath)
+          .toSet(),
+      addsToLibraryBuilders: _builders
+          .where((b) => b.partWrite != null)
           .toSet(),
       testingBuilderConfig: false,
       resolvers: discardResolver ? ResolversImpl.custom() : null,
@@ -409,6 +436,11 @@ class TestBuilderBuilder {
     if (_logSetup) _setupLog.add('builder.writes($extension)');
     _builder.writes.add('$extension.dart');
   }
+
+  void writesPart(String content) {
+    if (_logSetup) _setupLog.add('builder.writesPart($content)');
+    _builder.partWrite = content;
+  }
 }
 
 /// A builder that does reads and writes according to test setup.
@@ -447,6 +479,8 @@ class TestBuilder implements Builder {
   /// The extensions are applied to the primary input asset ID with
   /// [AssetIdExtension.replaceExtensions].
   List<String> writes = [];
+
+  String? partWrite;
 
   TestBuilder(
     this._tester,
@@ -566,6 +600,14 @@ class TestBuilder implements Builder {
       if (_tester._failureStrategies[writeId] == FailureStrategy.fail) {
         throw StateError('Failing as requested by test setup.');
       }
+    }
+
+    if (partWrite != null) {
+      final actualContent = partWrite! == '_digest'
+          ? recordedInput.map((l) => '// $l\n').join('')
+          : partWrite!;
+      (await buildStep.librarySourceSink)?.add(actualContent);
+      _tester._generatedOutputsWritten.add(buildStep.inputId.sharedPartId!);
     }
   }
 
