@@ -22,6 +22,7 @@ import '../io/build_output_reader.dart';
 import '../io/create_merged_dir.dart';
 import '../logging/build_log.dart';
 import 'asset_content.dart';
+import 'br_outputs.dart';
 import 'build.dart';
 import 'build_result.dart';
 import 'build_state/asset_graph_json.dart';
@@ -104,10 +105,11 @@ class BuildSeries {
         // If the first is by `build_runner` and the second is an external
         // change then just ignoring the event would be incorrect.
         if ((change.type == .ADD || change.type == .MODIFY) &&
-            _buildPlan.buildStepPlan.isDeclaredOutput(id)) {
+            (_buildPlan.buildStepPlan.isDeclaredOutput(id) || id.isBrOutput)) {
           final expectedDigest = previousBuild.digestOf(id);
-          final inArtifactTree = _buildPlan.buildStepPlan
-              .isDeclaredOutputInArtifactTree(id);
+          final inArtifactTree = id.isBrOutput
+              ? false
+              : _buildPlan.buildStepPlan.isDeclaredOutputInArtifactTree(id);
 
           if (expectedDigest != null) {
             try {
@@ -139,8 +141,9 @@ class BuildSeries {
 
       final isKnownAsset = previousBuild.isKnownAsset(id);
       if (!isKnownAsset) {
-        // Ignore under `.dart_tool/build`.
-        if (id.path.startsWith(hiddenBuildDirectoryPath)) continue;
+        if (id.path.startsWith(hiddenBuildDirectoryPath)) {
+          continue;
+        }
 
         // Ignore modifications and deletes.
         if (change.type != .ADD) continue;
@@ -157,6 +160,7 @@ class BuildSeries {
       // If not copying to a merged output directory, ignore modifications to
       // sources with no outputs.
       if (!_buildPlan.buildSpec.buildOptions.anyMergedOutputDirectory &&
+          !id.isBrOutput &&
           previousBuild.isSource(id) &&
           previousBuild.digestOf(id) == null) {
         // If its existence was tracked, removal invalidates the build.
@@ -169,7 +173,7 @@ class BuildSeries {
       }
 
       // Handle modifications and creations of outputs.
-      if (_buildPlan.buildStepPlan.isDeclaredOutput(id) &&
+      if ((_buildPlan.buildStepPlan.isDeclaredOutput(id) || id.isBrOutput) &&
           change.type != .REMOVE &&
           _outputStrategy == .keep) {
         continue;
@@ -391,7 +395,8 @@ class BuildSeries {
           : currentState.isInArtifactTree(file.id);
       final isMatchingActualOutput =
           (currentState.isActualOutput(file.id) ||
-              currentState.isActualPostOutput(file.id)) &&
+              currentState.isActualPostOutput(file.id) ||
+              currentState.hasSharedPart(file.id)) &&
           outputInArtifactTree == file.inArtifactTree;
       if (!isMatchingActualOutput) {
         deletes.add(file);
@@ -400,7 +405,8 @@ class BuildSeries {
     for (final id
         in _buildPlan.previousBuild.incompatibleBuildOutputsToDelete) {
       if (!currentState.isActualOutput(id) &&
-          !currentState.isActualPostOutput(id)) {
+          !currentState.isActualPostOutput(id) &&
+          !currentState.hasSharedPart(id)) {
         deletes.add(AssetFile.atPackagePath(id));
       }
     }
@@ -434,6 +440,11 @@ class BuildSeries {
               AssetFile(id, inArtifactTree: postProcessResult.inArtifactTree),
             );
           }
+        }
+      }
+      for (final libraryId in previousBuild.sharedPartLibraryIds) {
+        if (!currentState.hasSharedPart(libraryId)) {
+          deletes.add(AssetFile.atPackagePath(libraryId.sharedPartId!));
         }
       }
     }

@@ -1,5 +1,8 @@
 ## 3.5.21-wip
 
+- Add `addsToLibraryBuilders` to `testBuilders` and
+  `addsToLibraryBuilderFactories` to `testBuilderFactories` to support testing
+  builders that use `BuildStep.librarySourceSink`.
 - Use `build_runner` 2.16.2.
 
 ## 3.5.20

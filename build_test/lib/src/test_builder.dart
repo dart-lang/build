@@ -190,6 +190,7 @@ Future<TestBuilderResult> testBuilders(
   Set<Builder> optionalBuilders = const {},
   Set<Builder> visibleOutputBuilders = const {},
   Set<PostProcessBuilder> visibleOutputPostProcessBuilders = const {},
+  Set<Builder> addsToLibraryBuilders = const {},
   Map<Builder, List<String>> appliesBuilders = const {},
   bool testingBuilderConfig = true,
   TestReaderWriter? readerWriter,
@@ -199,6 +200,7 @@ Future<TestBuilderResult> testBuilders(
   final builderFactories = <BuilderFactory>[];
   final optionalBuilderFactories = Set<BuilderFactory>.identity();
   final visibleOutputBuilderFactories = Set<BuilderFactory>.identity();
+  final addsToLibraryBuilderFactories = Set<BuilderFactory>.identity();
   final appliesBuildersToFactories = <BuilderFactory, List<String>>{};
   for (final builder in builders) {
     Builder builderFactory(_) => builder;
@@ -208,6 +210,9 @@ Future<TestBuilderResult> testBuilders(
     }
     if (visibleOutputBuilders.contains(builder)) {
       visibleOutputBuilderFactories.add(builderFactory);
+    }
+    if (addsToLibraryBuilders.contains(builder)) {
+      addsToLibraryBuilderFactories.add(builderFactory);
     }
     if (appliesBuilders.containsKey(builder)) {
       appliesBuildersToFactories[builderFactory] = appliesBuilders[builder]!;
@@ -239,6 +244,7 @@ Future<TestBuilderResult> testBuilders(
     visibleOutputBuilderFactories: visibleOutputBuilderFactories,
     visibleOutputPostProcessBuilderFactories:
         visibleOutputPostProcessBuilderFactories,
+    addsToLibraryBuilderFactories: addsToLibraryBuilderFactories,
     appliesBuilders: appliesBuildersToFactories,
     testingBuilderConfig: testingBuilderConfig,
     readerWriter: readerWriter,
@@ -334,6 +340,7 @@ Future<TestBuilderResult> testBuilderFactories(
   Set<BuilderFactory> visibleOutputBuilderFactories = const {},
   Set<PostProcessBuilderFactory> visibleOutputPostProcessBuilderFactories =
       const {},
+  Set<BuilderFactory> addsToLibraryBuilderFactories = const {},
   Map<BuilderFactory, List<String>> appliesBuilders = const {},
   bool testingBuilderConfig = true,
   TestReaderWriter? readerWriter,
@@ -445,6 +452,7 @@ Future<TestBuilderResult> testBuilderFactories(
           outputsToArtifactTree: !visibleOutputBuilderFactories.contains(
             builderFactory,
           ),
+          addsToLibrary: addsToLibraryBuilderFactories.contains(builderFactory),
           appliesBuilders: appliesBuilders[builderFactory] ?? const [],
         ),
         applyToPackages: inputPackages,
