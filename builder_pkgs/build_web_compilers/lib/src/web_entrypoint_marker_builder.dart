@@ -53,33 +53,40 @@ class WebEntrypointMarkerBuilder implements Builder {
       buildStep,
     );
 
-    final webEntrypointJson = <String, Object?>{};
-
-    if (hasCachedState) {
-      final asset = frontendServerState.entrypointAssetId!;
-      webEntrypointJson['entrypoint'] = asset.toString();
-      webEntrypointJson['canonicalUri'] = sourceArg(asset);
-    } else {
-      final asset = await _findEntrypoint(buildStep);
-      if (asset != null) {
-        // We must save the main entrypoint as the recompilation target for
-        // the Frontend Server before any JS files are emitted.
-        frontendServerState.entrypointAssetId = asset;
-        webEntrypointJson['entrypoint'] = asset.toString();
-        webEntrypointJson['canonicalUri'] = sourceArg(asset);
-      }
+    final entrypointAssetId = hasCachedState
+        ? frontendServerState.entrypointAssetId!
+        : await _findEntrypoint(buildStep);
+    if (entrypointAssetId != null) {
+      // We must save the main entrypoint as the recompilation target for the
+      // Frontend Server before any JS files are emitted.
+      frontendServerState.entrypointAssetId = entrypointAssetId;
     }
 
-    final rootDir = p.dirname(buildStep.inputId.path);
-    final webEntrypointAsset = AssetId(
-      buildStep.inputId.package,
-      p.join(rootDir, '.web.entrypoint.json'),
+    await buildStep.writeAsString(
+      webEntrypointStateAssetId(buildStep.inputId.package),
+      jsonEncode(<String, Object?>{
+        if (entrypointAssetId != null) ...{
+          'entrypoint': entrypointAssetId.toString(),
+          'canonicalUri': sourceArg(entrypointAssetId),
+        },
+      }),
     );
 
-    await buildStep.writeAsString(
-      webEntrypointAsset,
-      jsonEncode(webEntrypointJson),
+    if (entrypointAssetId == null) return;
+
+    // A generated entrypoint can only be read from a build step in its own
+    // package. Stage it here, in the root package, so that the DDC builds of
+    // dependency packages can compile against it instead; see
+    // `DdcFrontendServerBuilder`.
+    //
+    // This runs after the state above is written so that a failure to read the
+    // entrypoint doesn't take the recorded state down with it.
+    final scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
+    await buildStep.trackStage(
+      'EnsureAssets',
+      () => scratchSpace.ensureAssets([entrypointAssetId], buildStep),
     );
+    frontendServerState.stagedEntrypointAssetId = entrypointAssetId;
   }
 
   /// Searches for and returns the highest-priority web app entrypoint,

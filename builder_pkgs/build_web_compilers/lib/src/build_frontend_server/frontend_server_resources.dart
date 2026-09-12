@@ -12,12 +12,36 @@ import 'package:scratch_space/scratch_space.dart';
 /// the Frontend Server.
 final frontendServerState = FrontendServerState();
 
+/// The asset in [package] that `WebEntrypointMarkerBuilder` records the app's
+/// entrypoint in.
+///
+/// That builder runs on the `$web$` placeholder, which is always `web/$web$`,
+/// so its `.web.entrypoint.json` output always lands directly under `web`.
+/// Everything that writes or reads the file goes through here so the two can't
+/// drift apart.
+AssetId webEntrypointStateAssetId(String package) =>
+    AssetId(package, 'web/.web.entrypoint.json');
+
 class FrontendServerState {
   /// The built app's main entrypoint file.
   ///
-  /// This must be set before any asset builders run when compiling with DDC and
-  /// hot reload.
+  /// This must be set before any asset builders run when
+  /// compiling with DDC and hot reload enabled.
+  ///
+  /// `WebEntrypointMarkerBuilder` sets it, and also stages it into the scratch
+  /// space; see [stagedEntrypointAssetId].
   AssetId? entrypointAssetId;
+
+  /// The entrypoint that has been copied into the scratch space, if any.
+  ///
+  /// Build steps in other packages can't read a generated entrypoint
+  /// themselves, so `WebEntrypointMarkerBuilder` stages a copy for them to
+  /// compile against and records it here.
+  ///
+  /// The scratch space outlives an individual build, so this is not reset
+  /// between builds; it is only unset for as long as nothing has been staged
+  /// into the current scratch space.
+  AssetId? stagedEntrypointAssetId;
 
   /// The scratch space where the Frontend Server writes its outputs (`.js`,
   /// `.map`, and `.metadata` files).
@@ -34,16 +58,21 @@ class FrontendServerState {
   /// Looks for and loads a `.web.entrypoint.json` file if it exists.
   ///
   /// Returns whether or not the `.web.entrypoint.json` was found and loaded.
+  ///
+  /// Note that a build step can never read its own output, so this only ever
+  /// loads state written by an earlier build phase, or by an earlier build.
   Future<bool> checkAndDeserializeState(BuildStep buildStep) async {
-    final webEntrypointAsset = AssetId(
+    final webEntrypointAsset = webEntrypointStateAssetId(
       buildStep.inputId.package,
-      '.web.entrypoint.json',
     );
-    if (await buildStep.canRead(webEntrypointAsset)) {
-      final contents = json.decode(
-        await buildStep.readAsString(webEntrypointAsset),
-      ) as Map<String, Object?>;
-      entrypointAssetId = AssetId.parse(contents['entrypoint'] as String);
+    if (!await buildStep.canRead(webEntrypointAsset)) return false;
+    final contents = json.decode(
+      await buildStep.readAsString(webEntrypointAsset),
+    ) as Map<String, Object?>;
+    // `WebEntrypointMarkerBuilder` writes an empty object when it doesn't find
+    // an entrypoint, in which case there is no state to restore.
+    if (contents['entrypoint'] case final String entrypoint) {
+      entrypointAssetId = AssetId.parse(entrypoint);
       return true;
     }
     return false;
