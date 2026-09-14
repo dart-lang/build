@@ -11,36 +11,12 @@ void main() {
       expect(() => prefixForPhase(-1), throwsArgumentError);
     });
 
-    test(
-      'generates single-letter base62 identifiers with single dollar prefix',
-      () {
-        expect(prefixForPhase(0), r'$a');
-        expect(prefixForPhase(1), r'$b');
-        expect(prefixForPhase(25), r'$z');
-        expect(prefixForPhase(26), r'$A');
-        expect(prefixForPhase(51), r'$Z');
-        expect(prefixForPhase(52), r'$0');
-        expect(prefixForPhase(61), r'$9');
-      },
-    );
-
-    test(
-      'generates two-character base62 identifiers with double dollar prefix',
-      () {
-        expect(prefixForPhase(62), r'$$aa');
-        expect(prefixForPhase(63), r'$$ab');
-        expect(prefixForPhase(62 + 25), r'$$az');
-        expect(prefixForPhase(62 + 26), r'$$aA');
-        expect(prefixForPhase(62 + 61), r'$$a9');
-        expect(prefixForPhase(62 + 62 * 62 - 1), r'$$99');
-      },
-    );
-
-    test(
-      'generates three-character base62 identifiers with triple dollar prefix',
-      () {
-        expect(prefixForPhase(62 + 62 * 62), r'$$$aaa');
-      },
-    );
+    test('is the phase number preceded by a dollar', () {
+      expect(prefixForPhase(0), r'$0');
+      expect(prefixForPhase(1), r'$1');
+      expect(prefixForPhase(9), r'$9');
+      expect(prefixForPhase(43), r'$43');
+      expect(prefixForPhase(1234), r'$1234');
+    });
   });
 }
