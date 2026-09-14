@@ -2,6 +2,11 @@
 // All rights reserved. Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// Deserialization catches `Error` so it can wrap any failure, including a type
+// error from malformed input, in a `DeserializationError` that names the type
+// being deserialized.
+// ignore_for_file: avoid_catching_errors
+
 import 'dart:convert';
 
 import 'package:built_collection/built_collection.dart';

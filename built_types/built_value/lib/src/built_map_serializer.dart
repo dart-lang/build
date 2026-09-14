@@ -53,7 +53,7 @@ class BuiltMapSerializer implements StructuredSerializer<BuiltMap> {
         ? MapBuilder<Object, Object>()
         : serializers.newBuilder(specifiedType) as MapBuilder;
 
-    if (serialized.length % 2 == 1) {
+    if (serialized.length.isOdd) {
       throw ArgumentError('odd length');
     }
 

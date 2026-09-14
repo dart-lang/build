@@ -70,7 +70,7 @@ class SetBuilder<E> {
   /// same type.
   ///
   /// Use [withDefaultBase] to reset `base` to the default value.
-  void withBase(_SetFactory<E> base) {
+  void withBase(Set<E> Function() base) {
     ArgumentError.checkNotNull(base, 'base');
     _setFactory = base;
     _setSafeSet(_createSet()..addAll(_set));

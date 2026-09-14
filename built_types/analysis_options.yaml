@@ -17,17 +17,3 @@ analyzer:
     # dart fix generates corrupted code when applying this rule to closures
     # assigned to fields in tests.
     prefer_function_declarations_over_variables: ignore
-    # Pre-existing patterns in built_types that require non-mechanical refactoring
-    avoid_catching_errors: ignore
-    camel_case_types: ignore
-    constant_identifier_names: ignore
-    depend_on_referenced_packages: ignore
-    hash_and_equals: ignore
-    implementation_imports: ignore
-    invalid_runtime_check_with_js_interop_types: ignore
-    library_private_types_in_public_api: ignore
-    non_constant_identifier_names: ignore
-    only_throw_errors: ignore
-    sort_pub_dependencies: ignore
-    unnecessary_statements: ignore
-    use_is_even_rather_than_modulo: ignore

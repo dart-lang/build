@@ -3,6 +3,7 @@
 ## 8.13.1-wip
 
 - Migrate to `package:dart_flutter_team_lints`.
+- Fix remaining analysis issues and remove the lint suppressions that hid them.
 
 ## 8.13.0
 

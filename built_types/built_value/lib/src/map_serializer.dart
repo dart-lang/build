@@ -14,7 +14,7 @@ class MapSerializer implements StructuredSerializer<Map> {
   final String wireName = 'Map';
 
   @override
-  Iterable<Object?> serialize(Serializers serializers, Map Map,
+  Iterable<Object?> serialize(Serializers serializers, Map map,
       {FullType specifiedType = FullType.unspecified}) {
     final isUnderspecified =
         specifiedType.isUnspecified || specifiedType.parameters.isEmpty;
@@ -28,9 +28,9 @@ class MapSerializer implements StructuredSerializer<Map> {
         : specifiedType.parameters[1];
 
     final result = <Object?>[];
-    for (final key in Map.keys) {
+    for (final key in map.keys) {
       result.add(serializers.serialize(key, specifiedType: keyType));
-      final value = Map[key];
+      final value = map[key];
       result.add(serializers.serialize(value, specifiedType: valueType));
     }
     return result;
@@ -53,7 +53,7 @@ class MapSerializer implements StructuredSerializer<Map> {
         ? <Object, Object>{}
         : serializers.newBuilder(specifiedType) as Map;
 
-    if (serialized.length % 2 == 1) {
+    if (serialized.length.isOdd) {
       throw ArgumentError('odd length');
     }
 
