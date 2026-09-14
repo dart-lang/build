@@ -4,6 +4,7 @@
 
 import 'package:build/build.dart' hide Builder;
 import 'package:built_collection/built_collection.dart';
+import 'package:dart_style/dart_style.dart';
 
 import 'asset_content.dart';
 import 'finished_shared_part.dart';
@@ -25,6 +26,7 @@ class SharedPartAccumulator {
   final MapBuilder<int, String> _contributions = MapBuilder();
 
   final Map<int, AssetContent> _contentsByPhase = {};
+  AssetContent? _finalContent;
 
   SharedPartAccumulator(this.libraryId, this.languageVersion);
 
@@ -37,12 +39,25 @@ class SharedPartAccumulator {
     if (_contributions[phase] != null) {
       throw StateError('Contribution for phase $phase already added.');
     }
+    _finalContent = null;
     _builderKeys[phase] = builderKey;
     _imports[phase] = newImports;
-    _contributions[phase] = newContribution;
+    _contributions[phase] = _formatContribution(newContribution);
   }
 
-  /// Returns the content of this shared part up to and including [phase].
+  static String _formatContribution(String contribution) {
+    final trimmed = contribution.trim();
+    if (trimmed.isEmpty) return '';
+    try {
+      return DartFormatter(
+        languageVersion: DartFormatter.latestLanguageVersion,
+      ).format(trimmed).trim();
+    } catch (_) {
+      return trimmed;
+    }
+  }
+
+  /// The content of this shared part up to and including [phase].
   ///
   /// Before reading at phase `p`, all contributions at or before `p` must
   /// have been added.
@@ -54,7 +69,13 @@ class SharedPartAccumulator {
     return AssetContent.string(content);
   });
 
-  /// Returns accumulated content as a [FinishedSharedPart].
+  /// The final content of this shared part containing all contributions.
+  AssetContent finalContent() => _finalContent ??= () {
+    final content = const SharedPartAccumulatorCodec().encode(this);
+    return AssetContent.string(content);
+  }();
+
+  /// This accumulated content as a [FinishedSharedPart].
   FinishedSharedPart toFinishedSharedPart() => FinishedSharedPart(
     (b) => b
       ..libraryId = libraryId

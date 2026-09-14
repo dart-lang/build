@@ -6,7 +6,6 @@ import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/token.dart';
 import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
-import 'package:dart_style/dart_style.dart';
 import 'package:path/path.dart' as p;
 
 import 'br_outputs.dart';
@@ -28,6 +27,7 @@ class SharedPartAccumulatorCodec {
     if (accumulator.languageVersion != null) {
       buffer.writeln(accumulator.languageVersion);
     }
+    buffer.writeln('// dart format off');
     final relativePath = p.url.relative(
       accumulator.libraryId.path,
       from: p.url.dirname(accumulator.libraryId.sharedPartId!.path),
@@ -57,24 +57,7 @@ class SharedPartAccumulatorCodec {
       }
     }
 
-    final rawContent = buffer.toString();
-    String formattedContent;
-    try {
-      formattedContent = DartFormatter(
-        languageVersion: DartFormatter.latestLanguageVersion,
-      ).format(rawContent);
-    } catch (_) {
-      formattedContent = rawContent;
-    }
-
-    if (accumulator.languageVersion != null) {
-      return formattedContent.replaceFirst(
-        accumulator.languageVersion!,
-        '${accumulator.languageVersion}\n// dart format off',
-      );
-    } else {
-      return '// dart format off\n$formattedContent';
-    }
+    return buffer.toString();
   }
 
   /// Decodes shared part source [content] into a [SharedPartAccumulator] for
