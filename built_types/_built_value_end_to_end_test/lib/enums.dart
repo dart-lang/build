@@ -120,6 +120,9 @@ class FallbackNumberEnum extends EnumClass {
   static FallbackNumberEnum valueOf(String name) => _$fbNumberValueOf(name);
 }
 
+// Checks that generation handles a name containing `$` and `_`, so the name
+// deliberately breaks the usual style.
+// ignore: camel_case_types
 class EnumWith$Dollar_UnderScore extends EnumClass {
   static Serializer<EnumWith$Dollar_UnderScore> get serializer =>
       _$enumWith$DollarUnderScoreSerializer;
