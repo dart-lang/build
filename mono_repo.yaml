@@ -7,3 +7,14 @@ merge_stages:
 github:
   permissions:
     contents: read
+  on_completion:
+    - name: ci
+      runs-on: ubuntu-latest
+      # Runs whatever happened above, because a job that simply depends on a
+      # failed job is skipped rather than failed, and a skipped check counts
+      # as a passing one.
+      if: always()
+      steps:
+        - name: Fail if any job failed or was cancelled
+          if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+          run: exit 1
