@@ -12,11 +12,7 @@ class _$FinishedSharedPart extends FinishedSharedPart {
   @override
   final String? languageVersion;
   @override
-  final BuiltMap<int, String> builderKeys;
-  @override
-  final BuiltMap<int, BuiltList<String>> imports;
-  @override
-  final BuiltMap<int, String> contributions;
+  final BuiltMap<int, PartContribution> contributions;
 
   factory _$FinishedSharedPart([
     void Function(FinishedSharedPartBuilder)? updates,
@@ -25,8 +21,6 @@ class _$FinishedSharedPart extends FinishedSharedPart {
   _$FinishedSharedPart._({
     required this.libraryId,
     this.languageVersion,
-    required this.builderKeys,
-    required this.imports,
     required this.contributions,
   }) : super._();
   @override
@@ -44,8 +38,6 @@ class _$FinishedSharedPart extends FinishedSharedPart {
     return other is FinishedSharedPart &&
         libraryId == other.libraryId &&
         languageVersion == other.languageVersion &&
-        builderKeys == other.builderKeys &&
-        imports == other.imports &&
         contributions == other.contributions;
   }
 
@@ -54,8 +46,6 @@ class _$FinishedSharedPart extends FinishedSharedPart {
     var _$hash = 0;
     _$hash = $jc(_$hash, libraryId.hashCode);
     _$hash = $jc(_$hash, languageVersion.hashCode);
-    _$hash = $jc(_$hash, builderKeys.hashCode);
-    _$hash = $jc(_$hash, imports.hashCode);
     _$hash = $jc(_$hash, contributions.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
@@ -66,8 +56,6 @@ class _$FinishedSharedPart extends FinishedSharedPart {
     return (newBuiltValueToStringHelper(r'FinishedSharedPart')
           ..add('libraryId', libraryId)
           ..add('languageVersion', languageVersion)
-          ..add('builderKeys', builderKeys)
-          ..add('imports', imports)
           ..add('contributions', contributions))
         .toString();
   }
@@ -86,22 +74,10 @@ class FinishedSharedPartBuilder
   set languageVersion(String? languageVersion) =>
       _$this._languageVersion = languageVersion;
 
-  MapBuilder<int, String>? _builderKeys;
-  MapBuilder<int, String> get builderKeys =>
-      _$this._builderKeys ??= MapBuilder<int, String>();
-  set builderKeys(MapBuilder<int, String>? builderKeys) =>
-      _$this._builderKeys = builderKeys;
-
-  MapBuilder<int, BuiltList<String>>? _imports;
-  MapBuilder<int, BuiltList<String>> get imports =>
-      _$this._imports ??= MapBuilder<int, BuiltList<String>>();
-  set imports(MapBuilder<int, BuiltList<String>>? imports) =>
-      _$this._imports = imports;
-
-  MapBuilder<int, String>? _contributions;
-  MapBuilder<int, String> get contributions =>
-      _$this._contributions ??= MapBuilder<int, String>();
-  set contributions(MapBuilder<int, String>? contributions) =>
+  MapBuilder<int, PartContribution>? _contributions;
+  MapBuilder<int, PartContribution> get contributions =>
+      _$this._contributions ??= MapBuilder<int, PartContribution>();
+  set contributions(MapBuilder<int, PartContribution>? contributions) =>
       _$this._contributions = contributions;
 
   FinishedSharedPartBuilder();
@@ -111,8 +87,6 @@ class FinishedSharedPartBuilder
     if ($v != null) {
       _libraryId = $v.libraryId;
       _languageVersion = $v.languageVersion;
-      _builderKeys = $v.builderKeys.toBuilder();
-      _imports = $v.imports.toBuilder();
       _contributions = $v.contributions.toBuilder();
       _$v = null;
     }
@@ -144,17 +118,11 @@ class FinishedSharedPartBuilder
               'libraryId',
             ),
             languageVersion: languageVersion,
-            builderKeys: builderKeys.build(),
-            imports: imports.build(),
             contributions: contributions.build(),
           );
     } catch (_) {
       late String _$failedField;
       try {
-        _$failedField = 'builderKeys';
-        builderKeys.build();
-        _$failedField = 'imports';
-        imports.build();
         _$failedField = 'contributions';
         contributions.build();
       } catch (e) {

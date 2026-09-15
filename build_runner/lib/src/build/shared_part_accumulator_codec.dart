@@ -9,6 +9,7 @@ import 'package:built_collection/built_collection.dart';
 import 'package:path/path.dart' as p;
 
 import 'br_outputs.dart';
+import 'part_contribution.dart';
 import 'shared_part_accumulator.dart';
 
 /// Serializes a [SharedPartAccumulator] to and from human-readable Dart source.
@@ -17,10 +18,9 @@ class SharedPartAccumulatorCodec {
 
   /// Encodes [accumulator] to Dart source code.
   String encode(SharedPartAccumulator accumulator, {int? upToPhase}) {
-    final validPhases = <int>{
-      ...accumulator.imports.keys,
-      ...accumulator.contributions.keys,
-    }.where((phase) => upToPhase == null || phase <= upToPhase).toList();
+    final validPhases = accumulator.contributions.keys
+        .where((phase) => upToPhase == null || phase <= upToPhase)
+        .toList();
     validPhases.sort();
 
     final buffer = StringBuffer();
@@ -36,11 +36,10 @@ class SharedPartAccumulatorCodec {
     buffer.writeln();
 
     for (final phase in validPhases) {
-      final phaseImports = accumulator.imports[phase];
-      if (phaseImports?.isNotEmpty ?? false) {
-        final builderKey = accumulator.builderKeys[phase] ?? '';
-        buffer.writeln('// === $builderKey/$phase imports.');
-        for (final import in phaseImports!) {
+      final contribution = accumulator.contributions[phase]!;
+      if (contribution.imports.isNotEmpty) {
+        buffer.writeln('// === ${contribution.builderKey}/$phase imports.');
+        for (final import in contribution.imports) {
           buffer.writeln(_escapeContent(import));
         }
         buffer.writeln();
@@ -48,11 +47,12 @@ class SharedPartAccumulatorCodec {
     }
 
     for (final phase in validPhases) {
-      final contribution = accumulator.contributions[phase];
-      if (contribution != null && contribution.isNotEmpty) {
-        final builderKey = accumulator.builderKeys[phase] ?? '';
-        buffer.writeln('// === $builderKey/$phase contribution.');
-        buffer.writeln(_escapeContent(contribution));
+      final contribution = accumulator.contributions[phase]!;
+      if (contribution.contribution.isNotEmpty) {
+        buffer.writeln(
+          '// === ${contribution.builderKey}/$phase contribution.',
+        );
+        buffer.writeln(_escapeContent(contribution.contribution));
         buffer.writeln();
       }
     }
@@ -130,18 +130,18 @@ class SharedPartAccumulatorCodec {
     }
 
     final result = SharedPartAccumulator(libraryId, languageVersion);
-    final allPhases = <int>{
-      ...builderKeys.keys,
-      ...importsByPhase.keys,
-      ...contributionsByPhase.keys,
-    }.toList()..sort();
+    // Every marker records a builder key, so `builderKeys` has all the phases.
+    final allPhases = builderKeys.keys.toList()..sort();
 
     for (final phase in allPhases) {
       result.addContribution(
         phase,
-        builderKeys[phase] ?? '',
-        importsByPhase[phase]?.build() ?? BuiltList<String>(),
-        contributionsByPhase[phase] ?? '',
+        PartContribution.of(
+          builderKey: builderKeys[phase]!,
+          imports: importsByPhase[phase]?.build() ?? const <String>[],
+          // A phase can have imports and no contribution.
+          contribution: contributionsByPhase[phase] ?? '',
+        ),
       );
     }
 
