@@ -122,7 +122,4 @@ class FinishedBuildState {
 
   bool hasSharedPart(AssetId id) =>
       sharedParts.containsKey(id.sharedPartLibraryId ?? id);
-
-  FinishedSharedPart? sharedPartOrNull(AssetId id) =>
-      sharedParts[id.sharedPartLibraryId ?? id];
 }

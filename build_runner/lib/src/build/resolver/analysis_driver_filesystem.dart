@@ -172,7 +172,7 @@ class AnalysisDriverFilesystem
       BuildRunnerFileContent(
         path: id.asPath,
         exists: true,
-        content: partContent.dartStringValueOrEmptyFail(id: id),
+        content: partContent.stringValue(),
         contentHash: partContent.digest.toString(),
         phase: -1,
       ),

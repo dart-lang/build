@@ -215,12 +215,8 @@ class BuildState {
 
     builder.globResults.addAll(_globResults);
 
-    for (final entry in _partData.entries) {
-      final partId = entry.key.sharedPartId!;
-      final digest =
-          _retainedPartContent(entry.key)?.digest ??
-          entry.value.finalContent().digest;
-      builder.digests[partId] = digest;
+    for (final libraryId in _partData.keys) {
+      builder.digests[libraryId.sharedPartId!] = _partContent(libraryId).digest;
     }
 
     return builder.build();
@@ -228,10 +224,8 @@ class BuildState {
 
   FinishedBuildState toFinishedBuildState() {
     final contents = Map<AssetId, AssetContent>.from(_contents);
-    for (final entry in _partData.entries) {
-      final partId = entry.key.sharedPartId!;
-      contents[partId] =
-          _retainedPartContent(entry.key) ?? entry.value.finalContent();
+    for (final libraryId in _partData.keys) {
+      contents[libraryId.sharedPartId!] = _partContent(libraryId);
     }
     return FinishedBuildState(
       buildStepPlan: buildStepPlan,
@@ -285,25 +279,9 @@ class BuildState {
 
   // -- Shared parts.
 
-  /// Adds [sharedPart].
-  ///
-  /// Throws if a shared part for the same library already exists.
-  void addSharedPart(SharedPartAccumulator sharedPart) {
-    if (_partData.containsKey(sharedPart.libraryId)) {
-      throw StateError(
-        'SharedPart for ${sharedPart.libraryId} already exists.',
-      );
-    }
-    _partData[sharedPart.libraryId] = sharedPart;
-  }
-
   /// Whether the library [id] has a shared part.
   bool hasSharedPart(AssetId id) =>
       _partData.containsKey(id.sharedPartLibraryId ?? id);
-
-  /// The shared part accumulator for [id], or `null` if it has none.
-  SharedPartAccumulator? sharedPartOrNull(AssetId id) =>
-      _partData[id.sharedPartLibraryId ?? id];
 
   /// The content of the shared part for [id], or `null` if it does not exist.
   ///
@@ -312,29 +290,26 @@ class BuildState {
     final libraryId = id.sharedPartLibraryId ?? id;
     final partData = _partData[libraryId];
     if (partData == null) return null;
-    if (upToPhase == null) {
-      return _retainedPartContent(libraryId) ?? partData.finalContent();
-    }
+    if (upToPhase == null) return _partContent(libraryId);
     return partData.contentAt(upToPhase);
   }
 
-  /// The previous build's on-disk content of the shared part for [libraryId].
+  /// The content of the shared part for [libraryId] as it will be on disk.
   ///
-  /// Returns `null` if there is none, or if the part is rebuilt in this build
-  /// and so the previous content no longer applies.
-  AssetContent? _retainedPartContent(AssetId libraryId) {
-    if (_librariesWithRebuiltPart.contains(libraryId)) return null;
-    final partId = libraryId.sharedPartId;
-    if (partId == null) return null;
-    return _retainedOutputContents[partId];
+  /// If the part is not rebuilt in this build then this is the content written
+  /// by the previous build, which is still correct and is kept as is.
+  ///
+  /// Throws if [libraryId] has no shared part.
+  AssetContent _partContent(AssetId libraryId) {
+    if (!_librariesWithRebuiltPart.contains(libraryId)) {
+      final retained = _retainedOutputContents[libraryId.sharedPartId!];
+      if (retained != null) return retained;
+    }
+    return _partData[libraryId]!.finalContent();
   }
 
   /// All libraries that have a shared part.
   Iterable<AssetId> get sharedPartLibraryIds => _partData.keys;
-
-  /// All generated shared part file IDs.
-  Iterable<AssetId> get sharedPartIds =>
-      sharedPartLibraryIds.map((id) => id.sharedPartId!);
 
   /// Records that the shared part for [id] is rebuilt in this build.
   ///
@@ -349,22 +324,37 @@ class BuildState {
   bool hasRebuiltPart(AssetId id) =>
       _librariesWithRebuiltPart.contains(id.sharedPartLibraryId ?? id);
 
-  void addPartContribution(
-    AssetId libraryId,
-    int phase,
-    String builderKey,
-    BuiltList<String> imports,
-    String contribution,
-  ) {
+  /// Adds a contribution written by a builder in this build.
+  ///
+  /// Creates the shared part for [libraryId] if it does not exist yet.
+  ///
+  /// The contribution supersedes whatever the previous build wrote, so the
+  /// part is marked rebuilt.
+  void addPartContribution({
+    required AssetId libraryId,
+    required int phase,
+    required String builderKey,
+    required BuiltList<String> imports,
+    required String contribution,
+    required String? languageVersion,
+  }) {
     markPartRebuilt(libraryId);
-    _partData[libraryId]!.addContribution(
-      phase,
-      builderKey,
-      imports,
-      contribution,
-    );
+    _partDataFor(
+      libraryId,
+      languageVersion,
+    ).addContribution(phase, builderKey, imports, contribution);
   }
 
+  /// Replays a contribution that [fromPart] recorded in the previous build.
+  ///
+  /// Creates the shared part for [libraryId] if it does not exist yet.
+  ///
+  /// Does nothing if [fromPart] is `null` or recorded nothing for [phase].
+  ///
+  /// The part is deliberately not marked rebuilt. The replayed contribution
+  /// reproduces what the previous build already wrote, so that content is
+  /// still correct and is kept rather than written again. Marking it rebuilt
+  /// would report the part as an output of this build.
   void copyPartContribution({
     required FinishedSharedPart? fromPart,
     required AssetId libraryId,
@@ -376,21 +366,25 @@ class BuildState {
     final imports = fromPart.imports[phase];
     final contribution = fromPart.contributions[phase];
     if (imports == null && contribution == null) return;
-    if (!hasSharedPart(libraryId)) {
-      addSharedPart(
-        SharedPartAccumulator(
-          libraryId,
-          languageVersion ?? fromPart.languageVersion,
-        ),
-      );
-    }
-    _partData[libraryId]!.addContribution(
+    _partDataFor(
+      libraryId,
+      languageVersion ?? fromPart.languageVersion,
+    ).addContribution(
       phase,
       builderKey ?? '',
       imports ?? BuiltList<String>(),
       contribution ?? '',
     );
   }
+
+  /// The accumulator for [libraryId], creating it if it does not exist yet.
+  SharedPartAccumulator _partDataFor(
+    AssetId libraryId,
+    String? languageVersion,
+  ) => _partData[libraryId] ??= SharedPartAccumulator(
+    libraryId,
+    languageVersion,
+  );
 
   // -- Globs.
 

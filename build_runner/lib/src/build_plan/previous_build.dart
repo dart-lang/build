@@ -148,7 +148,7 @@ abstract class PreviousBuild
       digests.keys.where((id) => id.isBrSharedPart);
 
   Iterable<AssetId> get sharedPartLibraryIds =>
-      sharedPartIds.map((id) => id.sharedPartLibraryId!).whereType<AssetId>();
+      sharedPartIds.map((id) => id.sharedPartLibraryId!);
 
   bool hasSharedPart(AssetId id) {
     final partId = id.isBrSharedPart ? id : id.sharedPartId;

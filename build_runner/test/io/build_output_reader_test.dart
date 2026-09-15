@@ -14,7 +14,6 @@ import 'package:build_runner/src/build/build_state/build_step_id.dart';
 import 'package:build_runner/src/build/build_state/build_step_result.dart';
 import 'package:build_runner/src/build/build_state/post_process_build_step_id.dart';
 import 'package:build_runner/src/build/build_state/post_process_build_step_result.dart';
-import 'package:build_runner/src/build/shared_part_accumulator.dart';
 import 'package:build_runner/src/build_plan/build_directory.dart';
 import 'package:build_runner/src/build_plan/build_filter.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
@@ -181,13 +180,13 @@ void main() {
           b.wrotePartContribution = true;
         }),
       );
-      buildState.addSharedPart(SharedPartAccumulator(inputId, '// @dart=3.0'));
       buildState.addPartContribution(
-        inputId,
-        0,
-        'b0',
-        BuiltList(['import \'package:foo/foo.dart\';']),
-        '// contribution',
+        libraryId: inputId,
+        phase: 0,
+        builderKey: 'b0',
+        imports: BuiltList<String>([r"import 'package:foo/foo.dart';"]),
+        contribution: '// contribution',
+        languageVersion: '// @dart=3.0',
       );
 
       final buildPlan = await BuildPlan.load(

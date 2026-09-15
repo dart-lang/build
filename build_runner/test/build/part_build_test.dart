@@ -218,15 +218,15 @@ void main() {
 
       // Initial build.
       // Expected generated part combines imports and content from both.
-      final expectedGeneratedPart = '''
+      final expectedGeneratedPart = r'''
 // dart format off
 part of '../a.dart';
 
 // === a:builder1/0 imports.
-import 'package:a/b.dart' as \$0b;
+import 'package:a/b.dart' as $0b;
 
 // === a:builder2/1 imports.
-import 'package:a/b.dart' as \$1b;
+import 'package:a/b.dart' as $1b;
 
 // === a:builder1/0 contribution.
 // builder saw: initial_b
@@ -251,15 +251,15 @@ content2
 
       // Now we do an incremental build where we ONLY change b.txt.
       // builder1 will run again, builder2 will be cached.
-      final expectedGeneratedPart2 = '''
+      final expectedGeneratedPart2 = r'''
 // dart format off
 part of '../a.dart';
 
 // === a:builder1/0 imports.
-import 'package:a/b.dart' as \$0b;
+import 'package:a/b.dart' as $0b;
 
 // === a:builder2/1 imports.
-import 'package:a/b.dart' as \$1b;
+import 'package:a/b.dart' as $1b;
 
 // === a:builder1/0 contribution.
 // builder saw: modified_b
@@ -280,6 +280,54 @@ content2
           'a|lib/c.txt': 'initial_c',
         },
         outputs: {'a|lib/_br_/a.part.dart': expectedGeneratedPart2},
+        resumeFrom: result1,
+      );
+    });
+
+    test('does not write the part again when nothing changes', () async {
+      final builderFactories = BuilderFactories({
+        'a:builder1': [
+          (_) => PartWritingBuilder('content1', 'lib/b.txt', '.b1.dart'),
+        ],
+      });
+      final builderDefinitions = [
+        BuilderDefinition(
+          'a:builder1',
+          outputsToArtifactTree: false,
+          autoApply: AutoApply.allPackages,
+          addsToLibrary: true,
+        ),
+      ];
+
+      final expectedGeneratedPart = r'''
+// dart format off
+part of '../a.dart';
+
+// === a:builder1/0 imports.
+import 'package:a/b.dart' as $0b;
+
+// === a:builder1/0 contribution.
+// builder saw: initial_b
+content1
+
+''';
+
+      final sources = {'a|lib/a.dart': '', 'a|lib/b.txt': 'initial_b'};
+
+      final result1 = await testPhases(
+        builderFactories,
+        builderDefinitions,
+        sources,
+        outputs: {'a|lib/_br_/a.part.dart': expectedGeneratedPart},
+      );
+
+      // The step is skipped and its contribution is copied from the previous
+      // build, so the part is unchanged and is not written again.
+      await testPhases(
+        builderFactories,
+        builderDefinitions,
+        sources,
+        outputs: {},
         resumeFrom: result1,
       );
     });
@@ -320,18 +368,18 @@ content2
         ];
 
         // Initial build with 3 phases.
-        final initialExpected = '''
+        final initialExpected = r'''
 // dart format off
 part of '../a.dart';
 
 // === a:builder1/0 imports.
-import 'package:a/b.dart' as \$0b;
+import 'package:a/b.dart' as $0b;
 
 // === a:builder2/1 imports.
-import 'package:a/b.dart' as \$1b;
+import 'package:a/b.dart' as $1b;
 
 // === a:builder3/2 imports.
-import 'package:a/b.dart' as \$2b;
+import 'package:a/b.dart' as $2b;
 
 // === a:builder1/0 contribution.
 // builder saw: b0
@@ -361,18 +409,18 @@ content3
 
         // Incremental build where only phase 1 changes.
         // Phase 0 and phase 2 are reused from the previous build.
-        final mixedExpected1 = '''
+        final mixedExpected1 = r'''
 // dart format off
 part of '../a.dart';
 
 // === a:builder1/0 imports.
-import 'package:a/b.dart' as \$0b;
+import 'package:a/b.dart' as $0b;
 
 // === a:builder2/1 imports.
-import 'package:a/b.dart' as \$1b;
+import 'package:a/b.dart' as $1b;
 
 // === a:builder3/2 imports.
-import 'package:a/b.dart' as \$2b;
+import 'package:a/b.dart' as $2b;
 
 // === a:builder1/0 contribution.
 // builder saw: b0
@@ -403,18 +451,18 @@ content3
 
         // Incremental build where phase 0 and phase 2 change.
         // Phase 1 is reused from the previous build.
-        final mixedExpected2 = '''
+        final mixedExpected2 = r'''
 // dart format off
 part of '../a.dart';
 
 // === a:builder1/0 imports.
-import 'package:a/b.dart' as \$0b;
+import 'package:a/b.dart' as $0b;
 
 // === a:builder2/1 imports.
-import 'package:a/b.dart' as \$1b;
+import 'package:a/b.dart' as $1b;
 
 // === a:builder3/2 imports.
-import 'package:a/b.dart' as \$2b;
+import 'package:a/b.dart' as $2b;
 
 // === a:builder1/0 contribution.
 // builder saw: b2_modified
@@ -462,13 +510,13 @@ content3
           ),
         ];
 
-        final expectedGeneratedPart = '''
+        final expectedGeneratedPart = r'''
 // @dart=2.14
 // dart format off
 part of '../a.dart';
 
 // === a:builder1/0 imports.
-import 'package:a/b.dart' as \$0b;
+import 'package:a/b.dart' as $0b;
 
 // === a:builder1/0 contribution.
 // builder saw: b
@@ -529,15 +577,15 @@ content
         ),
       ];
 
-      final expectedGeneratedPart1 = '''
+      final expectedGeneratedPart1 = r'''
 // dart format off
 part of '../a.dart';
 
 // === a:builder1/0 imports.
-import 'package:a/b.dart' as \$0b;
+import 'package:a/b.dart' as $0b;
 
 // === a:builder2/1 imports.
-import 'package:a/b.dart' as \$1b;
+import 'package:a/b.dart' as $1b;
 
 // === a:builder1/0 contribution.
 // builder saw: initial_b
@@ -561,15 +609,15 @@ content2
         outputs: {'a|lib/_br_/a.part.dart': expectedGeneratedPart1},
       );
 
-      final expectedGeneratedPart2 = '''
+      final expectedGeneratedPart2 = r'''
 // dart format off
 part of '../a.dart';
 
 // === a:builder1/0 imports.
-import 'package:a/b.dart' as \$0b;
+import 'package:a/b.dart' as $0b;
 
 // === a:builder2/1 imports.
-import 'package:a/b.dart' as \$1b;
+import 'package:a/b.dart' as $1b;
 
 // === a:builder1/0 contribution.
 // builder saw: modified_b
@@ -621,15 +669,15 @@ content2
         ),
       ];
 
-      final expectedGeneratedPart1 = '''
+      final expectedGeneratedPart1 = r'''
 // dart format off
 part of '../a.dart';
 
 // === a:builder1/0 imports.
-import 'package:a/b.dart' as \$0b;
+import 'package:a/b.dart' as $0b;
 
 // === a:builder2/1 imports.
-import 'package:a/b.dart' as \$1b;
+import 'package:a/b.dart' as $1b;
 
 // === a:builder1/0 contribution.
 // builder saw: initial_b
@@ -652,12 +700,12 @@ content2
         outputs: {'a|lib/_br_/a.part.dart': expectedGeneratedPart1},
       );
 
-      final expectedGeneratedPart2 = '''
+      final expectedGeneratedPart2 = r'''
 // dart format off
 part of '../a.dart';
 
 // === a:builder1/0 imports.
-import 'package:a/b.dart' as \$0b;
+import 'package:a/b.dart' as $0b;
 
 // === a:builder1/0 contribution.
 // builder saw: initial_b
@@ -805,12 +853,12 @@ class Class2 {}
         ),
       ];
 
-      final expectedGeneratedPart = '''
+      final expectedGeneratedPart = r'''
 // dart format off
 part of '../a.dart';
 
 // === a:builder1/0 imports.
-import 'package:a/b.dart' as \$0b;
+import 'package:a/b.dart' as $0b;
 
 // === a:builder1/0 contribution.
 // builder saw: b
@@ -843,12 +891,12 @@ content
           ),
         ];
 
-        final expectedGeneratedPart = '''
+        final expectedGeneratedPart = r'''
 // dart format off
 part of '../a.dart';
 
 // === a:builder1/0 imports.
-import 'package:a/b.dart' as \$0b;
+import 'package:a/b.dart' as $0b;
 
 // === a:builder1/0 contribution.
 // builder saw: b
@@ -903,15 +951,15 @@ content
           ),
         ];
 
-        final expectedGeneratedPart1 = '''
+        final expectedGeneratedPart1 = r'''
 // dart format off
 part of '../a.dart';
 
 // === a:builder1/0 imports.
-import 'package:a/b.dart' as \$0b;
+import 'package:a/b.dart' as $0b;
 
 // === a:builder2/1 imports.
-import 'package:a/b.dart' as \$1b;
+import 'package:a/b.dart' as $1b;
 
 // === a:builder1/0 contribution.
 // builder saw: b
@@ -945,12 +993,12 @@ content2
           ),
         ];
 
-        final expectedGeneratedPart2 = '''
+        final expectedGeneratedPart2 = r'''
 // dart format off
 part of '../a.dart';
 
 // === a:builder1/0 imports.
-import 'package:a/b.dart' as \$0b;
+import 'package:a/b.dart' as $0b;
 
 // === a:builder1/0 contribution.
 // builder saw: b
@@ -984,12 +1032,12 @@ content1
         ),
       ];
 
-      final expectedGeneratedPart = '''
+      final expectedGeneratedPart = r'''
 // dart format off
 part of '../a.dart';
 
 // === a:builder1/0 imports.
-import 'package:a/b.dart' as \$0b;
+import 'package:a/b.dart' as $0b;
 
 // === a:builder1/0 contribution.
 // builder saw: b

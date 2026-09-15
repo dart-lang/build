@@ -158,6 +158,10 @@ class Build {
     return result;
   }
 
+  /// Whether the phase numbered [phaseNumber] can add to libraries.
+  bool _isPartPhase(int phaseNumber) =>
+      _partPhaseIndices.containsKey(phaseNumber);
+
   BuildSpec get buildSpec => buildPlan.buildSpec;
   BuildOptions get buildOptions => buildSpec.buildOptions;
   TestingOverrides get testingOverrides => buildSpec.testingOverrides;
@@ -516,7 +520,7 @@ class Build {
       }
       return <AssetId>[];
     }
-    if (_partPhaseIndices[buildStepId.phaseNumber] != null) {
+    if (_isPartPhase(buildStepId.phaseNumber)) {
       buildState.markPartRebuilt(buildStepId.primaryInput);
     }
 
@@ -875,7 +879,7 @@ class Build {
         }
       }
 
-      if (_partPhaseIndices[step.phaseNumber] != null) {
+      if (_isPartPhase(step.phaseNumber)) {
         final partId = step.primaryInput.sharedPartId!;
         if (buildInputs.deletedSources.contains(partId) ||
             buildInputs.invalidOutputs.contains(partId)) {
@@ -1196,17 +1200,13 @@ class Build {
       ..errors.replace(errors)
       ..wrotePartContribution = step.wrotePartContribution;
     if (step.wrotePartContribution) {
-      if (!buildState.hasSharedPart(input)) {
-        buildState.addSharedPart(
-          SharedPartAccumulator(input, step.languageVersion),
-        );
-      }
       buildState.addPartContribution(
-        input,
-        phaseNum,
-        buildPhases.inBuildPhases[phaseNum].key,
-        step.partImports,
-        step.partContribution ?? '',
+        libraryId: input,
+        phase: phaseNum,
+        builderKey: buildPhases.inBuildPhases[phaseNum].key,
+        imports: step.partImports,
+        contribution: step.partContribution ?? '',
+        languageVersion: step.languageVersion,
       );
     }
     for (final output in outputs) {
