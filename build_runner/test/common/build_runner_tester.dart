@@ -486,58 +486,10 @@ class Pubspecs {
   static Future<Pubspecs>? _loadFuture;
 
   /// Creates [Pubspecs] with package config from the current isolate.
-  ///
-  /// Packages not in the pub cache are copied to a temporary directory so that
-  /// they are safe from concurrent modifications during tests.
   static Future<Pubspecs> load() => _loadFuture ??= _load();
 
-  static Future<Pubspecs> _load() async {
-    final config = await loadPackageConfigUri((await Isolate.packageConfig)!);
-    final copiedPackagesDir = Directory.systemTemp.createTempSync(
-      'BuildRunnerTester-packages-',
-    );
-
-    final updatedPackages = <Package>[];
-    for (final package in config.packages) {
-      if (package.root.path.contains('.pub-cache') ||
-          package.root.path.contains('pub/Cache') ||
-          // The workspace is awkward to copy and not needed.
-          package.name == 'build_workspace') {
-        updatedPackages.add(package);
-        continue;
-      }
-      final destinationPath = p.join(copiedPackagesDir.path, package.name);
-      _copyPackage(package.root.toFilePath(), destinationPath);
-      final newRoot = Uri.directory(destinationPath);
-      updatedPackages.add(
-        Package(
-          package.name,
-          newRoot,
-          packageUriRoot: newRoot.resolve('lib/'),
-          languageVersion: package.languageVersion,
-          extraData: package.extraData,
-        ),
-      );
-    }
-    return Pubspecs(
-      PackageConfig(updatedPackages, extraData: config.extraData),
-    );
-  }
-
-  static void _copyPackage(String source, String dest) {
-    for (final name in ['lib', 'bin']) {
-      final entityPath = p.join(source, name);
-      if (FileSystemEntity.isDirectorySync(entityPath)) {
-        copyPathSync(entityPath, p.join(dest, name));
-      }
-    }
-    for (final name in ['pubspec.yaml', 'build.yaml']) {
-      final entityPath = p.join(source, name);
-      if (FileSystemEntity.isFileSync(entityPath)) {
-        File(entityPath).copySync(p.join(dest, name));
-      }
-    }
-  }
+  static Future<Pubspecs> _load() async =>
+      Pubspecs(await loadPackageConfigUri((await Isolate.packageConfig)!));
 
   /// Returns `pubspec.yaml` content for the package called [name].
   ///
