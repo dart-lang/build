@@ -15,6 +15,7 @@ import 'package:shelf_web_socket/shelf_web_socket.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../../build/build_result.dart';
+import '../../io/build_output_read_result.dart';
 import '../../io/build_output_reader.dart';
 import '../../logging/build_log.dart';
 import '../watch/watcher.dart';
@@ -23,17 +24,6 @@ import 'path_to_asset_id.dart';
 final _assetsDigestPath = r'$assetDigests';
 final _buildUpdatesProtocol = r'$buildUpdates';
 final entrypointExtensionMarker = '/* ENTRYPOINT_EXTENTION_MARKER */';
-
-enum PerfSortOrder {
-  startTimeAsc,
-  startTimeDesc,
-  stopTimeAsc,
-  stopTimeDesc,
-  durationAsc,
-  durationDesc,
-  innerDurationAsc,
-  innerDurationDesc,
-}
 
 class ServeHandler {
   final Watcher _watcher;
@@ -57,6 +47,7 @@ class ServeHandler {
     String rootDir, {
     bool logRequests = false,
     bool liveReload = false,
+    bool restrictToLoopback = false,
   }) {
     if (p.url.split(rootDir).length != 1 || rootDir == '.') {
       throw ArgumentError.value(
@@ -85,6 +76,9 @@ class ServeHandler {
     if (logRequests) {
       pipeline = pipeline.addMiddleware(_logRequests);
     }
+    if (restrictToLoopback) {
+      pipeline = pipeline.addMiddleware(_loopbackOnly);
+    }
     if (liveReload) {
       pipeline = pipeline.addMiddleware(_injectLiveReloadClientCode);
     }
@@ -112,23 +106,19 @@ class ServeHandler {
         rootDir,
         p.url.split(path),
       );
-      AssetId? assetId;
+      BuildOutputReadResult? result;
       for (final id in assetIds) {
-        try {
-          if (await reader.canRead(id)) {
-            assetId = id;
-            break;
-          }
-        } on AssetNotFoundException {
-          // Try the next one.
+        final candidate = await reader.read(id);
+        if (candidate.canRead) {
+          result = candidate;
+          break;
         }
       }
 
-      if (assetId == null) {
+      if (result == null) {
         results.remove(path);
       } else {
-        final digest = await reader.digest(assetId);
-        results[path] = digest.toString();
+        results[path] = result.digest.toString();
       }
     }
     return shelf.Response.ok(
@@ -166,10 +156,10 @@ class BuildUpdatesWebSocketHandler {
   Future emitUpdateMessage(BuildResult buildResult) async {
     if (buildResult.status != BuildStatus.success) return;
     final reader = buildResult.buildOutputReader!;
-    final digests = <AssetId, String>{};
+    final digests = <AssetId, String?>{};
     for (final assetId in buildResult.outputs) {
-      final digest = await reader.digest(assetId);
-      digests[assetId] = digest.toString();
+      final result = await reader.read(assetId);
+      digests[assetId] = result.canRead ? result.digest.toString() : null;
     }
     for (final rootDir in connectionsByRootDir.keys) {
       final resultMap = <String, String?>{};
@@ -251,6 +241,33 @@ String _buildUpdatesInjectedJS(String scriptName) =>
 window.\$dartLoader.forceLoadModule('packages/build_runner/src/commands/serve/$scriptName');
 ''';
 
+/// Whether [host] refers to a loopback interface.
+bool _isLoopbackHost(String host) =>
+    host == 'localhost' ||
+    (InternetAddress.tryParse(host)?.isLoopback ?? false);
+
+/// Rejects requests that lack a loopback `Host` header or that carry a
+/// non-loopback `Origin` header.
+shelf.Handler _loopbackOnly(shelf.Handler inner) => (request) {
+  final hostHeader = request.headers['host'];
+  if (hostHeader == null) return shelf.Response.forbidden(null);
+
+  final host = Uri.tryParse('http://$hostHeader')?.host ?? '';
+  if (!_isLoopbackHost(host)) {
+    return shelf.Response.forbidden(null);
+  }
+
+  final origin = request.headers['origin'];
+  if (origin != null) {
+    final parsed = Uri.tryParse(origin);
+    if (parsed == null || !_isLoopbackHost(parsed.host)) {
+      return shelf.Response.forbidden(null);
+    }
+  }
+
+  return inner(request);
+};
+
 class AssetHandler {
   final Future<BuildOutputReader?> Function() _reader;
   final String _outputRootPackage;
@@ -283,31 +300,32 @@ class AssetHandler {
     if (reader == null) return shelf.Response.notFound('Not Found');
 
     // Use the first of [assetIds] that exists.
-    AssetId? assetId;
+    BuildOutputReadResult? result;
     for (final id in assetIds) {
-      if (await reader.canRead(id)) {
-        assetId = id;
+      final candidate = await reader.read(id);
+      if (candidate.canRead) {
+        result = candidate;
         break;
       }
+      // Ensure some result, if it's not readable then an error will be reported
+      // against it.
+      result ??= candidate;
     }
-    // Or if none exists, report an error about the first one.
-    assetId ??= assetIds.first;
 
     try {
       try {
-        if (!await reader.canRead(assetId)) {
-          final reason = await reader.unreadableReason(assetId);
-          switch (reason) {
+        if (!result!.canRead) {
+          switch (result.unreadableReason!) {
             case UnreadableReason.failed:
               return shelf.Response.internalServerError(
-                body: 'Build failed for $assetId',
+                body: 'Build failed for ${result.id}',
               );
             case UnreadableReason.notOutput:
-              return shelf.Response.notFound('$assetId was not output');
+              return shelf.Response.notFound('${result.id} was not output');
             case UnreadableReason.notFound:
               if (fallbackToDirectoryList) {
                 return shelf.Response.notFound(
-                  await _findDirectoryList(assetId),
+                  await _findDirectoryList(result.id),
                 );
               }
               return shelf.Response.notFound('Not Found');
@@ -320,8 +338,8 @@ class AssetHandler {
         return shelf.Response.notFound('Not Found');
       }
 
-      final etag = base64.encode((await reader.digest(assetId)).bytes);
-      var contentType = _typeResolver.lookup(assetId.path);
+      final etag = base64.encode(result.digest.bytes);
+      var contentType = _typeResolver.lookup(result.id.path);
       if (contentType == 'text/x-dart') {
         contentType = '$contentType; charset=utf-8';
       }
@@ -342,7 +360,7 @@ class AssetHandler {
       }
       List<int>? body;
       if (request.method != 'HEAD') {
-        body = await reader.readAsBytes(assetId);
+        body = result.bytes;
         headers[HttpHeaders.contentLengthHeader] = '${body.length}';
       }
       return shelf.Response.ok(body, headers: headers);

@@ -129,7 +129,8 @@ Future<void> bootstrapDdc(
       // `packages/` for lib modules. We set baseUrl to `/` to simplify things,
       // and we only allow you to serve top level directories.
       final moduleName = ddcModuleName(jsId);
-      modulePaths[moduleName] = jsId.path.startsWith('lib')
+      final id = '$moduleName.dart';
+      modulePaths[id] = jsId.path.startsWith('lib')
           ? '$moduleName$jsModuleExtension'
           : _context.relative(
               jsId.path,
@@ -781,9 +782,9 @@ $_simpleLoaderScript
         if (url.endsWith('dart_sdk.js')) {
           return dartDevEmbedder.debugger.getSourceMap('dart_sdk');
         }
-        url = url.replace("$jsModuleExtension", "");
-        let relativeUrl = url.replace(_currentDirectory, "");
-        return dartDevEmbedder.debugger.getSourceMap(relativeUrl);
+        var relativeUrl = url.replace(_currentDirectory, "");
+        var moduleName = relativeUrl.replace("$jsModuleExtension", "");
+        return dartDevEmbedder.debugger.getSourceMap(moduleName);
       });
     }
 

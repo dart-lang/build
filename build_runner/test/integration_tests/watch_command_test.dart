@@ -15,12 +15,14 @@ void main() async {
     final pubspecs = await Pubspecs.load();
     final tester = BuildRunnerTester(pubspecs);
 
-    tester.writeFixturePackage(FixturePackages.copyBuilder());
+    tester.writeFixturePackage(
+      FixturePackages.copyBuilder(defaultGlob: 'web/*.md'),
+    );
     tester.writePackage(
       name: 'root_pkg',
       dependencies: ['build_runner'],
       pathDependencies: ['builder_pkg', 'other_pkg'],
-      files: {'web/a.txt': 'a'},
+      files: {'web/a.txt': 'a', 'web/unread.md': 'unread'},
     );
     tester.writePackage(
       name: 'other_pkg',
@@ -35,12 +37,12 @@ void main() async {
       'dart run build_runner watch --force-jit',
     );
     await watch.expect(BuildLog.successPattern);
-    expect(tester.read('root_pkg/web/a.txt.copy'), 'a');
+    expect(tester.read('root_pkg/web/a.txt.copy'), 'a\nweb/unread.md');
 
     // File change.
     tester.write('root_pkg/web/a.txt', 'updated');
     await watch.expect(BuildLog.successPattern);
-    expect(tester.read('root_pkg/web/a.txt.copy'), 'updated');
+    expect(tester.read('root_pkg/web/a.txt.copy'), 'updated\nweb/unread.md');
 
     // File rewrite without change.
     tester.write('root_pkg/web/a.txt', 'updated');
@@ -56,7 +58,7 @@ void main() async {
     // New file.
     tester.write('root_pkg/web/b.txt', 'b');
     await watch.expect(BuildLog.successPattern);
-    expect(tester.read('root_pkg/web/b.txt.copy'), 'b');
+    expect(tester.read('root_pkg/web/b.txt.copy'), 'b\nweb/unread.md');
 
     // State on disk is updated so `build` knows to do nothing.
     output = await tester.copyWorkspace().run(
@@ -70,8 +72,18 @@ void main() async {
     await watch.expect(BuildLog.successPattern);
     expect(tester.read('root_pkg/web/b.txt.copy'), null);
 
+    // Deleted unread file.
+    tester.delete('root_pkg/web/unread.md');
+    await watch.expect(BuildLog.successPattern);
+    expect(tester.read('root_pkg/web/a.txt.copy'), 'updated');
+
     // Deleted output.
     tester.delete('root_pkg/web/a.txt.copy');
+    await watch.expect('wrote 1 output');
+    expect(tester.read('root_pkg/web/a.txt.copy'), 'updated');
+
+    // Modified output.
+    tester.write('root_pkg/web/a.txt.copy', 'manually modified');
     await watch.expect('wrote 1 output');
     expect(tester.read('root_pkg/web/a.txt.copy'), 'updated');
 
@@ -204,7 +216,7 @@ $yaml
     // The first build after retry is marked as a new build.
     await watch.expect('Starting build #5');
     // But the next identical build failure is not logged as a new build.
-    final block = await watch.expectAndGetBlock('0s compiling builders');
+    final block = await watch.expectAndGetBlock('compiling builders');
     expect(block, isNot(contains('Starting build')));
 
     // Restore the correct build script and it gets compiled and runs.

@@ -1,3 +1,17 @@
+## 1.4.0-wip
+
+- Add boolean `adds_to_library` builder configuration that grants access to new
+  builder feature `BuildStep.librarySourceSink`.
+
+## 1.3.3
+
+- Clarify terminology: refer to `.dart_tool/build/generated` as the "artifact
+  tree", and the normal output location as the "package path".
+
+## 1.3.2
+
+- Reject builder names with the wrong package name.
+
 ## 1.3.1
 
 - Document that `--define` values are parsed as JSON with a fallback.

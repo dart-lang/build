@@ -16,6 +16,7 @@ import 'package:package_config/package_config_types.dart';
 import 'asset_content.dart';
 import 'builder_filesystem.dart';
 import 'input_tracker.dart';
+import 'resolver/asset_ids.dart';
 import 'resolver/delegating_resolver.dart';
 
 /// A single step in the build processes.
@@ -110,12 +111,14 @@ class BuildStepImpl implements BuildStep {
   @override
   Future<bool> canRead(AssetId id, {bool track = true}) async {
     if (_isComplete) throw BuildStepCompletedException();
+    id = id.normalize();
     final isReadable = await _isReadable(
       id,
       catchInvalidInputs: true,
       track: track,
     );
     if (!isReadable) return false;
+    if (outputs.containsKey(id)) return true;
 
     // Read the file so it's in memory; if that fails the file was deleted
     // during the build and the build is aborted.
@@ -132,6 +135,7 @@ class BuildStepImpl implements BuildStep {
   @override
   Future<List<int>> readAsBytes(AssetId id) async {
     if (_isComplete) throw BuildStepCompletedException();
+    id = id.normalize();
     final isReadable = await _isReadable(id);
     if (!isReadable) {
       throw AssetNotFoundException(id);
@@ -150,6 +154,7 @@ class BuildStepImpl implements BuildStep {
     bool track = true,
   }) async {
     if (_isComplete) throw BuildStepCompletedException();
+    id = id.normalize();
     final isReadable = await _isReadable(id, track: track);
     if (!isReadable) {
       throw AssetNotFoundException(id);
@@ -175,6 +180,7 @@ class BuildStepImpl implements BuildStep {
   @override
   Future<void> writeAsBytes(AssetId id, FutureOr<List<int>> bytes) async {
     if (_isComplete) throw BuildStepCompletedException();
+    id = id.normalize();
     _checkOutput(id);
     outputs[id] = AssetContent.bytes(await bytes);
   }
@@ -186,6 +192,7 @@ class BuildStepImpl implements BuildStep {
     Encoding encoding = utf8,
   }) async {
     if (_isComplete) throw BuildStepCompletedException();
+    id = id.normalize();
     _checkOutput(id);
     outputs[id] = AssetContent.string(await content, encoding: encoding);
   }
@@ -193,6 +200,7 @@ class BuildStepImpl implements BuildStep {
   @override
   Future<Digest> digest(AssetId id, {bool track = true}) async {
     if (_isComplete) throw BuildStepCompletedException();
+    id = id.normalize();
     final isReadable = await _isReadable(id, track: track);
 
     if (!isReadable) {
@@ -243,6 +251,10 @@ class BuildStepImpl implements BuildStep {
   void reportUnusedAssets(Iterable<AssetId> assets) {
     _reportUnusedAssets?.call(assets);
   }
+
+  @override
+  Future<LibrarySourceSink?> get librarySourceSink =>
+      throw UnsupportedError('librarySourceSink is not implemented.');
 }
 
 final _lib = Uri.parse('lib/');

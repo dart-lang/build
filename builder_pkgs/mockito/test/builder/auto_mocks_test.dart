@@ -20,6 +20,7 @@ library;
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_test/build_test.dart';
+import 'package:dart_style/dart_style.dart';
 import 'package:logging/logging.dart';
 import 'package:mockito/src/builder.dart';
 import 'package:package_config/package_config.dart';
@@ -196,6 +197,64 @@ void main() {
 
   setUp(() {
     readerWriter = TestReaderWriter(rootPackage: 'foo');
+  });
+
+  test(
+    'header comment includes canonical input package and asset path',
+    () async {
+      final packageConfig = PackageConfig([
+        Package(
+          'foo',
+          Uri.file('/foo/'),
+          packageUriRoot: Uri.file('/foo/lib/'),
+          languageVersion: LanguageVersion(3, 3),
+        ),
+      ]);
+      final builder = buildMocks(BuilderOptions({}));
+      await testBuilders(
+        [builder],
+        visibleOutputBuilders: {builder},
+        {
+          ...annotationsAsset,
+          'foo|lib/foo.dart': 'class Foo {}',
+          'foo|lib/foo_test.dart': '''
+          import 'package:foo/foo.dart';
+          import 'package:mockito/annotations.dart';
+          @GenerateMocks([Foo])
+          void main() {}
+          ''',
+        },
+        rootPackage: 'foo',
+        readerWriter: readerWriter,
+        packageConfig: packageConfig,
+      );
+      final mocksContent = readerWriter.testing.readString(
+        AssetId('foo', 'lib/foo_test.mocks.dart'),
+      );
+      expect(mocksContent, contains('// in foo/lib/foo_test.dart.'));
+    },
+  );
+
+  test('generated mock output is ignored by DartFormatter', () async {
+    final mocksContent = await buildWithSingleNonNullableSource(
+      'class Foo { int bar(int a, int b, int c) => 0; }',
+    );
+    expect(mocksContent, contains('// dart format off'));
+    final reformatted = DartFormatter(
+      languageVersion: DartFormatter.latestLanguageVersion,
+      pageWidth: 40,
+    ).format(mocksContent);
+    expect(reformatted, equals(mocksContent));
+
+    final contentWithoutFormatOff = mocksContent.replaceFirst(
+      '// dart format off\n',
+      '',
+    );
+    final reformattedWithoutFormatOff = DartFormatter(
+      languageVersion: DartFormatter.latestLanguageVersion,
+      pageWidth: 40,
+    ).format(contentWithoutFormatOff);
+    expect(reformattedWithoutFormatOff, isNot(equals(contentWithoutFormatOff)));
   });
 
   test(
@@ -1263,6 +1322,67 @@ void main() {
         mocksContent,
         contains('class MockFoo extends _i1.Mock implements _i2.Foo'),
       );
+    },
+  );
+
+  test(
+    'deterministically selects exporting library by URI when multiple libraries re-export a type',
+    () async {
+      final mocksContent = await buildWithNonNullable({
+        ...annotationsAsset,
+        'foo|lib/bar_decl.dart': dedent(r'''
+        class Bar {}
+        '''),
+        'foo|lib/bar_a.dart': dedent(r'''
+        export 'bar_decl.dart';
+        '''),
+        'foo|lib/bar_b.dart': dedent(r'''
+        export 'bar_decl.dart';
+        '''),
+        'foo|lib/foo.dart': dedent(r'''
+        import 'bar_b.dart';
+        import 'bar_a.dart';
+        class Foo {
+          Bar m() => Bar();
+        }
+        '''),
+        'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+        @GenerateMocks([Foo])
+        void fooTests() {}
+        ''',
+      });
+      expect(mocksContent, contains("import 'package:foo/bar_a.dart' as _i2;"));
+    },
+  );
+
+  test(
+    'prefers exporting library without /src/ over exporting library with /src/',
+    () async {
+      final mocksContent = await buildWithNonNullable({
+        ...annotationsAsset,
+        'foo|lib/src/bar.dart': dedent(r'''
+        class Bar {}
+        '''),
+        'foo|lib/z_bar.dart': dedent(r'''
+        export 'src/bar.dart';
+        '''),
+        'foo|lib/foo.dart': dedent(r'''
+        import 'src/bar.dart';
+        import 'z_bar.dart';
+        class Foo {
+          Bar m() => Bar();
+        }
+        '''),
+        'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+        @GenerateMocks([Foo])
+        void fooTests() {}
+        ''',
+      });
+      expect(mocksContent, contains("import 'package:foo/z_bar.dart' as _i2;"));
     },
   );
 
@@ -3878,20 +3998,6 @@ void main() {
     );
   });
 
-  test('adds ignore: must_be_immutable analyzer comment if mocked class is '
-      'immutable', () async {
-    await expectSingleNonNullableOutput(
-      dedent(r'''
-      import 'package:meta/meta.dart';
-      @immutable
-      class Foo {
-        void foo();
-      }
-      '''),
-      _containsAllOf('// ignore: must_be_immutable\nclass MockFoo'),
-    );
-  });
-
   group('typedef mocks', () {
     group('are generated properly', () {
       test('when aliased type parameters are instantiated', () async {
@@ -4241,7 +4347,24 @@ void main() {
           E get v;
         }
         '''),
-        decodedMatches(allOf(contains('E get v'), contains('returnValue: 0'))),
+        decodedMatches(
+          allOf(contains('E get v'), contains('returnValue: (0 as _i2.E)')),
+        ),
+      );
+    });
+
+    test('are supported as type arguments in return types', () async {
+      await expectSingleNonNullableOutput(
+        dedent('''
+        extension type E(int v) {}
+        class Foo {
+          Future<E> get v;
+        }
+        '''),
+        _containsAllOf(
+          'Future<_i2.E> get v',
+          'returnValue: _i3.Future<_i2.E>.value((0 as _i2.E))',
+        ),
       );
     });
   });

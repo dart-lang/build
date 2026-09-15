@@ -6,68 +6,61 @@
 @OnPlatform({'windows': Skip('line endings are different')})
 library;
 
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
-// TODO: Generalize this test and move it to package:build_test. This is copied
-// wholesale from the json_serializable package.
 void main() {
-  String pkgRoot;
-  try {
-    pkgRoot = _runProc('git', ['rev-parse', '--show-toplevel']);
-    final currentDir = Directory.current.resolveSymbolicLinksSync();
-    if (!p.isWithin(pkgRoot, currentDir)) {
-      throw StateError(
-        'Expected the git root ($pkgRoot) '
-        'to be a parent of the current directory ($currentDir).',
-      );
+  test('ensure local build succeeds with no changes to .g.dart files', () {
+    final tempDir = Directory.systemTemp.createTempSync('build_test_');
+    addTearDown(() {
+      tempDir.deleteSync(recursive: true);
+    });
+
+    // `build_runner` doesn't verify outputs in an incremental build, so force
+    // a clean build by deleting the cache.
+    final buildCacheDir = Directory(p.join('.dart_tool', 'build'));
+    if (buildCacheDir.existsSync()) {
+      buildCacheDir.deleteSync(recursive: true);
     }
-  } catch (e) {
-    print("Skipping this test – git didn't run correctly");
-    print(e);
-    return;
-  }
 
-  test('ensure local build succeeds with no changes', () {
-    // 1 - get a list of modified `.g.dart` files - should be empty
-    expect(_changedGeneratedFiles(), isEmpty);
+    final result = Process.runSync('dart', [
+      'run',
+      'build_runner',
+      'build',
+      '--output=${tempDir.path}',
+    ]);
+    if (result.exitCode != 0) {
+      fail('build_runner failed: ${result.stdout}${result.stderr}');
+    }
 
-    // 2 - run build - should be no output, since nothing should change
-    final result = _runProc('dart', ['run', 'build_runner', 'build']);
-    expect(result, contains('Built with build_runner'));
+    final libDirectory = Directory('lib');
+    final partPaths = _findGeneratedFiles(libDirectory);
 
-    // 3 - get a list of modified `.g.dart` files - should still be empty
-    expect(_changedGeneratedFiles(), isEmpty);
+    final outputLibDirectory = Directory(
+      p.join(tempDir.path, 'packages', 'build_web_compilers'),
+    );
+    final outputPartPaths = _findGeneratedFiles(outputLibDirectory);
+
+    expect(outputPartPaths, partPaths);
+
+    for (var i = 0; i < partPaths.length; i++) {
+      final partPath = p.join(libDirectory.path, partPaths[i]);
+      final outputPartPath = p.join(outputLibDirectory.path, partPaths[i]);
+      final content = File(partPath).readAsStringSync();
+      final outputContent = File(outputPartPath).readAsStringSync();
+      expect(outputContent, content, reason: 'Change to $partPath.');
+    }
   });
 }
 
-final _whitespace = RegExp(r'\s');
-
-Set<String> _changedGeneratedFiles() {
-  final output = _runProc('git', ['status', '--porcelain']);
-
-  return LineSplitter.split(output)
-      .map((line) => line.split(_whitespace).last)
-      .where((path) => path.endsWith('.g.dart'))
-      .toSet();
-}
-
-String _runProc(String proc, List<String> args) {
-  final result = Process.runSync(proc, args);
-
-  if (result.exitCode != 0) {
-    throw ProcessException(
-      proc,
-      args,
-      'Stdout:\n${result.stdout}\n\nStderr:\n${result.stderr}',
-      result.exitCode,
-    );
-  }
-  final stderr = result.stderr as String;
-  if (stderr.isNotEmpty) print('stderr: $stderr');
-
-  return (result.stdout as String).trim();
+List<String> _findGeneratedFiles(Directory dir) {
+  return dir
+      .listSync(recursive: true)
+      .whereType<File>()
+      .where((f) => f.path.endsWith('.g.dart'))
+      .map((f) => p.relative(f.path, from: dir.path))
+      .toList()
+    ..sort();
 }

@@ -190,8 +190,9 @@ class BuildPhaseCreator {
             targetSources: buildTarget.sources,
             generateFor: targetConfig?.generateFor ?? builderConfig.generateFor,
             options: options,
-            hideOutput: builderDefinition.hideOutput,
+            outputsToArtifactTree: builderDefinition.outputsToArtifactTree,
             isOptional: builderDefinition.isOptional,
+            addsToLibrary: builderDefinition.addsToLibrary,
           ),
         );
       }
@@ -231,7 +232,7 @@ class BuildPhaseCreator {
         package: buildTarget.package,
         options: options,
         generateFor: targetConfig?.generateFor ?? builderConfig.generateFor,
-        hideOutput: builderDefinition.hideOutput,
+        outputsToArtifactTree: builderDefinition.outputsToArtifactTree,
         targetSources: buildTarget.sources,
       );
       result.add(builderAction);
@@ -288,16 +289,18 @@ class BuildPhaseCreator {
     AbstractBuilderDefinition builderDefinition,
     BuildTarget buildTarget,
   ) {
-    // If the package is not root, only hidden output is allowed. Return
-    // `false` if the builder or any builder it applies has non-hidden output.
+    // If the package is not root, only artifact tree output is allowed. Return
+    // `false` if the builder or any builder it applies does not output to the
+    // artifact tree.
     if (!buildPackages[buildTarget.package]!.isOutput) {
-      if (!builderDefinition.hideOutput) return false;
+      if (!builderDefinition.outputsToArtifactTree) return false;
       if (builderDefinition is BuilderDefinition &&
-          !(builderDefinition.hideOutput &&
+          !(builderDefinition.outputsToArtifactTree &&
               builderDefinition.appliesBuilders.every(
                 // Missing builders won't be applied and so are counted as
-                // hidden.
-                (b) => _builderDefinitionByKey[b]?.hideOutput ?? true,
+                // artifact tree outputs.
+                (b) =>
+                    _builderDefinitionByKey[b]?.outputsToArtifactTree ?? true,
               ))) {
         return false;
       }

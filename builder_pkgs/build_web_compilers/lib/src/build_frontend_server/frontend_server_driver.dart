@@ -17,10 +17,10 @@ import 'package:pool/pool.dart';
 import 'package:uuid/uuid.dart';
 
 import '../common.dart';
+import 'fes_server_info.dart';
 import 'package_config.dart';
 
 final _log = Logger('FrontendServerProxy');
-final dartaotruntimePath = p.join(sdkDir, 'bin', 'dartaotruntime');
 final frontendServerSnapshotPath = p.join(
   sdkDir,
   'bin',
@@ -347,7 +347,8 @@ class PersistentFrontendServer {
       for (final experiment in enabledExperiments)
         '--enable-experiment=$experiment',
     ];
-    final process = await _startWithReaper(dartaotruntimePath, args);
+    final dartaotruntime = p.join(sdkRoot, 'bin', 'dartaotruntime');
+    final process = await _startWithReaper(dartaotruntime, args);
     final fileSystem = WebMemoryFilesystem(fileSystemRoot, rootPackage);
     final stdoutHandler = StdoutHandler(logger: _log);
     process.stdout
@@ -383,34 +384,48 @@ class PersistentFrontendServer {
     );
     if (!configFile.existsSync()) return null;
 
-    int? port;
+    FesServerInfo? serverInfo;
     for (var i = 0; i < retries; i++) {
-      try {
-        final content = await configFile.readAsString();
-        final json = jsonDecode(content) as Map<String, dynamic>;
-        port = json['port'] as int?;
-        if (port != null) break;
-      } catch (_) {}
+      serverInfo = FesServerInfo.fromFile(configFile);
+      if (serverInfo != null) break;
       await Future<void>.delayed(const Duration(milliseconds: 25));
     }
 
-    if (port == null) {
+    if (serverInfo == null) {
       throw StateError(
         'FES config file found at ${configFile.path} '
-        'but port could not be read.',
+        'but server info could not be read.',
       );
     }
 
     try {
-      final socket = await Socket.connect(InternetAddress.loopbackIPv4, port);
+      final socket = await Socket.connect(
+        InternetAddress.loopbackIPv4,
+        serverInfo.port,
+      );
       final socketLines = socket
           .cast<List<int>>()
           .transform(utf8.decoder)
           .transform(const LineSplitter())
           .asBroadcastStream();
+      final authResponseFuture = socketLines.first;
+      socket.writeln(jsonEncode({'token': serverInfo.token}));
+      await socket.flush();
+      final authResponseLine = await authResponseFuture;
+      final authResponse = jsonDecode(authResponseLine) as Map<String, dynamic>;
+      if (authResponse['status'] != 'AUTHENTICATED') {
+        throw StateError(
+          'Failed to authenticate with Frontend Server Manager at port '
+          '${serverInfo.port} (Unauthorized). Please ensure '
+          'build_web_compilers is upgraded to >=4.8.11 and restart.',
+        );
+      }
       return _FesSocketConnection(socket, socketLines);
     } catch (e) {
-      throw StateError('Failed to connect to FES manager at port $port: $e');
+      if (e is StateError) rethrow;
+      throw StateError(
+        'Failed to connect to FES manager at port ${serverInfo.port}: $e',
+      );
     }
   }
 
@@ -961,6 +976,7 @@ class SocketFrontendServerClient implements FrontendServerClient {
               .map(Uri.parse)
               .toList() ??
           [],
+      errorMessage: compileResult['errorMessage'] as String?,
     );
   }
 
@@ -1199,19 +1215,20 @@ class StdioFrontendServerClient implements FrontendServerClient {
     String? content;
     final scratchSpacePrefix = testScratchSpacePathPrefix;
     final index = path.indexOf(scratchSpacePrefix);
-    if (index != -1) {
-      final relativeKey = fesToAssetPath(
-        path.substring(index + scratchSpacePrefix.length),
-        rootPackage: _fileSystem.rootPackageName,
-      );
+    final strippedPath = index != -1
+        ? path.substring(index + scratchSpacePrefix.length)
+        : path;
+    final relativeKey = fesToAssetPath(
+      strippedPath,
+      rootPackage: _fileSystem.rootPackageName,
+    );
 
-      final memoryData =
-          _fileSystem.files[relativeKey] ??
-          _fileSystem.sourcemaps[relativeKey] ??
-          _fileSystem.metadata[relativeKey];
-      if (memoryData != null) {
-        content = utf8.decode(memoryData);
-      }
+    final memoryData =
+        _fileSystem.files[relativeKey] ??
+        _fileSystem.sourcemaps[relativeKey] ??
+        _fileSystem.metadata[relativeKey];
+    if (memoryData != null) {
+      content = utf8.decode(memoryData);
     }
 
     if (content == null) {

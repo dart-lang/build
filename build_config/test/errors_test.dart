@@ -141,6 +141,46 @@ targets:
       ),
     );
   });
+
+  test('for builder keys outside package namespace', () {
+    final buildYaml = r'''
+builders:
+  other_package:builder:
+    builder_factories: ["someFactory"]
+    import: package:package_name/builders.dart
+    build_extensions: {".dart": [".json"]}
+''';
+
+    _expectThrows(buildYaml, r'''
+line 1, column 1 of build.yaml: Builder key "other_package:builder" does not belong to package "package_name".
+  ╷
+1 │ ┌ builders:
+2 │ │   other_package:builder:
+3 │ │     builder_factories: ["someFactory"]
+4 │ │     import: package:package_name/builders.dart
+5 │ └     build_extensions: {".dart": [".json"]}
+  ╵''');
+  });
+
+  test('for builder with adds_to_library and is_optional', () {
+    final buildYaml = r'''
+builders:
+  package_name:builder:
+    builder_factories: ["someFactory"]
+    import: package:package_name/builders.dart
+    build_extensions: {".dart": []}
+    adds_to_library: true
+    is_optional: true
+''';
+
+    _expectThrows(
+      buildYaml,
+      contains(
+        'A builder cannot set both `adds_to_library: true` and '
+        '`is_optional: true`.',
+      ),
+    );
+  });
 }
 
 void _expectThrows(String buildYaml, Object matcher) => expect(

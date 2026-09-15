@@ -64,7 +64,7 @@ configuration may have the following keys:
   Omit this key if you want the default behavior based on the builder's
   `auto_apply` configuration. Builders which are manually applied
   (`auto_apply: none`) are only ever used when there is a target specifying the
-  builder with `enabled: True`.
+  builder with `enabled: true`.
 - **generate_for**: List of String or Map, Optional:. The subset of files within
   the target's `sources` which should have this Builder applied. See `sources`
   configuration above for how to configure this.
@@ -138,15 +138,23 @@ the following keys:
   builders should be run on any target which will run this Builder.
 - **is_optional**: Optional, boolean. Specifies whether a Builder can be run
   lazily, such that it won't execute until one of it's outputs is requested by a
-  later Builder. This option should be rare. Defaults to `False`.
+  later Builder. This option should be rare. Defaults to `false`. Cannot be
+  used with `adds_to_library`.
 - **build_to**: Optional. The location that generated assets should be output
   to. The possibilities are:
-  - `"source"`: Outputs go to the source tree next to their primary inputs.
-  - `"cache"`: Outputs go to a hidden build cache and won't be published.
+  - `"source"`: Outputs are written at their package paths. They're written
+    next to their primary inputs except for the unusual case when
+    `build_extensions` is used to match and change the enclosing path.
+  - `"cache"`: Outputs are written in the artifact tree under
+    `.dart_tool/build/generated` and won't be published.
   The default is "cache". If a Builder specifies that it outputs to "source" it
   will never run on any package other than the root - but does not necessarily
   need to use the "root_package" value for "auto_apply". If it would otherwise
   run on a non-root package it will be filtered out.
+- **adds_to_library**: Optional, boolean. Specifies whether this builder adds
+  code to a library using `BuildStep.librarySourceSink`. If `true`, the builder
+  can access `buildStep.librarySourceSink` to contribute source and imports to
+  a shared part file. Defaults to `false`. Cannot be used with `is_optional`.
 - **defaults**: Optional: Default values to apply when a user does not specify
   the corresponding key in their `builders` section. May contain the following
   keys:
@@ -200,8 +208,9 @@ Each post process builder config may contain the following keys:
   returned by the `builder_factory`.
 - **build_to**: Optional. The location that generated assets should be output
   to. The possibilities are:
-  - `"source"`: Outputs go to the source tree next to their primary inputs.
-  - `"cache"`: Outputs go to a hidden build cache and won't be published.
+  - `"source"`: Outputs are written at their package paths.
+  - `"cache"`: Outputs are written in the artifact tree under
+    `.dart_tool/build/generated` and won't be published.
 - **defaults**: Optional: Default values to apply when a user does not specify
   the corresponding key in their `builders` section. May contain the following
   keys:

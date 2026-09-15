@@ -5,6 +5,12 @@
         },
         {
             "pattern": "^https://bazel.build"
+        },
+        {
+            "pattern": "^https://medium.com"
+        },
+        {
+            "pattern": "^https://steemit.com"
         }
     ]
 }

@@ -6,7 +6,7 @@ import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
 
 import '../io/build_output_reader.dart';
-import 'build_state/build_state.dart';
+import 'build_state/finished_build_state.dart';
 import 'library_cycle_graph/phased_asset_deps.dart';
 
 /// The result of an individual build, this may be an incremental build or
@@ -27,20 +27,22 @@ class BuildResult {
   /// The imports graph for resolved sources.
   final PhasedAssetDeps phasedAssetDeps;
 
+  // The build state.
+  //
+  // `null` if the build failed with no output.
+  final FinishedBuildState? buildState;
+
   /// The build output.
   ///
   /// `null` if the build failed with no output.
   final BuildOutputReader? buildOutputReader;
-
-  // The build state.
-  final BuildState? buildState;
 
   BuildResult({
     required this.status,
     BuiltList<String>? errors,
     BuiltList<AssetId>? outputs,
     PhasedAssetDeps? phasedAssetDeps,
-    required this.buildOutputReader,
+    this.buildOutputReader,
     this.buildState,
     FailureType? failureType,
   }) : failureType = failureType == null && status == BuildStatus.failure
@@ -57,7 +59,7 @@ class BuildResult {
     BuiltList<AssetId>? outputs,
     PhasedAssetDeps? phasedAssetDeps,
     BuildOutputReader? buildOutputReader,
-    BuildState? buildState,
+    FinishedBuildState? buildState,
   }) => BuildResult(
     status: status ?? this.status,
     failureType: failureType ?? this.failureType,
@@ -86,7 +88,6 @@ Build Failed :(
   factory BuildResult.buildScriptChanged() => BuildResult(
     status: BuildStatus.failure,
     failureType: FailureType.buildScriptChanged,
-    buildOutputReader: null,
   );
 }
 

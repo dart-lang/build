@@ -2,8 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:io';
-
 import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:graphs/graphs.dart';
@@ -11,6 +9,7 @@ import 'package:meta/meta.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 
+import '../build/resolver/asset_ids.dart';
 import '../constants.dart';
 import '../io/asset_path_provider.dart';
 import 'build_package.dart';
@@ -214,46 +213,48 @@ class BuildPackages implements AssetPathProvider {
   @override
   String pathFor(
     AssetId id, {
-    required bool hide,
-    bool checkDeleteAllowed = false,
+    required bool inArtifactTree,
+    bool checkWriteAllowed = false,
   }) {
-    if (checkDeleteAllowed) {
-      // Delete is allowed if it's a hidden output in `outputRoot` or if it's a
-      // package in the build.
-      final isUnderCacheDirectory = id.path.startsWith('$cacheDirectoryPath/');
-      final deleteIsAllowed =
-          hide ||
-          (isUnderCacheDirectory && id.package == outputRoot) ||
-          outputPackages.contains(id.package);
-      if (!deleteIsAllowed) {
-        if (isUnderCacheDirectory) {
-          throw InvalidOutputException(
-            id,
-            'Tried to delete from $cacheDirectoryPath in wrong package, should '
-            'be $outputRoot.',
-          );
-        } else {
-          throw InvalidOutputException(
-            id,
-            'Tried to delete from package not in the build. Packages in the '
-            'build are: ${outputPackages.join(', ')}',
-          );
-        }
-      }
-    }
-
-    if (hide) {
-      id = AssetPathProvider.hide(id, outputRoot);
-    }
-    final package = packages[id.package];
-    if (package == null) {
+    if (!packages.containsKey(id.package)) {
       throw PackageNotFoundException(id.package);
     }
-    var path = id.path;
-    if (Platform.pathSeparator != '/') {
-      path = path.replaceAll('/', Platform.pathSeparator);
+    if (inArtifactTree) {
+      id = AssetPathProvider.inArtifactTree(id, outputRoot);
     }
-    return p.join(package.path, path);
+    if (checkWriteAllowed) throwIfReadonly(id);
+    final package = packages[id.package]!;
+    return p.join(package.path, id.platformPath);
+  }
+
+  /// Throws if [id] is not allowed to be written or deleted.
+  ///
+  /// Write or delete is allowed if [id] is in a package that is a build output
+  /// or is in the hidden build directory for `outputRoot`. The hidden build
+  /// directory contains the artifact tree and internal files such as
+  /// `asset_graph.json`.
+  void throwIfReadonly(AssetId id) {
+    final isUnderHiddenBuildDirectory = id.path.startsWith(
+      '$hiddenBuildDirectoryPath/',
+    );
+    final writeIsAllowed =
+        (isUnderHiddenBuildDirectory && id.package == outputRoot) ||
+        outputPackages.contains(id.package);
+    if (!writeIsAllowed) {
+      if (isUnderHiddenBuildDirectory) {
+        throw InvalidOutputException(
+          id,
+          'Tried to write or delete from $hiddenBuildDirectoryPath in wrong '
+          'package, should be $outputRoot.',
+        );
+      } else {
+        throw InvalidOutputException(
+          id,
+          'Tried to write or delete in a package not in the build. Packages '
+          'in the build are: ${outputPackages.join(', ')}',
+        );
+      }
+    }
   }
 
   /// Gets transitive deps of [packageName].

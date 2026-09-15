@@ -1,6 +1,6 @@
 name: build_workspace     # Can be anything
 environment:
-  sdk: ^3.8.0
+  sdk: ^3.11.0
 publish_to: none
 dev_dependencies:
   dart_flutter_team_lints: ^3.1.0
@@ -19,5 +19,14 @@ workspace:
 - builder_pkgs/build_web_compilers/test/fixtures/d
 - builder_pkgs/mockito
 - builder_pkgs/scratch_space
+- built_types/_built_collection_benchmark
+- built_types/_built_value_benchmark
+- built_types/_built_value_end_to_end_test
+- built_types/built_collection
+- built_types/built_value
+- built_types/built_value_chat_example
+- built_types/built_value_example
+- built_types/built_value_generator
+- built_types/built_value_test
 - example
 - tool

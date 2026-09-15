@@ -9,6 +9,7 @@ export 'build/build_series.dart';
 export 'build/input_tracker.dart';
 export 'build/resolver/analysis_driver_model.dart';
 export 'build/resolver/resolvers_impl.dart';
+export 'build_plan/asset_file.dart';
 export 'build_plan/build_configs.dart';
 export 'build_plan/build_directory.dart';
 export 'build_plan/build_filter.dart';

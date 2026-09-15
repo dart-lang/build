@@ -12,19 +12,15 @@ class _$BuildPlan extends BuildPlan {
   @override
   final PreviousBuild previousBuild;
   @override
-  @override
   final BuildStepPlan buildStepPlan;
-
   @override
-  final BuiltList<AssetId> conflictingOutputs;
+  final BuiltList<AssetFile> conflictingOutputs;
   @override
   final BuildInputs buildInputs;
   @override
   final BuiltSet<BuildDirectory> buildDirs;
   @override
   final BuiltSet<BuildFilter> buildFilters;
-  @override
-  final void Function(AssetId)? onDelete;
 
   factory _$BuildPlan([void Function(BuildPlanBuilder)? updates]) =>
       (BuildPlanBuilder()..update(updates))._build();
@@ -37,7 +33,6 @@ class _$BuildPlan extends BuildPlan {
     required this.buildInputs,
     required this.buildDirs,
     required this.buildFilters,
-    this.onDelete,
   }) : super._();
   @override
   BuildPlan rebuild(void Function(BuildPlanBuilder) updates) =>
@@ -106,14 +101,10 @@ class BuildPlanBuilder implements Builder<BuildPlan, BuildPlanBuilder> {
   set buildStepPlan(BuildStepPlanBuilder? buildStepPlan) =>
       _$this._buildStepPlan = buildStepPlan;
 
-  void Function(AssetId)? _onDelete;
-  void Function(AssetId)? get onDelete => _$this._onDelete;
-  set onDelete(void Function(AssetId)? onDelete) => _$this._onDelete = onDelete;
-
-  ListBuilder<AssetId>? _conflictingOutputs;
-  ListBuilder<AssetId> get conflictingOutputs =>
-      _$this._conflictingOutputs ??= ListBuilder<AssetId>();
-  set conflictingOutputs(ListBuilder<AssetId>? conflictingOutputs) =>
+  ListBuilder<AssetFile>? _conflictingOutputs;
+  ListBuilder<AssetFile> get conflictingOutputs =>
+      _$this._conflictingOutputs ??= ListBuilder<AssetFile>();
+  set conflictingOutputs(ListBuilder<AssetFile>? conflictingOutputs) =>
       _$this._conflictingOutputs = conflictingOutputs;
 
   BuildInputsBuilder? _buildInputs;
@@ -146,7 +137,6 @@ class BuildPlanBuilder implements Builder<BuildPlan, BuildPlanBuilder> {
       _buildInputs = $v.buildInputs.toBuilder();
       _buildDirs = $v.buildDirs.toBuilder();
       _buildFilters = $v.buildFilters.toBuilder();
-      _onDelete = $v.onDelete;
       _$v = null;
     }
     return this;
@@ -178,7 +168,6 @@ class BuildPlanBuilder implements Builder<BuildPlan, BuildPlanBuilder> {
             buildInputs: buildInputs.build(),
             buildDirs: buildDirs.build(),
             buildFilters: buildFilters.build(),
-            onDelete: onDelete,
           );
     } catch (_) {
       late String _$failedField;
@@ -189,7 +178,6 @@ class BuildPlanBuilder implements Builder<BuildPlan, BuildPlanBuilder> {
         previousBuild.build();
         _$failedField = 'buildStepPlan';
         buildStepPlan.build();
-
         _$failedField = 'conflictingOutputs';
         conflictingOutputs.build();
         _$failedField = 'buildInputs';

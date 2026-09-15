@@ -1,3 +1,28 @@
+## 3.5.21-wip
+
+- Use `build_runner` 2.16.2.
+
+## 3.5.20
+
+- Clarify terminology: refer to `.dart_tool/build/generated` as the "artifact
+  tree", and the normal output location as the "package path".
+- Use `build_runner` 2.16.1.
+
+## 3.5.19
+
+- Use `build_runner` 2.16.0.
+- Allow `package_config` 3.x.
+
+## 3.5.18
+
+- Add `visibleOutputPostProcessBuilders` to `testBuilders`.
+- Use `build_runner` 2.15.3.
+
+## 3.5.17
+
+- Allow `analyzer` 14.x, require 13.3.0.
+- Require Dart 3.11.0.
+
 ## 3.5.16
 
 - Use `build_runner` 2.15.1.

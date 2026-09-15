@@ -77,10 +77,11 @@ class ResolversImpl implements Resolvers {
       );
       final driver = analysisDriver(
         _analysisDriverModel,
-        AnalysisOptionsImpl()
-          ..contextFeatures = _featureSet(
-            enableExperiments: enabledExperiments,
-          ),
+        (AnalysisOptionsBuilder()
+              ..contextFeatures = _featureSet(
+                enableExperiments: enabledExperiments,
+              ))
+            .build(),
         await defaultSdkSummaryGenerator(),
         loadedConfig,
       );

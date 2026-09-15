@@ -1,3 +1,33 @@
+## 4.8.11-wip
+
+- Make `fes_manager` config directory and file user-private.
+- Use a token for socket authentication in `fes_manager`.
+- By default, prefer entrypoints from the `web` directory over
+  entrypoints in other directories such as `test` or `example`.
+- Prefer entrypoints closer to the root of a searched directory,
+  and `main.dart` over other entrypoints alongside it.
+- Accept a list of directories for `web-assets-path`.
+
+## 4.8.10
+
+- Require Dart `3.13.0`.
+
+## 4.8.9
+- Fix an issue where `DdcFrontendServerBuilder` accumulates changed files across builds.
+
+## 4.8.8
+
+- Allow all DDC builders to use the scratch space specified by `scratch-space-dir`.
+
+## 4.8.7
+
+- Fix `DdcFrontendServerBuilder` retaining old compile requests.
+
+## 4.8.6
+
+- Allow `analyzer` 14.x, require 13.3.0.
+- Require Dart 3.11.0.
+
 ## 4.8.5
 
 - Allow Dart SDK 3.13.x and 3.14 prerelease.

@@ -16,73 +16,8 @@ import 'package:collection/collection.dart';
 import 'package:matcher/matcher.dart';
 import 'mock.dart';
 
-/// Returns a matcher that expects an invocation that matches arguments given.
-///
-/// Both [positionalArguments] and [namedArguments] can also be [Matcher]s:
-///     // Expects an invocation of "foo(String a, bool b)" where "a" must be
-///     // the value 'hello' but "b" may be any value. This would match both
-///     // foo('hello', true), foo('hello', false), and foo('hello', null).
-///     expect(fooInvocation, invokes(
-///       #foo,
-///       positionalArguments: ['hello', any]
-///     ));
-///
-/// Suitable for use in mocking libraries, where `noSuchMethod` can be used to
-/// get a handle to attempted [Invocation] objects and then compared against
-/// what a user expects to be called.
-Matcher invokes(
-  Symbol memberName, {
-  List<dynamic> positionalArguments = const [],
-  Map<Symbol, dynamic> namedArguments = const {},
-  bool isGetter = false,
-  bool isSetter = false,
-}) {
-  if (isGetter && isSetter) {
-    throw ArgumentError('Cannot set isGetter and iSetter');
-  }
-  return _InvocationMatcher(
-    _InvocationSignature(
-      memberName: memberName,
-      positionalArguments: positionalArguments,
-      namedArguments: namedArguments,
-      isGetter: isGetter,
-      isSetter: isSetter,
-    ),
-  );
-}
-
 /// Returns a matcher that matches the name and arguments of an [invocation].
-///
-/// To expect the same _signature_ see [invokes].
 Matcher isInvocation(Invocation invocation) => _InvocationMatcher(invocation);
-
-class _InvocationSignature extends Invocation {
-  @override
-  final Symbol memberName;
-
-  @override
-  final List positionalArguments;
-
-  @override
-  final Map<Symbol, dynamic> namedArguments;
-
-  @override
-  final bool isGetter;
-
-  @override
-  final bool isSetter;
-
-  _InvocationSignature({
-    required this.memberName,
-    this.positionalArguments = const [],
-    this.namedArguments = const {},
-    this.isGetter = false,
-    this.isSetter = false,
-  });
-
-  @override
-  bool get isMethod => !isAccessor;
-}
 
 class _InvocationMatcher implements Matcher {
   static Description _describeInvocation(Description d, Invocation invocation) {

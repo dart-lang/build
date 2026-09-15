@@ -10,11 +10,11 @@ import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 import 'package:watcher/watcher.dart';
 
-import '../build/build_state/build_state.dart';
+import '../build_plan/asset_file.dart';
 import '../build_plan/build_configs.dart';
 import '../build_plan/build_packages.dart';
-import '../build_plan/build_step_plan.dart';
 import '../build_plan/build_target.dart';
+import '../build_plan/previous_build.dart';
 import '../constants.dart';
 import '../logging/timed_activities.dart';
 import 'reader_writer.dart';
@@ -27,29 +27,33 @@ class AssetTracker {
 
   AssetTracker(this._readerWriter, this._buildPackages, this._buildConfigs);
 
-  /// Checks for and returns any file system changes compared to the current
-  /// build step plan and build state.
-  Future<Map<AssetId, ChangeType>> collectChanges({
-    required BuildStepPlan buildStepPlan,
-    required BuildState buildState,
+  /// Checks for and returns any file system changes compared to the previous
+  /// build.
+  Future<Map<AssetFile, ChangeType>> collectChanges({
+    required PreviousBuild previousBuild,
   }) async {
-    final inputSources = await findInputSources();
-    final generatedSources = await findCacheDirSources();
-    final declaredAndActualOutputs = [
-      ...buildStepPlan.declaredOutputs,
-      ...buildState.actualPostOutputs,
+    final diskFiles = await findFiles();
+    final actualOutputs = [
+      ...previousBuild.actualOutputs,
+      ...previousBuild.actualPostOutputs,
     ];
-    return computeSourceUpdates(
-      inputSources,
-      generatedSources,
-      buildState,
-      declaredAndActualOutputs,
-    );
+    return computeSourceUpdates(diskFiles, previousBuild, actualOutputs);
   }
 
-  /// Returns the all the sources found in the cache directory.
-  Future<Set<AssetId>> findCacheDirSources() =>
-      _listGeneratedAssetIds().toSet();
+  /// Returns all assets found on disk: both package path files and artifact
+  /// tree files.
+  Future<Set<AssetFile>> findFiles() async {
+    final inputSources = await findInputSources();
+    final artifactTreeFiles = await findArtifactTreeFiles();
+    return {
+      ...inputSources.map(AssetFile.atPackagePath),
+      ...artifactTreeFiles.map(AssetFile.inArtifactTree),
+    };
+  }
+
+  /// Returns all the assets found in the artifact tree.
+  Future<Set<AssetId>> findArtifactTreeFiles() =>
+      _listArtifactTreeAssetIds().toSet();
 
   /// Returns the set of original package inputs on disk.
   Future<Set<AssetId>> findInputSources() {
@@ -62,46 +66,44 @@ class AssetTracker {
   }
 
   /// Finds the asset changes which have happened while unwatched between builds
-  /// by taking a difference between the assets in the build state and the
+  /// by taking a difference between the assets in the previous build and the
   /// assets on disk.
-  Future<Map<AssetId, ChangeType>> computeSourceUpdates(
-    Set<AssetId> inputSources,
-    Set<AssetId> generatedSources,
-    BuildState buildState,
-    Iterable<AssetId> declaredAndActualOutputs,
+  Future<Map<AssetFile, ChangeType>> computeSourceUpdates(
+    Set<AssetFile> diskFiles,
+    PreviousBuild previousBuild,
+    Iterable<AssetId> actualOutputs,
   ) async {
-    final allSources = <AssetId>{}
-      ..addAll(inputSources)
-      ..addAll(generatedSources);
-    final updates = <AssetId, ChangeType>{};
-    void addUpdates(Iterable<AssetId> assets, ChangeType type) {
-      for (final asset in assets) {
-        updates[asset] = type;
-      }
+    final previousFiles = <AssetFile>{
+      ...previousBuild.sources.map(AssetFile.atPackagePath),
+      ...actualOutputs.map(
+        (id) =>
+            AssetFile(id, inArtifactTree: previousBuild.isInArtifactTree(id)),
+      ),
+    };
+
+    final updates = <AssetFile, ChangeType>{};
+
+    for (final file in diskFiles.difference(previousFiles)) {
+      updates[file] = ChangeType.ADD;
     }
 
-    final newSources = inputSources.difference(buildState.sources.toSet());
-    addUpdates(newSources, ChangeType.ADD);
-    final removedAssets = [
-      for (final id in buildState.sources)
-        if (!allSources.contains(id)) id,
-      for (final id in declaredAndActualOutputs)
-        if (!allSources.contains(id)) id,
-    ];
+    for (final file in previousFiles.difference(diskFiles)) {
+      updates[file] = ChangeType.REMOVE;
+    }
 
-    addUpdates(removedAssets, ChangeType.REMOVE);
-
-    final originalGraphSources = buildState.sources.toSet();
-    final preExistingSources = originalGraphSources.intersection(inputSources);
-    for (final id in preExistingSources) {
-      final originalDigest = buildState.contentOfSource(id);
+    for (final file in previousFiles.intersection(diskFiles)) {
+      final originalDigest = previousBuild.digestOf(file.id);
       if (originalDigest == null) continue;
 
-      final currentDigest = await _readerWriter.digest(id);
-      if (currentDigest != originalDigest.digest) {
-        updates[id] = ChangeType.MODIFY;
+      final currentDigest = await _readerWriter.digest(
+        file.id,
+        inArtifactTree: file.inArtifactTree,
+      );
+      if (currentDigest != originalDigest) {
+        updates[file] = ChangeType.MODIFY;
       }
     }
+
     return updates;
   }
 
@@ -122,14 +124,12 @@ class AssetTracker {
           );
   }
 
-  Stream<AssetId> _listGeneratedAssetIds() {
-    final glob = Glob('$generatedOutputDirectory/**');
+  Stream<AssetId> _listArtifactTreeAssetIds() {
+    final glob = Glob('$artifactTreePath/**');
 
     return _listIdsSafe(glob, package: _buildPackages.outputRoot)
         .map((id) {
-          final packagePath = id.path.substring(
-            generatedOutputDirectory.length + 1,
-          );
+          final packagePath = id.path.substring(artifactTreePath.length + 1);
           final firstSlash = packagePath.indexOf('/');
           if (firstSlash == -1) return null;
           final package = packagePath.substring(0, firstSlash);

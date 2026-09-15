@@ -1,11 +1,46 @@
-## 5.8.0-wip
+## 5.8.2-wip
+
+* Emit `// dart format off` in generated mock files to prevent reformatting.
+  [#4597](https://github.com/dart-lang/build/issues/4597)
+* Avoid generating fake classes for dummy values of ProtobufEnum subclasses or
+  GeneratedMessage subclasses from the protobuf package.
+
+## 5.8.1
+
+* Cast dummy values for extension types to the extension type so they satisfy
+  static type checking in generic return types like `Future<ExtensionType>`.
+  [#4590](https://github.com/dart-lang/build/issues/4590)
+* Use canonical asset path in generated header comments so symlink paths are
+  excluded.
+  [#4545](https://github.com/dart-lang/build/issues/4545)
+* Deterministically select library to import when multiple libraries export the
+  same type.
+  [#4549](https://github.com/dart-lang/build/issues/4549)
+* Prefer importing public entrypoints over `/src/` implementation libraries
+  when multiple libraries export the same type.
+  [#4551](https://github.com/dart-lang/build/issues/4551)
+* Throw `InvalidMockitoAnnotationException` with a clear message when
+  `@GenerateMocks` `customMocks` or `@GenerateNiceMocks` `mocks` is not a list
+  literal, instead of crashing with a type cast exception.
+  [#4428](https://github.com/dart-lang/build/issues/4428)
+* Remove redundant per-class `// ignore: must_be_immutable` comment to prevent
+  `duplicate_ignore` warnings.
+  [#4588](https://github.com/dart-lang/build/issues/4588)
+* Clarify in `README.md` that generated `.mocks.dart` filenames are based on the
+  source file name.
+  [#4599](https://github.com/dart-lang/build/issues/4599)
+* Suppress `experimental_member_use` warnings in generated mock files.
+  [#4602](https://github.com/dart-lang/build/issues/4602)
+* Document missing stub behavior for `void` and `Future<void>`.
+
+## 5.8.0
 
 * Add support for JS interop extension type mock generation to mockito.
 * It is now an error to generate mocks for non-JS interop extension types.
   Instead, mock the representation type and cast to the extension type where
   needed.
-* Avoid generating fake classes for dummy values of ProtobufEnum subclasses or
-  GeneratedMessage subclasses from the protobuf package.
+* Remove Mockito version number from generated output.
+* Allow `analyzer` 14.0.0.
 
 ## 5.7.0
 
@@ -167,13 +202,13 @@
 * In creating mocks for a pre-null-safe library, opt out of null safety in the
   generated code.
 * Properly generate method overrides for methods with covariant parameters.
-  [#506](https://github.com/dart-lang/mockito/issues/506)
+  [#4533](https://github.com/dart-lang/build/issues/4533)
 * Correctly generate a `toString` override method for pre-null safe libraries,
   for which the class-to-mock implements `toString` with additional parameters.
 * Improve messaging in a MissingStubError, directing to the docs for MockSpec.
 * Fix incorrect error when trying to mock a method with a parameter with inner
   function types (like in type arguments) which are potentially non-nullable.
-  [#476](https://github.com/dart-lang/mockito/issues/476)
+  [#4511](https://github.com/dart-lang/build/issues/4511)
 * Allow fallback generators to be applied for getters.
 * Support generating a mock class for a class with members with non-nullable
   unknown return types via a new parameter on `MockSpec` called
@@ -183,17 +218,17 @@
 
 * Report when a class cannot be mocked because an inherited method or property
   accessor requires a private type.
-  [#446](https://github.com/dart-lang/mockito/issues/446)
+  [#4854](https://github.com/dart-lang/build/issues/4854)
 * Do not needlessly implement `toString` unless the class-to-mock implements
   `toString` with additional parameters.
-  [#461](https://github.com/dart-lang/mockito/issues/461)
+  [#4503](https://github.com/dart-lang/build/issues/4503)
 * Support analyzer 3.x.
 
 ## 5.0.16
 
 * Fix type reference for nested, imported types found in type arguments on a
   custom class-to-mock.
-  [#469](https://github.com/dart-lang/mockito/issues/469)
+  [#4508](https://github.com/dart-lang/build/issues/4508)
 * Bump minimum analyzer dependency to version 2.1.0.
 * Ignore `camel_case_types` lint in generated code.
 
@@ -201,34 +236,34 @@
 
 * Fix an issue generating the correct parameter default value given a
   constructor which redirects to a constructor declared in a separate library.
-  [#459](https://github.com/dart-lang/mockito/issues/459)
+  [#4861](https://github.com/dart-lang/build/issues/4861)
 
 ## 5.0.14
 
 * Generate Fake classes with unique names.
-  [#441](https://github.com/dart-lang/mockito/issues/441)
+  [#4689](https://github.com/dart-lang/build/issues/4689)
 
 ## 5.0.13
 
 * Implement methods which have been overridden in the mixin hierarchy properly.
   Previously, mixins were being applied in the wrong order, which could skip
   over one method that overrides another with a different signature.
-  [#456](https://github.com/dart-lang/mockito/issues/456)
+  [#4859](https://github.com/dart-lang/build/issues/4859)
 
 ## 5.0.12
 
 * Use an empty list with a correct type argument for a fallback value for a
   method which returns Iterable.
-  [#445](https://github.com/dart-lang/mockito/issues/445)
+  [#4853](https://github.com/dart-lang/build/issues/4853)
 * When selecting the library that should be imported in order to reference a
   type, prefer a library which exports the library in which the type is
   declared. This avoids some confusion with conditional exports.
-  [#443](https://github.com/dart-lang/mockito/issues/443)
+  [#4691](https://github.com/dart-lang/build/issues/4691)
 * Properly reference types in overridden `toString` implementations.
-  [#438](https://github.com/dart-lang/mockito/issues/438)
+  [#4687](https://github.com/dart-lang/build/issues/4687)
 * Override `toString` in a Fake implementation when the class-to-be-faked has
   a superclass which overrides `toString` with additional parameters.
-  [#371](https://github.com/dart-lang/mockito/issues/371)
+  [#4640](https://github.com/dart-lang/build/issues/4640)
 * Support analyzer 2.x.
 
 ## 5.0.11
@@ -244,20 +279,20 @@
 
 * Generate a proper mock class when the mocked class overrides `toString`,
   `hashCode`, or `operator==`.
-  [#420](https://github.com/dart-lang/mockito/issues/420)
+  [#4672](https://github.com/dart-lang/build/issues/4672)
 * Override `toString` implementation on generated Fakes in order to match the
   signature of an overriding method which adds optional parameters.
-  [#371](https://github.com/dart-lang/mockito/issues/371)
+  [#4640](https://github.com/dart-lang/build/issues/4640)
   Properly type methods in a generated mock class which comes from a "custom
   mock" annotation referencing an implicit type. Given a method which references
   type variables defined on their enclosing class (for example, `T` in
   `class Foo<T>`), mockito will now correctly reference `T` in generated code.
-  [#422](https://github.com/dart-lang/mockito/issues/422)
+  [#4674](https://github.com/dart-lang/build/issues/4674)
 
 ## 5.0.9
 
 * Mock classes now implement a type's nested type arguments properly.
-  [#410](https://github.com/dart-lang/mockito/issues/410)
+  [#4667](https://github.com/dart-lang/build/issues/4667)
 * Mock classes now implement API from a class's interface(s) (in addition to
   superclasses and mix ins). Thanks @markgravity.
   [#404](https://github.com/dart-lang/mockito/pull/404)
@@ -276,14 +311,14 @@
 * Support mocking methods with return types declared in private SDK libraries
   (such as HttpClient and WebSocket, declared in `dart:_http`).
 * Do not generate a fake for a class which is only used as a nullable type in a
-  Future. [#409](https://github.com/dart-lang/mockito/issues/409)
+  Future. [#4666](https://github.com/dart-lang/build/issues/4666)
 
 ## 5.0.7
 
 * Properly refer to type parameter bounds with import prefixes.
-  [#389](https://github.com/dart-lang/mockito/issues/389)
+  [#4652](https://github.com/dart-lang/build/issues/4652)
 * Stop referring to private typedefs in generated code.
-  [#396](https://github.com/dart-lang/mockito/issues/396)
+  [#4656](https://github.com/dart-lang/build/issues/4656)
 * Ignore `prefer_const_constructors` and `avoid_redundant_argument_values` lint
   rule violations in generated code.
 
@@ -298,9 +333,9 @@
 ## 5.0.4
 
 * Allow calling methods with void return types w/o stubbing.
-  [#367](https://github.com/dart-lang/mockito/issues/367)
+  [#4638](https://github.com/dart-lang/build/issues/4638)
 * Add type argument to dummy `Future` return value.
-  [#380](https://github.com/dart-lang/mockito/issues/380)
+  [#4646](https://github.com/dart-lang/build/issues/4646)
 
 ## 5.0.3
 
@@ -358,12 +393,12 @@
 ## 5.0.0-nullsafety.2
 
 * Fix issue with generated code which references a class declared in a part
-  ([#310](https://github.com/dart-lang/mockito/issues/310)).
+  ([#4604](https://github.com/dart-lang/build/issues/4604)).
 
 ## 5.0.0-nullsafety.1
 
 * Fix an issue with generated mocks overriding methods from Object, such as
-  `operator ==` ([#306](https://github.com/dart-lang/mockito/issues/306)).
+  `operator ==` ([#4603](https://github.com/dart-lang/build/issues/4603)).
 * Fix an issue with relative imports in generated mocks.
 
 ## 5.0.0-nullsafety.0
@@ -487,7 +522,7 @@
   already exists.
 
 [upgrading-to-mockito-3]: https://github.com/dart-lang/build/blob/master/builder_pkgs/mockito/upgrading-to-mockito-3.md
-[noSuchMethod Forwarding]: https://github.com/dart-lang/sdk/blob/master/docs/language/informal/nosuchmethod-forwarding.md
+[noSuchMethod Forwarding]: https://github.com/dart-lang/language/blob/master/archive/feature-specifications/nosuchmethod-forwarding.md
 
 ## 2.2.0
 

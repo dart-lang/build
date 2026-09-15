@@ -24,6 +24,15 @@ abstract class BuildInputs implements Built<BuildInputs, BuildInputsBuilder> {
   /// Contents for source files that have declared outputs.
   BuiltMap<AssetId, AssetContent> get sourceContents;
 
+  /// Output contents from the previous build that are retained for reuse.
+  ///
+  /// Invalid or deleted outputs are omitted. In `--keep` mode, externally
+  /// modified outputs are retained with modified content but the previous
+  /// digest.
+  ///
+  /// Empty if [cleanBuild].
+  BuiltMap<AssetId, AssetContent> get retainedOutputContents;
+
   /// Sources that were added or modified since the last build.
   ///
   /// Empty if [cleanBuild].
@@ -34,10 +43,12 @@ abstract class BuildInputs implements Built<BuildInputs, BuildInputsBuilder> {
   /// Empty if [cleanBuild].
   BuiltSet<AssetId> get deletedSources;
 
-  /// Generated outputs that were deleted from disk.
+  /// Generated outputs that will be deleted from disk at the end of the build
+  /// because their input is gone, or that will be forcefully overwritten
+  /// because they have been manually modified or deleted by the user.
   ///
   /// Empty if [cleanBuild].
-  BuiltSet<AssetId> get deletedOutputs;
+  BuiltSet<AssetId> get invalidOutputs;
 
   BuildInputs._();
   factory BuildInputs([void Function(BuildInputsBuilder) updates]) =

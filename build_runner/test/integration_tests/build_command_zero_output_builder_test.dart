@@ -113,9 +113,11 @@ class MixedBuilder implements Builder {
   Future<void> build(BuildStep buildStep) async {
     log.warning('MixedBuilder ran on \${buildStep.inputId.path}');
     if (buildStep.inputId.path.endsWith('.dart')) {
-      await buildStep.writeAsString(
-        buildStep.inputId.changeExtension('.g.dart'), '',
-      );
+      final outputId = buildStep.inputId.changeExtension('.g.dart');
+      await buildStep.writeAsString(outputId, '');
+      if (!await buildStep.canRead(outputId)) {
+        throw StateError('Cannot read self-written output.');
+      }
     }
   }
 }

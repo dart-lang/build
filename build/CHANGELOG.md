@@ -1,3 +1,35 @@
+## 4.1.0-wip
+
+- Add `librarySourceSink` to `BuildStep`, a new way for builders to add source
+  to a library. Additions are collected from all builders and written to a
+  single shared part file per library. Experimental, may change following
+  feedback and discussion at https://github.com/dart-lang/build/discussions.
+- `AssetId` no longer rejects hyphens in package names.
+
+## 4.0.12-wip
+
+- Bug fix: handle `Resource` disposal failure gracefully: log an error instead
+  of letting the exception escape.
+
+## 4.0.11
+
+- Clarify terminology: refer to `.dart_tool/build/generated` as the "artifact
+  tree", and the normal output location as the "package path".
+
+## 4.0.10
+
+- Allow `package_config` 3.0.0.
+
+## 4.0.9
+
+- `AssetId` now validates package names in addition to paths.
+- Bug fix: more strictly prohibit absolute paths in `AssetId` path validation.
+
+## 4.0.8
+
+- Allow `analyzer` 14.0.0, require 13.3.0.
+- Require Dart 3.11.0.
+
 ## 4.0.7
 
 - Replace `Builder` extension method `hasOutputFor` with `matchesInput`.

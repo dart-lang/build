@@ -47,12 +47,22 @@ void main() {
       ]);
     });
 
-    test('compile progress', () {
-      buildLog.logCompile(compileType: CompileType.jit, function: () async {});
-      expect(lines, ['  0s compiling builders/jit']);
-      buildLog.logCompile(compileType: CompileType.aot, function: () async {});
+    test('compile progress', () async {
+      await buildLog.logCompile(
+        compileType: CompileType.jit,
+        function: () async {},
+      );
       expect(lines, [
+        '  compiling builders/jit',
         '  0s compiling builders/jit',
+      ]);
+      lines.clear();
+      await buildLog.logCompile(
+        compileType: CompileType.aot,
+        function: () async {},
+      );
+      expect(lines, [
+        '  compiling builders/aot',
         '  0s compiling builders/aot',
       ]);
     });

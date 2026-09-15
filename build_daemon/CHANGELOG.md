@@ -1,3 +1,28 @@
+## 4.1.6
+
+- Add doc comment to `DaemonBuilder.build`.
+
+## 4.1.5
+
+- Support the latest `package_config`.
+
+## 4.1.4
+
+- In the client, check the workspace build daemon version and throw
+  `VersionSkew` if there is a mismatch.
+- Add descriptive messages and custom `toString` overrides to
+  `MissingPortFile`, `OptionsSkew`, and `VersionSkew`.
+
+## 4.1.3
+
+- Bug fix: fix race condition when a new daemon immediately starts after
+  shutdown.
+- Put lock and config files under `.dart_tool` in the workspace by default.
+  Make them user private. Add `daemonSharedPath` to keep support for other
+  locations.
+- Use a token for websocket authentication.
+- Require Dart 3.11.0.
+
 ## 4.1.2
 
 - Security: reject clients that set an Origin header, which includes all browsers.

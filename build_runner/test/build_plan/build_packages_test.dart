@@ -7,6 +7,7 @@ library;
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:build/build.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_paths.dart';
@@ -21,7 +22,7 @@ void main() {
   late BuildPackages buildPackages;
 
   group('BuildPackages', () {
-    group('forThisPackage ', () {
+    group('forThisPackage', () {
       setUp(() async {
         buildPackages = await BuildPackages.forPaths(
           BuildPaths.load(p.current, buildWorkspace: false),
@@ -38,7 +39,73 @@ void main() {
           (p) => p.name == 'build_runner',
         );
 
-        expect(buildRunner.languageVersion, LanguageVersion(3, 8));
+        expect(buildRunner.languageVersion, LanguageVersion(3, 11));
+      });
+
+      test('pathFor allows write to output package', () {
+        expect(
+          buildPackages.pathFor(
+            AssetId('build_runner', 'lib/a.txt'),
+            inArtifactTree: false,
+            checkWriteAllowed: true,
+          ),
+          isNotNull,
+        );
+      });
+
+      test('pathFor prohibits write to known but non-output package', () {
+        expect(
+          () => buildPackages.pathFor(
+            AssetId('test', 'lib/a.txt'),
+            inArtifactTree: false,
+            checkWriteAllowed: true,
+          ),
+          throwsA(isA<InvalidOutputException>()),
+        );
+      });
+
+      test('pathFor prohibits access to unknown package', () {
+        expect(
+          () => buildPackages.pathFor(
+            AssetId('unknown', 'lib/a.txt'),
+            inArtifactTree: false,
+          ),
+          throwsA(isA<PackageNotFoundException>()),
+        );
+      });
+
+      test('pathFor allows write to artifact tree in output package', () {
+        expect(
+          buildPackages.pathFor(
+            AssetId('build_runner', 'lib/a.txt'),
+            inArtifactTree: true,
+            checkWriteAllowed: true,
+          ),
+          isNotNull,
+        );
+      });
+      test(
+        'pathFor allows write to artifact tree in known but non-output package',
+        () {
+          expect(
+            () => buildPackages.pathFor(
+              AssetId('test', 'lib/a.txt'),
+              inArtifactTree: true,
+              checkWriteAllowed: true,
+            ),
+            isNotNull,
+          );
+        },
+      );
+
+      test('pathFor prohibits access to artifact tree for unknown package', () {
+        expect(
+          () => buildPackages.pathFor(
+            AssetId('unknown', 'lib/a.txt'),
+            inArtifactTree: true,
+          ),
+          throwsA(isA<PackageNotFoundException>()),
+        );
       });
     });
 

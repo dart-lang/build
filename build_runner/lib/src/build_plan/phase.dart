@@ -36,7 +36,7 @@ abstract class BuildAction {
   InputMatcher get generateFor;
   String get package;
   InputMatcher get targetSources;
-  bool get hideOutput;
+  bool get outputsToArtifactTree;
 }
 
 /// A [BuildPhase] that uses a single [Builder] to generate files.
@@ -66,7 +66,10 @@ class InBuildPhase extends BuildPhase implements BuildAction {
   @override
   final bool isOptional;
   @override
-  final bool hideOutput;
+  final bool outputsToArtifactTree;
+
+  /// Whether this phase is capable of contributing to part files.
+  final bool addsToLibrary;
 
   InBuildPhase._(
     this.package,
@@ -77,7 +80,8 @@ class InBuildPhase extends BuildPhase implements BuildAction {
     required this.displayName,
     required this.key,
     this.isOptional = false,
-    this.hideOutput = false,
+    this.outputsToArtifactTree = false,
+    this.addsToLibrary = false,
   });
 
   /// Creates an [BuildPhase] for a normal [Builder].
@@ -89,8 +93,11 @@ class InBuildPhase extends BuildPhase implements BuildAction {
   /// [isOptional] specifies that a Builder may not be run unless some other
   /// Builder in a later phase attempts to read one of the potential outputs.
   ///
-  /// [hideOutput] specifies that the generated asses should be placed in the
-  /// build cache rather than the source tree.
+  /// [outputsToArtifactTree] specifies that the generated assets should be
+  /// placed in the artifact tree rather than at their package paths.
+  ///
+  /// [addsToLibrary] specifies that the builder is capable of contributing to
+  /// part files.
   InBuildPhase({
     required Builder builder,
     required String key,
@@ -99,7 +106,8 @@ class InBuildPhase extends BuildPhase implements BuildAction {
     InputSet generateFor = const InputSet(),
     BuilderOptions options = const BuilderOptions({}),
     bool isOptional = false,
-    bool hideOutput = false,
+    bool outputsToArtifactTree = false,
+    bool addsToLibrary = false,
   }) : this._(
          package,
          builder,
@@ -109,14 +117,16 @@ class InBuildPhase extends BuildPhase implements BuildAction {
          key: key,
          displayName: _simpleBuilderKey(key),
          isOptional: isOptional,
-         hideOutput: hideOutput,
+         outputsToArtifactTree: outputsToArtifactTree,
+         addsToLibrary: addsToLibrary,
        );
 
   @override
   String toString() {
     final settings = <String>[];
     if (isOptional) settings.add('optional');
-    if (hideOutput) settings.add('hidden');
+    if (outputsToArtifactTree) settings.add('artifactTree');
+    if (addsToLibrary) settings.add('addsToLibrary');
     var result = '$displayName on $targetSources in $package';
     if (settings.isNotEmpty) result += ' $settings';
     return result;
@@ -130,7 +140,8 @@ class InBuildPhase extends BuildPhase implements BuildAction {
     targetSources,
     generateFor,
     isOptional,
-    hideOutput,
+    outputsToArtifactTree,
+    addsToLibrary,
   ]);
 }
 
@@ -170,7 +181,7 @@ class PostBuildAction implements BuildAction {
   @override
   final InputMatcher targetSources;
   @override
-  final bool hideOutput;
+  final bool outputsToArtifactTree;
 
   PostBuildAction({
     required this.builder,
@@ -178,7 +189,7 @@ class PostBuildAction implements BuildAction {
     required this.options,
     required InputSet targetSources,
     required InputSet generateFor,
-    required this.hideOutput,
+    required this.outputsToArtifactTree,
   }) : builderLabel = _builderLabel(builder),
        targetSources = InputMatcher(targetSources),
        generateFor = InputMatcher(generateFor);
@@ -189,7 +200,7 @@ class PostBuildAction implements BuildAction {
     generateFor,
     package,
     targetSources,
-    hideOutput,
+    outputsToArtifactTree,
   ]);
 }
 

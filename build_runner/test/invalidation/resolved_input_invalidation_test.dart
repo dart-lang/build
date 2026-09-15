@@ -529,7 +529,7 @@ void _runTests(bool discardResolver) {
           from: '.2',
           to: '.3',
           isOptional: true,
-          outputIsVisible: true,
+          outputAtPackagePath: true,
         )
         ..reads('.2')
         // Resolving b.1 causes imported c.3 to be queued for read at later

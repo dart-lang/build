@@ -4,6 +4,8 @@
 
 import 'dart:async';
 
+import 'logging.dart';
+
 typedef CreateInstance<T> = FutureOr<T> Function();
 typedef DisposeInstance<T> = FutureOr<void> Function(T instance);
 typedef BeforeExit = FutureOr<void> Function();
@@ -26,6 +28,12 @@ typedef BeforeExit = FutureOr<void> Function();
 /// If a `dispose` callback is available it will be called between builds and it
 /// should clean up any state that may not be valid on a subsequent build. If no
 /// `dispose` callback is passed the value will be discarded between builds.
+///
+/// If `dispose` throws synchronously or returns a [Future] that completes with
+/// an error, the error is logged and the instance is discarded between builds.
+/// If creating the instance threw an error, disposal discards the failed
+/// creation without logging an error.
+///
 /// Only "universal" state should be retained by the instance after `dispose`.
 /// Any state which is particular to a single build should be cleared or marked
 /// dirty during dispose, and validated before subsequent use. For instance,
@@ -111,14 +119,25 @@ class Resource<T> {
   ///
   /// If a [_userDispose] was provided, invoke it and assume the state can be
   /// retained for the next build.
-  Future<void> _dispose(ResourceManager manager) {
+  Future<void> _dispose(ResourceManager manager) async {
     assert(_instanceByManager.containsKey(manager));
     final oldInstance = _instanceByManager[manager]!;
-    if (_userDispose != null) {
-      return oldInstance.then(_userDispose);
-    } else {
-      _instanceByManager.remove(manager);
-      return Future.value(null);
+    if (_userDispose == null) {
+      unawaited(_instanceByManager.remove(manager));
+      return;
+    }
+    final T instance;
+    try {
+      instance = await oldInstance;
+    } catch (_) {
+      unawaited(_instanceByManager.remove(manager));
+      return;
+    }
+    try {
+      await _userDispose(instance);
+    } catch (error, stackTrace) {
+      unawaited(_instanceByManager.remove(manager));
+      log.severe('Error disposing resource: $error', error, stackTrace);
     }
   }
 }

@@ -43,6 +43,12 @@ void main() {
         AssetId('example', 'web/large.txt'),
         'large' * 10000,
       )
+      ..testing.writeString(AssetId('example', 'web/index.html'), 'hello')
+      ..testing.writeString(
+        AssetId('example', 'web/undiscovered.html'),
+        'undiscovered',
+      )
+      ..testing.writeString(AssetId('example', 'web/page.html'), 'page')
       ..testing.writeString(
         makeAssetId('example|.dart_tool/package_config.json'),
         jsonEncode({
@@ -146,6 +152,138 @@ void main() {
     final response = await handler(Request('GET', getNew));
     expect(await response.readAsString(), 'NEW');
   });
+
+  test('emits build result when unbuilt file consumed outside build '
+      'changes', () async {
+    readerWriter.testing.writeString(
+      AssetId('example', 'web/index.html'),
+      'hello',
+    );
+    readerWriter.testing.writeString(
+      AssetId('example', 'web/unconsumed.html'),
+      'unconsumed',
+    );
+    final response = await handler(
+      Request('GET', Uri.parse('http://localhost/index.html')),
+    );
+    expect(await response.readAsString(), 'hello');
+
+    readerWriter.testing.writeString(
+      AssetId('example', 'web/index.html'),
+      'hello modified',
+    );
+    await Future<void>.value();
+    FakeWatcher.notifyWatchers(
+      WatchEvent(ChangeType.MODIFY, '$path/web/index.html'),
+    );
+    final result = await nextBuild.future;
+    expect(result.status, BuildStatus.success);
+    expect(result.outputs, isEmpty);
+
+    readerWriter.testing.writeString(
+      AssetId('example', 'web/unconsumed.html'),
+      'unconsumed modified',
+    );
+    await Future<void>.value();
+    FakeWatcher.notifyWatchers(
+      WatchEvent(ChangeType.MODIFY, '$path/web/unconsumed.html'),
+    );
+    expect(
+      nextBuild.future.timeout(
+        const Duration(milliseconds: 100),
+        onTimeout: () => throw TimeoutException('timeout'),
+      ),
+      throwsA(isA<TimeoutException>()),
+    );
+  });
+
+  test('emits build result when unbuilt file consumed outside build is '
+      'deleted', () async {
+    final response = await handler(
+      Request('GET', Uri.parse('http://localhost/index.html')),
+    );
+    expect(await response.readAsString(), 'hello');
+
+    readerWriter.testing.delete(AssetId('example', 'web/index.html'));
+    await Future<void>.value();
+    FakeWatcher.notifyWatchers(
+      WatchEvent(ChangeType.REMOVE, '$path/web/index.html'),
+    );
+    final result = await nextBuild.future;
+    expect(result.status, BuildStatus.success);
+    expect(result.outputs, isEmpty);
+
+    final notFoundResponse = await handler(
+      Request('GET', Uri.parse('http://localhost/index.html')),
+    );
+    expect(await notFoundResponse.readAsString(), 'Not Found');
+  });
+
+  test('emits build result with only built outputs when both built and '
+      'unbuilt files change', () async {
+    readerWriter.testing.writeString(
+      AssetId('example', 'web/page.html'),
+      'page',
+    );
+    final response = await handler(
+      Request('GET', Uri.parse('http://localhost/page.html')),
+    );
+    expect(await response.readAsString(), 'page');
+
+    readerWriter.testing.writeString(
+      AssetId('example', 'web/page.html'),
+      'page modified',
+    );
+    readerWriter.testing.writeString(
+      AssetId('example', 'web/new2.txt'),
+      'content',
+    );
+    await Future<void>.value();
+    FakeWatcher.notifyWatchers(
+      WatchEvent(ChangeType.ADD, '$path/web/new2.txt'),
+    );
+    FakeWatcher.notifyWatchers(
+      WatchEvent(ChangeType.MODIFY, '$path/web/page.html'),
+    );
+    final result = await nextBuild.future;
+    expect(result.status, BuildStatus.success);
+    expect(result.outputs, [AssetId('example', 'web/new2.g.txt')]);
+  });
+
+  test(
+    'synthetic build result retains failure status if previous build failed',
+    () async {
+      final response = await handler(
+        Request('GET', Uri.parse('http://localhost/index.html')),
+      );
+      expect(await response.readAsString(), 'hello');
+
+      // Trigger a failing build.
+      readerWriter.testing.writeString(
+        AssetId('example', 'web/initial.txt'),
+        'FAIL',
+      );
+      await Future<void>.value();
+      FakeWatcher.notifyWatchers(
+        WatchEvent(ChangeType.MODIFY, '$path/web/initial.txt'),
+      );
+      final failedResult = await nextBuild.future;
+      expect(failedResult.status, BuildStatus.failure);
+
+      // Now modify an unbuilt file consumed outside the build.
+      readerWriter.testing.writeString(
+        AssetId('example', 'web/index.html'),
+        'hello modified again',
+      );
+      await Future<void>.value();
+      FakeWatcher.notifyWatchers(
+        WatchEvent(ChangeType.MODIFY, '$path/web/index.html'),
+      );
+      final syntheticResult = await nextBuild.future;
+      expect(syntheticResult.status, BuildStatus.failure);
+      expect(syntheticResult.outputs, isEmpty);
+    },
+  );
 }
 
 class UppercaseBuilder implements Builder {
@@ -154,6 +292,7 @@ class UppercaseBuilder implements Builder {
   @override
   Future<void> build(BuildStep buildStep) async {
     final content = await buildStep.readAsString(buildStep.inputId);
+    if (content == 'FAIL') throw StateError('Build failed');
     await buildStep.writeAsString(
       buildStep.inputId.changeExtension('.g.txt'),
       content.toUpperCase(),

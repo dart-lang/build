@@ -12,8 +12,10 @@ import 'change_provider.dart';
 import 'constants.dart';
 import 'daemon_builder.dart';
 import 'data/build_target.dart';
+import 'src/file_permissions.dart';
 import 'src/file_wait.dart';
 import 'src/server.dart';
+import 'src/server_info.dart';
 
 /// The long running daemon process.
 ///
@@ -24,15 +26,21 @@ import 'src/server.dart';
 /// notification.
 class Daemon {
   final String _workingDirectory;
+  final String? _daemonSharedPath;
   final RandomAccessFile? _lock;
   final _doneCompleter = Completer<int>();
 
   Server? _server;
   StreamSubscription? _sub;
 
-  Daemon(String workingDirectory)
+  /// Creates a long running daemon process for builds in [workingDirectory].
+  ///
+  /// Optionally pass `daemonSharedPath` to use a separate shared path for lock
+  /// files. Avoid using globally shared paths on shared machines.
+  Daemon(String workingDirectory, {String? daemonSharedPath})
     : _workingDirectory = workingDirectory,
-      _lock = _tryGetLock(workingDirectory);
+      _daemonSharedPath = daemonSharedPath,
+      _lock = _tryGetLock(workingDirectory, daemonSharedPath: daemonSharedPath);
 
   /// Returns exit code.
   Future<int> get onDone => _doneCompleter.future;
@@ -46,7 +54,9 @@ class Daemon {
   ///
   /// Null if one isn't running.
   Future<String?> runningVersion() async {
-    final versionFile = File(versionFilePath(_workingDirectory));
+    final versionFile = File(
+      versionFilePath(_workingDirectory, daemonSharedPath: _daemonSharedPath),
+    );
     if (!await waitForFile(versionFile)) return null;
     return versionFile.readAsStringSync();
   }
@@ -55,7 +65,9 @@ class Daemon {
   ///
   /// Null if one isn't running.
   Future<Set<String>> currentOptions() async {
-    final optionsFile = File(optionsFilePath(_workingDirectory));
+    final optionsFile = File(
+      optionsFilePath(_workingDirectory, daemonSharedPath: _daemonSharedPath),
+    );
     if (!await waitForFile(optionsFile)) return <String>{};
     return optionsFile.readAsLinesSync().toSet();
   }
@@ -94,24 +106,41 @@ class Daemon {
   Future<void> _cleanUp(int exitCode) async {
     await _server?.stop();
     await _sub?.cancel();
-    // We need to close the lock prior to deleting the file.
-    _lock?.closeSync();
-    final workspace = Directory(daemonWorkspace(_workingDirectory));
-    if (workspace.existsSync()) {
-      workspace.deleteSync(recursive: true);
+
+    // Windows doesn't allow `Directory.deleteSync` while the lock is held, so
+    // delete exact files.
+    for (final path in [
+      portFilePath(_workingDirectory, daemonSharedPath: _daemonSharedPath),
+      versionFilePath(_workingDirectory, daemonSharedPath: _daemonSharedPath),
+      optionsFilePath(_workingDirectory, daemonSharedPath: _daemonSharedPath),
+    ]) {
+      try {
+        File(path).deleteSync();
+      } catch (_) {}
     }
+
+    // Close the lock.
+    _lock?.closeSync();
+
+    // Leave the directory and lock file: there's not much value in cleaning up
+    // further and it avoids a race if a new daemon starts up immediately.
+
     if (!_doneCompleter.isCompleted) _doneCompleter.complete(exitCode);
   }
 
-  void _createPortFile(int port) =>
-      File(portFilePath(_workingDirectory)).writeAsStringSync('$port');
+  void _createPortFile(int port) {
+    final portFile = File(
+      portFilePath(_workingDirectory, daemonSharedPath: _daemonSharedPath),
+    );
+    ServerInfo(port, _server!.token).writeToFile(portFile);
+  }
 
   void _createVersionFile() => File(
-    versionFilePath(_workingDirectory),
+    versionFilePath(_workingDirectory, daemonSharedPath: _daemonSharedPath),
   ).writeAsStringSync(currentVersion);
 
   void _createOptionsFile(Set<String> options) => File(
-    optionsFilePath(_workingDirectory),
+    optionsFilePath(_workingDirectory, daemonSharedPath: _daemonSharedPath),
   ).writeAsStringSync(options.toList().join('\n'));
 
   void _handleGracefulExit() {
@@ -126,11 +155,17 @@ class Daemon {
   }
 }
 
-RandomAccessFile? _tryGetLock(String workingDirectory) {
+RandomAccessFile? _tryGetLock(
+  String workingDirectory, {
+  required String? daemonSharedPath,
+}) {
   try {
-    _createDaemonWorkspace(workingDirectory);
+    _createDaemonWorkspace(
+      workingDirectory,
+      daemonSharedPath: daemonSharedPath,
+    );
     final lock = File(
-      lockFilePath(workingDirectory),
+      lockFilePath(workingDirectory, daemonSharedPath: daemonSharedPath),
     ).openSync(mode: FileMode.write)..lockSync();
     return lock;
   } on FileSystemException {
@@ -138,9 +173,21 @@ RandomAccessFile? _tryGetLock(String workingDirectory) {
   }
 }
 
-void _createDaemonWorkspace(String workingDirectory) {
+void _createDaemonWorkspace(
+  String workingDirectory, {
+  required String? daemonSharedPath,
+}) {
   try {
-    Directory(daemonWorkspace(workingDirectory)).createSync(recursive: true);
+    final workspace = daemonWorkspace(
+      workingDirectory,
+      daemonSharedPath: daemonSharedPath,
+    );
+    final directory = Directory(workspace);
+    final isNew = !directory.existsSync();
+    directory.createSync(recursive: true);
+    if (isNew && daemonSharedPath == null) {
+      FilePermissions.makeUserPrivate(workspace);
+    }
   } catch (e) {
     throw Exception('Unable to create daemon workspace: $e');
   }

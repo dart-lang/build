@@ -37,7 +37,10 @@ void main() async {
       (script) => script.replaceAll(r"'$extraContent'", "'(v1)'"),
     );
     await watch.expect('Starting build #2 with updated builders.');
-    await watch.expect(RegExp(r'1s compiling builders/jit'));
+    await watch.expect('compiling builders/jit');
+    // Wait a second so the build has definitely started.
+    await Future<void>.delayed(const Duration(seconds: 1));
+
     tester.update(
       'builder_pkg/lib/builder.dart',
       (script) => script.replaceAll("'(v1)'", "'(v2)'"),
