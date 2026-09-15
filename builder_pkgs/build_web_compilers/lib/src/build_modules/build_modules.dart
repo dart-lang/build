@@ -3,7 +3,11 @@
 // BSD-style license that can be found in the LICENSE file.
 
 export '../build_frontend_server/frontend_server_resources.dart'
-    show frontendServerState, frontendServerStateResource;
+    show
+        FrontendServerState,
+        frontendServerState,
+        frontendServerStateResource,
+        webEntrypointStateAssetId;
 export '../common.dart' show fesManagerConfigPath, multiRootScheme;
 export 'ddc_names.dart';
 export 'errors.dart' show MissingModulesException, UnsupportedModules;

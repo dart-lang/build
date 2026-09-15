@@ -164,11 +164,131 @@ void main() {
       );
     }
   });
+
+  test('stages a generated entrypoint in the scratch space', () async {
+    // The entrypoint is generated, so it can only be
+    // read from a build step in its own package.
+    // Staging it is what makes it available to
+    // the DDC builds of other packages.
+    final generateEntrypoint = TestBuilder(
+      buildExtensions: replaceExtension('.template', '.dart'),
+    );
+
+    // The scratch space is deleted once the build is over,
+    // so the staged file has to be read from within the build.
+    final readStagedEntrypoint = TestBuilder(
+      buildExtensions: replaceExtension(
+        '.web.entrypoint.json',
+        '.web.entrypoint.staged',
+      ),
+      build: (buildStep, _) async {
+        final scratchSpace = await buildStep.fetchResource(
+          scratchSpaceResource,
+        );
+        final entrypoint = AssetId(
+          buildStep.inputId.package,
+          'web/generated_main.dart',
+        );
+        await buildStep.writeAsString(
+          buildStep.allowedOutputs.single,
+          await scratchSpace.fileFor(entrypoint).readAsString(),
+        );
+      },
+    );
+
+    await testBuilders(
+      [
+        generateEntrypoint,
+        WebEntrypointMarkerBuilder(usesWebHotReload: true),
+        readStagedEntrypoint,
+      ],
+      {'a|web/\$web\$': '', 'a|web/generated_main.template': 'void main() {}'},
+      outputs: {
+        'a|web/generated_main.dart': 'void main() {}',
+        'a|web/.web.entrypoint.json': decodedMatches(
+          contains('web/generated_main.dart'),
+        ),
+        'a|web/.web.entrypoint.staged': 'void main() {}',
+      },
+    );
+
+    // The staged file is also there when a previous test left one behind, so
+    // check the signal `DdcFrontendServerBuilder` actually branches on.
+    expect(
+      frontendServerState.stagedEntrypointAssetId,
+      AssetId('a', 'web/generated_main.dart'),
+    );
+  });
+
+  test('records state that a later build step can load', () async {
+    // `checkAndDeserializeState` and the marker builder have to agree on where
+    // the state is written; a mismatch silently disables all state reuse.
+    final loadState = TestBuilder(
+      buildExtensions: replaceExtension('.dart', '.loaded'),
+      build: (buildStep, _) async {
+        // Deliberately not the shared state, which the marker builder in this
+        // same build has already populated in memory.
+        final state = FrontendServerState();
+        final loaded = await state.checkAndDeserializeState(buildStep);
+        await buildStep.writeAsString(
+          buildStep.allowedOutputs.single,
+          '$loaded ${state.entrypointAssetId}',
+        );
+      },
+    );
+
+    await testBuilders(
+      [WebEntrypointMarkerBuilder(usesWebHotReload: true), loadState],
+      {'a|web/\$web\$': '', 'a|web/main.dart': 'void main() {}'},
+      outputs: {
+        'a|web/.web.entrypoint.json': decodedMatches(contains('web/main.dart')),
+        'a|web/main.loaded': 'true a|web/main.dart',
+      },
+    );
+  });
+
+  test('does not record an entrypoint when there is none', () async {
+    await testBuilders(
+      [WebEntrypointMarkerBuilder(usesWebHotReload: true)],
+      {'a|web/\$web\$': '', 'a|web/no_main.dart': 'int x = 0;'},
+      outputs: {'a|web/.web.entrypoint.json': '{}'},
+    );
+
+    expect(frontendServerState.entrypointAssetId, isNull);
+    expect(frontendServerState.stagedEntrypointAssetId, isNull);
+  });
+
+  test(
+    'loading state without an entrypoint reports it as not loaded',
+    () async {
+      final loadState = TestBuilder(
+        buildExtensions: replaceExtension('.dart', '.loaded'),
+        build: (buildStep, _) async {
+          final state = FrontendServerState();
+          final loaded = await state.checkAndDeserializeState(buildStep);
+          await buildStep.writeAsString(
+            buildStep.allowedOutputs.single,
+            '$loaded ${state.entrypointAssetId}',
+          );
+        },
+      );
+
+      await testBuilders(
+        [loadState],
+        {
+          'a|web/.web.entrypoint.json': '{}',
+          'a|web/main.dart': 'void main() {}',
+        },
+        outputs: {'a|web/main.loaded': 'false null'},
+      );
+    },
+  );
 }
 
 void _resetFrontendServerState() {
   frontendServerState
     ..entrypointAssetId = null
+    ..stagedEntrypointAssetId = null
     ..needsRecompileRestart = false
     ..fesScratchSpace = null;
 }

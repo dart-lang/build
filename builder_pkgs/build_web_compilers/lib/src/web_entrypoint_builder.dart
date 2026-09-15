@@ -368,8 +368,6 @@ class WebEntrypointBuilder implements Builder {
       final frontendServerStateWasLoaded = await frontendServerState
           .checkAndDeserializeState(buildStep);
       if (!frontendServerStateWasLoaded) {
-        final webEntrypointJson = <String, dynamic>{};
-        webEntrypointJson['entrypoint'] = dartEntrypointId.toString();
         frontendServerState.entrypointAssetId = dartEntrypointId;
       }
     }
