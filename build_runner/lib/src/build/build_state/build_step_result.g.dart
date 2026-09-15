@@ -71,6 +71,14 @@ class _$BuildStepResultSerializer
           serializers.serialize(value, specifiedType: const FullType(bool)),
         );
     }
+    value = object.wrotePartContribution;
+    if (value != null) {
+      result
+        ..add('wrotePartContribution')
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(bool)),
+        );
+    }
     return result;
   }
 
@@ -114,6 +122,14 @@ class _$BuildStepResultSerializer
                 )!
                 as BuiltSet<Object?>,
           );
+          break;
+        case 'wrotePartContribution':
+          result.wrotePartContribution =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(bool),
+                  )
+                  as bool?;
           break;
         case 'inputs':
           result.inputs.replace(
@@ -174,6 +190,8 @@ class _$BuildStepResult extends BuildStepResult {
   @override
   final BuiltSet<AssetId> outputs;
   @override
+  final bool? wrotePartContribution;
+  @override
   final BuiltSet<AssetId> inputs;
   @override
   final BuiltSet<GlobId> globsEvaluated;
@@ -189,6 +207,7 @@ class _$BuildStepResult extends BuildStepResult {
     this.result,
     required this.inArtifactTree,
     required this.outputs,
+    this.wrotePartContribution,
     required this.inputs,
     required this.globsEvaluated,
     required this.resolverEntrypoints,
@@ -208,6 +227,7 @@ class _$BuildStepResult extends BuildStepResult {
         result == other.result &&
         inArtifactTree == other.inArtifactTree &&
         outputs == other.outputs &&
+        wrotePartContribution == other.wrotePartContribution &&
         inputs == other.inputs &&
         globsEvaluated == other.globsEvaluated &&
         resolverEntrypoints == other.resolverEntrypoints &&
@@ -220,6 +240,7 @@ class _$BuildStepResult extends BuildStepResult {
     _$hash = $jc(_$hash, result.hashCode);
     _$hash = $jc(_$hash, inArtifactTree.hashCode);
     _$hash = $jc(_$hash, outputs.hashCode);
+    _$hash = $jc(_$hash, wrotePartContribution.hashCode);
     _$hash = $jc(_$hash, inputs.hashCode);
     _$hash = $jc(_$hash, globsEvaluated.hashCode);
     _$hash = $jc(_$hash, resolverEntrypoints.hashCode);
@@ -234,6 +255,7 @@ class _$BuildStepResult extends BuildStepResult {
           ..add('result', result)
           ..add('inArtifactTree', inArtifactTree)
           ..add('outputs', outputs)
+          ..add('wrotePartContribution', wrotePartContribution)
           ..add('inputs', inputs)
           ..add('globsEvaluated', globsEvaluated)
           ..add('resolverEntrypoints', resolverEntrypoints)
@@ -258,6 +280,11 @@ class BuildStepResultBuilder
   SetBuilder<AssetId>? _outputs;
   SetBuilder<AssetId> get outputs => _$this._outputs ??= SetBuilder<AssetId>();
   set outputs(SetBuilder<AssetId>? outputs) => _$this._outputs = outputs;
+
+  bool? _wrotePartContribution;
+  bool? get wrotePartContribution => _$this._wrotePartContribution;
+  set wrotePartContribution(bool? wrotePartContribution) =>
+      _$this._wrotePartContribution = wrotePartContribution;
 
   SetBuilder<AssetId>? _inputs;
   SetBuilder<AssetId> get inputs => _$this._inputs ??= SetBuilder<AssetId>();
@@ -287,6 +314,7 @@ class BuildStepResultBuilder
       _result = $v.result;
       _inArtifactTree = $v.inArtifactTree;
       _outputs = $v.outputs.toBuilder();
+      _wrotePartContribution = $v.wrotePartContribution;
       _inputs = $v.inputs.toBuilder();
       _globsEvaluated = $v.globsEvaluated.toBuilder();
       _resolverEntrypoints = $v.resolverEntrypoints.toBuilder();
@@ -322,6 +350,7 @@ class BuildStepResultBuilder
               'inArtifactTree',
             ),
             outputs: outputs.build(),
+            wrotePartContribution: wrotePartContribution,
             inputs: inputs.build(),
             globsEvaluated: globsEvaluated.build(),
             resolverEntrypoints: resolverEntrypoints.build(),
@@ -332,6 +361,7 @@ class BuildStepResultBuilder
       try {
         _$failedField = 'outputs';
         outputs.build();
+
         _$failedField = 'inputs';
         inputs.build();
         _$failedField = 'globsEvaluated';

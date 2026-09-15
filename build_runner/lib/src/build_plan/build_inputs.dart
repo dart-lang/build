@@ -7,6 +7,7 @@ import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 
 import '../build/asset_content.dart';
+import '../build/finished_shared_part.dart';
 
 part 'build_inputs.g.dart';
 
@@ -49,6 +50,11 @@ abstract class BuildInputs implements Built<BuildInputs, BuildInputsBuilder> {
   ///
   /// Empty if [cleanBuild].
   BuiltSet<AssetId> get invalidOutputs;
+
+  /// Shared parts recovered from the previous build or parsed from disk.
+  ///
+  /// Empty if [cleanBuild].
+  BuiltMap<AssetId, FinishedSharedPart> get sharedParts;
 
   BuildInputs._();
   factory BuildInputs([void Function(BuildInputsBuilder) updates]) =

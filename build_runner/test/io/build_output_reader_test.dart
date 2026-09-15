@@ -167,6 +167,54 @@ void main() {
       expect(await reader.canRead(deletedId), false);
     });
 
+    test('can fully read generated shared parts (retaining imports)', () async {
+      final inputId = AssetId('a', 'lib/a.dart');
+      final expectedGeneratedPartId = AssetId('a', 'lib/_br_/a.part.dart');
+
+      final buildStepId = BuildStepId(primaryInput: inputId, phaseNumber: 0);
+      buildState.addBuildStepResult(
+        step: buildStepId,
+        result: BuildStepResult((b) {
+          b.result = true;
+          b.inArtifactTree = false;
+          b.wrotePartContribution = true;
+        }),
+      );
+      buildState.addPartContribution(
+        libraryId: inputId,
+        phase: 0,
+        builderKey: 'b0',
+        imports: BuiltList<String>([r"import 'package:foo/foo.dart';"]),
+        contribution: '// contribution',
+        languageVersion: '// @dart=3.0',
+      );
+
+      final buildPlan = await BuildPlan.load(
+        await BuildSpec.load(
+          builderFactories: BuilderFactories({}),
+          buildOptions: BuildOptions.forTests(),
+          testingOverrides: TestingOverrides(
+            buildPhases: buildPhases,
+            readerWriter: readerWriter,
+            buildPackages: buildPackages,
+          ),
+        ),
+      );
+      reader = BuildOutputReader(
+        buildPackages: buildPlan.buildSpec.buildPackages,
+        readerWriter: buildPlan.readerWriter,
+        buildState: buildState.toFinishedBuildState(),
+      );
+
+      expect(await reader.canRead(expectedGeneratedPartId), true);
+      final readResult = await reader.read(expectedGeneratedPartId);
+      expect(readResult.canRead, true);
+      final content = readResult.readAsString();
+      expect(content, contains('import \'package:foo/foo.dart\';'));
+      expect(content, contains('// @dart=3.0'));
+      expect(content, contains('// contribution'));
+    });
+
     test('Failed steps interact well with build filters ', () async {
       final id = AssetId('a', 'web/a.txt');
       final primaryId = AssetId('a', 'web/a.dart');

@@ -9,6 +9,7 @@ import 'dart:convert';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:async/async.dart';
 import 'package:build/build.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:package_config/package_config_types.dart';
@@ -16,6 +17,7 @@ import 'package:package_config/package_config_types.dart';
 import 'asset_content.dart';
 import 'builder_filesystem.dart';
 import 'input_tracker.dart';
+import 'library_source_sink_impl.dart';
 import 'resolver/asset_ids.dart';
 import 'resolver/delegating_resolver.dart';
 
@@ -43,14 +45,48 @@ class BuildStepImpl implements BuildStep {
 
   final InputTracker inputTracker;
   final Map<AssetId, AssetContent> outputs = {};
+  bool get wrotePartContribution =>
+      _librarySourceSink?.hasContribution ?? false;
+  LibrarySourceSinkImpl? _librarySourceSink;
+  String? get partContribution => _librarySourceSink?.contribution;
+  BuiltList<String> get partImports =>
+      _librarySourceSink?.imports ?? BuiltList<String>();
+  String? get languageVersion => _librarySourceSink?.languageVersion;
+
+  @override
+  Future<LibrarySourceSink?> get librarySourceSink async {
+    if (partPhaseIndex == null) {
+      throw UnsupportedError(
+        'Builder must opt into adds_to_library in build.yaml to write parts.',
+      );
+    }
+    if (!await resolver.isLibrary(inputId)) {
+      return null;
+    }
+    if (_librarySourceSink == null) {
+      final library = await resolver.libraryFor(inputId);
+      final overrideVersion = library.languageVersion.override;
+      final languageVersion = overrideVersion == null
+          ? null
+          : '// @dart=${overrideVersion.major}.${overrideVersion.minor}';
+      _librarySourceSink = LibrarySourceSinkImpl(
+        this,
+        prefixForPhase(partPhaseIndex!),
+        languageVersion,
+      );
+    }
+    return _librarySourceSink;
+  }
 
   final int phase;
+  final int? partPhaseIndex;
 
   final BuilderFilesystem buildFilesystem;
 
   final ResourceManager _resourceManager;
 
   bool _isComplete = false;
+  bool get isComplete => _isComplete;
 
   final void Function(Iterable<AssetId>)? _reportUnusedAssets;
 
@@ -64,6 +100,7 @@ class BuildStepImpl implements BuildStep {
     required this.inputTracker,
     required this.buildFilesystem,
     required this.phase,
+    this.partPhaseIndex,
     required Resolvers resolvers,
     required ResourceManager resourceManager,
     void Function(Iterable<AssetId>)? reportUnusedAssets,
@@ -251,10 +288,6 @@ class BuildStepImpl implements BuildStep {
   void reportUnusedAssets(Iterable<AssetId> assets) {
     _reportUnusedAssets?.call(assets);
   }
-
-  @override
-  Future<LibrarySourceSink?> get librarySourceSink =>
-      throw UnsupportedError('librarySourceSink is not implemented.');
 }
 
 final _lib = Uri.parse('lib/');

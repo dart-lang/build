@@ -2,6 +2,8 @@
 
 - Add `SharedPartAccumulator` and `SharedPartAccumulatorCodec` for shared part
   outputs.
+- Support shared parts written using `BuildStep.librarySourceSink` when builders
+  opt in with `adds_to_library: true` in `build.yaml`.
 - The `serve` command now rejects non-loopback `Host` and `Origin` headers when
   bound to a loopback interface.
 - Require `build` 4.1.0.

@@ -10,6 +10,7 @@ import 'package:built_value/built_value.dart';
 
 import 'package:crypto/crypto.dart';
 
+import '../build/br_outputs.dart';
 import '../build/build_state/asset_graph_json.dart';
 import '../build/build_state/build_step_id.dart';
 import '../build/build_state/build_step_result.dart';
@@ -136,9 +137,23 @@ abstract class PreviousBuild
   bool isKnownAsset(AssetId id) =>
       isSource(id) ||
       (buildStepPlan?.isDeclaredOutput(id) ?? false) ||
-      isActualPostOutput(id);
+      isActualPostOutput(id) ||
+      id.isBrOutput;
 
   Digest? digestOf(AssetId id) => digests[id];
+
+  // -- Shared parts.
+
+  Iterable<AssetId> get sharedPartIds =>
+      digests.keys.where((id) => id.isBrSharedPart);
+
+  Iterable<AssetId> get sharedPartLibraryIds =>
+      sharedPartIds.map((id) => id.sharedPartLibraryId!);
+
+  bool hasSharedPart(AssetId id) {
+    final partId = id.isBrSharedPart ? id : id.sharedPartId;
+    return partId != null && digests.containsKey(partId);
+  }
 
   /// Deserializes information about the previous build and compares it to
   /// [buildSpec] to determine whether an incremental build is possible.
@@ -280,6 +295,13 @@ Iterable<AssetId> _outputsToDelete({
       for (final id in postProcessResult.outputs) {
         if (buildPackages.outputPackages.contains(id.package)) result.add(id);
       }
+    }
+  }
+  for (final partId in buildState.digests.keys.where(
+    (id) => id.isBrSharedPart,
+  )) {
+    if (buildPackages.outputPackages.contains(partId.package)) {
+      result.add(partId);
     }
   }
   return result;
