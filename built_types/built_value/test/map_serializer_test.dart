@@ -129,16 +129,16 @@ void main() {
       <int, int>{1: 1}: <String, String>{'one': 'one!'},
       <int, int>{2: 2}: <String, String>{'two': 'two!'}
     };
-    const MapOfIntIntGenericType =
+    const mapOfIntIntGenericType =
         FullType(Map, [FullType(int), FullType(int)]);
-    const MapOfStringStringGenericType =
+    const mapOfStringStringGenericType =
         FullType(Map, [FullType(String), FullType(String)]);
     final specifiedType = const FullType(
-        Map, [MapOfIntIntGenericType, MapOfStringStringGenericType]);
+        Map, [mapOfIntIntGenericType, mapOfStringStringGenericType]);
     final serializers = (Serializers().toBuilder()
-          ..addBuilderFactory(MapOfIntIntGenericType, () => <int, int>{})
+          ..addBuilderFactory(mapOfIntIntGenericType, () => <int, int>{})
           ..addBuilderFactory(
-              MapOfStringStringGenericType, () => <String, String>{})
+              mapOfStringStringGenericType, () => <String, String>{})
           ..addBuilderFactory(
               specifiedType, () => <Map<int, int>, Map<String, String>>{}))
         .build();
@@ -168,9 +168,9 @@ void main() {
       final genericSerializer = (serializers.toBuilder()
             ..addBuilderFactory(
                 specifiedType, () => <Map<int, int>, Map<String, String>>{})
-            ..addBuilderFactory(MapOfIntIntGenericType, () => <int, int>{})
+            ..addBuilderFactory(mapOfIntIntGenericType, () => <int, int>{})
             ..addBuilderFactory(
-                MapOfStringStringGenericType, () => <String, String>{}))
+                mapOfStringStringGenericType, () => <String, String>{}))
           .build();
 
       expect(

@@ -3,6 +3,9 @@
 // license that can be found in the LICENSE file.
 
 import 'package:built_collection/built_collection.dart';
+// `built_collection` does not export its hash helper, but `built_value` needs
+// to produce identical hash codes.
+// ignore: implementation_imports
 import 'package:built_collection/src/internal/hash.dart';
 
 import 'src/big_int_serializer.dart';

@@ -810,6 +810,8 @@ abstract class MemoizedHashcodeValue
 
   @override
   @memoized
+  // The matching `==` is supplied by the generated implementation.
+  // ignore: hash_and_equals
   int get hashCode;
 
   MemoizedHashcodeValue._();

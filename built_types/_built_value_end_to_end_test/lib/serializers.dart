@@ -84,7 +84,7 @@ final Serializers serializers = _$serializers;
 final Serializers moreSerializers = _$moreSerializers;
 
 // Check that generation does not fail due to new type `Never`.
-Never get never => throw 'Never!';
+Never get never => throw StateError('Never!');
 
 // Check that generation does not fail due to new type `Record`.
 (int, int) get record => (0, 0);

@@ -73,7 +73,7 @@ class MapBuilder<K, V> {
   /// instantiate and return a new object.
   ///
   /// Use [withDefaultBase] to reset `base` to the default value.
-  void withBase(_MapFactory<K, V> base) {
+  void withBase(Map<K, V> Function() base) {
     ArgumentError.checkNotNull(base, 'base');
     _mapFactory = base;
     _setSafeMap(_createMap()..addAll(_map));
