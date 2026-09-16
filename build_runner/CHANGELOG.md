@@ -18,6 +18,9 @@
   script is updated, preventing asset server requests from hanging.
 - Bug fix: handle deletions of unread sources during watch, serve, and
   daemon modes.
+- Bug fix: in watch, serve, and daemon modes, do not run a build when nothing
+  changed that can affect any output. A file can be written without changing
+  its content, and one write can produce more than one filesystem event.
 
 ## 2.16.1
 

@@ -194,6 +194,21 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
   bool postBuildOptionsChanged(int actionNumber) =>
       previousBuild.postBuildOptionsChangedList[actionNumber];
 
+  /// Whether output from a compatible previous build is still current.
+  ///
+  /// True when that output can be reused and nothing changed that could affect
+  /// it, so a build would have nothing to do. A file can be written without
+  /// changing its content, and one logical write can produce more than one
+  /// filesystem watch event, so `watch` and `serve` reach this case routinely.
+  bool get outputsAreUpToDate =>
+      !buildInputs.cleanBuild &&
+      buildInputs.updatedSources.isEmpty &&
+      buildInputs.deletedSources.isEmpty &&
+      buildInputs.invalidOutputs.isEmpty &&
+      conflictingOutputs.isEmpty &&
+      !previousBuild.phaseOptionsChangedList.contains(true) &&
+      !previousBuild.postBuildOptionsChangedList.contains(true);
+
   /// Creates a [BuildPlan] for a clean build.
   ///
   /// Pass [diskFiles] to check if any files that builders will generate

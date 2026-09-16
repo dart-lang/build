@@ -44,9 +44,9 @@ void main() async {
     await watch.expect(BuildLog.successPattern);
     expect(tester.read('root_pkg/web/a.txt.copy'), 'updated\nweb/unread.md');
 
-    // File rewrite without change.
+    // File rewrite without change does not trigger a build.
     tester.write('root_pkg/web/a.txt', 'updated');
-    await watch.expect('wrote 0 outputs');
+    await watch.expectNoOutput(const Duration(seconds: 1));
 
     // State on disk is updated so `build` knows to do nothing.
     var output = await tester.copyWorkspace().run(
