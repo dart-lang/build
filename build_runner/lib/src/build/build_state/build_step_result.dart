@@ -27,6 +27,9 @@ abstract class BuildStepResult
   /// Outputs written by the step.
   BuiltSet<AssetId> get outputs;
 
+  /// Whether this step wrote a part contribution.
+  bool? get wrotePartContribution;
+
   /// Inputs and missing sources read.
   BuiltSet<AssetId> get inputs;
 

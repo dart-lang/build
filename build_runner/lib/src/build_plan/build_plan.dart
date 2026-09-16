@@ -7,8 +7,10 @@ import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 
 import '../build/asset_content.dart';
+import '../build/br_outputs.dart';
 import '../build/build_state/finished_build_state.dart';
 import '../build/library_cycle_graph/phased_asset_deps.dart';
+import '../build/shared_part_accumulator.dart';
 import '../constants.dart';
 import '../exceptions.dart';
 import '../io/asset_tracker.dart';
@@ -76,7 +78,7 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       // that look like old generation outputs removed.
 
       final inputSources = diskFiles
-          .where((f) => f.atPackagePath)
+          .where((f) => f.atPackagePath && !f.id.isBrOutput)
           .map((f) => f.id)
           .toSet();
 
@@ -117,6 +119,7 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
           (id) =>
               AssetFile(id, inArtifactTree: previousBuild.isInArtifactTree(id)),
         ),
+        ...previousBuild.sharedPartIds.map(AssetFile.atPackagePath),
       };
 
       final previousBuildStepPlan = previousBuild.buildStepPlan!;
@@ -152,6 +155,7 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       ..buildInputs.retainedOutputContents.addEntries(
         previousBuildState.outputContents,
       )
+      ..buildInputs.sharedParts.replace(previousBuildState.sharedParts)
       ..buildInputs.deletedSources.clear()
       ..buildInputs.updatedSources.clear()
       ..buildInputs.invalidOutputs.clear()
@@ -243,7 +247,7 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       }
 
       for (final file in diskFiles) {
-        if (buildStepPlan.isDeclaredOutput(file.id)) {
+        if (buildStepPlan.isDeclaredOutput(file.id) || file.id.isBrOutput) {
           if (file.atPackagePath &&
               buildPackages.outputPackages.contains(file.id.package)) {
             conflictingOutputs.add(file);
@@ -293,6 +297,7 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       buildInputs.retainedOutputContents.replace(
         previousBuildInputs.retainedOutputContents,
       );
+      buildInputs.sharedParts.replace(previousBuildInputs.sharedParts);
     }
 
     var buildStepPlan = previousBuildStepPlan;
@@ -307,6 +312,8 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       final oldIsSource = previousBuild.isSource(id);
       AssetFile? oldFile;
       if (oldIsSource) {
+        oldFile = AssetFile.atPackagePath(id);
+      } else if (id.isBrOutput && previousBuild.hasSharedPart(id)) {
         oldFile = AssetFile.atPackagePath(id);
       } else if (previousBuild.isActualOutput(id) ||
           previousBuild.isActualPostOutput(id)) {
@@ -346,6 +353,10 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
           } else {
             buildInputs.retainedOutputContents.remove(id);
             buildInputs.invalidOutputs.add(id);
+            final libraryId = id.sharedPartLibraryId;
+            if (libraryId != null) {
+              buildInputs.sharedParts.remove(libraryId);
+            }
           }
         }
         continue;
@@ -354,6 +365,8 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       if (!oldExistedSameLocation) {
         if (file.inArtifactTree) {
           newArtifactTreeFiles.add(id);
+          conflictingOutputs.add(file);
+        } else if (id.isBrOutput) {
           conflictingOutputs.add(file);
         } else {
           buildInputs.updatedSources.add(id);
@@ -370,6 +383,30 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
         if (changed) buildInputs.updatedSources.add(id);
         buildInputs.sourceContents[id] = newContent;
         continue;
+      }
+
+      if (id.isBrOutput) {
+        final libraryId = id.sharedPartLibraryId!;
+        if (previousBuildInputs == null) {
+          try {
+            final accumulator = SharedPartAccumulator.parseContent(
+              newContent.stringValue(),
+              libraryId,
+            );
+            buildInputs.sharedParts[libraryId] = accumulator
+                .toFinishedSharedPart();
+          } catch (_) {
+            // Treat unparseable output as invalid to trigger rebuild.
+          }
+        }
+        if (buildInputs.sharedParts[libraryId] == null) {
+          buildInputs.invalidOutputs.add(id);
+          continue;
+        }
+        if (changed &&
+            buildSpec.buildOptions.outputStrategy != OutputStrategy.keep) {
+          buildInputs.sharedParts.remove(libraryId);
+        }
       }
 
       if (!changed) {

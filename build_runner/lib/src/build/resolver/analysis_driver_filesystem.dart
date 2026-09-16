@@ -16,6 +16,7 @@ import 'package:path/path.dart' as p;
 
 import '../../build_plan/build_inputs.dart';
 import '../asset_content.dart';
+import '../br_outputs.dart';
 import '../builder_filesystem.dart';
 import 'asset_ids.dart';
 
@@ -60,6 +61,10 @@ class AnalysisDriverFilesystem
           _changedPaths.add(output.asPath);
         }
       }
+    }
+    for (final libraryId
+        in _builderFilesystem.buildState.sharedPartLibraryIds) {
+      _updateSharedPartContent(libraryId.sharedPartId!);
     }
   }
 
@@ -109,6 +114,15 @@ class AnalysisDriverFilesystem
       _updateContent(id, builderFilesystem.buildState.contentOf(id));
     }
     _changedPathsThisBuild.clear();
+
+    final sharedPartPaths = _data.keys.where((path) {
+      return tryParseAssetPath(path)?.isBrSharedPart ?? false;
+    }).toList();
+    for (final path in sharedPartPaths) {
+      if (_data.remove(path) != null) {
+        _changedPaths.add(path);
+      }
+    }
   }
 
   void _updateContent(AssetId id, AssetContent? content) {
@@ -119,6 +133,10 @@ class AnalysisDriverFilesystem
       if (_data.remove(path) != null) {
         _changedPaths.add(path);
       }
+      return;
+    }
+    if (id.isBrSharedPart) {
+      _updateSharedPartContent(id);
       return;
     }
     final phase =
@@ -133,6 +151,30 @@ class AnalysisDriverFilesystem
         content: content.dartStringValueOrEmptyFail(id: id),
         contentHash: content.digest.toString(),
         phase: phase,
+      ),
+    );
+  }
+
+  void _updateSharedPartContent(AssetId id) {
+    final libraryId = id.sharedPartLibraryId!;
+    final partContent = _builderFilesystem.buildState.sharedPartContent(
+      libraryId,
+      upToPhase: _phase - 1,
+    );
+    if (partContent == null) {
+      final path = id.asPath;
+      if (_data.remove(path) != null) {
+        _changedPaths.add(path);
+      }
+      return;
+    }
+    _writeContent(
+      BuildRunnerFileContent(
+        path: id.asPath,
+        exists: true,
+        content: partContent.stringValue(),
+        contentHash: partContent.digest.toString(),
+        phase: -1,
       ),
     );
   }
@@ -167,7 +209,11 @@ class AnalysisDriverFilesystem
     if (isVisible) {
       _changedPaths.add(path);
     }
-    assert(_changedPathsThisBuild.add(path), path);
+    assert(
+      _changedPathsThisBuild.add(path) ||
+          (tryParseAssetPath(path)?.isBrSharedPart ?? false),
+      path,
+    );
   }
 
   /// Paths that were modified by [_writeContent] since the last
@@ -268,6 +314,12 @@ class AnalysisDriverFilesystem
     }
     return null;
   }
+
+  /// Parses in-memory filesystem [path] into an [AssetId].
+  ///
+  /// Returns null if the path cannot be parsed.
+  static AssetId? tryParseAssetPath(String path) =>
+      parseAsset(Uri(scheme: 'file', path: path));
 
   // `ResourceProvider` methods.
 

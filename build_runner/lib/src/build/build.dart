@@ -30,6 +30,7 @@ import '../logging/build_log.dart';
 import '../logging/build_log_logger.dart';
 import '../logging/timed_activities.dart';
 import 'asset_content.dart';
+import 'br_outputs.dart';
 import 'build_dirs.dart';
 import 'build_file_index.dart';
 import 'build_result.dart';
@@ -50,6 +51,7 @@ import 'library_cycle_graph/phased_asset_deps.dart';
 import 'post_process_build_step_impl.dart';
 import 'resolver/analysis_driver_model.dart';
 import 'resolver/resolvers_impl.dart';
+import 'shared_part_accumulator.dart';
 
 final ResolversImpl _defaultResolvers = ResolversImpl(
   analysisDriverModel: AnalysisDriverModel(),
@@ -76,6 +78,29 @@ class Build {
   final BuildState buildState;
   final lazyPhases = <BuildStepId, Future<Iterable<AssetId>>>{};
   final lazyGlobs = <GlobId, Future<void>>{};
+
+  /// Cached accumulators for previous shared parts, keyed by library ID.
+  final _previousPartAccumulators = <AssetId, SharedPartAccumulator>{};
+
+  SharedPartAccumulator? _previousPartAccumulator(AssetId libraryId) {
+    var accumulator = _previousPartAccumulators[libraryId];
+    if (accumulator == null) {
+      final part = buildInputs.sharedParts[libraryId];
+      if (part != null) {
+        accumulator = _previousPartAccumulators[libraryId] =
+            SharedPartAccumulator(part.libraryId, part.languageVersion);
+        for (final phase in part.contributions.keys) {
+          accumulator.addContribution(
+            phase,
+            part.builderKeys[phase] ?? '',
+            part.imports[phase] ?? BuiltList<String>(),
+            part.contributions[phase]!,
+          );
+        }
+      }
+    }
+    return accumulator;
+  }
 
   /// Whether a graph from [previousLibraryCycleGraphLoader] has any changed
   /// transitive source.
@@ -112,7 +137,30 @@ class Build {
           for (final id in buildPlan.buildInputs.sources)
             id: buildPlan.buildInputs.sourceContents[id],
         },
+        retainedOutputContents: buildPlan.buildInputs.retainedOutputContents
+            .toMap(),
       );
+
+  /// Index of each `addsToLibrary` phase among the `addsToLibrary` phases,
+  /// keyed by phase number.
+  ///
+  /// Phases that are not `addsToLibrary` are absent.
+  late final Map<int, int> _partPhaseIndices = _computePartPhaseIndices();
+
+  Map<int, int> _computePartPhaseIndices() {
+    final result = <int, int>{};
+    var nextIndex = 0;
+    for (var i = 0; i < buildPhases.inBuildPhases.length; i++) {
+      if (buildPhases.inBuildPhases[i].addsToLibrary) {
+        result[i] = nextIndex++;
+      }
+    }
+    return result;
+  }
+
+  /// Whether the phase numbered [phaseNumber] can add to libraries.
+  bool _isPartPhase(int phaseNumber) =>
+      _partPhaseIndices.containsKey(phaseNumber);
 
   BuildSpec get buildSpec => buildPlan.buildSpec;
   BuildOptions get buildOptions => buildSpec.buildOptions;
@@ -308,6 +356,22 @@ class Build {
     );
     // Assume success, failed outputs will be checked later.
 
+    for (final libraryId in buildState.sharedPartLibraryIds) {
+      final partId = libraryId.sharedPartId!;
+      final currentContent = buildState.sharedPartContent(libraryId);
+      final accumulator = _previousPartAccumulator(libraryId);
+      final previousDigest = accumulator == null
+          ? null
+          : buildInputs.retainedOutputContents[partId]?.digest ??
+                accumulator.finalContent().digest;
+      if (buildState.hasRebuiltPart(libraryId) ||
+          buildInputs.invalidOutputs.contains(partId) ||
+          previousDigest == null ||
+          currentContent?.digest != previousDigest) {
+        outputs.add(partId);
+      }
+    }
+
     final finishedBuildState = buildState.toFinishedBuildState();
     return BuildResult(
       status: BuildStatus.success,
@@ -371,6 +435,8 @@ class Build {
   /// If it is currently being built according to [lazyPhases], waits for it to
   /// be built.
   Future<void> _buildOutput(AssetId id) async {
+    if (id.isBrSharedPart) return;
+
     final step = buildStepPlan.stepForDeclaredOutputOrNull(id);
     if (step != null && !buildState.isProcessedOutput(id)) {
       await lazyPhases.putIfAbsent(step, () async {
@@ -420,6 +486,7 @@ class Build {
       inputTracker: inputTracker,
       buildFilesystem: _builderFilesystem,
       phase: buildStepId.phaseNumber,
+      partPhaseIndex: _partPhaseIndices[buildStepId.phaseNumber],
       resolvers: resolvers,
       resourceManager: resourceManager,
       reportUnusedAssets: (Iterable<AssetId> assets) =>
@@ -435,6 +502,12 @@ class Build {
         await _markStepFailed(buildStepId, builderOutputs);
       } else if (stepAction == StepAction.skipReuse) {
         final stepResult = previousBuild.stepResult(buildStepId);
+        buildState.copyPartContribution(
+          fromPart: buildInputs.sharedParts[buildStepId.primaryInput],
+          libraryId: buildStepId.primaryInput,
+          phase: buildStepId.phaseNumber,
+          languageVersion: step.languageVersion,
+        );
         final contents = <AssetId, AssetContent>{
           for (final id in stepResult.outputs)
             id: buildInputs.retainedOutputContents[id]!,
@@ -446,6 +519,9 @@ class Build {
         );
       }
       return <AssetId>[];
+    }
+    if (_isPartPhase(buildStepId.phaseNumber)) {
+      buildState.markPartRebuilt(buildStepId.primaryInput);
     }
 
     // Clear input tracking accumulated during `_buildShouldRun`.
@@ -803,6 +879,14 @@ class Build {
         }
       }
 
+      if (_isPartPhase(step.phaseNumber)) {
+        final partId = step.primaryInput.sharedPartId!;
+        if (buildInputs.deletedSources.contains(partId) ||
+            buildInputs.invalidOutputs.contains(partId)) {
+          return StepAction.run;
+        }
+      }
+
       final stepResult = previousBuild.stepResultOrNull(step);
       if (stepResult == null || !stepResult.hasRun) return StepAction.run;
 
@@ -902,6 +986,12 @@ class Build {
           rootLibraryCycleHasChanged = true;
           break;
         }
+        final partId = id.sharedPartId;
+        if (partId != null &&
+            await _hasInputChanged(phaseNumber: phaseNumber, input: partId)) {
+          rootLibraryCycleHasChanged = true;
+          break;
+        }
       }
       if (rootLibraryCycleHasChanged) {
         changedGraphs[nextGraph] = true;
@@ -929,7 +1019,16 @@ class Build {
     required AssetId input,
     required int phaseNumber,
   }) async {
-    if (buildStepPlan.isDeclaredOutput(input)) {
+    if (input.isBrSharedPart) {
+      if (phaseNumber == 0) return false;
+      final libraryId = input.sharedPartLibraryId!;
+      final accumulator = _previousPartAccumulator(libraryId);
+      final oldDigest = accumulator?.contentAt(phaseNumber - 1).digest;
+      final newDigest = buildState
+          .sharedPartContent(input, upToPhase: phaseNumber - 1)
+          ?.digest;
+      return oldDigest != newDigest;
+    } else if (buildStepPlan.isDeclaredOutput(input)) {
       final phase = buildStepPlan.stepForDeclaredOutput(input).phaseNumber;
       if (phase >= phaseNumber) {
         // It's not readable in this phase.
@@ -1098,7 +1197,18 @@ class Build {
       ..inputs.replace(usedInputs)
       ..globsEvaluated.replace(inputTracker.globsEvaluated)
       ..resolverEntrypoints.replace(inputTracker.resolverEntrypoints)
-      ..errors.replace(errors);
+      ..errors.replace(errors)
+      ..wrotePartContribution = step.wrotePartContribution;
+    if (step.wrotePartContribution) {
+      buildState.addPartContribution(
+        libraryId: input,
+        phase: phaseNum,
+        builderKey: buildPhases.inBuildPhases[phaseNum].key,
+        imports: step.partImports,
+        contribution: step.partContribution ?? '',
+        languageVersion: step.languageVersion,
+      );
+    }
     for (final output in outputs) {
       if (step.outputs.containsKey(output)) {
         buildStepResultBuilder.outputs.add(output);

@@ -5,14 +5,15 @@
 import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
-
 import 'package:meta/meta.dart';
 
 import '../../build_plan/build_phases.dart';
 import '../../build_plan/build_step_plan.dart';
 import '../../build_plan/phase.dart';
 import '../asset_content.dart';
-
+import '../br_outputs.dart';
+import '../finished_shared_part.dart';
+import '../shared_part_accumulator.dart';
 import 'build_step_id.dart';
 import 'build_step_result.dart';
 import 'finished_build_state.dart';
@@ -53,14 +54,29 @@ class BuildState {
   /// All post process build step outputs by the step that created them.
   final Map<AssetId, PostProcessBuildStepId> _postProcessOutputs;
 
+  /// Source added using `buildStep.librarySourceSink`.
+  final Map<AssetId, SharedPartAccumulator> _partData = {};
+
+  /// Retained output contents from previous build, used when keeping modified
+  /// outputs.
+  final Map<AssetId, AssetContent> _retainedOutputContents;
+
+  /// Libraries whose shared part is rebuilt in this build.
+  ///
+  /// Retained output content is not used for these, as it is superseded by
+  /// what this build writes.
+  final Set<AssetId> _librariesWithRebuiltPart = {};
+
   BuildState({
     required this.buildStepPlan,
     required Map<AssetId, AssetContent?> sources,
+    Map<AssetId, AssetContent> retainedOutputContents = const {},
   }) : _sources = sources.keys.toSet(),
        _contents = {
          for (final entry in sources.entries)
            if (entry.value != null) entry.key: entry.value!,
        },
+       _retainedOutputContents = Map.of(retainedOutputContents),
        _postProcessResultsByInput = {},
        _postProcessOutputs = {},
        _buildStepResultsByPrimaryInput = {},
@@ -92,11 +108,12 @@ class BuildState {
   /// Whether [id] is a source file.
   bool isSource(AssetId id) => _sources.contains(id);
 
-  /// Whether [id] is one of: source, declared output or actual post process
-  /// output.
+  /// Whether [id] is one of: source, declared output, `_br_` output, or actual
+  /// post process output.
   bool isKnownAsset(AssetId id) =>
       isSource(id) ||
       buildStepPlan.isDeclaredOutput(id) ||
+      id.isBrOutput ||
       isActualPostOutput(id);
 
   /// Actual build step outputs.
@@ -158,10 +175,16 @@ class BuildState {
   /// The content of [id].
   ///
   /// Returns `null` if it is an unread source or has not been generated.
-  AssetContent? contentOf(AssetId id) => _contents[id];
+  AssetContent? contentOf(AssetId id) {
+    if (id.isBrOutput) return sharedPartContent(id);
+    return _contents[id];
+  }
 
   /// The digest of [id], or `null` if not known.
-  Digest? digestOf(AssetId id) => _contents[id]?.digest;
+  Digest? digestOf(AssetId id) {
+    if (id.isBrOutput) return sharedPartContent(id)?.digest;
+    return _contents[id]?.digest;
+  }
 
   @visibleForTesting
   IncrementalBuildState toIncrementalBuildState() {
@@ -192,14 +215,26 @@ class BuildState {
 
     builder.globResults.addAll(_globResults);
 
+    for (final libraryId in _partData.keys) {
+      builder.digests[libraryId.sharedPartId!] = _partContent(libraryId).digest;
+    }
+
     return builder.build();
   }
 
   FinishedBuildState toFinishedBuildState() {
+    final contents = Map<AssetId, AssetContent>.from(_contents);
+    for (final libraryId in _partData.keys) {
+      contents[libraryId.sharedPartId!] = _partContent(libraryId);
+    }
     return FinishedBuildState(
       buildStepPlan: buildStepPlan,
       incremental: toIncrementalBuildState(),
-      contents: _contents.build(),
+      contents: contents.build(),
+      sharedParts: BuiltMap<AssetId, FinishedSharedPart>({
+        for (final entry in _partData.entries)
+          entry.key: entry.value.toFinishedSharedPart(),
+      }),
     );
   }
 
@@ -241,6 +276,115 @@ class BuildState {
     results[step.phaseNumber] = result;
     _contents.addAll(contents);
   }
+
+  // -- Shared parts.
+
+  /// Whether the library [id] has a shared part.
+  bool hasSharedPart(AssetId id) =>
+      _partData.containsKey(id.sharedPartLibraryId ?? id);
+
+  /// The content of the shared part for [id], or `null` if it does not exist.
+  ///
+  /// [id] is either the library ID or the shared part ID.
+  AssetContent? sharedPartContent(AssetId id, {int? upToPhase}) {
+    final libraryId = id.sharedPartLibraryId ?? id;
+    final partData = _partData[libraryId];
+    if (partData == null) return null;
+    if (upToPhase == null) return _partContent(libraryId);
+    return partData.contentAt(upToPhase);
+  }
+
+  /// The content of the shared part for [libraryId] as it will be on disk.
+  ///
+  /// If the part is not rebuilt in this build then this is the content written
+  /// by the previous build, which is still correct and is kept as is.
+  ///
+  /// Throws if [libraryId] has no shared part.
+  AssetContent _partContent(AssetId libraryId) {
+    if (!_librariesWithRebuiltPart.contains(libraryId)) {
+      final retained = _retainedOutputContents[libraryId.sharedPartId!];
+      if (retained != null) return retained;
+    }
+    return _partData[libraryId]!.finalContent();
+  }
+
+  /// All libraries that have a shared part.
+  Iterable<AssetId> get sharedPartLibraryIds => _partData.keys;
+
+  /// Records that the shared part for [id] is rebuilt in this build.
+  ///
+  /// [id] is either the library ID or the shared part ID.
+  void markPartRebuilt(AssetId id) {
+    _librariesWithRebuiltPart.add(id.sharedPartLibraryId ?? id);
+  }
+
+  /// Whether the shared part for [id] is rebuilt in this build.
+  ///
+  /// [id] is either the library ID or the shared part ID.
+  bool hasRebuiltPart(AssetId id) =>
+      _librariesWithRebuiltPart.contains(id.sharedPartLibraryId ?? id);
+
+  /// Adds a contribution written by a builder in this build.
+  ///
+  /// Creates the shared part for [libraryId] if it does not exist yet.
+  ///
+  /// The contribution supersedes whatever the previous build wrote, so the
+  /// part is marked rebuilt.
+  void addPartContribution({
+    required AssetId libraryId,
+    required int phase,
+    required String builderKey,
+    required BuiltList<String> imports,
+    required String contribution,
+    required String? languageVersion,
+  }) {
+    markPartRebuilt(libraryId);
+    _partDataFor(
+      libraryId,
+      languageVersion,
+    ).addContribution(phase, builderKey, imports, contribution);
+  }
+
+  /// Replays a contribution that [fromPart] recorded in the previous build.
+  ///
+  /// Creates the shared part for [libraryId] if it does not exist yet.
+  ///
+  /// Does nothing if [fromPart] is `null` or recorded nothing for [phase].
+  ///
+  /// The part is deliberately not marked rebuilt. The replayed contribution
+  /// reproduces what the previous build already wrote, so that content is
+  /// still correct and is kept rather than written again. Marking it rebuilt
+  /// would report the part as an output of this build.
+  void copyPartContribution({
+    required FinishedSharedPart? fromPart,
+    required AssetId libraryId,
+    required int phase,
+    required String? languageVersion,
+  }) {
+    if (fromPart == null) return;
+    final builderKey = fromPart.builderKeys[phase];
+    final imports = fromPart.imports[phase];
+    final contribution = fromPart.contributions[phase];
+    if (imports == null && contribution == null) return;
+    _partDataFor(
+      libraryId,
+      languageVersion ?? fromPart.languageVersion,
+    ).addContribution(
+      phase,
+      builderKey ?? '',
+      imports ?? BuiltList<String>(),
+      contribution ?? '',
+    );
+  }
+
+  /// The accumulator for [libraryId], creating it if it does not exist yet.
+  SharedPartAccumulator _partDataFor(
+    AssetId libraryId,
+    String? languageVersion,
+  ) => _partData[libraryId] ??= SharedPartAccumulator(
+    libraryId,
+    languageVersion,
+  );
 
   // -- Globs.
 
