@@ -7,10 +7,12 @@ import 'dart:io';
 
 import 'package:analyzer/dart/sdk/build_sdk_summary.dart';
 import 'package:analyzer/file_system/physical_file_system.dart';
+import 'package:meta/meta.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 
 import '../../bootstrap/build_process_state.dart';
+import '../../io/atomic_write.dart';
 import '../../logging/timed_activities.dart';
 
 /// `true` if the currently running dart was provided by the Flutter SDK.
@@ -64,29 +66,23 @@ Future<String> defaultSdkSummaryGenerator() async {
   final needsRebuild =
       !await summaryFile.exists() ||
       !await depsFile.exists() ||
-      !await _checkDeps(depsFile, currentDeps);
+      !depsMatch(await depsFile.readAsString(), currentDeps);
 
   // Generate the summary and version files if necessary.
   if (needsRebuild) {
     await TimedActivity.analyzeSdk.runAsync(() async {
-      await Directory(cacheDir).create(recursive: true);
-      final tempDir = await Directory(cacheDir).createTemp();
-      final tempFile = File(p.join(tempDir.path, p.basename(summaryPath)));
-      await tempFile.create();
       final embedderYamlPath = isFlutter
           ? p.join(_dartUiPath, '_embedder.yaml')
           : null;
-      await tempFile.writeAsBytes(
+      await writeAtomically(
+        summaryFile,
         await buildSdkSummary(
           sdkPath: _runningDartSdkPath,
           resourceProvider: PhysicalResourceProvider.INSTANCE,
           embedderYamlPath: embedderYamlPath,
         ),
       );
-
-      await tempFile.rename(summaryPath);
-      await _createDepsFile(depsFile, currentDeps);
-      await tempDir.delete();
+      await writeAtomically(depsFile, utf8.encode(jsonEncode(currentDeps)));
     });
   }
 
@@ -95,12 +91,20 @@ Future<String> defaultSdkSummaryGenerator() async {
 
 final _packageDepsToCheck = ['analyzer', 'build_runner'];
 
-Future<bool> _checkDeps(
-  File versionsFile,
-  Map<String, Object?> currentDeps,
-) async {
-  final previous =
-      jsonDecode(await versionsFile.readAsString()) as Map<String, Object?>;
+/// Whether [encodedDeps], the content of the deps file, describes the same
+/// deps as [currentDeps].
+///
+/// Content that is not a JSON map does not match, so a corrupt deps file
+/// causes a rebuild instead of a failure.
+@visibleForTesting
+bool depsMatch(String encodedDeps, Map<String, Object?> currentDeps) {
+  final Object? previous;
+  try {
+    previous = jsonDecode(encodedDeps);
+  } on FormatException {
+    return false;
+  }
+  if (previous is! Map<String, Object?>) return false;
 
   if (previous.keys.length != currentDeps.keys.length) return false;
 
@@ -109,12 +113,4 @@ Future<bool> _checkDeps(
   }
 
   return true;
-}
-
-Future<void> _createDepsFile(
-  File depsFile,
-  Map<String, Object?> currentDeps,
-) async {
-  await depsFile.create(recursive: true);
-  await depsFile.writeAsString(jsonEncode(currentDeps));
 }

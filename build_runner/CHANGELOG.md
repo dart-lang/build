@@ -18,6 +18,9 @@
 - Require `analyzer` 14.3.0.
 - Bug fix: complete the active building future in daemon mode when the build
   script is updated, preventing asset server requests from hanging.
+- Bug fix: write the SDK summary deps file atomically, so a concurrently
+  running build does not read it while it is empty; and rebuild the summary
+  instead of failing if the deps file turns out to be corrupt.
 - Bug fix: handle deletions of unread sources during watch, serve, and
   daemon modes.
 
