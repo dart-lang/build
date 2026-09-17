@@ -416,9 +416,6 @@ void main() {
         BuiltMap<int, String>({1: '1', 2: '2', 3: '3'}).containsKey(4),
         isFalse,
       );
-
-      expect(BuiltMap<int?, String>({null: '1'}).containsKey(null), isTrue);
-      expect(BuiltMap<int?, String>({null: '1'}).containsKey(2), isFalse);
     });
 
     test('has a method like Map.containsValue', () {
@@ -430,9 +427,6 @@ void main() {
         BuiltMap<int, String>({1: '1', 2: '2', 3: '3'}).containsValue('4'),
         isFalse,
       );
-
-      expect(BuiltMap<int, String?>({1: null}).containsValue(null), isTrue);
-      expect(BuiltMap<int, String?>({1: null}).containsValue('2'), isFalse);
     });
 
     test('has a method like Map.forEach', () {

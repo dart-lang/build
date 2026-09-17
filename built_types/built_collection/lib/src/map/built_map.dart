@@ -105,7 +105,7 @@ abstract class BuiltMap<K, V> {
     for (final key in keys) {
       if (other[key] != this[key]) return false;
       // A lookup can't distinguish a missing key from one mapped to null.
-      if (!other.containsKey(key)) return false;
+      if (!other._map.containsKey(key)) return false;
     }
     return true;
   }
