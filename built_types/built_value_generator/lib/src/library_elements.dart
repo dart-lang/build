@@ -3,6 +3,9 @@
 // license that can be found in the LICENSE file.
 
 import 'package:analyzer/dart/element/element.dart';
+// `ExperimentStatus` is needed to check language features and the analyzer
+// does not export it.
+// ignore: implementation_imports
 import 'package:analyzer/src/dart/analysis/experiments.dart';
 
 /// Tools for [LibraryElement]s.

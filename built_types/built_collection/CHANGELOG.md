@@ -6,6 +6,7 @@
 - Require Dart SDK `^3.11.0`.
 - Fix unnecessary non-null assertions in internal copy-on-write collections.
 - Migrate to `package:dart_flutter_team_lints`.
+- Fix analysis issues and remove the lint suppressions that hid them.
 
 ## 5.1.1
 

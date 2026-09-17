@@ -56,7 +56,7 @@ class BuiltSetMultimapSerializer
         ? SetMultimapBuilder<Object, Object>()
         : serializers.newBuilder(specifiedType) as SetMultimapBuilder;
 
-    if (serialized.length % 2 == 1) {
+    if (serialized.length.isOdd) {
       throw ArgumentError('odd length');
     }
 
