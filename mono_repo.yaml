@@ -8,11 +8,10 @@ github:
   permissions:
     contents: read
   on_completion:
+    # Job that runs always and fails if any prior job failed to provide that
+    # information with a stable job name.
     - name: ci
       runs-on: ubuntu-latest
-      # Runs whatever happened above, because a job that simply depends on a
-      # failed job is skipped rather than failed, and a skipped check counts
-      # as a passing one.
       if: always()
       steps:
         - name: Fail if any job failed or was cancelled
