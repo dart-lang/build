@@ -1023,7 +1023,7 @@ class Build {
       if (phaseNumber == 0) return false;
       final libraryId = input.sharedPartLibraryId!;
       final accumulator = _previousPartAccumulator(libraryId);
-      final oldDigest = accumulator?.contentAt(phaseNumber - 1).digest;
+      final oldDigest = accumulator?.contentAt(phaseNumber - 1)?.digest;
       final newDigest = buildState
           .sharedPartContent(input, upToPhase: phaseNumber - 1)
           ?.digest;
