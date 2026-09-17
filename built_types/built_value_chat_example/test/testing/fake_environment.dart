@@ -4,8 +4,8 @@
 
 import 'dart:async';
 
-import '../client/client.dart';
-import '../server/server.dart';
+import 'package:built_value_chat_example/client/client.dart';
+import 'package:built_value_chat_example/server/server.dart';
 import 'fake_client_connection.dart';
 import 'fake_display.dart';
 import 'fake_server_connection.dart';
