@@ -119,10 +119,10 @@ abstract class BuiltMap<K, V> {
   V? operator [](Object? key) => _map[key];
 
   /// As [Map.containsKey].
-  bool containsKey(Object? key) => _map.containsKey(key);
+  bool containsKey(Object key) => _map.containsKey(key);
 
   /// As [Map.containsValue].
-  bool containsValue(Object? value) => _map.containsValue(value);
+  bool containsValue(Object value) => _map.containsValue(value);
 
   /// As [Map.forEach].
   void forEach(void Function(K, V) f) {
