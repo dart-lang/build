@@ -7,6 +7,9 @@
 - Fix unnecessary non-null assertions in internal copy-on-write collections.
 - Migrate to `package:dart_flutter_team_lints`.
 - Fix analysis issues and remove the lint suppressions that hid them.
+- Fix `BuiltMap` equality when maps with nullable values have different keys.
+- Allow nullable arguments to `BuiltMap.containsKey` and `BuiltMap.containsValue`,
+  matching the corresponding `Map` APIs.
 
 ## 5.1.1
 

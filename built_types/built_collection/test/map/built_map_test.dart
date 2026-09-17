@@ -221,8 +221,7 @@ void main() {
 
     test('compares not equal to different type', () {
       expect(
-        // ignore: unrelated_type_equality_checks
-        BuiltMap<int, String>({1: '1', 2: '2', 3: '3'}) == '',
+        (BuiltMap<int, String>({1: '1', 2: '2', 3: '3'}) as Object) == '',
         isFalse,
       );
     });
@@ -267,10 +266,26 @@ void main() {
       );
     });
 
+    test('compares not equal to different keys with null values', () {
+      // Matching lengths and hash codes ensure equality compares the entries.
+      final first =
+          BuiltCollectionTestHelpers.overridenHashcodeBuiltMapWithNullableValues(
+            {1: null},
+            0,
+          );
+      final second =
+          BuiltCollectionTestHelpers.overridenHashcodeBuiltMapWithNullableValues(
+            {2: null},
+            0,
+          );
+
+      expect(first == second, isFalse);
+    });
+
     test('compares without throwing for same hashcode different key type', () {
       expect(
-        // ignore: unrelated_type_equality_checks
-        BuiltCollectionTestHelpers.overridenHashcodeBuiltMap({1: '1'}, 0) ==
+        (BuiltCollectionTestHelpers.overridenHashcodeBuiltMap({1: '1'}, 0)
+                as Object) ==
             BuiltCollectionTestHelpers.overridenHashcodeBuiltMapWithStringKeys({
               '1': '1',
             }, 0),
@@ -401,6 +416,9 @@ void main() {
         BuiltMap<int, String>({1: '1', 2: '2', 3: '3'}).containsKey(4),
         isFalse,
       );
+
+      expect(BuiltMap<int?, String>({null: '1'}).containsKey(null), isTrue);
+      expect(BuiltMap<int?, String>({null: '1'}).containsKey(2), isFalse);
     });
 
     test('has a method like Map.containsValue', () {
@@ -412,6 +430,9 @@ void main() {
         BuiltMap<int, String>({1: '1', 2: '2', 3: '3'}).containsValue('4'),
         isFalse,
       );
+
+      expect(BuiltMap<int, String?>({1: null}).containsValue(null), isTrue);
+      expect(BuiltMap<int, String?>({1: null}).containsValue('2'), isFalse);
     });
 
     test('has a method like Map.forEach', () {
