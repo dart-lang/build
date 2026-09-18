@@ -39,7 +39,7 @@ void main() {
       );
     });
 
-    test('no-op build does not rewrite part', () async {
+    test('no-op build rebuilds nothing', () async {
       await tester.build();
       expect(await tester.build(), Result());
     });
@@ -109,7 +109,7 @@ void main() {
       );
     });
 
-    test('no-op build does not rebuild c.2', () async {
+    test('no-op build rebuilds nothing', () async {
       await tester.build();
       expect(await tester.build(), Result());
     });
@@ -144,7 +144,7 @@ void main() {
         );
       });
 
-      test('no-op build does not rebuild c.2', () async {
+      test('no-op build rebuilds nothing', () async {
         await tester.build();
         expect(await tester.build(), Result());
       });

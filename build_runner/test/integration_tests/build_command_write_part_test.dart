@@ -22,7 +22,7 @@ void main() {
       name: 'write_part_pkg',
       dependencies: ['build', 'build_runner'],
       files: {
-        'build.yaml': '''
+        'build.yaml': r'''
 builders:
   write_part_builder:
     import: 'package:write_part_pkg/builder.dart'
@@ -31,7 +31,7 @@ builders:
     build_to: 'cache'
     adds_to_library: true
 ''',
-        'lib/builder.dart': '''
+        'lib/builder.dart': r'''
 import 'package:build/build.dart';
 
 Builder writePartBuilderFactory(BuilderOptions options) => WritePartBuilder();
@@ -53,7 +53,7 @@ class WritePartBuilder implements Builder {
       name: 'multi_part_pkg',
       dependencies: ['build', 'build_runner'],
       files: {
-        'build.yaml': '''
+        'build.yaml': r'''
 builders:
   builder1:
     import: 'package:multi_part_pkg/builder.dart'
@@ -68,7 +68,7 @@ builders:
     build_to: 'cache'
     adds_to_library: true
 ''',
-        'lib/builder.dart': '''
+        'lib/builder.dart': r'''
 import 'package:build/build.dart';
 
 Builder factory1(BuilderOptions options) => PartBuilder('// contribution 1');
@@ -94,7 +94,7 @@ class PartBuilder implements Builder {
       name: 'phase_part_pkg',
       dependencies: ['build', 'build_runner'],
       files: {
-        'build.yaml': '''
+        'build.yaml': r'''
 builders:
   part_generator_1:
     import: 'package:phase_part_pkg/builder.dart'
@@ -117,7 +117,7 @@ builders:
     required_inputs: ['.dummy2']
     adds_to_library: true
 ''',
-        'lib/builder.dart': '''
+        'lib/builder.dart': r'''
 import 'package:build/build.dart';
 
 Builder partGen1Factory(BuilderOptions options) => PartGen1Builder();
@@ -135,7 +135,7 @@ class PartGen1Builder implements Builder {
     final hasClass2 = lib.getClass('Class2') != null;
     final hasClass3 = lib.getClass('Class3') != null;
     (await buildStep.librarySourceSink)
-      ?.add("class Class1 {\\n  // Gen1 checked hasClass1: \$hasClass1, hasClass2: \$hasClass2, hasClass3: \$hasClass3\\n}");
+      ?.add("class Class1 {\n  // Gen1 checked hasClass1: $hasClass1, hasClass2: $hasClass2, hasClass3: $hasClass3\n}");
   }
 }
 class PartGen2Builder implements Builder {
@@ -148,7 +148,7 @@ class PartGen2Builder implements Builder {
     final hasClass1 = lib.getClass('Class1') != null;
     final hasClass2 = lib.getClass('Class2') != null;
     (await buildStep.librarySourceSink)
-      ?.add("class Class2 {\\n  // Gen2 checked hasClass1: \$hasClass1, hasClass2: \$hasClass2\\n}");
+      ?.add("class Class2 {\n  // Gen2 checked hasClass1: $hasClass1, hasClass2: $hasClass2\n}");
   }
 }
 
@@ -165,10 +165,10 @@ class PartGen3Builder implements Builder {
 
     await buildStep.writeAsString(
       buildStep.inputId.changeExtension('.resolved.txt'),
-      'Gen3 checks - Class1: \$hasClass1, Class2: \$hasClass2, Class3: \$hasClass3',
+      'Gen3 checks - Class1: $hasClass1, Class2: $hasClass2, Class3: $hasClass3',
     );
     (await buildStep.librarySourceSink)
-      ?.add("class Class3 {\\n  // Gen3 checked hasClass1: \$hasClass1, hasClass2: \$hasClass2, hasClass3: \$hasClass3\\n}");
+      ?.add("class Class3 {\n  // Gen3 checked hasClass1: $hasClass1, hasClass2: $hasClass2, hasClass3: $hasClass3\n}");
   }
 }
 ''',
@@ -179,7 +179,7 @@ class PartGen3Builder implements Builder {
       name: 'write_part_imports_pkg',
       dependencies: ['build', 'build_runner'],
       files: {
-        'build.yaml': '''
+        'build.yaml': r'''
 builders:
   write_part_builder:
     import: 'package:write_part_imports_pkg/builder.dart'
@@ -194,7 +194,7 @@ builders:
     build_to: 'cache'
     required_inputs: ['.dummy']
 ''',
-        'lib/builder.dart': '''
+        'lib/builder.dart': r'''
 import 'package:build/build.dart';
 
 Builder writePartBuilderFactory(BuilderOptions options) => WritePartBuilder();
@@ -210,8 +210,8 @@ class WritePartBuilder implements Builder {
     final writer = await buildStep.librarySourceSink;
     if (writer == null) return;
     final prefix = writer.importPrefix;
-    writer.addImport('dart:async', as: '\${prefix}async');
-    writer.add('class Generated { \${prefix}async.Future<void>? future; }');
+    writer.addImport('dart:async', as: '${prefix}async');
+    writer.add('class Generated { ${prefix}async.Future<void>? future; }');
   }
 }
 
@@ -224,7 +224,7 @@ class ResolvePartBuilder implements Builder {
     final library = await buildStep.inputLibrary;
     await buildStep.writeAsString(
       buildStep.inputId.changeExtension('.resolved.txt'),
-      'Generated: \${library.getClass('Generated') != null}',
+      'Generated: ${library.getClass('Generated') != null}',
     );
   }
 }
@@ -242,9 +242,9 @@ class ResolvePartBuilder implements Builder {
         'write_part_pkg',
       ],
       files: {
-        'build.yaml': '''
+        'build.yaml': r'''
 targets:
-  \$default:
+  $default:
     builders:
       write_part_pkg|write_part_builder:
         enabled: true
@@ -259,7 +259,7 @@ targets:
       'dart run build_runner build --force-jit',
     );
     expect(output, contains(BuildLog.successPattern));
-    expect(tester.read('root_pkg/lib/_br_/a.part.dart'), '''
+    expect(tester.read('root_pkg/lib/_br_/a.part.dart'), r'''
 // dart format off
 part of '../a.dart';
 
@@ -269,9 +269,9 @@ part of '../a.dart';
 ''');
 
     // Two builders writing parts to the same library concatenate.
-    tester.write('root_pkg/build.yaml', '''
+    tester.write('root_pkg/build.yaml', r'''
 targets:
-  \$default:
+  $default:
     builders:
       multi_part_pkg|builder1:
         enabled: true
@@ -283,7 +283,7 @@ targets:
       'dart run build_runner build --force-jit',
     );
     expect(output, contains(BuildLog.successPattern));
-    expect(tester.read('root_pkg/lib/_br_/a.part.dart'), '''
+    expect(tester.read('root_pkg/lib/_br_/a.part.dart'), r'''
 // dart format off
 part of '../a.dart';
 
@@ -297,9 +297,9 @@ part of '../a.dart';
 
     // A library resolved in a later phase sees the part written in an earlier
     // phase.
-    tester.write('root_pkg/build.yaml', '''
+    tester.write('root_pkg/build.yaml', r'''
 targets:
-  \$default:
+  $default:
     builders:
       phase_part_pkg|part_generator_1:
         enabled: true
@@ -308,7 +308,7 @@ targets:
       phase_part_pkg|part_generator_3:
         enabled: true
 ''');
-    tester.write('root_pkg/lib/a.dart', '''
+    tester.write('root_pkg/lib/a.dart', r'''
 part '_br_/a.part.dart';
 
 class A {}
@@ -324,7 +324,7 @@ class A {}
       ),
       contains('Gen3 checks - Class1: true, Class2: true, Class3: false'),
     );
-    expect(tester.read('root_pkg/lib/_br_/a.part.dart'), '''
+    expect(tester.read('root_pkg/lib/_br_/a.part.dart'), r'''
 // dart format off
 part of '../a.dart';
 
@@ -346,16 +346,19 @@ class Class3 {
 ''');
 
     // The same holds on an incremental build.
-    tester.write(
-      'root_pkg/lib/a.dart',
-      "part '_br_/a.part.dart';\n\nclass A { void foo() {} }\n",
-    );
+    tester.write('root_pkg/lib/a.dart', r'''
+part '_br_/a.part.dart';
+
+class A {
+  void foo() {}
+}
+''');
     output = await tester.run(
       'root_pkg',
       'dart run build_runner build --force-jit',
     );
     expect(output, contains(BuildLog.successPattern));
-    expect(tester.read('root_pkg/lib/_br_/a.part.dart'), '''
+    expect(tester.read('root_pkg/lib/_br_/a.part.dart'), r'''
 // dart format off
 part of '../a.dart';
 
@@ -378,9 +381,9 @@ class Class3 {
 
     // Deleting a source file deletes its generated part, and leaves other
     // generated parts alone.
-    tester.write('root_pkg/build.yaml', '''
+    tester.write('root_pkg/build.yaml', r'''
 targets:
-  \$default:
+  $default:
     builders:
       write_part_pkg|write_part_builder:
         enabled: true
@@ -414,16 +417,16 @@ targets:
     // what allows a part to have imports; writing the part does not need it,
     // analyzing the result does.
     tester.delete('root_pkg/lib/b.dart');
-    tester.write('root_pkg/build.yaml', '''
+    tester.write('root_pkg/build.yaml', r'''
 targets:
-  \$default:
+  $default:
     builders:
       write_part_imports_pkg|write_part_builder:
         enabled: true
       write_part_imports_pkg|resolve_part_builder:
         enabled: true
 ''');
-    tester.write('root_pkg/lib/a.dart', '''
+    tester.write('root_pkg/lib/a.dart', r'''
 part '_br_/a.part.dart';
 class A {}
 ''');
@@ -433,16 +436,16 @@ class A {}
           '--enable-experiment=enhanced-parts',
     );
     expect(output, contains(BuildLog.successPattern));
-    expect(tester.read('root_pkg/lib/_br_/a.part.dart'), '''
+    expect(tester.read('root_pkg/lib/_br_/a.part.dart'), r'''
 // dart format off
 part of '../a.dart';
 
 // === write_part_imports_pkg:write_part_builder/0 imports.
-import 'dart:async' as \$0async;
+import 'dart:async' as $0async;
 
 // === write_part_imports_pkg:write_part_builder/0 contribution.
 class Generated {
-  \$0async.Future<void>? future;
+  $0async.Future<void>? future;
 }
 
 ''');
