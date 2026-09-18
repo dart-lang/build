@@ -57,17 +57,21 @@ class SharedPartAccumulator {
     }
   }
 
-  /// The content of this shared part up to and including [phase].
+  /// The content of this shared part up to and including [phase], or `null` if
+  /// there are no contributions at or before [phase].
   ///
   /// Before reading at phase `p`, all contributions at or before `p` must
   /// have been added.
-  AssetContent contentAt(int phase) => _contentsByPhase.putIfAbsent(phase, () {
-    final content = const SharedPartAccumulatorCodec().encode(
-      this,
-      upToPhase: phase,
-    );
-    return AssetContent.string(content);
-  });
+  AssetContent? contentAt(int phase) {
+    if (_contributions.build().keys.every((p) => p > phase)) return null;
+    return _contentsByPhase.putIfAbsent(phase, () {
+      final content = const SharedPartAccumulatorCodec().encode(
+        this,
+        upToPhase: phase,
+      );
+      return AssetContent.string(content);
+    });
+  }
 
   /// The final content of this shared part containing all contributions.
   AssetContent finalContent() => _finalContent ??= () {

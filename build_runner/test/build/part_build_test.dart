@@ -93,8 +93,13 @@ class OptionalPartWritingBuilder implements Builder {
 class PartResolvingAndWritingBuilder implements Builder {
   final String _readFile;
   final String _extension;
+  final void Function()? _onBuild;
 
-  PartResolvingAndWritingBuilder(this._readFile, this._extension);
+  PartResolvingAndWritingBuilder(
+    this._readFile,
+    this._extension, {
+    void Function()? onBuild,
+  }) : _onBuild = onBuild;
 
   @override
   Map<String, List<String>> get buildExtensions => {
@@ -103,6 +108,7 @@ class PartResolvingAndWritingBuilder implements Builder {
 
   @override
   Future<void> build(BuildStep buildStep) async {
+    _onBuild?.call();
     final readId = AssetId('a', _readFile);
     final text = await buildStep.canRead(readId)
         ? await buildStep.readAsString(readId)
@@ -1069,5 +1075,77 @@ content
 
       expect(result.readerWriter.testing.exists(partId), isFalse);
     });
+
+    test(
+      'incremental build with no changes skips resolving part builder in later '
+      'phase when earlier phase did not contribute to part',
+      () async {
+        var builder2Runs = 0;
+        final builderFactories = BuilderFactories({
+          'a:builder1': [
+            (_) => OptionalPartWritingBuilder(
+              'content1',
+              'lib/skip.txt',
+              '.b1.dart',
+            ),
+          ],
+          'a:builder2': [
+            (_) => PartResolvingAndWritingBuilder(
+              'lib/b.txt',
+              '.b2.dart',
+              onBuild: () => builder2Runs++,
+            ),
+          ],
+        });
+        final builderDefinitions = [
+          BuilderDefinition(
+            'a:builder1',
+            outputsToArtifactTree: false,
+            autoApply: AutoApply.allPackages,
+            addsToLibrary: true,
+          ),
+          BuilderDefinition(
+            'a:builder2',
+            outputsToArtifactTree: false,
+            autoApply: AutoApply.allPackages,
+            addsToLibrary: true,
+          ),
+        ];
+
+        final expectedGeneratedPart = r'''
+// dart format off
+part of '../a.dart';
+
+// === a:builder2/1 contribution.
+// builder saw: b
+class Class1 {
+  // sawClass2: false
+}
+
+''';
+
+        final result = await testPhases(
+          builderFactories,
+          builderDefinitions,
+          {
+            'a|lib/a.dart': 'class A {}',
+            'a|lib/skip.txt': 'skip',
+            'a|lib/b.txt': 'b',
+          },
+          outputs: {'a|lib/_br_/a.part.dart': expectedGeneratedPart},
+        );
+        expect(builder2Runs, 1);
+
+        // Incremental build with zero changes must skip builder2.
+        await testPhases(
+          builderFactories,
+          builderDefinitions,
+          {},
+          outputs: {},
+          resumeFrom: result,
+        );
+        expect(builder2Runs, 1);
+      },
+    );
   });
 }

@@ -14,13 +14,13 @@ void main() {
       () {
         final part = SharedPartAccumulator(AssetId('a', 'lib/b.dart'), null);
         part.addContribution(0, 'b0', BuiltList(), '// c0');
-        final c0 = part.contentAt(0);
+        final c0 = part.contentAt(0)!;
         expect(c0.stringValue(), contains('// c0'));
         expect(c0.stringValue(), isNot(contains('// c1')));
         expect(part.contentAt(0), same(c0));
 
         part.addContribution(1, 'b1', BuiltList(), '// c1');
-        final c1 = part.contentAt(1);
+        final c1 = part.contentAt(1)!;
         expect(c1.stringValue(), contains('// c0'));
         expect(c1.stringValue(), contains('// c1'));
         expect(part.contentAt(1), same(c1));
@@ -28,15 +28,26 @@ void main() {
       },
     );
 
+    test(
+      'contentAt returns null when no contributions exist at or before phase',
+      () {
+        final part = SharedPartAccumulator(AssetId('a', 'lib/b.dart'), null);
+        expect(part.contentAt(0), isNull);
+        part.addContribution(1, 'b1', BuiltList(), '// c1');
+        expect(part.contentAt(0), isNull);
+        expect(part.contentAt(1)!.stringValue(), contains('// c1'));
+      },
+    );
+
     test('contentAt for earlier phase after multiple phases added', () {
       final part = SharedPartAccumulator(AssetId('a', 'lib/b.dart'), null);
       part.addContribution(0, 'b0', BuiltList(), '// c0');
       part.addContribution(1, 'b1', BuiltList(), '// c1');
-      final c0 = part.contentAt(0);
+      final c0 = part.contentAt(0)!;
       expect(c0.stringValue(), contains('// c0'));
       expect(c0.stringValue(), isNot(contains('// c1')));
 
-      final c1 = part.contentAt(1);
+      final c1 = part.contentAt(1)!;
       expect(c1.stringValue(), contains('// c0'));
       expect(c1.stringValue(), contains('// c1'));
     });
@@ -44,7 +55,7 @@ void main() {
     test('contentAt applies DartFormatter', () {
       final part = SharedPartAccumulator(AssetId('a', 'lib/b.dart'), null);
       part.addContribution(0, 'b0', BuiltList(), 'int   x   =   1   ;');
-      final formatted = part.contentAt(0).stringValue();
+      final formatted = part.contentAt(0)!.stringValue();
       expect(formatted, contains('int x = 1;'));
       expect(formatted, isNot(contains('int   x   =')));
     });
@@ -108,7 +119,7 @@ void main() {
         finished.imports[0]!,
         finished.contributions[0]!,
       );
-      final phase0Content = accumulator.contentAt(0);
+      final phase0Content = accumulator.contentAt(0)!;
       expect(phase0Content.stringValue(), contains('// c0 original'));
       expect(phase0Content.stringValue(), isNot(contains('// c1')));
       expect(phase0Content.stringValue(), isNot(contains('// c2')));
@@ -120,7 +131,7 @@ void main() {
         BuiltList(["import 'package:a/b1_new.dart';"]),
         '// c1 modified',
       );
-      final phase1Content = accumulator.contentAt(1);
+      final phase1Content = accumulator.contentAt(1)!;
       expect(phase1Content.stringValue(), contains('// c0 original'));
       expect(phase1Content.stringValue(), contains('// c1 modified'));
       expect(phase1Content.stringValue(), isNot(contains('// c1 original')));
@@ -133,13 +144,13 @@ void main() {
         finished.imports[2]!,
         finished.contributions[2]!,
       );
-      final phase2Content = accumulator.contentAt(2);
+      final phase2Content = accumulator.contentAt(2)!;
       expect(phase2Content.stringValue(), contains('// c0 original'));
       expect(phase2Content.stringValue(), contains('// c1 modified'));
       expect(phase2Content.stringValue(), contains('// c2 original'));
 
       // Final content contains all contributions.
-      final generatedContent = accumulator.contentAt(2).stringValue();
+      final generatedContent = accumulator.contentAt(2)!.stringValue();
       expect(generatedContent, contains('// c0 original'));
       expect(generatedContent, contains('// c1 modified'));
       expect(generatedContent, contains('// c2 original'));
