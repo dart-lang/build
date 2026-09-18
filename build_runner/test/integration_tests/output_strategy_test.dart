@@ -16,10 +16,45 @@ void main() async {
     final tester = BuildRunnerTester(pubspecs);
 
     tester.writeFixturePackage(FixturePackages.copyBuilder());
+
+    // Used by the part builder sections below. It has nothing to do until
+    // `lib/a.dart` is written.
+    tester.writePackage(
+      name: 'write_part_pkg',
+      dependencies: ['build', 'build_runner'],
+      files: {
+        'build.yaml': '''
+builders:
+  write_part_builder:
+    import: 'package:write_part_pkg/builder.dart'
+    builder_factories: ['writePartBuilderFactory']
+    build_extensions: {'.dart': []}
+    auto_apply: 'root_package'
+    build_to: 'cache'
+    adds_to_library: true
+''',
+        'lib/builder.dart': '''
+import 'package:build/build.dart';
+
+Builder writePartBuilderFactory(BuilderOptions options) => WritePartBuilder();
+
+class WritePartBuilder implements Builder {
+  @override
+  Map<String, List<String>> get buildExtensions => {'.dart': []};
+
+  @override
+  Future<void> build(BuildStep buildStep) async {
+    (await buildStep.librarySourceSink)?.add('// part content');
+  }
+}
+''',
+      },
+    );
+
     tester.writePackage(
       name: 'root_pkg',
       dependencies: ['build_runner'],
-      pathDependencies: ['builder_pkg'],
+      pathDependencies: ['builder_pkg', 'write_part_pkg'],
       files: {'web/a.txt': 'a', 'web/b.txt': 'b', 'web/c.txt': 'c'},
     );
 
@@ -110,5 +145,59 @@ void main() async {
     tester.write('root_pkg/web/a.txt.copy', 'a');
     await watch.expect(BuildLog.successPattern);
     await watch.kill();
+
+    // The same strategies apply to a generated part. Start from a clean build
+    // so the first build below is the first build that writes the part.
+    tester.write('root_pkg/lib/a.dart', 'class A {}');
+    tester.delete('root_pkg/.dart_tool');
+
+    // A first build with --keep-modified-outputs writes the part.
+    await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit --keep-modified-outputs',
+    );
+    expect(
+      tester.read('root_pkg/lib/_br_/a.part.dart'),
+      contains('// part content'),
+    );
+
+    // Deleting the part and building again restores it.
+    tester.delete('root_pkg/lib/_br_/a.part.dart');
+    await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit --keep-modified-outputs',
+    );
+    expect(
+      tester.read('root_pkg/lib/_br_/a.part.dart'),
+      contains('// part content'),
+    );
+
+    // Default output strategy "overwrite" fixes a manually modified part.
+    tester.write('root_pkg/lib/_br_/a.part.dart', '// User modified part');
+    await tester.run('root_pkg', 'dart run build_runner build --force-jit');
+    expect(
+      tester.read('root_pkg/lib/_br_/a.part.dart'),
+      contains('// part content'),
+    );
+
+    // With --keep-modified-outputs, a manually modified part is kept.
+    final originalPart = tester.read('root_pkg/lib/_br_/a.part.dart')!;
+    final modifiedPart = originalPart.replaceFirst(
+      '// part content',
+      '// user modified part content',
+    );
+    tester.write('root_pkg/lib/_br_/a.part.dart', modifiedPart);
+    await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit --keep-modified-outputs',
+    );
+    expect(tester.read('root_pkg/lib/_br_/a.part.dart'), modifiedPart);
+
+    // With --only-check after an "overwrite" build, passes.
+    await tester.run('root_pkg', 'dart run build_runner build --force-jit');
+    await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit --only-check',
+    );
   });
 }
