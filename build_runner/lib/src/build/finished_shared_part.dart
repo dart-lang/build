@@ -6,6 +6,8 @@ import 'package:build/build.dart' hide Builder;
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 
+import 'part_contribution.dart';
+
 part 'finished_shared_part.g.dart';
 
 /// A shared part output by a finished build.
@@ -18,14 +20,8 @@ abstract class FinishedSharedPart
   /// if it has none.
   String? get languageVersion;
 
-  /// Builders that added contributions to this part, keyed by phase number.
-  BuiltMap<int, String> get builderKeys;
-
-  /// Imports added to this part, keyed by phase number.
-  BuiltMap<int, BuiltList<String>> get imports;
-
-  /// Contributions added to this part, keyed by phase number.
-  BuiltMap<int, String> get contributions;
+  /// Contributions to this part, keyed by phase number.
+  BuiltMap<int, PartContribution> get contributions;
 
   FinishedSharedPart._();
   factory FinishedSharedPart([
