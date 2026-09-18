@@ -175,6 +175,19 @@ class EmptyPartWritingBuilder implements Builder {
   }
 }
 
+class WhitespacePartWritingBuilder implements Builder {
+  @override
+  Map<String, List<String>> get buildExtensions => {
+    '.dart': ['.whitespace.dart'],
+  };
+
+  @override
+  Future<void> build(BuildStep buildStep) async {
+    final writer = await buildStep.librarySourceSink;
+    writer?.add('  \n');
+  }
+}
+
 class PartVerifyingInvisibilityBuilder implements Builder {
   @override
   Map<String, List<String>> get buildExtensions => {
@@ -836,6 +849,24 @@ class Class2 {}
         }, outputs: {});
       },
     );
+
+    test('does not generate part when only whitespace is added', () async {
+      final builderFactories = BuilderFactories({
+        'a:builder1': [(_) => WhitespacePartWritingBuilder()],
+      });
+      final builderDefinitions = [
+        BuilderDefinition(
+          'a:builder1',
+          outputsToArtifactTree: false,
+          autoApply: AutoApply.allPackages,
+          addsToLibrary: true,
+        ),
+      ];
+
+      await testPhases(builderFactories, builderDefinitions, {
+        'a|lib/a.dart': '',
+      }, outputs: {});
+    });
 
     test('_br_ assets are invisible to asset reader calls', () async {
       final builderFactories = BuilderFactories({
