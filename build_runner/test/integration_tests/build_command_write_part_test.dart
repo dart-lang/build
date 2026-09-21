@@ -211,7 +211,13 @@ class WritePartBuilder implements Builder {
     if (writer == null) return;
     final prefix = writer.importPrefix;
     writer.addImport('dart:async', as: '${prefix}async');
-    writer.add('class Generated { ${prefix}async.Future<void>? future; }');
+    writer.addImport('package:root_pkg/dep.dart', as: '${prefix}dep');
+    writer.add(
+      'class Generated {'
+      ' ${prefix}async.Future<void>? future;'
+      ' ${prefix}dep.Dep? dep;'
+      ' }',
+    );
   }
 }
 
@@ -222,9 +228,13 @@ class ResolvePartBuilder implements Builder {
   @override
   Future<void> build(BuildStep buildStep) async {
     final library = await buildStep.inputLibrary;
+    final generated = library.getClass('Generated');
     await buildStep.writeAsString(
       buildStep.inputId.changeExtension('.resolved.txt'),
-      'Generated: ${library.getClass('Generated') != null}',
+      generated == null
+          ? 'No Generated'
+          : 'Generated: '
+                '${generated.fields.map((f) => f.type.getDisplayString()).join(', ')}',
     );
   }
 }
@@ -430,6 +440,7 @@ targets:
 part '_br_/a.part.dart';
 class A {}
 ''');
+    tester.write('root_pkg/lib/dep.dart', 'class Dep {}\n');
     output = await tester.run(
       'root_pkg',
       'dart run build_runner build --force-jit '
@@ -442,10 +453,12 @@ part of '../a.dart';
 
 // === write_part_imports_pkg:write_part_builder/0 imports.
 import 'dart:async' as $0async;
+import 'package:root_pkg/dep.dart' as $0dep;
 
 // === write_part_imports_pkg:write_part_builder/0 contribution.
 class Generated {
   $0async.Future<void>? future;
+  $0dep.Dep? dep;
 }
 
 ''');
@@ -453,7 +466,24 @@ class Generated {
       tester.read(
         'root_pkg/.dart_tool/build/generated/root_pkg/lib/a.resolved.txt',
       ),
-      'Generated: true',
+      'Generated: Future<void>?, Dep?',
+    );
+
+    // `a.dart` only reaches `dep.dart` through the import in its part, so
+    // changing `dep.dart` invalidates `a.resolved.txt` only if the deps of the
+    // part are tracked.
+    tester.write('root_pkg/lib/dep.dart', 'class Dep<T> {}\n');
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit '
+          '--enable-experiment=enhanced-parts',
+    );
+    expect(output, contains(BuildLog.successPattern));
+    expect(
+      tester.read(
+        'root_pkg/.dart_tool/build/generated/root_pkg/lib/a.resolved.txt',
+      ),
+      'Generated: Future<void>?, Dep<dynamic>?',
     );
   });
 }
