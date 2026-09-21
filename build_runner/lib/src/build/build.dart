@@ -48,6 +48,7 @@ import 'library_cycle_graph/asset_deps_loader.dart';
 import 'library_cycle_graph/library_cycle_graph.dart';
 import 'library_cycle_graph/library_cycle_graph_loader.dart';
 import 'library_cycle_graph/phased_asset_deps.dart';
+import 'part_contribution.dart';
 import 'post_process_build_step_impl.dart';
 import 'resolver/analysis_driver_model.dart';
 import 'resolver/resolvers_impl.dart';
@@ -89,13 +90,8 @@ class Build {
       if (part != null) {
         accumulator = _previousPartAccumulators[libraryId] =
             SharedPartAccumulator(part.libraryId, part.languageVersion);
-        for (final phase in part.contributions.keys) {
-          accumulator.addContribution(
-            phase,
-            part.builderKeys[phase] ?? '',
-            part.imports[phase] ?? BuiltList<String>(),
-            part.contributions[phase]!,
-          );
+        for (final entry in part.contributions.entries) {
+          accumulator.addContribution(entry.key, entry.value);
         }
       }
     }
@@ -1203,9 +1199,11 @@ class Build {
       buildState.addPartContribution(
         libraryId: input,
         phase: phaseNum,
-        builderKey: buildPhases.inBuildPhases[phaseNum].key,
-        imports: step.partImports,
-        contribution: step.partContribution ?? '',
+        contribution: PartContribution.of(
+          builderKey: buildPhases.inBuildPhases[phaseNum].key,
+          imports: step.partImports,
+          contribution: step.partContribution ?? '',
+        ),
         languageVersion: step.languageVersion,
       );
     }

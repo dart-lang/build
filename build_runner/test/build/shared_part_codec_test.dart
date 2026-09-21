@@ -3,9 +3,9 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
+import 'package:build_runner/src/build/part_contribution.dart';
 import 'package:build_runner/src/build/shared_part_accumulator.dart';
 import 'package:build_runner/src/build/shared_part_accumulator_codec.dart';
-import 'package:built_collection/built_collection.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -19,18 +19,22 @@ void main() {
       );
       part.addContribution(
         0,
-        'built_value_generator:built_value',
-        BuiltList([
-          "import 'package:foo/foo.dart';",
-          "import 'package:bar/bar.dart';",
-        ]),
-        'class User0 {}',
+        PartContribution.of(
+          builderKey: 'built_value_generator:built_value',
+          imports: [
+            "import 'package:foo/foo.dart';",
+            "import 'package:bar/bar.dart';",
+          ],
+          contribution: 'class User0 {}',
+        ),
       );
       part.addContribution(
         1,
-        'json_serializable:json_serializable',
-        BuiltList(["import 'package:baz/baz.dart';"]),
-        'class User1 {}',
+        PartContribution.of(
+          builderKey: 'json_serializable:json_serializable',
+          imports: ["import 'package:baz/baz.dart';"],
+          contribution: 'class User1 {}',
+        ),
       );
 
       final encoded = codec.encode(part);
@@ -57,19 +61,31 @@ class User1 {}
 
     test('uses correct relative path to library', () {
       final p1 = SharedPartAccumulator(AssetId('a', 'lib/b.dart'), null);
-      p1.addContribution(0, 'b1', BuiltList(), '// c1');
+      p1.addContribution(
+        0,
+        PartContribution.of(builderKey: 'b1', contribution: '// c1'),
+      );
       expect(codec.encode(p1), contains("part of '../b.dart';"));
 
       final p2 = SharedPartAccumulator(AssetId('a', 'lib/foo/bar.dart'), null);
-      p2.addContribution(0, 'b1', BuiltList(), '// c1');
+      p2.addContribution(
+        0,
+        PartContribution.of(builderKey: 'b1', contribution: '// c1'),
+      );
       expect(codec.encode(p2), contains("part of '../../foo/bar.dart';"));
 
       final p3 = SharedPartAccumulator(AssetId('a', 'test/foo.dart'), null);
-      p3.addContribution(0, 'b1', BuiltList(), '// c1');
+      p3.addContribution(
+        0,
+        PartContribution.of(builderKey: 'b1', contribution: '// c1'),
+      );
       expect(codec.encode(p3), contains("part of '../../test/foo.dart';"));
 
       final p4 = SharedPartAccumulator(AssetId('a', 'root.dart'), null);
-      p4.addContribution(0, 'b1', BuiltList(), '// c1');
+      p4.addContribution(
+        0,
+        PartContribution.of(builderKey: 'b1', contribution: '// c1'),
+      );
       expect(codec.encode(p4), contains("part of '../root.dart';"));
     });
 
@@ -79,15 +95,19 @@ class User1 {}
         final part = SharedPartAccumulator(AssetId('a', 'lib/b.dart'), null);
         part.addContribution(
           0,
-          'b0',
-          BuiltList(["import 'package:foo/foo.dart';"]),
-          'class C0 {}',
+          PartContribution.of(
+            builderKey: 'b0',
+            imports: ["import 'package:foo/foo.dart';"],
+            contribution: 'class C0 {}',
+          ),
         );
         part.addContribution(
           1,
-          'b1',
-          BuiltList(["import 'package:bar/bar.dart';"]),
-          'class C1 {}',
+          PartContribution.of(
+            builderKey: 'b1',
+            imports: ["import 'package:bar/bar.dart';"],
+            contribution: 'class C1 {}',
+          ),
         );
 
         final phase0Only = codec.encode(part, upToPhase: 0);
@@ -108,13 +128,15 @@ class User1 {}
       );
       original.addContribution(
         0,
-        'b0',
-        BuiltList(),
-        '// === built_value_generator:built_value/0 imports.\n'
-            '// \\=== fake delimiter\n'
-            '// \\\\ double backslash\n'
-            '// normal comment\n'
-            'class A {}',
+        PartContribution.of(
+          builderKey: 'b0',
+          contribution:
+              '// === built_value_generator:built_value/0 imports.\n'
+              '// \\=== fake delimiter\n'
+              '// \\\\ double backslash\n'
+              '// normal comment\n'
+              'class A {}',
+        ),
       );
 
       final encoded = codec.encode(original);
@@ -138,26 +160,28 @@ class User1 {}
       );
       original.addContribution(
         0,
-        'builder_a',
-        BuiltList([
-          "import 'package:foo/foo.dart';",
-          "import 'package:bar/bar.dart';",
-        ]),
-        'class B0 {\n  int x = 1;\n}',
+        PartContribution.of(
+          builderKey: 'builder_a',
+          imports: [
+            "import 'package:foo/foo.dart';",
+            "import 'package:bar/bar.dart';",
+          ],
+          contribution: 'class B0 {\n  int x = 1;\n}',
+        ),
       );
       original.addContribution(
         1,
-        'builder_b',
-        BuiltList(["import 'package:baz/baz.dart';"]),
-        'class B1 {\n  int y = 2;\n}',
+        PartContribution.of(
+          builderKey: 'builder_b',
+          imports: ["import 'package:baz/baz.dart';"],
+          contribution: 'class B1 {\n  int y = 2;\n}',
+        ),
       );
 
       final encoded = codec.encode(original);
       final decoded = codec.decode(encoded, AssetId('a', 'lib/b.dart'));
 
       expect(decoded.languageVersion, original.languageVersion);
-      expect(decoded.builderKeys, original.builderKeys);
-      expect(decoded.imports, original.imports);
       expect(decoded.contributions, original.contributions);
     });
 
@@ -168,28 +192,38 @@ class User1 {}
       );
       original.addContribution(
         0,
-        'b0',
-        BuiltList(["import 'package:foo/foo.dart';"]),
-        "const str = '''\n"
-            '// === b1/1 contribution.\n'
-            '// === b1/1 imports.\n'
-            "''';\n"
-            'class A {}',
+        PartContribution.of(
+          builderKey: 'b0',
+          imports: ["import 'package:foo/foo.dart';"],
+          contribution:
+              "const str = '''\n"
+              '// === b1/1 contribution.\n'
+              '// === b1/1 imports.\n'
+              "''';\n"
+              'class A {}',
+        ),
       );
       original.addContribution(
         1,
-        'b1',
-        BuiltList(["import 'package:bar/bar.dart';"]),
-        'class B {}',
+        PartContribution.of(
+          builderKey: 'b1',
+          imports: ["import 'package:bar/bar.dart';"],
+          contribution: 'class B {}',
+        ),
       );
 
       final encoded = codec.encode(original);
       final decoded = codec.decode(encoded, AssetId('a', 'lib/b.dart'));
 
-      expect(decoded.imports.keys, [0, 1]);
       expect(decoded.contributions.keys, [0, 1]);
-      expect(decoded.contributions[0], original.contributions[0]);
-      expect(decoded.contributions[1], original.contributions[1]);
+      expect(
+        decoded.contributions[0]!.contribution,
+        original.contributions[0]!.contribution,
+      );
+      expect(
+        decoded.contributions[1]!.contribution,
+        original.contributions[1]!.contribution,
+      );
     });
 
     test('does not escape delimiter-like text inside multiline strings', () {
@@ -199,14 +233,16 @@ class User1 {}
       );
       original.addContribution(
         0,
-        'b0',
-        BuiltList(),
-        "const str = '''\n"
-            '// === b1/1 contribution.\n'
-            '// === b1/1 imports.\n'
-            '// \\ fake backslash\n'
-            "''';\n"
-            'class A {}',
+        PartContribution.of(
+          builderKey: 'b0',
+          contribution:
+              "const str = '''\n"
+              '// === b1/1 contribution.\n'
+              '// === b1/1 imports.\n'
+              '// \\ fake backslash\n'
+              "''';\n"
+              'class A {}',
+        ),
       );
 
       final encoded = codec.encode(original);
@@ -239,15 +275,16 @@ class B {}
 
       final decoded = codec.decode(content, AssetId('a', 'lib/b.dart'));
       expect(decoded.contributions.keys, [0, 1]);
-      expect(decoded.contributions[0], contains('// === b1/1 contribution.'));
-      expect(decoded.contributions[1], 'class B {}');
+      expect(
+        decoded.contributions[0]!.contribution,
+        contains('// === b1/1 contribution.'),
+      );
+      expect(decoded.contributions[1]!.contribution, 'class B {}');
     });
 
     test('decode on empty string returns empty accumulator', () {
       final decoded = codec.decode('', AssetId('a', 'lib/b.dart'));
       expect(decoded.languageVersion, isNull);
-      expect(decoded.builderKeys, isEmpty);
-      expect(decoded.imports, isEmpty);
       expect(decoded.contributions, isEmpty);
     });
 
@@ -255,11 +292,12 @@ class B {}
       final part = SharedPartAccumulator(AssetId('a', 'lib/b.dart'), null);
       part.addContribution(
         0,
-        'b0',
-        BuiltList(),
-        'class Foo{   final int  x ; Foo ( this.x ) ; }',
+        PartContribution.of(
+          builderKey: 'b0',
+          contribution: 'class Foo{   final int  x ; Foo ( this.x ) ; }',
+        ),
       );
-      expect(part.contributions[0], '''class Foo {
+      expect(part.contributions[0]!.contribution, '''class Foo {
   final int x;
   Foo(this.x);
 }''');

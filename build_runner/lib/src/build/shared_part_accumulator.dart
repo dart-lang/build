@@ -8,6 +8,7 @@ import 'package:dart_style/dart_style.dart';
 
 import 'asset_content.dart';
 import 'finished_shared_part.dart';
+import 'part_contribution.dart';
 import 'shared_part_accumulator_codec.dart';
 
 /// Accumulates part file contributions and imports across build phases.
@@ -19,30 +20,21 @@ class SharedPartAccumulator {
   /// if it has none and so uses the package language version.
   final String? languageVersion;
 
-  final MapBuilder<int, String> _builderKeys = MapBuilder();
-
-  final MapBuilder<int, BuiltList<String>> _imports = MapBuilder();
-
-  final MapBuilder<int, String> _contributions = MapBuilder();
+  final MapBuilder<int, PartContribution> _contributions = MapBuilder();
 
   final Map<int, AssetContent> _contentsByPhase = {};
   AssetContent? _finalContent;
 
   SharedPartAccumulator(this.libraryId, this.languageVersion);
 
-  void addContribution(
-    int phase,
-    String builderKey,
-    BuiltList<String> newImports,
-    String newContribution,
-  ) {
+  void addContribution(int phase, PartContribution contribution) {
     if (_contributions[phase] != null) {
       throw StateError('Contribution for phase $phase already added.');
     }
     _finalContent = null;
-    _builderKeys[phase] = builderKey;
-    _imports[phase] = newImports;
-    _contributions[phase] = _formatContribution(newContribution);
+    _contributions[phase] = contribution.rebuild(
+      (b) => b.contribution = _formatContribution(contribution.contribution),
+    );
   }
 
   static String _formatContribution(String contribution) {
@@ -84,8 +76,6 @@ class SharedPartAccumulator {
     (b) => b
       ..libraryId = libraryId
       ..languageVersion = languageVersion
-      ..builderKeys = _builderKeys
-      ..imports = _imports
       ..contributions = _contributions,
   );
 
@@ -96,9 +86,5 @@ class SharedPartAccumulator {
     AssetId libraryId,
   ) => const SharedPartAccumulatorCodec().decode(content, libraryId);
 
-  BuiltMap<int, String> get builderKeys => _builderKeys.build();
-
-  BuiltMap<int, BuiltList<String>> get imports => _imports.build();
-
-  BuiltMap<int, String> get contributions => _contributions.build();
+  BuiltMap<int, PartContribution> get contributions => _contributions.build();
 }

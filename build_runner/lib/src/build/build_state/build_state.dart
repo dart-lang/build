@@ -13,6 +13,7 @@ import '../../build_plan/phase.dart';
 import '../asset_content.dart';
 import '../br_outputs.dart';
 import '../finished_shared_part.dart';
+import '../part_contribution.dart';
 import '../shared_part_accumulator.dart';
 import 'build_step_id.dart';
 import 'build_step_result.dart';
@@ -333,16 +334,14 @@ class BuildState {
   void addPartContribution({
     required AssetId libraryId,
     required int phase,
-    required String builderKey,
-    required BuiltList<String> imports,
-    required String contribution,
+    required PartContribution contribution,
     required String? languageVersion,
   }) {
     markPartRebuilt(libraryId);
     _partDataFor(
       libraryId,
       languageVersion,
-    ).addContribution(phase, builderKey, imports, contribution);
+    ).addContribution(phase, contribution);
   }
 
   /// Replays a contribution that [fromPart] recorded in the previous build.
@@ -362,19 +361,12 @@ class BuildState {
     required String? languageVersion,
   }) {
     if (fromPart == null) return;
-    final builderKey = fromPart.builderKeys[phase];
-    final imports = fromPart.imports[phase];
     final contribution = fromPart.contributions[phase];
-    if (imports == null && contribution == null) return;
+    if (contribution == null) return;
     _partDataFor(
       libraryId,
       languageVersion ?? fromPart.languageVersion,
-    ).addContribution(
-      phase,
-      builderKey ?? '',
-      imports ?? BuiltList<String>(),
-      contribution ?? '',
-    );
+    ).addContribution(phase, contribution);
   }
 
   /// The accumulator for [libraryId], creating it if it does not exist yet.
