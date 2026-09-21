@@ -82,7 +82,19 @@ class InBuildPhase extends BuildPhase implements BuildAction {
     this.isOptional = false,
     this.outputsToArtifactTree = false,
     this.addsToLibrary = false,
-  });
+  }) {
+    if (addsToLibrary) {
+      final nonDartInputs = builder.buildExtensions.keys.where(
+        (input) => !input.endsWith('.dart'),
+      );
+      if (nonDartInputs.isNotEmpty) {
+        throw ArgumentError(
+          'A builder with `adds_to_library: true` can only have `.dart` '
+          "inputs, but has: ${nonDartInputs.map((i) => "'$i'").join(', ')}.",
+        );
+      }
+    }
+  }
 
   /// Creates an [BuildPhase] for a normal [Builder].
   ///

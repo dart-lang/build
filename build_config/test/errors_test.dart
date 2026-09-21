@@ -181,6 +181,25 @@ builders:
       ),
     );
   });
+
+  test('for builder with adds_to_library and a non-Dart input', () {
+    final buildYaml = r'''
+builders:
+  package_name:builder:
+    builder_factories: ["someFactory"]
+    import: package:package_name/builders.dart
+    build_extensions: {".txt": [".json"]}
+    adds_to_library: true
+''';
+
+    _expectThrows(
+      buildYaml,
+      contains(
+        'A builder with `adds_to_library: true` can only have `.dart` '
+        "inputs, but has: '.txt'.",
+      ),
+    );
+  });
 }
 
 void _expectThrows(String buildYaml, Object matcher) => expect(

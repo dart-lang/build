@@ -131,5 +131,28 @@ Builder partFactory(BuilderOptions options) => throw UnimplementedError();
         '`is_optional: true`.',
       ),
     );
+
+    // Builder with adds_to_library: true and a non-Dart input is rejected.
+    tester.write('root_pkg/build.yaml', r'''
+builders:
+  part_builder:
+    import: 'tool/builder.dart'
+    builder_factories: ['partFactory']
+    build_extensions: {'.txt': ['.txt.g.dart']}
+    auto_apply: root_package
+    adds_to_library: true
+''');
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+      expectExitCode: ExitCode.config.code,
+    );
+    expect(
+      output,
+      contains(
+        'A builder with `adds_to_library: true` can only have `.dart` '
+        "inputs, but has: '.txt'.",
+      ),
+    );
   });
 }
