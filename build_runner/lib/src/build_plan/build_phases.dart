@@ -32,6 +32,10 @@ class BuildPhases {
   /// A [Digest] that can be used to detect any change to the phases.
   final Digest digest;
 
+  /// The number of the last of [inBuildPhases] that can add to a library, or
+  /// `null` if there is none.
+  final int? lastAddsToLibraryPhase;
+
   BuildPhases(
     Iterable<InBuildPhase> inBuildPhases, [
     PostBuildPhase? postBuildPhase,
@@ -41,7 +45,8 @@ class BuildPhases {
        postBuildActionsOptionsDigests = _digestsOf(
          postBuildPhase?.builderActions ?? [],
        ),
-       digest = _computeDigest([...inBuildPhases, ?postBuildPhase]);
+       digest = _computeDigest([...inBuildPhases, ?postBuildPhase]),
+       lastAddsToLibraryPhase = _lastAddsToLibraryPhase(inBuildPhases);
 
   /// The phases, [inBuildPhases] followed by [postBuildPhase], by number.
   BuildPhase operator [](int index) {
@@ -59,6 +64,16 @@ class BuildPhases {
   /// non-empty.
   int get length =>
       inBuildPhases.length + (postBuildPhase.builderActions.isEmpty ? 0 : 1);
+
+  static int? _lastAddsToLibraryPhase(Iterable<InBuildPhase> phases) {
+    int? result;
+    var number = 0;
+    for (final phase in phases) {
+      if (phase.addsToLibrary) result = number;
+      ++number;
+    }
+    return result;
+  }
 
   static Digest _computeDigest(Iterable<BuildPhase> phases) {
     final digestSink = AccumulatorSink<Digest>();

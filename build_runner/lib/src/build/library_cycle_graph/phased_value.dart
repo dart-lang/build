@@ -89,6 +89,10 @@ abstract class PhasedValue<T>
   /// are possible.
   bool get isComplete => values.last.expiresAfter == null;
 
+  /// Whether this value is nothing but the "before" value of
+  /// [PhasedValue.unavailable]: nothing is known about it yet.
+  bool get isUnavailable => values.length == 1 && !isComplete;
+
   /// The phase after which the value expires, or `null` if it never expires.
   int? get expiresAfter => values.last.expiresAfter;
 
@@ -123,6 +127,14 @@ abstract class PhasedValue<T>
   T get lastValue {
     if (!isComplete) throw StateError('Not complete, no last value.');
     return values.last.value;
+  }
+
+  /// This value with the last value made final, so [isComplete] is `true`.
+  PhasedValue<T> get completed {
+    if (isComplete) return this;
+    final completedValues = values.toList();
+    completedValues.last = ExpiringValue(completedValues.last.value);
+    return PhasedValue((b) => b.values.addAll(completedValues));
   }
 
   /// This value followed by [value].
