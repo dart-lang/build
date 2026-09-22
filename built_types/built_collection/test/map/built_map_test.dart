@@ -282,6 +282,12 @@ void main() {
       expect(first == second, isFalse);
     });
 
+    test('compares equal with the same keys and null values', () {
+      final first = BuiltMap<int, String?>.of({1: null, 2: null, 3: null});
+      final second = BuiltMap<int, String?>.of({1: null, 2: null, 3: null});
+      expect(first == second, isTrue);
+    });
+
     test('compares without throwing for same hashcode different key type', () {
       expect(
         (BuiltCollectionTestHelpers.overridenHashcodeBuiltMap({1: '1'}, 0)

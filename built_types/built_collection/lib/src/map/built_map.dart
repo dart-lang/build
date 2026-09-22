@@ -103,9 +103,10 @@ abstract class BuiltMap<K, V> {
     if (other.length != length) return false;
     if (other.hashCode != hashCode) return false;
     for (final key in keys) {
-      if (other[key] != this[key]) return false;
+      final value = this[key];
+      if (other[key] != value) return false;
       // A lookup can't distinguish a missing key from one mapped to null.
-      if (!other._map.containsKey(key)) return false;
+      if (value == null && !other._map.containsKey(key)) return false;
     }
     return true;
   }
