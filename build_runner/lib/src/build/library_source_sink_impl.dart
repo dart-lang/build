@@ -31,7 +31,11 @@ class LibrarySourceSinkImpl implements LibrarySourceSink {
   /// Whether there is a contribution that should be written to the shared part.
   ///
   /// Imports without source code are ignored and not counted as a contribution.
-  bool get hasContribution => _buffer.isNotEmpty;
+  ///
+  /// Whitespace is not source code, so it is ignored as well. A whitespace
+  /// only contribution writes nothing to the shared part file, so recording it
+  /// would create state that cannot be recovered by reading the file back.
+  bool get hasContribution => _buffer.toString().trim().isNotEmpty;
 
   void _checkCanWrite() {
     if (_buildStep.isComplete) throw BuildStepCompletedException();
