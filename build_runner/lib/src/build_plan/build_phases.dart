@@ -67,10 +67,10 @@ class BuildPhases {
 
   static int? _lastAddsToLibraryPhase(Iterable<InBuildPhase> phases) {
     int? result;
-    var number = 0;
+    var phaseNumber = 0;
     for (final phase in phases) {
-      if (phase.addsToLibrary) result = number;
-      ++number;
+      if (phase.addsToLibrary) result = phaseNumber;
+      ++phaseNumber;
     }
     return result;
   }
