@@ -26,6 +26,9 @@
 - Bug fix: in watch, serve, and daemon modes, do not run a build when nothing
   changed that can affect any output. A file can be written without changing
   its content, and one write can produce more than one filesystem event.
+- Bug fix: detect duplicate `--output` directories that are spelled
+  differently, for example `build` and `build/`, instead of writing both and
+  silently keeping only the last.
 
 ## 2.16.1
 
