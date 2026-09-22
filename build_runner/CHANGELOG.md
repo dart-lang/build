@@ -23,6 +23,9 @@
   instead of failing if the deps file turns out to be corrupt.
 - Bug fix: handle deletions of unread sources during watch, serve, and
   daemon modes.
+- Bug fix: in watch, serve, and daemon modes, do not run a build when nothing
+  changed that can affect any output. A file can be written without changing
+  its content, and one write can produce more than one filesystem event.
 
 ## 2.16.1
 

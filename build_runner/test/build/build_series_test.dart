@@ -12,6 +12,7 @@ import 'package:build_runner/src/build/build_state/build_step_result.dart';
 import 'package:build_runner/src/build/build_state/glob_id.dart';
 import 'package:build_runner/src/build/build_state/glob_result.dart';
 import 'package:build_runner/src/build/library_cycle_graph/phased_asset_deps.dart';
+import 'package:build_runner/src/build_plan/asset_file.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
@@ -401,6 +402,63 @@ void main() {
 
         expect(secondResult.status, BuildStatus.success);
         expect(secondResult.outputs, contains(outputId));
+      });
+    });
+
+    group('run', () {
+      test(
+        'skips build when a source is written with unchanged content',
+        () async {
+          final series = BuildSeries(buildPlan);
+          final firstResult = await series.run({}, recentlyBootstrapped: true);
+          expect(firstResult.status, BuildStatus.success);
+          expect(firstResult.outputs, contains(outputId));
+
+          await readerWriter.writeAsString(assetId, '// a.dart');
+          final secondResult = await series.run({
+            assetId,
+          }, recentlyBootstrapped: false);
+
+          // No build ran, so the output of the previous build is reused and
+          // nothing is reported as written.
+          expect(
+            secondResult.buildOutputReader,
+            same(firstResult.buildOutputReader),
+          );
+          expect(secondResult.outputs, isEmpty);
+        },
+      );
+
+      test(
+        'runs build when a source is written with changed content',
+        () async {
+          final series = BuildSeries(buildPlan);
+          final firstResult = await series.run({}, recentlyBootstrapped: true);
+          expect(firstResult.status, BuildStatus.success);
+
+          await readerWriter.writeAsString(assetId, '// a.dart, changed');
+          final secondResult = await series.run({
+            assetId,
+          }, recentlyBootstrapped: false);
+
+          expect(secondResult, isNot(same(firstResult)));
+          expect(secondResult.status, BuildStatus.success);
+          expect(secondResult.outputs, contains(outputId));
+        },
+      );
+
+      test('runs build when a source is deleted', () async {
+        final series = BuildSeries(buildPlan);
+        final firstResult = await series.run({}, recentlyBootstrapped: true);
+        expect(firstResult.status, BuildStatus.success);
+
+        await readerWriter.delete(AssetFile.atPackagePath(assetId));
+        final secondResult = await series.run({
+          assetId,
+        }, recentlyBootstrapped: false);
+
+        expect(secondResult, isNot(same(firstResult)));
+        expect(secondResult.outputs, isNot(contains(outputId)));
       });
     });
 

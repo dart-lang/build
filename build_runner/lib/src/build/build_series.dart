@@ -268,12 +268,16 @@ class BuildSeries {
 
     buildDirs ??= _buildPlan.buildDirs;
     buildFilters ??= _buildPlan.buildFilters;
-    if (!firstBuild) buildLog.nextBuild();
+    final buildDirsOrFiltersChanged =
+        buildDirs != _buildPlan.buildDirs ||
+        buildFilters != _buildPlan.buildFilters;
     _buildPlan = _buildPlan.rebuild(
       (b) => b
         ..buildDirs.replace(buildDirs!)
         ..buildFilters.replace(buildFilters!),
     );
+
+    final previousResult = await _currentBuildResult;
 
     if (!firstBuild || updates.isNotEmpty) {
       final filesToCheck = <AssetFile>{
@@ -281,7 +285,29 @@ class BuildSeries {
         for (final id in updates) AssetFile.inArtifactTree(id),
       };
       _buildPlan = await _buildPlan.updateForFileChanges(filesToCheck);
+
+      // The scan found nothing that can affect any output, so there is no
+      // build to run. Keep the updated plan: it holds the content that was
+      // just read, so the next change is compared against it.
+      //
+      // Only a successful previous build can be reused. A failed build can
+      // leave work unfinished, and under `--only-check` it fails because disk
+      // disagrees with a plan that the scan still reports as unchanged.
+      //
+      // Nothing was written, so the result reports no outputs. Consumers use
+      // that to decide which assets to refresh.
+      if (!firstBuild &&
+          previousResult != null &&
+          previousResult.status == BuildStatus.success &&
+          !buildDirsOrFiltersChanged &&
+          _buildPlan.outputsAreUpToDate) {
+        return previousResult.outputs.isEmpty
+            ? previousResult
+            : previousResult.copyWith(outputs: BuiltList());
+      }
     }
+
+    if (!firstBuild) buildLog.nextBuild();
 
     final build = Build(
       buildPlan: _buildPlan,
@@ -289,7 +315,6 @@ class BuildSeries {
     );
     if (firstBuild) firstBuild = false;
 
-    final previousResult = await _currentBuildResult;
     final previousReader = previousResult?.buildOutputReader;
     _currentBuildResult = _runBuildAndWrite(
       build,
