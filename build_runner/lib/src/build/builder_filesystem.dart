@@ -255,15 +255,31 @@ class BuilderFilesystem {
     }
 
     if (id.isBrOutput) {
-      final content =
-          buildState
-              .sharedPartContent(id, upToPhase: phase - 1)
-              ?.stringValue() ??
-          '';
-      // TODO(davidmorgan): support incremental resolution of imports from
-      // shared parts; needs to be tested with the "Parts with Imports" feature
-      // enabled.
-      return PhasedValue.fixed(content);
+      // The shared part accumulates contributions phase by phase, and a
+      // contribution can add imports, so the deps change at every phase that
+      // contributes. Build one value per change. Content contributed at phase
+      // `p` is readable at phase `p + 1`.
+      final values = <ExpiringValue<String>>[];
+      var previous = '';
+      for (var readableAt = 1; readableAt <= phase; ++readableAt) {
+        final content =
+            buildState
+                .sharedPartContent(id, upToPhase: readableAt - 1)
+                ?.stringValue() ??
+            '';
+        if (content != previous) {
+          values.add(ExpiringValue(previous, expiresAfter: readableAt - 1));
+          previous = content;
+        }
+      }
+      // Nothing can be contributed after the last `adds_to_library` phase, so
+      // from the phase after that the value is final.
+      final lastAddsToLibraryPhase =
+          buildStepPlan.buildPhases.lastAddsToLibraryPhase;
+      final isFinal =
+          lastAddsToLibraryPhase == null || phase > lastAddsToLibraryPhase;
+      values.add(ExpiringValue(previous, expiresAfter: isFinal ? null : phase));
+      return PhasedValue((b) => b.values.addAll(values));
     }
 
     if (buildStepPlan.isDeclaredOutput(id)) {
