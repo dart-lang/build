@@ -30,11 +30,11 @@ void main() {
       readerWriter = InternalTestReaderWriter(outputRootPackage: 'a');
       buildOptions = BuildOptions.forTests();
       builderFactories = BuilderFactories({
-        '': [(_) => TestBuilder()],
+        'b1': [(_) => TestBuilder()],
         'b2': [(_) => TestBuilder(buildExtensions: appendExtension('.copy2'))],
       });
       testingOverrides = TestingOverrides(
-        builderDefinitions: [BuilderDefinition('')].build(),
+        builderDefinitions: [BuilderDefinition('b1')].build(),
         readerWriter: readerWriter,
         buildPackages: buildPackages,
         checkBuilderFreshness: false,

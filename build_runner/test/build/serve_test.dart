@@ -61,9 +61,9 @@ void main() {
     test('does basic builds', () async {
       final handler = await createHandler(
         BuilderFactories({
-          '': [(_) => TestBuilder()],
+          'b1': [(_) => TestBuilder()],
         }),
-        [BuilderDefinition('')],
+        [BuilderDefinition('b1')],
         {'a|web/a.txt': 'a'},
         buildPackages,
         readerWriter,
@@ -92,9 +92,9 @@ void main() {
 
       final handler = await createHandler(
         BuilderFactories({
-          '': [(_) => TestBuilder(extraWork: (_, _) => nextBuildBlocker)],
+          'b1': [(_) => TestBuilder(extraWork: (_, _) => nextBuildBlocker)],
         }),
-        [BuilderDefinition('')],
+        [BuilderDefinition('b1')],
         {'a|web/a.txt': 'a'},
         buildPackages,
         readerWriter,

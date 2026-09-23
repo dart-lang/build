@@ -72,6 +72,10 @@ for PKG in ${PKGS}; do
         dart run build_runner build --workspace --force-jit --only-check || EXIT_CODE=$?
         ;;
       command_1)
+        echo '../tool/contract_check.sh'
+        ../tool/contract_check.sh || EXIT_CODE=$?
+        ;;
+      command_2)
         echo '../tool/leak_check.sh'
         ../tool/leak_check.sh || EXIT_CODE=$?
         ;;
