@@ -13,6 +13,7 @@ import 'part_contribution.dart';
 import 'shared_part_accumulator_codec.dart';
 
 /// Accumulates part file contributions and imports across build phases.
+@ContractImport('package:build_runner/src/build/br_outputs.dart')
 @Invariant('libraryId.package.isNotEmpty')
 @Invariant('libraryId.path.isNotEmpty')
 @Invariant('libraryId.sharedPartId != null')

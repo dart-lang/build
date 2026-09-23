@@ -43,6 +43,7 @@ void main() {
   final builderFactories = BuilderFactories(
     {
       '': [(_) => testBuilder],
+      'b1': [(_) => testBuilder],
       'test_builder': [(_) => testBuilder],
     },
     postProcessBuilderFactories: {
@@ -285,13 +286,13 @@ void main() {
       test('one phase, one builder, one-to-many outputs', () async {
         await testPhases(
           BuilderFactories({
-            '': [
+            'b1': [
               (_) => TestBuilder(
                 buildExtensions: appendExtension('.copy', numCopies: 2),
               ),
             ],
           }),
-          [BuilderDefinition('')],
+          [BuilderDefinition('b1')],
           {'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'},
           outputs: {
             'a|web/a.txt.copy.0': 'a',
@@ -390,7 +391,7 @@ void main() {
 
       test('multiple mixed build actions with custom build config', () async {
         final builders = [
-          BuilderDefinition(''),
+          BuilderDefinition('b1'),
           BuilderDefinition(
             'a:clone_txt',
             autoApply: AutoApply.rootPackage,
@@ -408,7 +409,7 @@ void main() {
         await testPhases(
           BuilderFactories(
             {
-              '': [(_) => TestBuilder()],
+              'b1': [(_) => TestBuilder()],
               'a:clone_txt': [
                 (_) => TestBuilder(buildExtensions: appendExtension('.clone')),
               ],
@@ -541,7 +542,7 @@ targets:
       test('pre-existing outputs', () async {
         final result = await testPhases(
           BuilderFactories({
-            '': [
+            'b1': [
               (_) => TestBuilder(
                 buildExtensions: appendExtension('.copy', from: '.txt'),
               ),
@@ -552,7 +553,7 @@ targets:
               ),
             ],
           }),
-          [BuilderDefinition(''), BuilderDefinition('b2')],
+          [BuilderDefinition('b1'), BuilderDefinition('b2')],
           {'a|web/a.txt': 'a', 'a|web/a.txt.copy': 'a'},
           outputs: {'a|web/a.txt.copy': 'a', 'a|web/a.txt.copy.clone': 'a'},
         );
@@ -633,7 +634,7 @@ targets:
       test('does not build artifact tree non-lib assets by default', () async {
         final result = await testPhases(
           builderFactories,
-          [BuilderDefinition('', outputsToArtifactTree: true)],
+          [BuilderDefinition('b1', outputsToArtifactTree: true)],
           {'a|example/a.txt': 'a', 'a|lib/b.txt': 'b'},
           checkBuildStatus: false,
           buildDirs: {BuildDirectory('web')},
@@ -651,7 +652,7 @@ targets:
         () async {
           final result = await testPhases(
             builderFactories,
-            [BuilderDefinition('', outputsToArtifactTree: true)],
+            [BuilderDefinition('b1', outputsToArtifactTree: true)],
             {
               'a|include/a.txt': 'a',
               'a|lib/b.txt': 'b',
@@ -980,7 +981,7 @@ targets:
     test('can build files from one dir when building another dir', () async {
       await testPhases(
         BuilderFactories({
-          '': [(_) => TestBuilder()],
+          'b1': [(_) => TestBuilder()],
           'b2': [
             (_) => TestBuilder(
               buildExtensions: appendExtension('.copy', from: '.txt'),
@@ -995,7 +996,7 @@ targets:
         }),
         [
           BuilderDefinition(
-            '',
+            'b1',
             outputsToArtifactTree: true,
             targetBuilderConfigDefaults: const TargetBuilderConfigDefaults(
               generateFor: InputSet(include: ['test/*.txt']),
@@ -1023,7 +1024,7 @@ targets:
           builderFactories,
           [
             BuilderDefinition(
-              '',
+              'b1',
               outputsToArtifactTree: false,
               targetBuilderConfigDefaults: const TargetBuilderConfigDefaults(
                 generateFor: InputSet(include: ['**/*.txt']),
@@ -1049,7 +1050,7 @@ targets:
           builderFactories,
           [
             BuilderDefinition(
-              '',
+              'b1',
               autoApply: AutoApply.allPackages,
               targetBuilderConfigDefaults: const TargetBuilderConfigDefaults(
                 generateFor: InputSet(include: ['**/*.txt']),
@@ -1089,7 +1090,7 @@ targets:
           builderFactories,
           [
             BuilderDefinition(
-              '',
+              'b1',
               autoApply: AutoApply.allPackages,
               targetBuilderConfigDefaults: const TargetBuilderConfigDefaults(
                 generateFor: InputSet(include: ['**/*.txt']),
@@ -1114,7 +1115,7 @@ targets:
           builderFactories,
           [
             BuilderDefinition(
-              '',
+              'b1',
               autoApply: AutoApply.allPackages,
               targetBuilderConfigDefaults: const TargetBuilderConfigDefaults(
                 generateFor: InputSet(include: ['**/*.txt']),
@@ -1155,7 +1156,7 @@ targets:
           builderFactories,
           [
             BuilderDefinition(
-              '',
+              'b1',
               autoApply: AutoApply.allPackages,
               targetBuilderConfigDefaults: const TargetBuilderConfigDefaults(
                 generateFor: InputSet(include: ['**/*.txt']),
@@ -1265,7 +1266,7 @@ targets:
     group('reportUnusedAssets', () {
       test('removes input dependencies', () async {
         final builderFactories = BuilderFactories({
-          '': [
+          'b1': [
             (_) => TestBuilder(
               buildExtensions: appendExtension('.copy', from: '.txt'),
               // Add two extra deps, but remove one since we decided not to use
@@ -1289,7 +1290,7 @@ targets:
           ],
         });
         final builderDefinitions = [
-          BuilderDefinition('', outputsToArtifactTree: false),
+          BuilderDefinition('b1', outputsToArtifactTree: false),
         ];
 
         // Initial build.
@@ -1349,7 +1350,7 @@ targets:
 
       test('allows marking the primary input as unused', () async {
         final builderFactories = BuilderFactories({
-          '': [
+          'b1': [
             (_) => TestBuilder(
               buildExtensions: appendExtension('.copy', from: '.txt'),
               // Add two extra deps, but remove one since we decided not to use
@@ -1363,7 +1364,7 @@ targets:
           ],
         });
         final builderDefinitions = [
-          BuilderDefinition('', outputsToArtifactTree: false),
+          BuilderDefinition('b1', outputsToArtifactTree: false),
         ];
 
         // Initial build.
@@ -1401,7 +1402,7 @@ targets:
         'marking the primary input as unused still tracks if it is deleted',
         () async {
           final builderFactories = BuilderFactories({
-            '': [
+            'b1': [
               (_) => TestBuilder(
                 buildExtensions: appendExtension('.copy', from: '.txt'),
                 // Add two extra deps, but remove one since we decided not to
@@ -1413,7 +1414,7 @@ targets:
             ],
           });
           final builderDefinitions = [
-            BuilderDefinition('', outputsToArtifactTree: false),
+            BuilderDefinition('b1', outputsToArtifactTree: false),
           ];
           // Initial build.
           final result = await testPhases(
@@ -1438,7 +1439,7 @@ targets:
 
     test('build state/file system get cleaned up for deleted inputs', () async {
       final builderFactories = BuilderFactories({
-        '': [(_) => TestBuilder()],
+        'b1': [(_) => TestBuilder()],
         'b2': [
           (_) => TestBuilder(
             buildExtensions: {
@@ -1448,7 +1449,7 @@ targets:
         ],
       });
       final builderDefinitions = [
-        BuilderDefinition('', outputsToArtifactTree: false),
+        BuilderDefinition('b1', outputsToArtifactTree: false),
         BuilderDefinition('b2', outputsToArtifactTree: false),
       ];
 
@@ -1491,7 +1492,7 @@ targets:
 
     test('no outputs if no changed sources', () async {
       final builderDefinitions = [
-        BuilderDefinition('', outputsToArtifactTree: false),
+        BuilderDefinition('b1', outputsToArtifactTree: false),
       ];
       // Initial build.
       final result = await testPhases(
@@ -1516,7 +1517,7 @@ targets:
       () async {
         final builderDefinitions = [
           BuilderDefinition(
-            '',
+            'b1',
             autoApply: AutoApply.rootPackage,
             outputsToArtifactTree: true,
           ),
@@ -1545,12 +1546,12 @@ targets:
 
     test('inputs/outputs are updated if they change', () async {
       final builderDefinitions = [
-        BuilderDefinition('', outputsToArtifactTree: false),
+        BuilderDefinition('b1', outputsToArtifactTree: false),
       ];
       // Initial build.
       final result = await testPhases(
         BuilderFactories({
-          '': [
+          'b1': [
             (_) => TestBuilder(
               buildExtensions: appendExtension('.copy', from: '.a'),
               build: copyFrom(makeAssetId('a|lib/file.b')),
@@ -1566,7 +1567,7 @@ targets:
       // the builder to read a different file.
       await testPhases(
         BuilderFactories({
-          '': [
+          'b1': [
             (_) => TestBuilder(
               buildExtensions: appendExtension('.copy', from: '.a'),
               build: copyFrom(makeAssetId('a|lib/file.c')),
@@ -1606,7 +1607,7 @@ targets:
 
     test('Ouputs aren\'t rebuilt if their inputs didn\'t change', () async {
       final builderFactories = BuilderFactories({
-        '': [
+        'b1': [
           (_) => TestBuilder(
             buildExtensions: appendExtension('.copy', from: '.a'),
             build: copyFrom(makeAssetId('a|lib/file.b')),
@@ -1619,7 +1620,7 @@ targets:
         ],
       });
       final builderDefinitions = [
-        BuilderDefinition(''),
+        BuilderDefinition('b1'),
         BuilderDefinition('b2'),
       ];
 
@@ -1649,10 +1650,10 @@ targets:
 
     test('no implicit dependency on primary input contents', () async {
       final builderFactories = BuilderFactories({
-        '': [(_) => SiblingCopyBuilder()],
+        'b1': [(_) => SiblingCopyBuilder()],
       });
       final builderDefinitions = [
-        BuilderDefinition('', outputsToArtifactTree: false),
+        BuilderDefinition('b1', outputsToArtifactTree: false),
       ];
 
       // Initial build.
@@ -1696,7 +1697,7 @@ targets:
     test('a failed output on a primary input which is not output in later '
         'builds', () async {
       final builderFactories = BuilderFactories({
-        '': [
+        'b1': [
           (_) => TestBuilder(
             buildExtensions: replaceExtension('.source', '.g1'),
             build: (buildStep, _) async {
@@ -1720,7 +1721,7 @@ targets:
         ],
       });
       final builderDefinitions = [
-        BuilderDefinition(''),
+        BuilderDefinition('b1'),
         BuilderDefinition('b2'),
       ];
       final result = await testPhases(builderFactories, builderDefinitions, {
@@ -1760,7 +1761,7 @@ targets:
 
     test('primary outputs are reran when failures are fixed', () async {
       final builderFactories = BuilderFactories({
-        '': [
+        'b1': [
           (_) => TestBuilder(
             buildExtensions: replaceExtension('.source', '.g1'),
             build: (buildStep, _) async {
@@ -1800,7 +1801,7 @@ targets:
         ],
       });
       final builderDefinitions = [
-        BuilderDefinition('', isOptional: true),
+        BuilderDefinition('b1', isOptional: true),
         BuilderDefinition('b2', isOptional: true),
         BuilderDefinition('b3'),
       ];
@@ -1860,7 +1861,7 @@ targets:
       // https://github.com/dart-lang/build/issues/2017
       final builderFactories = BuilderFactories(
         {
-          '': [
+          'b1': [
             (_) => TestBuilder(
               build: (buildStep, _) {
                 buildStep.findAssets(Glob('**'));
@@ -1874,7 +1875,7 @@ targets:
       );
       final builderDefinitions = [
         BuilderDefinition(
-          '',
+          'b1',
           outputsToArtifactTree: false,
           appliesBuilders: ['a|copy_builder'],
         ),

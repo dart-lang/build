@@ -235,6 +235,7 @@ void main() {
             phaseNumber: 0,
           );
           final stepResult = BuildStepResult((b) {
+            b.result = true;
             b.inArtifactTree = true;
             b.outputs.add(primaryOutputId);
           });
@@ -272,6 +273,7 @@ void main() {
             phaseNumber: 0,
           );
           final stepResult = BuildStepResult((b) {
+            b.result = true;
             b.inArtifactTree = true;
             b.outputs.add(primaryOutputId);
           });
@@ -302,6 +304,7 @@ void main() {
             phaseNumber: 0,
           );
           final stepResult = BuildStepResult((b) {
+            b.result = true;
             b.inArtifactTree = true;
             b.outputs.add(primaryOutputId);
           });
