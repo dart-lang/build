@@ -148,7 +148,10 @@ class WritePartBuilder implements Builder {
 
     // The same strategies apply to a generated part. Start from a clean build
     // so the first build below is the first build that writes the part.
-    tester.write('root_pkg/lib/a.dart', 'class A {}');
+    tester.write(
+      'root_pkg/lib/a.dart',
+      'part \'_br_/a.part.dart\';\nclass A {}',
+    );
     tester.delete('root_pkg/.dart_tool');
 
     // A first build with --keep-modified-outputs writes the part.
