@@ -8,8 +8,13 @@ import 'package:build/build.dart';
 import 'package:crypto/crypto.dart';
 
 import '../build/asset_content.dart';
+import '../contracts.dart';
 
 /// The result of reading an asset from a `BuildOutputReader`.
+@Invariant(
+  'canRead == (unreadableReason == null)',
+  'canRead == (_content != null)',
+)
 class BuildOutputReadResult {
   final AssetId id;
   final UnreadableReason? unreadableReason;

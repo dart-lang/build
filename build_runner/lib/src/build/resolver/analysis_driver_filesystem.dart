@@ -15,6 +15,7 @@ import 'package:build/build.dart' hide Resource;
 import 'package:path/path.dart' as p;
 
 import '../../build_plan/build_inputs.dart';
+import '../../contracts.dart';
 import '../asset_content.dart';
 import '../br_outputs.dart';
 import '../builder_filesystem.dart';
@@ -27,6 +28,7 @@ import 'asset_ids.dart';
 ///
 /// During the build, set [phase] to change the phase that the files are viewed
 /// at.
+@Invariant('_phase >= 0')
 class AnalysisDriverFilesystem
     implements UriResolver, ResourceProvider, FileContentCache {
   late BuilderFilesystem _builderFilesystem;
@@ -47,6 +49,11 @@ class AnalysisDriverFilesystem
   /// A generated file is only visible if it was generated at an earlier phase.
   ///
   /// Records changes due to the phase change in [changedPaths].
+  @Requires(
+    'phase >= 0',
+    'phase <= _builderFilesystem.buildStepPlan.buildStepsByPhase.length',
+  )
+  @Ensures('_phase == phase')
   set phase(int phase) {
     if (phase == _phase) return;
     final previousPhase = _phase;
@@ -189,6 +196,8 @@ class AnalysisDriverFilesystem
   /// Reads the data previously written to [path].
   ///
   /// Throws if ![exists].
+  @Requires('exists(path)')
+  @Ensures('result == _data[path]!.content')
   String read(String path) {
     if (!exists(path)) throw StateError('Read of non-existent file.');
     return _data[path]!.content;
@@ -251,6 +260,8 @@ class AnalysisDriverFilesystem
   /// /<package>/lib/<rest> --> package:<package>/<rest>
   /// /<package>/<rest> --> asset:<package>/<rest>
   /// ```
+  @Requires('path.startsWith("/")')
+  @Ensures('result.isScheme("package") || result.isScheme("asset")')
   @override
   Uri pathToUri(String path) {
     if (!path.startsWith('/')) {
@@ -344,6 +355,10 @@ class AnalysisDriverFilesystem
   Folder? getStateLocation(String pluginId) => throw UnimplementedError();
 }
 
+@Invariant(
+  'path.startsWith("/")',
+  'exists || (content.isEmpty && contentHash.isEmpty && phase == -1)',
+)
 class BuildRunnerFileContent implements FileContent {
   @override
   final String path;

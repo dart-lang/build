@@ -8,10 +8,29 @@ import 'package:built_value/built_value.dart';
 
 import '../build/asset_content.dart';
 import '../build/finished_shared_part.dart';
+import '../contracts.dart';
 
 part 'build_inputs.g.dart';
 
 /// The state of the file system before a build begins.
+@Invariant(
+  '!cleanBuild || retainedOutputContents.isEmpty',
+  '!cleanBuild || updatedSources.isEmpty',
+  '!cleanBuild || deletedSources.isEmpty',
+  '!cleanBuild || invalidOutputs.isEmpty',
+  '!cleanBuild || sharedParts.isEmpty',
+  'sourceContents.keys.every((id) => sources.contains(id))',
+  'retainedOutputContents.keys.every((id) => !sources.contains(id))',
+  'updatedSources.every((id) => sources.contains(id))',
+  'deletedSources.every((id) => !sources.contains(id))',
+  'invalidOutputs.every((id) => !retainedOutputContents.containsKey(id))',
+)
+@Invariant(
+  'sources.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)',
+  'sources.every((id) => !id.isBrOutput)',
+  'sharedParts.keys.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)',
+  'sharedParts.keys.every((id) => id.sharedPartId != null)',
+)
 abstract class BuildInputs implements Built<BuildInputs, BuildInputsBuilder> {
   /// Whether this is a clean build.
   ///

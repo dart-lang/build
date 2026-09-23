@@ -8,6 +8,7 @@ import 'dart:math';
 import 'package:build/build.dart';
 import 'package:graphs/graphs.dart';
 
+import '../../contracts.dart';
 import 'asset_deps.dart';
 import 'asset_deps_loader.dart';
 import 'library_cycle.dart';
@@ -48,6 +49,18 @@ import 'phased_value.dart';
 /// call to any of the methods is still running, provided each newer call is at
 /// an earlier phase. This happens when a load does a read that triggers a build
 /// of a generated file in an earlier phase.
+@Invariant(
+  '_idsToLoad.keys.every((p) => p >= 0)',
+  '_idsToLoad.values.every((ids) => ids.isNotEmpty)',
+  '_graphsToComputeByPhase.keys.every((p) => p >= 0)',
+  '_graphsToComputeByPhase.values.every((ids) => ids.isNotEmpty)',
+  '_runningAtPhases.every((p) => p >= 0)',
+  '_runningAtPhases.length <= 1 || '
+      'Iterable<int>.generate(_runningAtPhases.length - 1).every('
+      '(i) => _runningAtPhases[i] > _runningAtPhases[i + 1])',
+  '_cycles.keys.every((id) => _assetDeps.containsKey(id))',
+  '_graphs.keys.every((id) => _cycles.containsKey(id))',
+)
 class LibraryCycleGraphLoader {
   /// The phases at which evaluation is currently running.
   ///
@@ -98,6 +111,8 @@ class LibraryCycleGraphLoader {
   /// Marks asset with [id] for loading at [phase].
   ///
   /// Any [_load] running at that phase or later will load it.
+  @Requires('phase >= 0')
+  @Ensures('_idsToLoad[phase]!.contains(id)')
   void _loadAtPhase(int phase, AssetId id) {
     (_idsToLoad[phase] ??= []).add(id);
   }
@@ -108,6 +123,7 @@ class LibraryCycleGraphLoader {
   }
 
   /// Whether there are assets to load before or at [upToPhase].
+  @Requires('upToPhase >= 0')
   bool _hasIdToLoad({required int upToPhase}) {
     final first = _idsToLoad.keys.firstOrNull;
     if (first == null) return false;
@@ -125,6 +141,11 @@ class LibraryCycleGraphLoader {
   /// Throws if not [_hasIdToLoad] at [upToPhase].
   ///
   /// When done loading call [_removeIdToLoad] with the phase and ID.
+  @Requires('upToPhase >= 0')
+  @Ensures(
+    r'result.$1 <= upToPhase',
+    r'_idsToLoad[result.$1]!.contains(result.$2)',
+  )
   (int, AssetId) _nextIdToLoad({required int upToPhase}) {
     final first = _idsToLoad.entries.first;
     if (first.key > upToPhase) {
@@ -175,6 +196,10 @@ class LibraryCycleGraphLoader {
   ///
   /// Newly seen assets are noted in [_graphsToComputeByPhase] at phase 0
   /// for further processing by [_buildCycles].
+  @Ensures(
+    '_assetDeps.containsKey(id)',
+    '!_hasIdToLoad(upToPhase: assetDepsLoader.phase)',
+  )
   Future<void> _load(AssetDepsLoader assetDepsLoader, AssetId id) async {
     // Mark [id] as an asset to load at any phase.
     _loadAtPhase(0, id);
@@ -245,6 +270,8 @@ class LibraryCycleGraphLoader {
   /// Graphs which are still not complete--they have one or more assets that
   /// expire after [upToPhase]--are added to [_graphsToComputeByPhase] at
   /// the appropirate phase to be completed later.
+  @Requires('upToPhase >= 0')
+  @Ensures('_graphsToComputeByPhase.keys.every((p) => p > upToPhase)')
   void _buildCycles(int upToPhase) {
     // Process phases that have work to do in ascending order.
     while (true) {
@@ -339,6 +366,11 @@ class LibraryCycleGraphLoader {
   /// cycles in that order.
   ///
   /// A [_graphs] entry will be created for each ID in [newCycles].
+  @Requires('phase >= 0', 'newCycles.every((cycle) => cycle.ids.isNotEmpty)')
+  @Ensures(
+    'newCycles.every((cycle) => '
+    'cycle.ids.every((id) => _graphs.containsKey(id)))',
+  )
   void _buildGraphs(int phase, {required List<LibraryCycle> newCycles}) {
     // Cycles by ID at the current phase.
     final cycleById = <AssetId, LibraryCycle>{};
@@ -426,6 +458,7 @@ class LibraryCycleGraphLoader {
   /// loaded using [assetDepsLoader].
   ///
   /// See class note about recursive calls.
+  @Ensures('!result.isExpiredAt(phase: assetDepsLoader.phase)')
   Future<PhasedValue<LibraryCycle>> libraryCycleOf(
     AssetDepsLoader assetDepsLoader,
     AssetId id,
@@ -459,6 +492,7 @@ class LibraryCycleGraphLoader {
   /// loaded using [assetDepsLoader].
   ///
   /// See class note about recursive calls.
+  @Ensures('!result.isExpiredAt(phase: assetDepsLoader.phase)')
   Future<PhasedValue<LibraryCycleGraph>> libraryCycleGraphOf(
     AssetDepsLoader assetDepsLoader,
     AssetId id,

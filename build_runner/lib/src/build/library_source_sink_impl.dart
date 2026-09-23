@@ -5,10 +5,15 @@
 import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
 
+import '../contracts.dart';
 import 'build_step_impl.dart';
 
 export 'prefix_for_phase.dart';
 
+@Invariant(
+  'importPrefix.isNotEmpty',
+  'languageVersion == null || languageVersion!.isNotEmpty',
+)
 class LibrarySourceSinkImpl implements LibrarySourceSink {
   final BuildStepImpl _buildStep;
   @override
@@ -41,6 +46,7 @@ class LibrarySourceSinkImpl implements LibrarySourceSink {
     if (_buildStep.isComplete) throw BuildStepCompletedException();
   }
 
+  @Requires('uri.isNotEmpty', 'as.isNotEmpty', 'as.startsWith(importPrefix)')
   @override
   void addImport(
     String uri, {

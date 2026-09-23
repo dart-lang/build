@@ -6,12 +6,14 @@ import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:build/build.dart';
 
+import '../../contracts.dart';
 import '../builder_filesystem.dart';
 import 'asset_deps.dart';
 import 'phased_asset_deps.dart';
 import 'phased_value.dart';
 
 /// Loads Dart source assets to [PhasedValue]s of [AssetDeps].
+@Invariant('phase >= 0')
 class AssetDepsLoader {
   static const _ignoredSchemes = ['dart', 'dart-ext'];
 
@@ -26,6 +28,7 @@ class AssetDepsLoader {
   ///
   /// If [id] will be generated at a phase equal to or after [phase], the
   /// result is incomplete, with an expiry phase.
+  @Ensures('!result.isExpiredAt(phase: phase)')
   Future<PhasedValue<AssetDeps>> load(AssetId id) async {
     final content = await _buildFilesystem.readPhased(phase, id);
 
