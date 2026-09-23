@@ -223,14 +223,17 @@ class LibraryCycleGraphLoader {
       );
       _removeIdToLoad(idToLoadPhase, idToLoad);
 
-      if (assetDeps.isComplete) {
-        // "isComplete" means it's a source file or a generated value that has
-        // already been generated, and its deps have been parsed. Mark them
-        // for loading at any phase: if the `_load` that loads them is at a too
-        // early phase to see generated output they will be queued for
-        // processing by a later `_load`.
-        _loadAllAtPhaseZero(assetDeps.lastValue.deps);
-      } else {
+      // Mark deps for loading at any phase: if the `_load` that loads them is
+      // at a too early phase to see generated output they will be queued for
+      // processing by a later `_load`.
+      //
+      // A value with more than one phase, a shared part, can have deps that
+      // are only present at an earlier phase, so take the deps of all phases.
+      for (final value in assetDeps.values) {
+        _loadAllAtPhaseZero(value.value.deps);
+      }
+
+      if (!assetDeps.isComplete) {
         // It's a generated source that has not yet been generated. Mark it for
         // loading later.
         _loadAtPhase(assetDeps.values.last.expiresAfter! + 1, idToLoad);
