@@ -29,4 +29,5 @@ workspace:
 - built_types/built_value_generator
 - built_types/built_value_test
 - example
+- test_infra/_contract_weaver
 - tool
