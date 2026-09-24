@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-/// Annotations for Design by Contract.
+/// Annotations for contract programming.
 ///
 /// These annotations support an unpublished external contract weaver. Because
 /// the weaver and annotations are not published as a package, this file is
@@ -48,7 +48,10 @@ class Requires {
 /// Conditions that must hold when a method returns.
 ///
 /// Clauses are written as for [Requires], with `result` additionally in scope
-/// for the returned value.
+/// for the returned value when there is one. `result` shadows any instance
+/// member of the same name, which can still be referenced as `this.result`.
+/// A value-returning function with [Ensures] must not declare a parameter
+/// named `result`; the weaver will throw.
 ///
 /// A method that throws checks nothing here, because there is no result to
 /// describe.
@@ -82,7 +85,10 @@ class Ensures {
 ///
 /// [type] is the exception class, written as a type literal so that the
 /// analyzer checks it. Clauses are written as for [Requires], with `signal` in
-/// scope for the thrown exception.
+/// scope for the thrown exception. `signal` shadows any instance member of the
+/// same name, which can still be referenced as `this.signal`. The annotated
+/// function must not declare a parameter named `signal`; the weaver will
+/// throw.
 ///
 /// A method that throws something else, or that returns, checks nothing here.
 /// Use one annotation per exception type.
