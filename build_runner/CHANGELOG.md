@@ -30,6 +30,10 @@
 - Bug fix: detect duplicate `--output` directories that are spelled
   differently, for example `build` and `build/`, instead of writing both and
   silently keeping only the last.
+- Bug fix: in watch, serve, and daemon modes, notice a generated file being
+  deleted after a previous build deleted and then rewrote that same file.
+  Previously the delete was mistaken for the build's own earlier delete and
+  ignored, so deleting a generated file no longer forced it to be regenerated.
 
 ## 2.16.1
 
