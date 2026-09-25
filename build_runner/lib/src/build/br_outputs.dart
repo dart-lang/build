@@ -52,6 +52,14 @@ extension AssetIdBrOutputsExtension on AssetId {
     return AssetId(package, p.posix.joinAll(newSegments));
   }
 
+  /// The URI that this library's `part` directive must use to include its
+  /// shared part, or `null` if this is not such a library.
+  String? get sharedPartUri {
+    final partId = sharedPartId;
+    if (partId == null) return null;
+    return p.url.relative(partId.path, from: p.url.dirname(path));
+  }
+
   /// The corresponding library `.dart` AssetId if this is a generated shared
   /// part.
   AssetId? get sharedPartLibraryId {

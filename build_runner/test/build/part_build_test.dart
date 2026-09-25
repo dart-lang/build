@@ -222,10 +222,12 @@ void main() {
     partsTest('updates generated part file correctly', () async {
       final builderFactories = BuilderFactories({
         'a:builder1': [
-          (_) => PartWritingBuilder('content1', 'lib/b.txt', '.b1.dart'),
+          (_) =>
+              PartWritingBuilder('var content1 = 1;', 'lib/b.txt', '.b1.dart'),
         ],
         'a:builder2': [
-          (_) => PartWritingBuilder('content2', 'lib/c.txt', '.b2.dart'),
+          (_) =>
+              PartWritingBuilder('var content2 = 1;', 'lib/c.txt', '.b2.dart'),
         ],
       });
       final builderDefinitions = [
@@ -257,11 +259,11 @@ import 'package:a/b.dart' as $1b;
 
 // === a:builder1/0 contribution.
 // builder saw: initial_b
-content1
+var content1 = 1;
 
 // === a:builder2/1 contribution.
 // builder saw: initial_c
-content2
+var content2 = 1;
 
 ''';
 
@@ -269,7 +271,7 @@ content2
         builderFactories,
         builderDefinitions,
         {
-          'a|lib/a.dart': '',
+          'a|lib/a.dart': 'part \'_br_/a.part.dart\';\n',
           'a|lib/b.txt': 'initial_b',
           'a|lib/c.txt': 'initial_c',
         },
@@ -290,11 +292,11 @@ import 'package:a/b.dart' as $1b;
 
 // === a:builder1/0 contribution.
 // builder saw: modified_b
-content1
+var content1 = 1;
 
 // === a:builder2/1 contribution.
 // builder saw: initial_c
-content2
+var content2 = 1;
 
 ''';
 
@@ -302,7 +304,7 @@ content2
         builderFactories,
         builderDefinitions,
         {
-          'a|lib/a.dart': '',
+          'a|lib/a.dart': 'part \'_br_/a.part.dart\';\n',
           'a|lib/b.txt': 'modified_b',
           'a|lib/c.txt': 'initial_c',
         },
@@ -314,7 +316,8 @@ content2
     partsTest('does not write the part again when nothing changes', () async {
       final builderFactories = BuilderFactories({
         'a:builder1': [
-          (_) => PartWritingBuilder('content1', 'lib/b.txt', '.b1.dart'),
+          (_) =>
+              PartWritingBuilder('var content1 = 1;', 'lib/b.txt', '.b1.dart'),
         ],
       });
       final builderDefinitions = [
@@ -335,11 +338,14 @@ import 'package:a/b.dart' as $0b;
 
 // === a:builder1/0 contribution.
 // builder saw: initial_b
-content1
+var content1 = 1;
 
 ''';
 
-      final sources = {'a|lib/a.dart': '', 'a|lib/b.txt': 'initial_b'};
+      final sources = {
+        'a|lib/a.dart': 'part \'_br_/a.part.dart\';\n',
+        'a|lib/b.txt': 'initial_b',
+      };
 
       final result1 = await testPhases(
         builderFactories,
@@ -364,13 +370,25 @@ content1
       () async {
         final builderFactories = BuilderFactories({
           'a:builder1': [
-            (_) => PartWritingBuilder('content1', 'lib/b.txt', '.b1.dart'),
+            (_) => PartWritingBuilder(
+              'var content1 = 1;',
+              'lib/b.txt',
+              '.b1.dart',
+            ),
           ],
           'a:builder2': [
-            (_) => PartWritingBuilder('content2', 'lib/c.txt', '.b2.dart'),
+            (_) => PartWritingBuilder(
+              'var content2 = 1;',
+              'lib/c.txt',
+              '.b2.dart',
+            ),
           ],
           'a:builder3': [
-            (_) => PartWritingBuilder('content3', 'lib/d.txt', '.b3.dart'),
+            (_) => PartWritingBuilder(
+              'var content3 = 1;',
+              'lib/d.txt',
+              '.b3.dart',
+            ),
           ],
         });
         final builderDefinitions = [
@@ -410,15 +428,15 @@ import 'package:a/b.dart' as $2b;
 
 // === a:builder1/0 contribution.
 // builder saw: b0
-content1
+var content1 = 1;
 
 // === a:builder2/1 contribution.
 // builder saw: c0
-content2
+var content2 = 1;
 
 // === a:builder3/2 contribution.
 // builder saw: d0
-content3
+var content3 = 1;
 
 ''';
 
@@ -426,7 +444,7 @@ content3
           builderFactories,
           builderDefinitions,
           {
-            'a|lib/a.dart': '',
+            'a|lib/a.dart': 'part \'_br_/a.part.dart\';\n',
             'a|lib/b.txt': 'b0',
             'a|lib/c.txt': 'c0',
             'a|lib/d.txt': 'd0',
@@ -451,15 +469,15 @@ import 'package:a/b.dart' as $2b;
 
 // === a:builder1/0 contribution.
 // builder saw: b0
-content1
+var content1 = 1;
 
 // === a:builder2/1 contribution.
 // builder saw: c1_modified
-content2
+var content2 = 1;
 
 // === a:builder3/2 contribution.
 // builder saw: d0
-content3
+var content3 = 1;
 
 ''';
 
@@ -467,7 +485,7 @@ content3
           builderFactories,
           builderDefinitions,
           {
-            'a|lib/a.dart': '',
+            'a|lib/a.dart': 'part \'_br_/a.part.dart\';\n',
             'a|lib/b.txt': 'b0',
             'a|lib/c.txt': 'c1_modified',
             'a|lib/d.txt': 'd0',
@@ -493,15 +511,15 @@ import 'package:a/b.dart' as $2b;
 
 // === a:builder1/0 contribution.
 // builder saw: b2_modified
-content1
+var content1 = 1;
 
 // === a:builder2/1 contribution.
 // builder saw: c1_modified
-content2
+var content2 = 1;
 
 // === a:builder3/2 contribution.
 // builder saw: d2_modified
-content3
+var content3 = 1;
 
 ''';
 
@@ -509,7 +527,7 @@ content3
           builderFactories,
           builderDefinitions,
           {
-            'a|lib/a.dart': '',
+            'a|lib/a.dart': 'part \'_br_/a.part.dart\';\n',
             'a|lib/b.txt': 'b2_modified',
             'a|lib/c.txt': 'c1_modified',
             'a|lib/d.txt': 'd2_modified',
@@ -525,7 +543,8 @@ content3
       () async {
         final builderFactories = BuilderFactories({
           'a:builder1': [
-            (_) => PartWritingBuilder('content', 'lib/b.txt', '.b.dart'),
+            (_) =>
+                PartWritingBuilder('var content = 1;', 'lib/b.txt', '.b.dart'),
           ],
         });
         final builderDefinitions = [
@@ -547,14 +566,17 @@ import 'package:a/b.dart' as $0b;
 
 // === a:builder1/0 contribution.
 // builder saw: b
-content
+var content = 1;
 
 ''';
 
         await testPhases(
           builderFactories,
           builderDefinitions,
-          {'a|lib/a.dart': '// @dart=2.14\n', 'a|lib/b.txt': 'b'},
+          {
+            'a|lib/a.dart': '// @dart=2.14\npart \'_br_/a.part.dart\';\n',
+            'a|lib/b.txt': 'b',
+          },
           outputs: {'a|lib/_br_/a.part.dart': expectedGeneratedPart},
         );
       },
@@ -574,7 +596,7 @@ content
       ];
 
       await testPhases(builderFactories, builderDefinitions, {
-        'a|lib/a.dart': '// @dart=2.14\n',
+        'a|lib/a.dart': '// @dart=2.14\npart \'_br_/a.part.dart\';\n',
       });
     });
 
@@ -582,7 +604,8 @@ content
         'experiment', () async {
       final builderFactories = BuilderFactories({
         'a:builder1': [
-          (_) => PartWritingBuilder('content1', 'lib/b.txt', '.b1.dart'),
+          (_) =>
+              PartWritingBuilder('var content1 = 1;', 'lib/b.txt', '.b1.dart'),
         ],
       });
       final builderDefinitions = [
@@ -615,11 +638,15 @@ content
         'contribution in incremental build', () async {
       final builderFactories = BuilderFactories({
         'a:builder1': [
-          (_) =>
-              PartReadingAndWritingBuilder('content1', 'lib/b.txt', '.b1.dart'),
+          (_) => PartReadingAndWritingBuilder(
+            'var content1 = 1;',
+            'lib/b.txt',
+            '.b1.dart',
+          ),
         ],
         'a:builder2': [
-          (_) => PartWritingBuilder('content2', 'lib/c.txt', '.b2.dart'),
+          (_) =>
+              PartWritingBuilder('var content2 = 1;', 'lib/c.txt', '.b2.dart'),
         ],
       });
       final builderDefinitions = [
@@ -650,11 +677,11 @@ import 'package:a/b.dart' as $1b;
 // === a:builder1/0 contribution.
 // builder saw: initial_b
 // saw later contribution: false
-content1
+var content1 = 1;
 
 // === a:builder2/1 contribution.
 // builder saw: initial_c
-content2
+var content2 = 1;
 
 ''';
 
@@ -662,7 +689,7 @@ content2
         builderFactories,
         builderDefinitions,
         {
-          'a|lib/a.dart': '',
+          'a|lib/a.dart': 'part \'_br_/a.part.dart\';\n',
           'a|lib/b.txt': 'initial_b',
           'a|lib/c.txt': 'initial_c',
         },
@@ -682,11 +709,11 @@ import 'package:a/b.dart' as $1b;
 // === a:builder1/0 contribution.
 // builder saw: modified_b
 // saw later contribution: false
-content1
+var content1 = 1;
 
 // === a:builder2/1 contribution.
 // builder saw: initial_c
-content2
+var content2 = 1;
 
 ''';
 
@@ -694,7 +721,7 @@ content2
         builderFactories,
         builderDefinitions,
         {
-          'a|lib/a.dart': '',
+          'a|lib/a.dart': 'part \'_br_/a.part.dart\';\n',
           'a|lib/b.txt': 'modified_b',
           'a|lib/c.txt': 'initial_c',
         },
@@ -707,11 +734,15 @@ content2
         'in incremental build', () async {
       final builderFactories = BuilderFactories({
         'a:builder1': [
-          (_) => PartWritingBuilder('content1', 'lib/b.txt', '.b1.dart'),
+          (_) =>
+              PartWritingBuilder('var content1 = 1;', 'lib/b.txt', '.b1.dart'),
         ],
         'a:builder2': [
-          (_) =>
-              OptionalPartWritingBuilder('content2', 'lib/c.txt', '.b2.dart'),
+          (_) => OptionalPartWritingBuilder(
+            'var content2 = 1;',
+            'lib/c.txt',
+            '.b2.dart',
+          ),
         ],
       });
       final builderDefinitions = [
@@ -741,11 +772,11 @@ import 'package:a/b.dart' as $1b;
 
 // === a:builder1/0 contribution.
 // builder saw: initial_b
-content1
+var content1 = 1;
 
 // === a:builder2/1 contribution.
 // builder saw: initial_c
-content2
+var content2 = 1;
 
 ''';
 
@@ -753,7 +784,7 @@ content2
         builderFactories,
         builderDefinitions,
         {
-          'a|lib/a.dart': '',
+          'a|lib/a.dart': 'part \'_br_/a.part.dart\';\n',
           'a|lib/b.txt': 'initial_b',
           'a|lib/c.txt': 'initial_c',
         },
@@ -769,14 +800,18 @@ import 'package:a/b.dart' as $0b;
 
 // === a:builder1/0 contribution.
 // builder saw: initial_b
-content1
+var content1 = 1;
 
 ''';
 
       await testPhases(
         builderFactories,
         builderDefinitions,
-        {'a|lib/a.dart': '', 'a|lib/b.txt': 'initial_b', 'a|lib/c.txt': 'skip'},
+        {
+          'a|lib/a.dart': 'part \'_br_/a.part.dart\';\n',
+          'a|lib/b.txt': 'initial_b',
+          'a|lib/c.txt': 'skip',
+        },
         outputs: {'a|lib/_br_/a.part.dart': expectedGeneratedPart2},
         resumeFrom: result1,
       );
@@ -886,7 +921,7 @@ class Class2 {}
         ];
 
         await testPhases(builderFactories, builderDefinitions, {
-          'a|lib/a.dart': '',
+          'a|lib/a.dart': 'part \'_br_/a.part.dart\';\n',
         }, outputs: {});
       },
     );
@@ -905,14 +940,14 @@ class Class2 {}
       ];
 
       await testPhases(builderFactories, builderDefinitions, {
-        'a|lib/a.dart': '',
+        'a|lib/a.dart': 'part \'_br_/a.part.dart\';\n',
       }, outputs: {});
     });
 
     partsTest('_br_ assets are invisible to asset reader calls', () async {
       final builderFactories = BuilderFactories({
         'a:builder1': [
-          (_) => PartWritingBuilder('content', 'lib/b.txt', '.b.dart'),
+          (_) => PartWritingBuilder('var content = 1;', 'lib/b.txt', '.b.dart'),
         ],
         'a:builder2': [(_) => PartVerifyingInvisibilityBuilder()],
       });
@@ -940,14 +975,14 @@ import 'package:a/b.dart' as $0b;
 
 // === a:builder1/0 contribution.
 // builder saw: b
-content
+var content = 1;
 
 ''';
 
       await testPhases(
         builderFactories,
         builderDefinitions,
-        {'a|lib/a.dart': '', 'a|lib/b.txt': 'b'},
+        {'a|lib/a.dart': 'part \'_br_/a.part.dart\';\n', 'a|lib/b.txt': 'b'},
         outputs: {'a|lib/_br_/a.part.dart': expectedGeneratedPart},
       );
     });
@@ -957,7 +992,8 @@ content
       () async {
         final builderFactories = BuilderFactories({
           'a:builder1': [
-            (_) => PartWritingBuilder('content', 'lib/b.txt', '.b.dart'),
+            (_) =>
+                PartWritingBuilder('var content = 1;', 'lib/b.txt', '.b.dart'),
           ],
         });
         final builderDefinitions = [
@@ -978,14 +1014,14 @@ import 'package:a/b.dart' as $0b;
 
 // === a:builder1/0 contribution.
 // builder saw: b
-content
+var content = 1;
 
 ''';
 
         final result = await testPhases(
           builderFactories,
           builderDefinitions,
-          {'a|lib/a.dart': '', 'a|lib/b.txt': 'b'},
+          {'a|lib/a.dart': 'part \'_br_/a.part.dart\';\n', 'a|lib/b.txt': 'b'},
           outputs: {'a|lib/_br_/a.part.dart': expectedGeneratedPart},
         );
 
@@ -1008,10 +1044,12 @@ content
       () async {
         final builderFactories1 = BuilderFactories({
           'a:builder1': [
-            (_) => PartWritingBuilder('content1', 'lib/b.txt', '.b.dart'),
+            (_) =>
+                PartWritingBuilder('var content1 = 1;', 'lib/b.txt', '.b.dart'),
           ],
           'a:builder2': [
-            (_) => PartWritingBuilder('content2', 'lib/c.txt', '.c.dart'),
+            (_) =>
+                PartWritingBuilder('var content2 = 1;', 'lib/c.txt', '.c.dart'),
           ],
         });
         final builderDefinitions1 = [
@@ -1041,25 +1079,30 @@ import 'package:a/b.dart' as $1b;
 
 // === a:builder1/0 contribution.
 // builder saw: b
-content1
+var content1 = 1;
 
 // === a:builder2/1 contribution.
 // builder saw: c
-content2
+var content2 = 1;
 
 ''';
 
         final result = await testPhases(
           builderFactories1,
           builderDefinitions1,
-          {'a|lib/a.dart': '', 'a|lib/b.txt': 'b', 'a|lib/c.txt': 'c'},
+          {
+            'a|lib/a.dart': 'part \'_br_/a.part.dart\';\n',
+            'a|lib/b.txt': 'b',
+            'a|lib/c.txt': 'c',
+          },
           outputs: {'a|lib/_br_/a.part.dart': expectedGeneratedPart1},
         );
 
         // Remove builder2 through a configuration change.
         final builderFactories2 = BuilderFactories({
           'a:builder1': [
-            (_) => PartWritingBuilder('content1', 'lib/b.txt', '.b.dart'),
+            (_) =>
+                PartWritingBuilder('var content1 = 1;', 'lib/b.txt', '.b.dart'),
           ],
         });
         final builderDefinitions2 = [
@@ -1080,7 +1123,7 @@ import 'package:a/b.dart' as $0b;
 
 // === a:builder1/0 contribution.
 // builder saw: b
-content1
+var content1 = 1;
 
 ''';
 
@@ -1100,7 +1143,8 @@ content1
       () async {
         final builderFactories1 = BuilderFactories({
           'a:builder1': [
-            (_) => PartWritingBuilder('content', 'lib/b.txt', '.b.dart'),
+            (_) =>
+                PartWritingBuilder('var content = 1;', 'lib/b.txt', '.b.dart'),
           ],
         });
         final builderDefinitions1 = [
@@ -1121,14 +1165,14 @@ import 'package:a/b.dart' as $0b;
 
 // === a:builder1/0 contribution.
 // builder saw: b
-content
+var content = 1;
 
 ''';
 
         final result = await testPhases(
           builderFactories1,
           builderDefinitions1,
-          {'a|lib/a.dart': '', 'a|lib/b.txt': 'b'},
+          {'a|lib/a.dart': 'part \'_br_/a.part.dart\';\n', 'a|lib/b.txt': 'b'},
           outputs: {'a|lib/_br_/a.part.dart': expectedGeneratedPart},
         );
 
@@ -1159,7 +1203,7 @@ content
         final builderFactories = BuilderFactories({
           'a:builder1': [
             (_) => OptionalPartWritingBuilder(
-              'content1',
+              'var content1 = 1;',
               'lib/skip.txt',
               '.b1.dart',
             ),
@@ -1203,7 +1247,7 @@ class Class1 {
           builderFactories,
           builderDefinitions,
           {
-            'a|lib/a.dart': 'class A {}',
+            'a|lib/a.dart': 'part \'_br_/a.part.dart\';\nclass A {}',
             'a|lib/skip.txt': 'skip',
             'a|lib/b.txt': 'b',
           },
