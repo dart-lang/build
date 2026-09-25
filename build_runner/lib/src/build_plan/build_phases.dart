@@ -16,10 +16,10 @@ import 'phase.dart';
 
 /// The [BuildPhases] defining the sequence of actions in a build, and their
 /// [Digest] and options digests.
+@Invariant('inBuildPhasesOptionsDigests.length == inBuildPhases.length')
 @Invariant(
-  'inBuildPhasesOptionsDigests.length == inBuildPhases.length',
   'postBuildActionsOptionsDigests.length == '
-      'postBuildPhase.builderActions.length',
+  'postBuildPhase.builderActions.length',
 )
 class BuildPhases {
   /// The sequence of actions in the main build.

@@ -13,13 +13,13 @@ import 'glob_id.dart';
 part 'build_step_result.g.dart';
 
 /// Execution results and dependency tracking for a build step.
+@Invariant('hasRun || (outputs.isEmpty && errors.isEmpty)')
+@Invariant('!succeeded || errors.isEmpty')
+@Invariant('outputs.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)')
+@Invariant('inputs.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)')
 @Invariant(
-  'hasRun || (outputs.isEmpty && errors.isEmpty)',
-  '!succeeded || errors.isEmpty',
-  'outputs.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)',
-  'inputs.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)',
   'resolverEntrypoints.every('
-      '(id) => id.package.isNotEmpty && id.path.isNotEmpty)',
+  '(id) => id.package.isNotEmpty && id.path.isNotEmpty)',
 )
 abstract class BuildStepResult
     implements Built<BuildStepResult, BuildStepResultBuilder> {

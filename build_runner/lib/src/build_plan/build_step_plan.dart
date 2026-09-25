@@ -15,15 +15,19 @@ import 'phase.dart';
 part 'build_step_plan.g.dart';
 
 /// Planned build steps for one build and their declared outputs.
+@Invariant('buildStepsByPhase.length == buildPhases.inBuildPhases.length')
 @Invariant(
-  'buildStepsByPhase.length == buildPhases.inBuildPhases.length',
   'buildStepsByDeclaredOutput.values.every('
-      '(step) => step.phaseNumber < buildPhases.inBuildPhases.length)',
+  '(step) => step.phaseNumber < buildPhases.inBuildPhases.length)',
+)
+@Invariant(
   'buildStepsByDeclaredOutput.keys.every('
-      '(id) => id.package.isNotEmpty && id.path.isNotEmpty)',
+  '(id) => id.package.isNotEmpty && id.path.isNotEmpty)',
+)
+@Invariant(
   'declaredOutputsByStep.asMap().entries.every('
-      '(entry) => entry.value.every('
-      '(out) => buildStepsByDeclaredOutput[out] == entry.key))',
+  '(entry) => entry.value.every('
+  '(out) => buildStepsByDeclaredOutput[out] == entry.key))',
 )
 abstract class BuildStepPlan
     implements Built<BuildStepPlan, BuildStepPlanBuilder> {
@@ -153,7 +157,8 @@ abstract class BuildStepPlan
 
   Iterable<AssetId> get declaredOutputs => buildStepsByDeclaredOutput.keys;
 
-  @Requires('id.package.isNotEmpty', 'id.path.isNotEmpty')
+  @Requires('id.package.isNotEmpty')
+  @Requires('id.path.isNotEmpty')
   bool isDeclaredOutput(AssetId id) =>
       buildStepsByDeclaredOutput.containsKey(id);
 
@@ -164,7 +169,8 @@ abstract class BuildStepPlan
   BuildStepId? stepForDeclaredOutputOrNull(AssetId id) =>
       buildStepsByDeclaredOutput[id];
 
-  @Requires('id.package.isNotEmpty', 'id.path.isNotEmpty')
+  @Requires('id.package.isNotEmpty')
+  @Requires('id.path.isNotEmpty')
   Iterable<AssetId> declaredOutputsOf(AssetId id) =>
       declaredOutputsByPrimaryInput[id];
 

@@ -19,8 +19,8 @@ import 'post_process_build_step_result.dart';
 part 'incremental_build_state.g.dart';
 
 /// `BuildState` saved for use in incremental builds.
+@Invariant('sources.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)')
 @Invariant(
-  'sources.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)',
   'digests.keys.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)',
 )
 abstract class IncrementalBuildState

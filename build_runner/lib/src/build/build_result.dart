@@ -14,12 +14,14 @@ import 'library_cycle_graph/phased_asset_deps.dart';
 /// a full build.
 @Invariant(
   'status == BuildStatus.failure ? failureType != null : failureType == null',
-  'status != BuildStatus.success || buildOutputReader != null',
+)
+@Invariant('status != BuildStatus.success || buildOutputReader != null')
+@Invariant(
   'buildState == null || '
-      'outputs.every((id) => '
-      'buildState!.isActualOutput(id) || '
-      'buildState!.isActualPostOutput(id) || '
-      'buildState!.hasSharedPart(id))',
+  'outputs.every((id) => '
+  'buildState!.isActualOutput(id) || '
+  'buildState!.isActualPostOutput(id) || '
+  'buildState!.hasSharedPart(id))',
 )
 class BuildResult {
   /// The status of this build.

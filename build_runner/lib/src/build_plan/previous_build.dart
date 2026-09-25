@@ -35,15 +35,21 @@ part 'previous_build.g.dart';
 /// configuration.
 @Invariant(
   'incrementalState == null || incompatibleBuildOutputsToDelete.isEmpty',
-  'incrementalState == null || buildStepPlan != null',
+)
+@Invariant('incrementalState == null || buildStepPlan != null')
+@Invariant(
   'buildStepPlan == null || '
-      'phaseOptionsChangedList.length == '
-      'buildStepPlan!.buildPhases.inBuildPhases.length',
+  'phaseOptionsChangedList.length == '
+  'buildStepPlan!.buildPhases.inBuildPhases.length',
+)
+@Invariant(
   'buildStepPlan == null || '
-      'postBuildOptionsChangedList.length == '
-      'buildStepPlan!.buildPhases.postBuildPhase.builderActions.length',
+  'postBuildOptionsChangedList.length == '
+  'buildStepPlan!.buildPhases.postBuildPhase.builderActions.length',
+)
+@Invariant(
   'incompatibleBuildOutputsToDelete.every('
-      '(id) => id.package.isNotEmpty && id.path.isNotEmpty)',
+  '(id) => id.package.isNotEmpty && id.path.isNotEmpty)',
 )
 abstract class PreviousBuild
     implements Built<PreviousBuild, PreviousBuildBuilder> {

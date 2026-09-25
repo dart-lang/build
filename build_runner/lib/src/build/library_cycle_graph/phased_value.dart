@@ -45,15 +45,19 @@ part 'phased_value.g.dart';
 ///
 /// TODO(davidmorgan): it might be more efficient to represent the simpler
 /// cases, fixed or changing exactly once, as different implementation types.
+@Invariant('values.isNotEmpty')
 @Invariant(
-  'values.isNotEmpty',
   'values.every((v) => v.expiresAfter == null || v.expiresAfter! >= 0)',
+)
+@Invariant(
   'values.length <= 1 || '
-      'values.take(values.length - 1).every((v) => v.expiresAfter != null)',
+  'values.take(values.length - 1).every((v) => v.expiresAfter != null)',
+)
+@Invariant(
   'values.length <= 1 || '
-      'Iterable<int>.generate(values.length - 1).every((i) => '
-      'values[i + 1].expiresAfter == null || '
-      'values[i].expiresAfter! < values[i + 1].expiresAfter!)',
+  'Iterable<int>.generate(values.length - 1).every((i) => '
+  'values[i + 1].expiresAfter == null || '
+  'values[i].expiresAfter! < values[i + 1].expiresAfter!)',
 )
 abstract class PhasedValue<T>
     implements Built<PhasedValue<T>, PhasedValueBuilder<T>> {

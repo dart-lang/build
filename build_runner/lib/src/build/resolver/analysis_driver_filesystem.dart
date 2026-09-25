@@ -49,8 +49,8 @@ class AnalysisDriverFilesystem
   /// A generated file is only visible if it was generated at an earlier phase.
   ///
   /// Records changes due to the phase change in [changedPaths].
+  @Requires('phase >= 0')
   @Requires(
-    'phase >= 0',
     'phase <= _builderFilesystem.buildStepPlan.buildStepsByPhase.length',
   )
   @Ensures('_phase == phase')
@@ -355,10 +355,8 @@ class AnalysisDriverFilesystem
   Folder? getStateLocation(String pluginId) => throw UnimplementedError();
 }
 
-@Invariant(
-  'path.startsWith("/")',
-  'exists || (content.isEmpty && contentHash.isEmpty && phase == -1)',
-)
+@Invariant('path.startsWith("/")')
+@Invariant('exists || (content.isEmpty && contentHash.isEmpty && phase == -1)')
 class BuildRunnerFileContent implements FileContent {
   @override
   final String path;

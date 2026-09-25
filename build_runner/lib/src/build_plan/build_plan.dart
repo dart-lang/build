@@ -31,14 +31,20 @@ part 'build_plan.g.dart';
 /// Options and derived configuration for a build.
 @Invariant(
   'conflictingOutputs.every((file) => '
-      'buildSpec.buildPackages.outputPackages.contains(file.id.package))',
-  'buildStepPlan.buildPhases.digest == buildSpec.buildPhases.digest',
+  'buildSpec.buildPackages.outputPackages.contains(file.id.package))',
+)
+@Invariant('buildStepPlan.buildPhases.digest == buildSpec.buildPhases.digest')
+@Invariant(
   'previousBuild.incompatibleBuildOutputsToDelete.every('
-      '(id) => buildSpec.buildPackages.outputPackages.contains(id.package))',
+  '(id) => buildSpec.buildPackages.outputPackages.contains(id.package))',
+)
+@Invariant(
   'previousBuild.phaseOptionsChangedList.length == '
-      'buildStepPlan.buildPhases.inBuildPhases.length',
+  'buildStepPlan.buildPhases.inBuildPhases.length',
+)
+@Invariant(
   'previousBuild.postBuildOptionsChangedList.length == '
-      'buildStepPlan.buildPhases.postBuildPhase.builderActions.length',
+  'buildStepPlan.buildPhases.postBuildPhase.builderActions.length',
 )
 abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
   BuildSpec get buildSpec;

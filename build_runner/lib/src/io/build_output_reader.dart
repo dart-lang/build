@@ -26,10 +26,14 @@ import 'reader_writer.dart';
 /// returned directly from disk with no caching.
 @Invariant(
   '_sourcesConsumedOutsideBuild.every((id) => buildState.isSource(id))',
+)
+@Invariant(
   '_sourcesConsumedOutsideBuild.every('
-      '(id) => !buildStepPlan.isDeclaredOutput(id))',
+  '(id) => !buildStepPlan.isDeclaredOutput(id))',
+)
+@Invariant(
   '_sourcesConsumedOutsideBuild.every('
-      '(id) => !buildState.isActualPostOutput(id))',
+  '(id) => !buildState.isActualPostOutput(id))',
 )
 class BuildOutputReader {
   final BuildPackages buildPackages;
@@ -66,7 +70,8 @@ class BuildOutputReader {
     required this.buildState,
   });
 
-  @Requires('id.package.isNotEmpty', 'id.path.isNotEmpty')
+  @Requires('id.package.isNotEmpty')
+  @Requires('id.path.isNotEmpty')
   String pathFor(AssetId id) {
     return readerWriter.assetPathProvider.pathFor(
       id,
@@ -119,7 +124,8 @@ class BuildOutputReader {
   }
 
   /// Reads [id] from the build output, returning a [BuildOutputReadResult].
-  @Requires('id.package.isNotEmpty', 'id.path.isNotEmpty')
+  @Requires('id.package.isNotEmpty')
+  @Requires('id.path.isNotEmpty')
   Future<BuildOutputReadResult> read(AssetId id) async {
     final reason = await _unreadableReason(id);
     if (reason != null) {
@@ -140,7 +146,8 @@ class BuildOutputReader {
     return BuildOutputReadResult.available(id, AssetContent.bytes(bytes));
   }
 
-  @Requires('id.package.isNotEmpty', 'id.path.isNotEmpty')
+  @Requires('id.package.isNotEmpty')
+  @Requires('id.path.isNotEmpty')
   Future<bool> canRead(AssetId id) async =>
       (await _unreadableReason(id)) == null;
 

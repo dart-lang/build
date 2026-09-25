@@ -11,14 +11,16 @@ import '../io/filesystem.dart';
 import 'build_state/glob_id.dart';
 
 /// Records inputs for a `BuildStep`.
+@Invariant('_inputs.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)')
 @Invariant(
-  '_inputs.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)',
   '_resolverEntrypoints.every('
-      '(id) => id.package.isNotEmpty && id.path.isNotEmpty)',
-  'primaryInput == null || '
-      '(primaryInput!.package.isNotEmpty && primaryInput!.path.isNotEmpty)',
-  'builderLabel == null || builderLabel!.isNotEmpty',
+  '(id) => id.package.isNotEmpty && id.path.isNotEmpty)',
 )
+@Invariant(
+  'primaryInput == null || '
+  '(primaryInput!.package.isNotEmpty && primaryInput!.path.isNotEmpty)',
+)
+@Invariant('builderLabel == null || builderLabel!.isNotEmpty')
 class InputTracker {
   /// If set, when an `InputTracker` is instantiated it is stored in
   /// `inputTrackers`.
@@ -48,11 +50,13 @@ class InputTracker {
     }
   }
 
-  @Requires('input.package.isNotEmpty', 'input.path.isNotEmpty')
+  @Requires('input.package.isNotEmpty')
+  @Requires('input.path.isNotEmpty')
   @Ensures('inputs.contains(input)')
   void add(AssetId input) => _inputs.add(input);
 
-  @Requires('graph.package.isNotEmpty', 'graph.path.isNotEmpty')
+  @Requires('graph.package.isNotEmpty')
+  @Requires('graph.path.isNotEmpty')
   @Ensures('resolverEntrypoints.contains(graph)')
   void addResolverEntrypoint(AssetId graph) => _resolverEntrypoints.add(graph);
 
@@ -62,11 +66,9 @@ class InputTracker {
   Set<AssetId> get resolverEntrypoints => _resolverEntrypoints;
   Set<GlobId> get globsEvaluated => _globsEvaluated;
 
-  @Ensures(
-    'inputs.isEmpty',
-    'resolverEntrypoints.isEmpty',
-    'globsEvaluated.isEmpty',
-  )
+  @Ensures('inputs.isEmpty')
+  @Ensures('resolverEntrypoints.isEmpty')
+  @Ensures('globsEvaluated.isEmpty')
   void clear() {
     _inputs.clear();
     _resolverEntrypoints.clear();

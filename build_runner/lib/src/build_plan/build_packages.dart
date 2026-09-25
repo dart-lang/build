@@ -23,14 +23,12 @@ import 'placeholders.dart';
 final _sdkPackage = BuildPackage(name: r'$sdk', path: sdkPath);
 
 /// The [BuildPackage]s in the build.
-@Invariant(
-  'currentPackage.isNotEmpty',
-  'outputRoot.isNotEmpty',
-  'packages.isNotEmpty',
-  'packages.containsKey(currentPackage)',
-  'outputPackages.isNotEmpty',
-  'outputPackages.every((p) => packages.containsKey(p))',
-)
+@Invariant('currentPackage.isNotEmpty')
+@Invariant('outputRoot.isNotEmpty')
+@Invariant('packages.isNotEmpty')
+@Invariant('packages.containsKey(currentPackage)')
+@Invariant('outputPackages.isNotEmpty')
+@Invariant('outputPackages.every((p) => packages.containsKey(p))')
 class BuildPackages implements AssetPathProvider {
   /// All packages by package name.
   final BuiltMap<String, BuildPackage> packages;
@@ -100,12 +98,14 @@ class BuildPackages implements AssetPathProvider {
   }) : _transitiveDependencies = transitiveDependencies,
        _peerPackages = buildPackages;
 
+  @Requires('currentPackage.isNotEmpty')
+  @Requires('outputRoot.isNotEmpty')
+  @Requires('packages.containsKey(currentPackage)')
   @Requires(
-    'currentPackage.isNotEmpty',
-    'outputRoot.isNotEmpty',
-    'packages.containsKey(currentPackage)',
     'singlePackageToBuild == null || '
-        'packages.containsKey(singlePackageToBuild)',
+    'packages.containsKey(singlePackageToBuild)',
+  )
+  @Requires(
     'singlePackageToBuild == null || packages[singlePackageToBuild]!.isOutput',
   )
   factory BuildPackages.compute({

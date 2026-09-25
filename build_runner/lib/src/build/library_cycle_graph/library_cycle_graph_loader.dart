@@ -49,18 +49,18 @@ import 'phased_value.dart';
 /// call to any of the methods is still running, provided each newer call is at
 /// an earlier phase. This happens when a load does a read that triggers a build
 /// of a generated file in an earlier phase.
+@Invariant('_idsToLoad.keys.every((p) => p >= 0)')
+@Invariant('_idsToLoad.values.every((ids) => ids.isNotEmpty)')
+@Invariant('_graphsToComputeByPhase.keys.every((p) => p >= 0)')
+@Invariant('_graphsToComputeByPhase.values.every((ids) => ids.isNotEmpty)')
+@Invariant('_runningAtPhases.every((p) => p >= 0)')
 @Invariant(
-  '_idsToLoad.keys.every((p) => p >= 0)',
-  '_idsToLoad.values.every((ids) => ids.isNotEmpty)',
-  '_graphsToComputeByPhase.keys.every((p) => p >= 0)',
-  '_graphsToComputeByPhase.values.every((ids) => ids.isNotEmpty)',
-  '_runningAtPhases.every((p) => p >= 0)',
   '_runningAtPhases.length <= 1 || '
-      'Iterable<int>.generate(_runningAtPhases.length - 1).every('
-      '(i) => _runningAtPhases[i] > _runningAtPhases[i + 1])',
-  '_cycles.keys.every((id) => _assetDeps.containsKey(id))',
-  '_graphs.keys.every((id) => _cycles.containsKey(id))',
+  'Iterable<int>.generate(_runningAtPhases.length - 1).every('
+  '(i) => _runningAtPhases[i] > _runningAtPhases[i + 1])',
 )
+@Invariant('_cycles.keys.every((id) => _assetDeps.containsKey(id))')
+@Invariant('_graphs.keys.every((id) => _cycles.containsKey(id))')
 class LibraryCycleGraphLoader {
   /// The phases at which evaluation is currently running.
   ///
@@ -142,10 +142,8 @@ class LibraryCycleGraphLoader {
   ///
   /// When done loading call [_removeIdToLoad] with the phase and ID.
   @Requires('upToPhase >= 0')
-  @Ensures(
-    r'result.$1 <= upToPhase',
-    r'_idsToLoad[result.$1]!.contains(result.$2)',
-  )
+  @Ensures(r'result.$1 <= upToPhase')
+  @Ensures(r'_idsToLoad[result.$1]!.contains(result.$2)')
   (int, AssetId) _nextIdToLoad({required int upToPhase}) {
     final first = _idsToLoad.entries.first;
     if (first.key > upToPhase) {
@@ -196,10 +194,8 @@ class LibraryCycleGraphLoader {
   ///
   /// Newly seen assets are noted in [_graphsToComputeByPhase] at phase 0
   /// for further processing by [_buildCycles].
-  @Ensures(
-    '_assetDeps.containsKey(id)',
-    '!_hasIdToLoad(upToPhase: assetDepsLoader.phase)',
-  )
+  @Ensures('_assetDeps.containsKey(id)')
+  @Ensures('!_hasIdToLoad(upToPhase: assetDepsLoader.phase)')
   Future<void> _load(AssetDepsLoader assetDepsLoader, AssetId id) async {
     // Mark [id] as an asset to load at any phase.
     _loadAtPhase(0, id);
@@ -366,7 +362,8 @@ class LibraryCycleGraphLoader {
   /// cycles in that order.
   ///
   /// A [_graphs] entry will be created for each ID in [newCycles].
-  @Requires('phase >= 0', 'newCycles.every((cycle) => cycle.ids.isNotEmpty)')
+  @Requires('phase >= 0')
+  @Requires('newCycles.every((cycle) => cycle.ids.isNotEmpty)')
   @Ensures(
     'newCycles.every((cycle) => '
     'cycle.ids.every((id) => _graphs.containsKey(id)))',

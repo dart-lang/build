@@ -11,11 +11,9 @@ import '../../contracts.dart';
 part 'build_step_id.g.dart';
 
 /// Unique ID for a build step.
-@Invariant(
-  'primaryInput.package.isNotEmpty',
-  'primaryInput.path.isNotEmpty',
-  'phaseNumber >= 0',
-)
+@Invariant('primaryInput.package.isNotEmpty')
+@Invariant('primaryInput.path.isNotEmpty')
+@Invariant('phaseNumber >= 0')
 abstract class BuildStepId implements Built<BuildStepId, BuildStepIdBuilder> {
   static Serializer<BuildStepId> get serializer => _$buildStepIdSerializer;
 
