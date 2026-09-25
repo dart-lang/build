@@ -16,6 +16,7 @@ import '../build_plan/build_packages.dart';
 import '../build_plan/build_target.dart';
 import '../build_plan/previous_build.dart';
 import '../constants.dart';
+import '../contracts.dart';
 import '../logging/timed_activities.dart';
 import 'reader_writer.dart';
 
@@ -42,6 +43,9 @@ class AssetTracker {
 
   /// Returns all assets found on disk: both package path files and artifact
   /// tree files.
+  @Ensures(
+    'result.every((f) => f.id.package.isNotEmpty && f.id.path.isNotEmpty)',
+  )
   Future<Set<AssetFile>> findFiles() async {
     final inputSources = await findInputSources();
     final artifactTreeFiles = await findArtifactTreeFiles();
@@ -52,10 +56,12 @@ class AssetTracker {
   }
 
   /// Returns all the assets found in the artifact tree.
+  @Ensures('result.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)')
   Future<Set<AssetId>> findArtifactTreeFiles() =>
       _listArtifactTreeAssetIds().toSet();
 
   /// Returns the set of original package inputs on disk.
+  @Ensures('result.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)')
   Future<Set<AssetId>> findInputSources() {
     final targets = Stream<BuildTarget>.fromIterable(
       _buildConfigs.buildTargets.values,
@@ -68,6 +74,12 @@ class AssetTracker {
   /// Finds the asset changes which have happened while unwatched between builds
   /// by taking a difference between the assets in the previous build and the
   /// assets on disk.
+  @Ensures(
+    'result.entries.every((e) => '
+    '(e.value == ChangeType.ADD && diskFiles.contains(e.key)) || '
+    '(e.value == ChangeType.REMOVE && !diskFiles.contains(e.key)) || '
+    '(e.value == ChangeType.MODIFY && diskFiles.contains(e.key)))',
+  )
   Future<Map<AssetFile, ChangeType>> computeSourceUpdates(
     Set<AssetFile> diskFiles,
     PreviousBuild previousBuild,

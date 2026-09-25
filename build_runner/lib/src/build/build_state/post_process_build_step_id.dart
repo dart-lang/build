@@ -6,10 +6,15 @@ import 'package:build/build.dart' hide Builder;
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
+import '../../contracts.dart';
+
 part 'post_process_build_step_id.g.dart';
 
 /// Identifies a `PostProcessBuildStep` within a build: the application of a
 /// `PostProcessBuilder` to one input.
+@Invariant('input.package.isNotEmpty')
+@Invariant('input.path.isNotEmpty')
+@Invariant('actionNumber >= 0')
 abstract class PostProcessBuildStepId
     implements Built<PostProcessBuildStepId, PostProcessBuildStepIdBuilder> {
   static Serializer<PostProcessBuildStepId> get serializer =>

@@ -12,6 +12,7 @@ import '../build/build_state/finished_build_state.dart';
 import '../build/library_cycle_graph/phased_asset_deps.dart';
 import '../build/shared_part_accumulator.dart';
 import '../constants.dart';
+import '../contracts.dart';
 import '../exceptions.dart';
 import '../io/asset_tracker.dart';
 import '../io/reader_writer.dart';
@@ -28,6 +29,23 @@ import 'previous_build.dart';
 part 'build_plan.g.dart';
 
 /// Options and derived configuration for a build.
+@Invariant(
+  'conflictingOutputs.every((file) => '
+  'buildSpec.buildPackages.outputPackages.contains(file.id.package))',
+)
+@Invariant('buildStepPlan.buildPhases.digest == buildSpec.buildPhases.digest')
+@Invariant(
+  'previousBuild.incompatibleBuildOutputsToDelete.every('
+  '(id) => buildSpec.buildPackages.outputPackages.contains(id.package))',
+)
+@Invariant(
+  'previousBuild.phaseOptionsChangedList.length == '
+  'buildStepPlan.buildPhases.inBuildPhases.length',
+)
+@Invariant(
+  'previousBuild.postBuildOptionsChangedList.length == '
+  'buildStepPlan.buildPhases.postBuildPhase.builderActions.length',
+)
 abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
   BuildSpec get buildSpec;
   PreviousBuild get previousBuild;

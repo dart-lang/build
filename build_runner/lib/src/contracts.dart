@@ -8,143 +8,66 @@
 /// the weaver and annotations are not published as a package, this file is
 /// copied into each codebase that uses them.
 ///
-/// Clauses are Dart expressions written as strings. They run only in a
-/// contracts build, where the weaver rewrites them into executable checks in a
-/// staged copy of the package. In normal builds they are inert `const`
-/// annotations, so a rename that invalidates a clause is not a compile error
-/// until the weaver runs.
+/// Each annotation holds one clause, a Dart expression written as a string.
+/// Repeat the annotation for more clauses; every clause must hold, and they
+/// are checked in order.
+///
+/// Clauses run only in a contracts build, where the weaver rewrites them into
+/// executable checks in a staged copy of the package. In normal builds they
+/// are inert `const` annotations, so a rename that invalidates a clause is not
+/// a compile error until the weaver runs.
 library;
 
-/// Conditions that must hold when a method is called.
+/// A condition that must hold when a method is called.
 ///
-/// A clause may use anything in scope where the method starts, including its
-/// parameters and `this`. Every clause must hold, so the list reads as "and".
+/// The clause may use anything in scope where the method starts, including
+/// its parameters and `this`.
 class Requires {
-  final String c1;
-  final String? c2;
-  final String? c3;
-  final String? c4;
-  final String? c5;
-  final String? c6;
-  final String? c7;
-  final String? c8;
-  final String? c9;
-  final String? c10;
+  final String clause;
 
-  const Requires(
-    this.c1, [
-    this.c2,
-    this.c3,
-    this.c4,
-    this.c5,
-    this.c6,
-    this.c7,
-    this.c8,
-    this.c9,
-    this.c10,
-  ]);
+  const Requires(this.clause);
 }
 
-/// Conditions that must hold when a method returns.
+/// A condition that must hold when a method returns.
 ///
-/// Clauses are written as for [Requires], with `result` additionally in scope
-/// for the returned value when there is one. `result` shadows any instance
-/// member of the same name, which can still be referenced as `this.result`.
-/// A value-returning function with [Ensures] must not declare a parameter
-/// named `result`; the weaver will throw.
+/// The clause is written as for [Requires], with `result` additionally in
+/// scope for the returned value when there is one. `result` shadows any
+/// instance member of the same name, which can still be referenced as
+/// `this.result`. A value-returning function with [Ensures] must not declare a
+/// parameter named `result`; the weaver will throw.
 ///
 /// A method that throws checks nothing here, because there is no result to
 /// describe.
 class Ensures {
-  final String c1;
-  final String? c2;
-  final String? c3;
-  final String? c4;
-  final String? c5;
-  final String? c6;
-  final String? c7;
-  final String? c8;
-  final String? c9;
-  final String? c10;
+  final String clause;
 
-  const Ensures(
-    this.c1, [
-    this.c2,
-    this.c3,
-    this.c4,
-    this.c5,
-    this.c6,
-    this.c7,
-    this.c8,
-    this.c9,
-    this.c10,
-  ]);
+  const Ensures(this.clause);
 }
 
-/// Conditions that must hold when a method throws.
+/// A condition that must hold when a method throws [type].
 ///
 /// [type] is the exception class, written as a type literal so that the
-/// analyzer checks it. Clauses are written as for [Requires], with `signal` in
-/// scope for the thrown exception. `signal` shadows any instance member of the
-/// same name, which can still be referenced as `this.signal`. The annotated
-/// function must not declare a parameter named `signal`; the weaver will
-/// throw.
+/// analyzer checks it. The clause is written as for [Requires], with `signal`
+/// in scope for the thrown exception. `signal` shadows any instance member of
+/// the same name, which can still be referenced as `this.signal`. The
+/// annotated function must not declare a parameter named `signal`; the weaver
+/// will throw.
 ///
 /// A method that throws something else, or that returns, checks nothing here.
-/// Use one annotation per exception type.
 class ThrowEnsures {
   final Type type;
-  final String c1;
-  final String? c2;
-  final String? c3;
-  final String? c4;
-  final String? c5;
-  final String? c6;
-  final String? c7;
-  final String? c8;
-  final String? c9;
+  final String clause;
 
-  const ThrowEnsures(
-    this.type,
-    this.c1, [
-    this.c2,
-    this.c3,
-    this.c4,
-    this.c5,
-    this.c6,
-    this.c7,
-    this.c8,
-    this.c9,
-  ]);
+  const ThrowEnsures(this.type, this.clause);
 }
 
-/// Conditions that must hold whenever an instance is at rest.
+/// A condition that must hold whenever an instance is at rest.
 ///
-/// Clauses are written as for [Requires]. They are checked on entry to and
-/// exit from every public instance method, so they may be false while such a
-/// method is running.
+/// The clause is written as for [Requires]. It is checked on entry to and exit
+/// from every public instance method, so it may be false while such a method
+/// is running.
 class Invariant {
-  final String c1;
-  final String? c2;
-  final String? c3;
-  final String? c4;
-  final String? c5;
-  final String? c6;
-  final String? c7;
-  final String? c8;
-  final String? c9;
-  final String? c10;
+  final String clause;
 
-  const Invariant(
-    this.c1, [
-    this.c2,
-    this.c3,
-    this.c4,
-    this.c5,
-    this.c6,
-    this.c7,
-    this.c8,
-    this.c9,
-    this.c10,
-  ]);
+  const Invariant(this.clause);
 }

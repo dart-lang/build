@@ -10,6 +10,7 @@ import 'package:meta/meta.dart';
 import '../../build_plan/build_phases.dart';
 import '../../build_plan/build_step_plan.dart';
 import '../../build_plan/phase.dart';
+import '../../contracts.dart';
 import '../asset_content.dart';
 import '../br_outputs.dart';
 import '../finished_shared_part.dart';
@@ -32,6 +33,14 @@ import 'post_process_build_step_result.dart';
 /// - Glob results.
 /// - Build step results.
 /// - Post process build step results.
+@Invariant(
+  '_partData.keys.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)',
+)
+@Invariant('_partData.keys.every((id) => id.sharedPartId != null)')
+@Invariant(
+  '_librariesWithRebuiltPart.every('
+  '(id) => id.package.isNotEmpty && id.path.isNotEmpty)',
+)
 class BuildState {
   /// The planned build steps for this build.
   final BuildStepPlan buildStepPlan;
@@ -68,6 +77,15 @@ class BuildState {
   /// what this build writes.
   final Set<AssetId> _librariesWithRebuiltPart = {};
 
+  @Ensures('_sources.every((id) => !buildStepPlan.isDeclaredOutput(id))')
+  @Ensures('_sources.every((id) => !id.isBrOutput)')
+  @Ensures(
+    '_contents.keys.every((id) => '
+    'isSource(id) || '
+    'isActualOutput(id) || '
+    'isActualPostOutput(id) || '
+    'id.isBrOutput)',
+  )
   BuildState({
     required this.buildStepPlan,
     required Map<AssetId, AssetContent?> sources,
@@ -166,6 +184,9 @@ class BuildState {
   /// Updates a source file content.
   ///
   /// Throws if not a source.
+  @Ensures('isSource(id)')
+  @Ensures('_contents[id] == content')
+  @ThrowEnsures(StateError, '!isSource(id)')
   void updateSourceContent(AssetId id, AssetContent content) {
     if (!isSource(id)) {
       throw StateError('Tried to update content of non-source $id.');
@@ -255,6 +276,10 @@ class BuildState {
   ///
   /// Throws if [contents] does not have keys matching outputs of [result],
   /// or if [step] has already been recorded.
+  @Requires('step.phaseNumber >= 0')
+  @Ensures('result.outputs.every((id) => buildStepPlan.isDeclaredOutput(id))')
+  @Ensures('contents.keys.every((id) => _contents.containsKey(id))')
+  @ThrowEnsures(StateError, 'stepResultOrNull(step) != null')
   void addBuildStepResult({
     required BuildStepId step,
     required BuildStepResult result,
@@ -331,6 +356,11 @@ class BuildState {
   ///
   /// The contribution supersedes whatever the previous build wrote, so the
   /// part is marked rebuilt.
+  @Requires('libraryId.package.isNotEmpty')
+  @Requires('libraryId.path.isNotEmpty')
+  @Requires('libraryId.sharedPartId != null')
+  @Requires('phase >= 0')
+  @Requires('contribution.builderKey.isNotEmpty')
   void addPartContribution({
     required AssetId libraryId,
     required int phase,
@@ -354,6 +384,10 @@ class BuildState {
   /// reproduces what the previous build already wrote, so that content is
   /// still correct and is kept rather than written again. Marking it rebuilt
   /// would report the part as an output of this build.
+  @Requires('phase >= 0')
+  @Requires('fromPart == null || libraryId.package.isNotEmpty')
+  @Requires('fromPart == null || libraryId.path.isNotEmpty')
+  @Requires('fromPart == null || libraryId.sharedPartId != null')
   void copyPartContribution({
     required FinishedSharedPart? fromPart,
     required AssetId libraryId,
@@ -394,6 +428,13 @@ class BuildState {
   ///
   /// Throws if [contents] does not have keys matching outputs of [result],
   /// or if [step] has already been recorded.
+  @Requires('step.actionNumber >= 0')
+  @Ensures(
+    'result.outputs.every((id) => '
+    '!isSource(id) && !buildStepPlan.isDeclaredOutput(id))',
+  )
+  @Ensures('contents.keys.every((id) => _contents.containsKey(id))')
+  @ThrowEnsures(StateError, 'postProcessBuildStepResultFor(step) != null')
   void addPostProcessBuildStepResult({
     required PostProcessBuildStepId step,
     required PostProcessBuildStepResult result,
@@ -466,6 +507,10 @@ class BuildState {
   // -- Testing.
 
   @visibleForTesting
+  @Requires('id.package.isNotEmpty')
+  @Requires('id.path.isNotEmpty')
+  @Requires('!buildStepPlan.isDeclaredOutput(id)')
+  @Requires('!id.isBrOutput')
   void addSourceForTest(AssetId id, {AssetContent? content}) {
     _sources.add(id);
     if (content != null) {

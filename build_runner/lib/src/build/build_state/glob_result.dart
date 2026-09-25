@@ -8,9 +8,14 @@ import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 import 'package:crypto/crypto.dart';
 
+import '../../contracts.dart';
+
 part 'glob_result.g.dart';
 
 /// Execution results and dependency tracking for a glob evaluation.
+@Invariant('results.every((id) => inputs.contains(id))')
+@Invariant('inputs.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)')
+@Invariant('results.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)')
 abstract class GlobResult implements Built<GlobResult, GlobResultBuilder> {
   static Serializer<GlobResult> get serializer => _$globResultSerializer;
 

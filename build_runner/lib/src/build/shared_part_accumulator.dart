@@ -6,12 +6,31 @@ import 'package:build/build.dart' hide Builder;
 import 'package:built_collection/built_collection.dart';
 import 'package:dart_style/dart_style.dart';
 
+import '../contracts.dart';
 import 'asset_content.dart';
 import 'finished_shared_part.dart';
 import 'part_contribution.dart';
 import 'shared_part_accumulator_codec.dart';
 
 /// Accumulates part file contributions and imports across build phases.
+@Invariant('libraryId.package.isNotEmpty')
+@Invariant('libraryId.path.isNotEmpty')
+@Invariant('libraryId.sharedPartId != null')
+@Invariant('languageVersion == null || languageVersion!.isNotEmpty')
+// Every recorded phase must survive a write and read of the shared part
+// file. A phase with neither imports nor a contribution writes nothing, so
+// reading the file back loses it, and `contentAt` then returns null where it
+// previously returned content.
+@Invariant(
+  'contributions.values.every((c) => '
+  'c.contribution.isNotEmpty || c.imports.isNotEmpty)',
+)
+// Imports are written and read back one per line, so an import containing a
+// newline would come back as two imports.
+@Invariant(
+  r'contributions.values.every((c) => '
+  r'c.imports.every((i) => !i.contains("\n")))',
+)
 class SharedPartAccumulator {
   /// The library that this part is for.
   final AssetId libraryId;
@@ -27,6 +46,10 @@ class SharedPartAccumulator {
 
   SharedPartAccumulator(this.libraryId, this.languageVersion);
 
+  @Requires('phase >= 0')
+  @Requires('contribution.builderKey.isNotEmpty')
+  @Requires('contributions.keys.every((p) => p <= phase)')
+  @ThrowEnsures(StateError, 'contributions.containsKey(phase)')
   void addContribution(int phase, PartContribution contribution) {
     if (_contributions[phase] != null) {
       throw StateError('Contribution for phase $phase already added.');
@@ -54,6 +77,9 @@ class SharedPartAccumulator {
   ///
   /// Before reading at phase `p`, all contributions at or before `p` must
   /// have been added.
+  @Requires('phase >= -1')
+  @Ensures('result == null || contributions.keys.any((p) => p <= phase)')
+  @Ensures('result != null || contributions.keys.every((p) => p > phase)')
   AssetContent? contentAt(int phase) {
     if (_contributions.build().keys.every((p) => p > phase)) return null;
     return _contentsByPhase.putIfAbsent(phase, () {
