@@ -221,8 +221,7 @@ void main() {
 
     test('compares not equal to different type', () {
       expect(
-        // ignore: unrelated_type_equality_checks
-        BuiltMap<int, String>({1: '1', 2: '2', 3: '3'}) == '',
+        (BuiltMap<int, String>({1: '1', 2: '2', 3: '3'}) as Object) == '',
         isFalse,
       );
     });
@@ -267,10 +266,32 @@ void main() {
       );
     });
 
+    test('compares not equal to different keys with null values', () {
+      // Matching lengths and hash codes ensure equality compares the entries.
+      final first =
+          BuiltCollectionTestHelpers.overridenHashcodeBuiltMapWithNullableValues(
+            {1: null},
+            0,
+          );
+      final second =
+          BuiltCollectionTestHelpers.overridenHashcodeBuiltMapWithNullableValues(
+            {2: null},
+            0,
+          );
+
+      expect(first == second, isFalse);
+    });
+
+    test('compares equal with the same keys and null values', () {
+      final first = BuiltMap<int, String?>.of({1: null, 2: null, 3: null});
+      final second = BuiltMap<int, String?>.of({1: null, 2: null, 3: null});
+      expect(first == second, isTrue);
+    });
+
     test('compares without throwing for same hashcode different key type', () {
       expect(
-        // ignore: unrelated_type_equality_checks
-        BuiltCollectionTestHelpers.overridenHashcodeBuiltMap({1: '1'}, 0) ==
+        (BuiltCollectionTestHelpers.overridenHashcodeBuiltMap({1: '1'}, 0)
+                as Object) ==
             BuiltCollectionTestHelpers.overridenHashcodeBuiltMapWithStringKeys({
               '1': '1',
             }, 0),
