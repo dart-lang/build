@@ -1,4 +1,3 @@
-[![Build](https://github.com/google/built_collection.dart/actions/workflows/build.yaml/badge.svg)](https://github.com/google/built_collection.dart/actions/workflows/build.yaml)
 [![pub package](https://img.shields.io/pub/v/built_collection.svg)](https://pub.dev/packages/built_collection)
 [![package publisher](https://img.shields.io/pub/publisher/built_collection.svg)](https://pub.dev/packages/built_collection/publisher)
 
@@ -12,7 +11,7 @@ and an immutable "built" class. Builders are for computation,
 "built" classes are for safely sharing with no need to copy defensively.
 
 Immutable collections work particularly well with immutable values. See
-[built_value](https://github.com/google/built_value.dart#built-values-for-dart).
+[built_value](https://pub.dev/packages/built_value).
 
 You can read more about built_collection
 [on medium](https://medium.com/@davidmorgan_14314/darts-built-collection-for-immutable-collections-db662f705eff).
@@ -115,4 +114,4 @@ and `BuiltMap.asMap`.
 
 Please file feature requests and bugs at the [issue tracker][tracker].
 
-[tracker]: https://github.com/google/built_collection.dart/issues
+[tracker]: https://github.com/dart-lang/build/issues
