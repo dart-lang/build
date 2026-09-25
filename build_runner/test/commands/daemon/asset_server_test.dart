@@ -4,10 +4,14 @@
 
 import 'dart:async';
 
+import 'package:build/build.dart';
 import 'package:build_runner/src/build/build_result.dart';
 import 'package:build_runner/src/build/build_series.dart';
 import 'package:build_runner/src/commands/daemon/asset_server.dart';
 import 'package:build_runner/src/commands/daemon/daemon_builder.dart';
+import 'package:build_runner/src/io/build_output_read_result.dart';
+import 'package:build_runner/src/io/build_output_reader.dart';
+import 'package:glob/glob.dart';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 
@@ -61,10 +65,28 @@ void main() {
   });
 }
 
+class FakeBuildOutputReader implements BuildOutputReader {
+  @override
+  Future<BuildOutputReadResult> read(AssetId id) => Future.value(
+    BuildOutputReadResult.unreadable(id, UnreadableReason.notFound),
+  );
+
+  @override
+  Stream<AssetId> findAssets(Glob glob, {required String package}) =>
+      const Stream.empty();
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 class FakeBuildSeries implements BuildSeries {
   @override
-  Future<BuildResult> get currentBuildResult =>
-      Future.value(BuildResult(status: BuildStatus.success));
+  Future<BuildResult> get currentBuildResult => Future.value(
+    BuildResult(
+      status: BuildStatus.success,
+      buildOutputReader: FakeBuildOutputReader(),
+    ),
+  );
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

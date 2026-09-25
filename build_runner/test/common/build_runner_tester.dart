@@ -313,8 +313,9 @@ class BuildRunnerProcess {
   ///
   /// Otherwise, waits until [pattern] appears, then completes.
   ///
-  /// Throws if the process appears to be stuck or done: if it outputs nothing
-  /// for 30s.
+  /// A process that hangs is caught by the test timeout, which is set in
+  /// `dart_test.yaml` and scaled by `--timeout` for runs that are expected to
+  /// be slow.
   Future<void> expect(Pattern pattern, {Pattern? failOn}) async =>
       expectAndGetLine(pattern, failOn: failOn);
 
@@ -328,8 +329,9 @@ class BuildRunnerProcess {
   ///
   /// Otherwise, waits until [pattern] appears, returns the matching line.
   ///
-  /// Throws if the process appears to be stuck or done: if it outputs nothing
-  /// for 30s.
+  /// A process that hangs is caught by the test timeout, which is set in
+  /// `dart_test.yaml` and scaled by `--timeout` for runs that are expected to
+  /// be slow.
   Future<String> expectAndGetLine(Pattern pattern, {Pattern? failOn}) async {
     printOnFailure(
       '--- $_testLine expects `$pattern`'
@@ -337,11 +339,9 @@ class BuildRunnerProcess {
     );
     failOn ??= BuildLog.failurePattern;
     while (true) {
-      String? line;
+      String line;
       try {
-        line = await _outputs.next.timeout(const Duration(seconds: 30));
-      } on TimeoutException catch (_) {
-        throw fail('While expecting `$pattern`, timed out after 30s.');
+        line = await _outputs.next;
       } catch (_) {
         throw fail('While expecting `$pattern`, process exited.');
       }
@@ -363,8 +363,9 @@ class BuildRunnerProcess {
   ///
   /// Otherwise, waits until [pattern] appears, returns all text seen.
   ///
-  /// Throws if the process appears to be stuck or done: if it outputs nothing
-  /// for 30s.
+  /// A process that hangs is caught by the test timeout, which is set in
+  /// `dart_test.yaml` and scaled by `--timeout` for runs that are expected to
+  /// be slow.
   Future<String> expectAndGetBlock(Pattern pattern, {Pattern? failOn}) async {
     printOnFailure(
       '--- $_testLine expects `$pattern`'
@@ -373,12 +374,10 @@ class BuildRunnerProcess {
     failOn ??= BuildLog.failurePattern;
     final lines = StringBuffer();
     while (true) {
-      String? line;
+      String line;
       try {
-        line = await _outputs.next.timeout(const Duration(seconds: 30));
+        line = await _outputs.next;
         lines.writeln(line);
-      } on TimeoutException catch (_) {
-        throw fail('While expecting `$pattern`, timed out after 30s.');
       } catch (_) {
         throw fail('While expecting `$pattern`, process exited.');
       }

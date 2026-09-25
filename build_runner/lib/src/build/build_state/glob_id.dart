@@ -5,9 +5,12 @@
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
+import '../../contracts.dart';
+
 part 'glob_id.g.dart';
 
 /// Unique ID for a glob evaluation.
+@Invariant('package.isNotEmpty', 'glob.isNotEmpty', 'phaseNumber >= 0')
 abstract class GlobId implements Built<GlobId, GlobIdBuilder> {
   static Serializer<GlobId> get serializer => _$globIdSerializer;
 

@@ -7,6 +7,7 @@ import 'package:built_collection/built_collection.dart';
 import 'package:meta/meta.dart';
 
 import '../../build_plan/build_step_plan.dart';
+import '../../contracts.dart';
 import '../asset_content.dart';
 import '../br_outputs.dart';
 import '../finished_shared_part.dart';
@@ -22,6 +23,20 @@ import 'post_process_build_step_result.dart';
 /// available.
 ///
 /// Used by post-build consumers and to prepare the next incremental build.
+@Invariant(
+  'contents.keys.every((id) => '
+      'isSource(id) || '
+      'isActualOutput(id) || '
+      'isActualPostOutput(id) || '
+      'id.isBrOutput)',
+  'sources.every((id) => !buildStepPlan.isDeclaredOutput(id))',
+  'sources.every((id) => !isActualPostOutput(id))',
+  'sources.every((id) => !id.isBrOutput)',
+  'actualOutputs.every((id) => buildStepPlan.isDeclaredOutput(id))',
+  'sharedParts.keys.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)',
+  'sharedParts.keys.every((id) => id.sharedPartId != null)',
+  'sharedParts.keys.every((id) => contents.containsKey(id.sharedPartId!))',
+)
 class FinishedBuildState {
   /// Description of the build.
   final BuildStepPlan buildStepPlan;

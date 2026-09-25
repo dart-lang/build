@@ -14,6 +14,7 @@ import '../build/build_file_index.dart';
 import '../build/build_state/finished_build_state.dart';
 import '../build_plan/build_packages.dart';
 import '../build_plan/build_step_plan.dart';
+import '../contracts.dart';
 import 'build_output_read_result.dart';
 import 'reader_writer.dart';
 
@@ -23,6 +24,13 @@ import 'reader_writer.dart';
 ///
 /// Build inputs that were not used in the build are not in memory and are
 /// returned directly from disk with no caching.
+@Invariant(
+  '_sourcesConsumedOutsideBuild.every((id) => buildState.isSource(id))',
+  '_sourcesConsumedOutsideBuild.every('
+      '(id) => !buildStepPlan.isDeclaredOutput(id))',
+  '_sourcesConsumedOutsideBuild.every('
+      '(id) => !buildState.isActualPostOutput(id))',
+)
 class BuildOutputReader {
   final BuildPackages buildPackages;
   final ReaderWriter readerWriter;
@@ -58,6 +66,7 @@ class BuildOutputReader {
     required this.buildState,
   });
 
+  @Requires('id.package.isNotEmpty', 'id.path.isNotEmpty')
   String pathFor(AssetId id) {
     return readerWriter.assetPathProvider.pathFor(
       id,
@@ -110,6 +119,7 @@ class BuildOutputReader {
   }
 
   /// Reads [id] from the build output, returning a [BuildOutputReadResult].
+  @Requires('id.package.isNotEmpty', 'id.path.isNotEmpty')
   Future<BuildOutputReadResult> read(AssetId id) async {
     final reason = await _unreadableReason(id);
     if (reason != null) {
@@ -130,6 +140,7 @@ class BuildOutputReader {
     return BuildOutputReadResult.available(id, AssetContent.bytes(bytes));
   }
 
+  @Requires('id.package.isNotEmpty', 'id.path.isNotEmpty')
   Future<bool> canRead(AssetId id) async =>
       (await _unreadableReason(id)) == null;
 
