@@ -48,6 +48,7 @@ class ServeHandler {
     bool logRequests = false,
     bool liveReload = false,
     bool restrictToLoopback = false,
+    String? allowedHost,
   }) {
     if (p.url.split(rootDir).length != 1 || rootDir == '.') {
       throw ArgumentError.value(
@@ -76,8 +77,13 @@ class ServeHandler {
     if (logRequests) {
       pipeline = pipeline.addMiddleware(_logRequests);
     }
-    if (restrictToLoopback) {
-      pipeline = pipeline.addMiddleware(_loopbackOnly);
+    if (restrictToLoopback || allowedHost != null) {
+      pipeline = pipeline.addMiddleware(
+        _restrictHost(
+          restrictToLoopback: restrictToLoopback,
+          allowedHost: allowedHost,
+        ),
+      );
     }
     if (liveReload) {
       pipeline = pipeline.addMiddleware(_injectLiveReloadClientCode);
@@ -246,27 +252,55 @@ bool _isLoopbackHost(String host) =>
     host == 'localhost' ||
     (InternetAddress.tryParse(host)?.isLoopback ?? false);
 
-/// Rejects requests that lack a loopback `Host` header or that carry a
-/// non-loopback `Origin` header.
-shelf.Handler _loopbackOnly(shelf.Handler inner) => (request) {
-  final hostHeader = request.headers['host'];
-  if (hostHeader == null) return shelf.Response.forbidden(null);
-
-  final host = Uri.tryParse('http://$hostHeader')?.host ?? '';
-  if (!_isLoopbackHost(host)) {
-    return shelf.Response.forbidden(null);
+/// Whether [host] matches the allowed host or is loopback when restricted.
+bool _isAllowedHost(
+  String host, {
+  required bool restrictToLoopback,
+  required String? allowedHost,
+}) {
+  if (allowedHost != null && host.toLowerCase() == allowedHost.toLowerCase()) {
+    return true;
   }
-
-  final origin = request.headers['origin'];
-  if (origin != null) {
-    final parsed = Uri.tryParse(origin);
-    if (parsed == null || !_isLoopbackHost(parsed.host)) {
-      return shelf.Response.forbidden(null);
-    }
+  if (restrictToLoopback) {
+    return _isLoopbackHost(host);
   }
+  return false;
+}
 
-  return inner(request);
-};
+/// Rejects requests that lack an allowed `Host` header or that carry a
+/// disallowed `Origin` header.
+shelf.Middleware _restrictHost({
+  required bool restrictToLoopback,
+  required String? allowedHost,
+}) =>
+    (shelf.Handler inner) => (request) {
+      final hostHeader = request.headers['host'];
+      if (hostHeader == null) return shelf.Response.forbidden(null);
+
+      final host = Uri.tryParse('http://$hostHeader')?.host ?? '';
+      if (!_isAllowedHost(
+        host,
+        restrictToLoopback: restrictToLoopback,
+        allowedHost: allowedHost,
+      )) {
+        return shelf.Response.forbidden(null);
+      }
+
+      final origin = request.headers['origin'];
+      if (origin != null) {
+        final parsed = Uri.tryParse(origin);
+        if (parsed == null ||
+            !_isAllowedHost(
+              parsed.host,
+              restrictToLoopback: restrictToLoopback,
+              allowedHost: allowedHost,
+            )) {
+          return shelf.Response.forbidden(null);
+        }
+      }
+
+      return inner(request);
+    };
 
 class AssetHandler {
   final Future<BuildOutputReader?> Function() _reader;

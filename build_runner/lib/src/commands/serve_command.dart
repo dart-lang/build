@@ -87,6 +87,7 @@ class ServeCommand implements BuildRunnerCommand {
             logRequests: serveOptions.logRequests,
             liveReload: serveOptions.liveReload,
             restrictToLoopback: server.address.isLoopback,
+            allowedHost: serveOptions.allowedHost,
           ),
         );
       });

@@ -268,4 +268,36 @@ void main() {
       );
     });
   });
+
+  group(
+    'shared part importing an asset that is not otherwise in the build',
+    () {
+      setUp(() {
+        // Imports in parts need the "Parts with Imports" language feature.
+        tester = InvalidationTester(enabledExperiments: ['enhanced-parts']);
+        tester.sources(['a']);
+        tester.partGraph({
+          'a': ['_br_/a.part'],
+        });
+
+        // 'z' is not a source and no builder runs on it, so the import in the
+        // part of 'a' is the only reference to it in the build.
+        tester.builder(from: '', to: '.1')
+          ..writesPartImport('z')
+          ..writesPart('// uses z');
+
+        // The builder that resolves also writes a part, so the shared part
+        // content is never final while the build is running.
+        tester.builder(from: '', to: '.2')
+          ..reads('')
+          ..resolvesOther('a')
+          ..writes('.2')
+          ..writesPart('// from builder 2');
+      });
+
+      test('initial build resolves a', () async {
+        expect(await tester.build(), Result(written: ['_br_/a.part', 'a.2']));
+      });
+    },
+  );
 }

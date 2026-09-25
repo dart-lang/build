@@ -52,6 +52,13 @@ class BuildSeries {
 
   /// Deletes that are part of build output, so the resulting file watch events
   /// can be ignored.
+  ///
+  /// An id is removed when its delete is seen, and also when the file is
+  /// written again, because then it is no longer absent and there is no delete
+  /// left to ignore. Removing on write matters because the delete event may
+  /// never arrive: a file that is deleted and written again is reported as a
+  /// modification. A stale id would swallow the next delete of that file, which
+  /// is most likely the user deleting generated output to force a rebuild.
   final Set<AssetId> _expectedDeletes = {};
 
   /// Whether the next build is the first build.
@@ -94,16 +101,25 @@ class BuildSeries {
 
       // Ignore deletes and writes done by `build_runner`, for output strategies
       // that do deletes and writes.
+      //
+      // Watch events say that a path changed, not what happened to it:
+      // `package:watcher` guarantees only that applying its events eventually
+      // reproduces the state of the filesystem. Events are not one per
+      // operation, and a path that is deleted and written again is reported as
+      // a modification. So neither check below may assume that an event it
+      // expects will arrive; each decides from the state of the file.
       if (_outputStrategy == .overwrite || _outputStrategy == .keep) {
-        // Ignore deletes done by `build_runner`.
+        // Ignore deletes done by `build_runner`. The id is dropped from
+        // `_expectedDeletes` when the file is written again, so a delete that
+        // was never reported cannot suppress a later one.
         if (change.type == .REMOVE && _expectedDeletes.remove(id)) {
           continue;
         }
 
-        // Ignore writes done by `build_runner`. It's necessary to check content
-        // because `package:watcher` can coalesce two modify events into one.
-        // If the first is by `build_runner` and the second is an external
-        // change then just ignoring the event would be incorrect.
+        // Ignore writes done by `build_runner`. Read the content rather than
+        // trusting the event: one event can stand for a write by
+        // `build_runner` followed by an external change, and ignoring it would
+        // lose the external change.
         if ((change.type == .ADD || change.type == .MODIFY) &&
             (_buildPlan.buildStepPlan.isDeclaredOutput(id) || id.isBrOutput)) {
           final expectedDigest = previousBuild.digestOf(id);
@@ -370,6 +386,10 @@ class BuildSeries {
     }
 
     for (final output in result.outputs) {
+      // The file exists again, so there is no delete of it left to ignore. The
+      // delete loop below runs after this one, so a build that both writes and
+      // deletes this path still records the delete.
+      _expectedDeletes.remove(output);
       final content = result.buildState!.contentOf(output)!;
       await _buildPlan.readerWriter.writeAsBytes(
         output,

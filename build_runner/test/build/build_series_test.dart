@@ -460,6 +460,42 @@ void main() {
         expect(secondResult, isNot(same(firstResult)));
         expect(secondResult.outputs, isNot(contains(outputId)));
       });
+
+      test('accepts deletion of an output that was deleted by an earlier build '
+          'and then written again', () async {
+        final series = BuildSeries(buildPlan);
+        expect(
+          (await series.run({}, recentlyBootstrapped: true)).outputs,
+          contains(outputId),
+        );
+
+        // Deleting the source makes the build delete the output. The delete is
+        // recorded so that the resulting watcher event does not start another
+        // build.
+        await readerWriter.delete(AssetFile.atPackagePath(assetId));
+        expect(
+          (await series.run({assetId}, recentlyBootstrapped: false)).outputs,
+          isNot(contains(outputId)),
+        );
+
+        // The watcher never reports that delete. Watch events converge on the
+        // state of the filesystem, they do not describe each operation, so a
+        // file that is deleted and written again is reported as a
+        // modification. Restoring the source makes the next build write the
+        // output again.
+        await readerWriter.writeAsString(assetId, '// a.dart');
+        expect(
+          (await series.run({assetId}, recentlyBootstrapped: false)).outputs,
+          contains(outputId),
+        );
+
+        // The user deletes the generated file by hand to force regeneration.
+        await readerWriter.delete(AssetFile.atPackagePath(outputId));
+        final change = AssetChange(outputId, ChangeType.REMOVE);
+        final filtered = await series.filterChanges([change]);
+
+        expect(filtered.accepted, [change]);
+      });
     });
 
     group('currentBuildResult', () {

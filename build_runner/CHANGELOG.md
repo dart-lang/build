@@ -5,7 +5,8 @@
 - Support shared parts written using `BuildStep.librarySourceSink` when builders
   opt in with `adds_to_library: true` in `build.yaml`.
 - The `serve` command now rejects non-loopback `Host` and `Origin` headers when
-  bound to a loopback interface.
+  bound to a loopback interface, and validates them against `--hostname` when a
+  specific host is given.
 - Require `build` 4.1.0.
 - Require `build_config` 1.4.0.
 - Bug fix: allow calling `BuildStep.canRead` on outputs written by the same
@@ -29,6 +30,10 @@
 - Bug fix: detect duplicate `--output` directories that are spelled
   differently, for example `build` and `build/`, instead of writing both and
   silently keeping only the last.
+- Bug fix: in watch, serve, and daemon modes, notice a generated file being
+  deleted after a previous build deleted and then rewrote that same file.
+  Previously the delete was mistaken for the build's own earlier delete and
+  ignored, so deleting a generated file no longer forced it to be regenerated.
 
 ## 2.16.1
 
