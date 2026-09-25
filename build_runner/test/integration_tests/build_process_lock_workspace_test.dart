@@ -6,6 +6,7 @@
 library;
 
 import 'package:build_runner/src/logging/build_log.dart';
+import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 import '../common/common.dart';
@@ -15,10 +16,13 @@ void main() async {
     final pubspecs = await Pubspecs.load();
     final tester = BuildRunnerTester(pubspecs);
 
+    // While `gate` does not exist, builds block at the start of each build
+    // step, holding the build process lock.
+    tester.write('gate', '');
     tester.writeFixturePackage(
       FixturePackages.copyBuilder(
         packageName: 'builder_pkg',
-        delayAtBuildStart: true,
+        waitForFileAtBuildStart: p.join(tester.tempDirectory.path, 'gate'),
         applyToAllPackages: true,
       ),
     );
@@ -60,30 +64,36 @@ void main() async {
     );
 
     // Workspace build blocks on single package build.
+    tester.delete('gate');
+    tester.write('p1/lib/p1.txt', '2');
     final build3 = await tester.start(
       'p1',
       'dart run build_runner build --force-jit',
     );
-    await Future<void>.delayed(const Duration(milliseconds: 500));
+    await build3.expect('builder_pkg:test_builder');
     final build4 = await tester.start(
       '',
       'dart run build_runner build --force-jit --workspace',
     );
     await build4.expect('Waiting for already-running build_runner.');
+    tester.write('gate', '');
     await build3.expect(BuildLog.successPattern);
     await build4.expect(BuildLog.successPattern);
 
     // Single package build blocks on workspace build.
+    tester.delete('gate');
+    tester.write('p1/lib/p1.txt', '3');
     final build5 = await tester.start(
       '',
       'dart run build_runner build --force-jit --workspace',
     );
-    await Future<void>.delayed(const Duration(milliseconds: 500));
+    await build5.expect('builder_pkg:test_builder');
     final build6 = await tester.start(
       'p1',
       'dart run build_runner build --force-jit',
     );
     await build6.expect('Waiting for already-running build_runner.');
+    tester.write('gate', '');
     await build5.expect(BuildLog.successPattern);
     await build6.expect(BuildLog.successPattern);
 
@@ -93,9 +103,7 @@ void main() async {
       'dart run build_runner watch --force-jit',
     );
     await watch.expect(BuildLog.successPattern);
-    await tester
-        .run('p1', 'dart run build_runner stop --workspace')
-        .timeout(const Duration(seconds: 5));
+    await tester.run('p1', 'dart run build_runner stop --workspace');
     await watch.expect('Exiting as requested by another build_runner process.');
     await watch.exitCode;
 
@@ -106,9 +114,7 @@ void main() async {
       'dart run build_runner watch --force-jit',
     );
     await watch2.expect(BuildLog.successPattern);
-    await tester
-        .run('p1', 'dart run build_runner stop')
-        .timeout(const Duration(seconds: 5));
+    await tester.run('p1', 'dart run build_runner stop');
     await watch2.expect(
       'Exiting as requested by another build_runner process.',
     );
@@ -121,9 +127,7 @@ void main() async {
       'dart run build_runner watch --force-jit',
     );
     await watch3.expect(BuildLog.successPattern);
-    await tester
-        .run('p2', 'dart run build_runner stop --workspace')
-        .timeout(const Duration(seconds: 5));
+    await tester.run('p2', 'dart run build_runner stop --workspace');
     await watch3.expect(
       'Exiting as requested by another build_runner process.',
     );

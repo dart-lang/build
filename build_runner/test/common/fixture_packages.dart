@@ -19,6 +19,9 @@ class FixturePackage {
 
 class FixturePackages {
   /// Copies .txt files to .txt.$outputExtension files.
+  ///
+  /// If [waitForFileAtBuildStart] is set, each build step waits until a file
+  /// exists at that absolute path before doing any work.
   static FixturePackage copyBuilder({
     String packageName = 'builder_pkg',
     bool buildToCache = false,
@@ -27,6 +30,7 @@ class FixturePackages {
     String appliesBuilders = '[]',
     List<String> pathDependencies = const [],
     bool delayAtBuildStart = false,
+    String? waitForFileAtBuildStart,
     String? defaultGlob,
   }) => FixturePackage(
     name: packageName,
@@ -47,6 +51,8 @@ ${defaultGlob != null ? '    defaults:\n      options:\n        glob: "$defaultG
 ''',
       'lib/builder.dart':
           '''
+import 'dart:io';
+
 import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 
@@ -72,6 +78,10 @@ class TestBuilder implements Builder {
   @override
   Future<void> build(BuildStep buildStep) async {
 ${delayAtBuildStart ? 'await Future.delayed(Duration(seconds: 1));' : ''}
+${waitForFileAtBuildStart == null ? '' : '''
+    while (!File(r'$waitForFileAtBuildStart').existsSync()) {
+      await Future.delayed(Duration(milliseconds: 100));
+    }'''}
     final globAssets = glob == null
         ? <String>[]
         : ([
