@@ -3,11 +3,15 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
+import 'package:build/experiments.dart';
 import 'package:built_collection/built_collection.dart';
 
 import 'build_step_impl.dart';
 
 export 'prefix_for_phase.dart';
+
+/// The language experiment that allows a part to have imports.
+const String _enhancedParts = 'enhanced-parts';
 
 class LibrarySourceSinkImpl implements LibrarySourceSink {
   final BuildStepImpl _buildStep;
@@ -51,6 +55,14 @@ class LibrarySourceSinkImpl implements LibrarySourceSink {
     _checkCanWrite();
     if (!as.startsWith(importPrefix)) {
       throw ArgumentError.value(as, 'as', 'must start with $importPrefix');
+    }
+    if (!enabledExperiments.contains(_enhancedParts)) {
+      throw StateError(
+        'Imports in parts need the `$_enhancedParts` language experiment. '
+        'Pass `--enable-experiment=$_enhancedParts` to `build_runner`, and '
+        'enable it for anything else that analyzes or compiles the '
+        'generated code.',
+      );
     }
 
     final buffer = StringBuffer('import \'$uri\' as $as');

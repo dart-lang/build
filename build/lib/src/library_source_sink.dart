@@ -25,7 +25,8 @@ abstract class LibrarySourceSink {
   /// thrown.
   ///
   /// Adding imports causes generated source to depend on the unlaunched
-  /// "Parts with Imports" language feature.
+  /// "Parts with Imports" language feature, so the build must enable the
+  /// `enhanced-parts` experiment; if it does not, a [StateError] is thrown.
   void addImport(
     String uri, {
     required String as,

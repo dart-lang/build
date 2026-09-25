@@ -1,4 +1,6 @@
 import 'package:build/build.dart';
+import 'package:build/experiments.dart';
+import 'package:build_runner/src/build/build_result.dart';
 import 'package:build_runner/src/build_plan/builder_definition.dart';
 import 'package:build_runner/src/build_plan/builder_factories.dart';
 import 'package:build_runner/src/constants.dart';
@@ -6,6 +8,12 @@ import 'package:glob/glob.dart';
 import 'package:test/test.dart';
 
 import '../common/common.dart';
+
+/// A [test] that runs with the `enhanced-parts` experiment enabled.
+///
+/// The builders here add imports to parts, which needs the experiment.
+void partsTest(String description, Future<void> Function() body) =>
+    test(description, () => withEnabledExperiments(body, ['enhanced-parts']));
 
 class PartWritingBuilder implements Builder {
   final String _content;
@@ -211,7 +219,7 @@ class PartVerifyingInvisibilityBuilder implements Builder {
 
 void main() {
   group('Part Builders incremental build', () {
-    test('updates generated part file correctly', () async {
+    partsTest('updates generated part file correctly', () async {
       final builderFactories = BuilderFactories({
         'a:builder1': [
           (_) => PartWritingBuilder('content1', 'lib/b.txt', '.b1.dart'),
@@ -303,7 +311,7 @@ content2
       );
     });
 
-    test('does not write the part again when nothing changes', () async {
+    partsTest('does not write the part again when nothing changes', () async {
       final builderFactories = BuilderFactories({
         'a:builder1': [
           (_) => PartWritingBuilder('content1', 'lib/b.txt', '.b1.dart'),
@@ -351,7 +359,7 @@ content1
       );
     });
 
-    test(
+    partsTest(
       'phase by phase mixed reuse and new contributions across 3 phases',
       () async {
         final builderFactories = BuilderFactories({
@@ -512,7 +520,7 @@ content3
       },
     );
 
-    test(
+    partsTest(
       'preserves language version comments from the primary input',
       () async {
         final builderFactories = BuilderFactories({
@@ -552,7 +560,7 @@ content
       },
     );
 
-    test('throws if addImport uses incorrect prefix', () async {
+    partsTest('throws if addImport uses incorrect prefix', () async {
       final builderFactories = BuilderFactories({
         '.dart': [(_) => ThrowingPrefixBuilder()],
       });
@@ -570,7 +578,40 @@ content
       });
     });
 
-    test('earlier phase builder does not see later phase part '
+    test('fails if addImport is used without the `enhanced-parts` '
+        'experiment', () async {
+      final builderFactories = BuilderFactories({
+        'a:builder1': [
+          (_) => PartWritingBuilder('content1', 'lib/b.txt', '.b1.dart'),
+        ],
+      });
+      final builderDefinitions = [
+        BuilderDefinition(
+          'a:builder1',
+          outputsToArtifactTree: false,
+          autoApply: AutoApply.allPackages,
+          addsToLibrary: true,
+        ),
+      ];
+
+      final logs = <String>[];
+      await testPhases(
+        builderFactories,
+        builderDefinitions,
+        {'a|lib/a.dart': '', 'a|lib/b.txt': 'b'},
+        status: BuildStatus.failure,
+        onLog: (record) => logs.add(record.message),
+      );
+      expect(
+        logs.join('\n'),
+        contains(
+          'Imports in parts need the `enhanced-parts` '
+          'language experiment.',
+        ),
+      );
+    });
+
+    partsTest('earlier phase builder does not see later phase part '
         'contribution in incremental build', () async {
       final builderFactories = BuilderFactories({
         'a:builder1': [
@@ -662,7 +703,7 @@ content2
       );
     });
 
-    test('removes part contribution when builder stops writing one '
+    partsTest('removes part contribution when builder stops writing one '
         'in incremental build', () async {
       final builderFactories = BuilderFactories({
         'a:builder1': [
@@ -741,7 +782,7 @@ content1
       );
     });
 
-    test(
+    partsTest(
       'earlier phase builder resolving library does not see later phase part '
       'contribution in incremental build',
       () async {
@@ -829,7 +870,7 @@ class Class2 {}
       },
     );
 
-    test(
+    partsTest(
       'does not generate part when sink is accessed but no content is added',
       () async {
         final builderFactories = BuilderFactories({
@@ -850,7 +891,7 @@ class Class2 {}
       },
     );
 
-    test('does not generate part when only whitespace is added', () async {
+    partsTest('does not generate part when only whitespace is added', () async {
       final builderFactories = BuilderFactories({
         'a:builder1': [(_) => WhitespacePartWritingBuilder()],
       });
@@ -868,7 +909,7 @@ class Class2 {}
       }, outputs: {});
     });
 
-    test('_br_ assets are invisible to asset reader calls', () async {
+    partsTest('_br_ assets are invisible to asset reader calls', () async {
       final builderFactories = BuilderFactories({
         'a:builder1': [
           (_) => PartWritingBuilder('content', 'lib/b.txt', '.b.dart'),
@@ -911,7 +952,7 @@ content
       );
     });
 
-    test(
+    partsTest(
       'rebuilding with existing shared parts after discarding the asset graph',
       () async {
         final builderFactories = BuilderFactories({
@@ -962,7 +1003,7 @@ content
       },
     );
 
-    test(
+    partsTest(
       'removing a shared part contributor through a configuration change',
       () async {
         final builderFactories1 = BuilderFactories({
@@ -1053,23 +1094,25 @@ content1
       },
     );
 
-    test('removing all shared part contributors through a configuration change '
-        'deletes the shared part', () async {
-      final builderFactories1 = BuilderFactories({
-        'a:builder1': [
-          (_) => PartWritingBuilder('content', 'lib/b.txt', '.b.dart'),
-        ],
-      });
-      final builderDefinitions1 = [
-        BuilderDefinition(
-          'a:builder1',
-          outputsToArtifactTree: false,
-          autoApply: AutoApply.allPackages,
-          addsToLibrary: true,
-        ),
-      ];
+    partsTest(
+      'removing all shared part contributors through a configuration change '
+      'deletes the shared part',
+      () async {
+        final builderFactories1 = BuilderFactories({
+          'a:builder1': [
+            (_) => PartWritingBuilder('content', 'lib/b.txt', '.b.dart'),
+          ],
+        });
+        final builderDefinitions1 = [
+          BuilderDefinition(
+            'a:builder1',
+            outputsToArtifactTree: false,
+            autoApply: AutoApply.allPackages,
+            addsToLibrary: true,
+          ),
+        ];
 
-      final expectedGeneratedPart = r'''
+        final expectedGeneratedPart = r'''
 // dart format off
 part of '../a.dart';
 
@@ -1082,32 +1125,33 @@ content
 
 ''';
 
-      final result = await testPhases(
-        builderFactories1,
-        builderDefinitions1,
-        {'a|lib/a.dart': '', 'a|lib/b.txt': 'b'},
-        outputs: {'a|lib/_br_/a.part.dart': expectedGeneratedPart},
-      );
+        final result = await testPhases(
+          builderFactories1,
+          builderDefinitions1,
+          {'a|lib/a.dart': '', 'a|lib/b.txt': 'b'},
+          outputs: {'a|lib/_br_/a.part.dart': expectedGeneratedPart},
+        );
 
-      final partId = AssetId('a', 'lib/_br_/a.part.dart');
-      expect(result.readerWriter.testing.exists(partId), isTrue);
+        final partId = AssetId('a', 'lib/_br_/a.part.dart');
+        expect(result.readerWriter.testing.exists(partId), isTrue);
 
-      // Remove builder1 through a configuration change.
-      final builderFactories2 = BuilderFactories({});
-      final builderDefinitions2 = <AbstractBuilderDefinition>[];
+        // Remove builder1 through a configuration change.
+        final builderFactories2 = BuilderFactories({});
+        final builderDefinitions2 = <AbstractBuilderDefinition>[];
 
-      await testPhases(
-        builderFactories2,
-        builderDefinitions2,
-        {},
-        outputs: {},
-        resumeFrom: result,
-      );
+        await testPhases(
+          builderFactories2,
+          builderDefinitions2,
+          {},
+          outputs: {},
+          resumeFrom: result,
+        );
 
-      expect(result.readerWriter.testing.exists(partId), isFalse);
-    });
+        expect(result.readerWriter.testing.exists(partId), isFalse);
+      },
+    );
 
-    test(
+    partsTest(
       'incremental build with no changes skips resolving part builder in later '
       'phase when earlier phase did not contribute to part',
       () async {
