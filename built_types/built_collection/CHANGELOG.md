@@ -1,14 +1,11 @@
 # Changelog
 
-## 5.1.2-wip
+## 5.1.2
 
-- Moved repository to `dart-lang/build`.
+- Bug fix: `BuiltMap` equality no longer returns true for maps with null
+  values, different keys and colliding hash codes.
 - Require Dart SDK `^3.11.0`.
-- Fix unnecessary non-null assertions in internal copy-on-write collections.
-- Migrate to `package:dart_flutter_team_lints`.
-- Fix analysis issues and remove the lint suppressions that hid them.
-- Fix `BuiltMap` equality incorrectly returning true for maps with null values,
-  different keys and colliding hash codes.
+- Moved repository to `dart-lang/build`.
 
 ## 5.1.1
 
