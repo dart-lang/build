@@ -63,8 +63,9 @@ abstract class BuiltMap<K, V> {
 
   /// Returns as an immutable map.
   ///
-  /// Useful when producing or using APIs that need the [Map] interface. This
-  /// differs from [toMap] where mutations are explicitly disallowed.
+  /// Useful when producing or using APIs that need the [Map] interface.
+  /// Unlike [toMap], which returns a mutable copy, the returned map throws if
+  /// you try to modify it.
   Map<K, V> asMap() => Map<K, V>.unmodifiable(_map);
 
   /// Converts to a [Map].

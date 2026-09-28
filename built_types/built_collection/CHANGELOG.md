@@ -1,5 +1,9 @@
 # Changelog
 
+## 5.1.3-wip
+
+- Clarify the docs of `asList`, `asSet` and `asMap`.
+
 ## 5.1.2
 
 - Bug fix: `BuiltMap` equality no longer returns true for maps with null

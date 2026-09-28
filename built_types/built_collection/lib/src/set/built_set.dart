@@ -91,8 +91,9 @@ abstract class BuiltSet<E> implements Iterable<E>, BuiltIterable<E> {
 
   /// Returns as an immutable set.
   ///
-  /// Useful when producing or using APIs that need the [Set] interface. This
-  /// differs from [toSet] where mutations are explicitly disallowed.
+  /// Useful when producing or using APIs that need the [Set] interface.
+  /// Unlike [toSet], which returns a mutable copy, the returned set throws if
+  /// you try to modify it.
   Set<E> asSet() => UnmodifiableSetView<E>(_set);
 
   // Set.
