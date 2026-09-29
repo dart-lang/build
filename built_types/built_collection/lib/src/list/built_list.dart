@@ -91,8 +91,9 @@ abstract class BuiltList<E> implements Iterable<E>, BuiltIterable<E> {
 
   /// Returns as an immutable list.
   ///
-  /// Useful when producing or using APIs that need the [List] interface. This
-  /// differs from [toList] where mutations are explicitly disallowed.
+  /// Useful when producing or using APIs that need the [List] interface.
+  /// Unlike [toList], which returns a mutable copy, the returned list throws
+  /// if you try to modify it.
   List<E> asList() => List<E>.unmodifiable(_list);
 
   // List.
