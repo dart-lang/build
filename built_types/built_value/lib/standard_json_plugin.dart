@@ -19,6 +19,11 @@ import 'serializer.dart';
 /// When using this plugin you may wish to also install
 /// `Iso8601DateTimeSerializer` which switches serialization of `DateTime`
 /// from microseconds since epoch to ISO 8601 format.
+///
+/// On deserialization, map entries with `null` values are dropped, except
+/// in a `BuiltMap`. So for a Built Value, a field with an explicit `null`
+/// value is treated the same as a missing field: it keeps the builder's
+/// initial value, which for a Built Collection is empty.
 class StandardJsonPlugin implements SerializerPlugin {
   static final BuiltSet<Type> _unsupportedTypes =
       BuiltSet<Type>([BuiltListMultimap, BuiltSetMultimap]);

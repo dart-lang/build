@@ -271,6 +271,36 @@ abstract class MyValue {
         ..count = 0;
 ```
 
+### What happens when serialized data is missing a field?
+
+Deserialization starts from a new builder and sets only the fields that are
+present. A missing field keeps the builder's initial value, then the builder is
+built as usual. This is what allows fields to be added to a class without
+breaking compatibility with data written before they existed.
+
+The initial value of a field is the default set by an `initializeBuilder` hook,
+if there is one. Otherwise it's `null`, or for a field with a nested builder,
+an empty nested builder. Nested builders are used for Built Collections and,
+by default, for Built Values.
+
+So, when a field is missing:
+
+- If the field is nullable, it's `null`.
+- If the field has a default, it gets the default.
+- If the field is a Built Collection, it's empty.
+- If the field is a Built Value with a nested builder, the nested builder is
+  built with the same rules. This succeeds if that class has no required
+  fields left unset.
+- Otherwise, the field is required and deserialization fails.
+
+In the "Common Usage" example above, deserializing `{"id": 12345}` gives a
+`Person` with `age` and `firstName` set to `null` and `hobbies` empty.
+Deserializing `{}` fails because `id` is required.
+
+With `StandardJsonPlugin`, a field with an explicit `null` value is dropped
+before deserialization, so it's treated exactly like a missing field. For
+example, `"hobbies": null` also gives an empty `hobbies`.
+
 ### Should I check in and/or publish in the generated `.g.dart` files?
 
 See the [build_runner](https://pub.dev/packages/build_runner#source-control)

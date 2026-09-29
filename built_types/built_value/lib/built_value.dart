@@ -254,9 +254,9 @@ class BuiltValueHook {
   /// @BuiltValueHook(initializeBuilder: true)
   /// static void _initialize(MyClassBuilder b) =>
   ///    b..name = 'defaultName';
+  /// ```
   ///
   /// Defaults to `false`.
-  /// ```
   final bool initializeBuilder;
 
   /// Marks a static method that will be called immediately before the builder
@@ -270,9 +270,9 @@ class BuiltValueHook {
   /// @BuiltValueHook(finalizeBuilder: true)
   /// static void _finalize(MyClassBuilder b) =>
   ///    b..items.sort();
+  /// ```
   ///
   /// Defaults to `false`.
-  /// ```
   final bool finalizeBuilder;
 
   const BuiltValueHook(
