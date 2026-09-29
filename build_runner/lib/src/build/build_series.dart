@@ -26,6 +26,7 @@ import 'br_outputs.dart';
 import 'build.dart';
 import 'build_result.dart';
 import 'build_state/asset_graph_json.dart';
+import 'part_directives.dart';
 
 /// A series of builds with the same configuration.
 ///
@@ -358,6 +359,13 @@ class BuildSeries {
       }
     } else {
       await _writeBuildOutput(result);
+    }
+    if (result.librariesMissingPartDirective.isNotEmpty) {
+      await PartDirectives.addMissing(
+        result.librariesMissingPartDirective,
+        _buildPlan.readerWriter,
+        onlyCheck: _outputStrategy == .verify,
+      );
     }
     result = await _createMergedOutputDirectories(result);
 

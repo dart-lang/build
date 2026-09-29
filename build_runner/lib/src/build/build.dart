@@ -218,8 +218,15 @@ class Build {
       }
     }
 
-    if (await PartDirectives.reportMissing(buildState, _builderFilesystem)) {
-      result = result.copyWith(status: BuildStatus.failure);
+    final librariesMissingPartDirective = await PartDirectives.findMissing(
+      buildState,
+      _builderFilesystem,
+    );
+    if (librariesMissingPartDirective.isNotEmpty) {
+      result = result.copyWith(
+        status: BuildStatus.failure,
+        librariesMissingPartDirective: librariesMissingPartDirective,
+      );
     }
 
     await resourceManager.disposeAll();

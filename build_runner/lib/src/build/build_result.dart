@@ -4,6 +4,7 @@
 
 import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
+import 'package:crypto/crypto.dart';
 
 import '../contracts.dart';
 import '../io/build_output_reader.dart';
@@ -49,6 +50,11 @@ class BuildResult {
   /// `null` if the build failed with no output.
   final BuildOutputReader? buildOutputReader;
 
+  /// Libraries with generated code but no `part` directive including it.
+  ///
+  /// Values are the md5 digests of the library content that was checked.
+  final BuiltMap<AssetId, Digest> librariesMissingPartDirective;
+
   BuildResult({
     required this.status,
     BuiltList<String>? errors,
@@ -57,12 +63,15 @@ class BuildResult {
     this.buildOutputReader,
     this.buildState,
     FailureType? failureType,
+    BuiltMap<AssetId, Digest>? librariesMissingPartDirective,
   }) : failureType = failureType == null && status == BuildStatus.failure
            ? FailureType.general
            : failureType,
        errors = errors ?? BuiltList(),
        outputs = outputs ?? BuiltList(),
-       phasedAssetDeps = phasedAssetDeps ?? PhasedAssetDeps();
+       phasedAssetDeps = phasedAssetDeps ?? PhasedAssetDeps(),
+       librariesMissingPartDirective =
+           librariesMissingPartDirective ?? BuiltMap();
 
   BuildResult copyWith({
     BuildStatus? status,
@@ -72,6 +81,7 @@ class BuildResult {
     PhasedAssetDeps? phasedAssetDeps,
     BuildOutputReader? buildOutputReader,
     FinishedBuildState? buildState,
+    BuiltMap<AssetId, Digest>? librariesMissingPartDirective,
   }) => BuildResult(
     status: status ?? this.status,
     failureType: failureType ?? this.failureType,
@@ -80,6 +90,8 @@ class BuildResult {
     phasedAssetDeps: phasedAssetDeps ?? this.phasedAssetDeps,
     buildOutputReader: buildOutputReader ?? this.buildOutputReader,
     buildState: buildState ?? this.buildState,
+    librariesMissingPartDirective:
+        librariesMissingPartDirective ?? this.librariesMissingPartDirective,
   );
 
   @override

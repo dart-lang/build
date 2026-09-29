@@ -2,41 +2,101 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:convert';
+
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/token.dart';
+import 'package:build/build.dart';
+import 'package:built_collection/built_collection.dart';
+import 'package:crypto/crypto.dart';
 
+import '../io/reader_writer.dart';
 import '../logging/build_log.dart';
 import 'br_outputs.dart';
 import 'build_state/build_state.dart';
 import 'builder_filesystem.dart';
 import 'source_edit.dart';
 
-/// Missing `part` directives for generated code: finding and placing them.
+/// Missing `part` directives for generated code: finding, placing and adding
+/// them.
 abstract final class PartDirectives {
-  /// Reports libraries that have generated code but no `part` directive
-  /// including it, so the generated code has no effect.
+  /// Libraries that have generated code but no `part` directive including it,
+  /// so the generated code has no effect.
   ///
-  /// Returns whether any were reported.
-  static Future<bool> reportMissing(
+  /// Values are the md5 digests of the library content that was checked.
+  static Future<BuiltMap<AssetId, Digest>> findMissing(
     BuildState buildState,
     BuilderFilesystem filesystem,
   ) async {
-    final lines = <String>[];
+    final result = <AssetId, Digest>{};
     for (final libraryId in buildState.sharedPartLibraryIds) {
       if (buildState.sharedPartContent(libraryId) == null) continue;
-      final source = (await filesystem.contentOf(libraryId)).stringValue();
-      final partUri = libraryId.sharedPartUri!;
-      if (edit(source, partUri) == null) continue;
-      lines.add("${buildLog.renderId(libraryId)}: part '$partUri';");
+      final content = await filesystem.contentOf(libraryId);
+      if (edit(content.stringValue(), libraryId.sharedPartUri!) == null) {
+        continue;
+      }
+      result[libraryId] = md5.convert(content.bytes);
     }
-    if (lines.isEmpty) return false;
-    lines.sort();
-    buildLog.error(
-      'Add missing `part` directives for generated code:\n\n'
-      '${lines.join('\n')}',
-    );
-    return true;
+    return result.build();
+  }
+
+  /// Reports [libraries] as missing the `part` directive for their generated
+  /// code and, unless [onlyCheck], adds it.
+  ///
+  /// [libraries] maps each library to the md5 digest of the content that was
+  /// checked, as returned by [findMissing]. A library that changed since then
+  /// is not edited: the finding is stale, and the next build decides again.
+  /// `build` reruns with the library as an update, and `watch` builds because
+  /// of the change.
+  static Future<void> addMissing(
+    BuiltMap<AssetId, Digest> libraries,
+    ReaderWriter readerWriter, {
+    required bool onlyCheck,
+  }) async {
+    String line(AssetId id) =>
+        "${buildLog.renderId(id)}: part '${id.sharedPartUri}';";
+    if (onlyCheck) {
+      buildLog.error(
+        'Add missing `part` directives for generated code:\n\n'
+        '${(libraries.keys.map(line).toList()..sort()).join('\n')}',
+      );
+      return;
+    }
+    final added = <String>[];
+    final changed = <String>[];
+    for (final MapEntry(key: id, value: digest) in libraries.entries) {
+      final bytes = await readerWriter.readAsBytes(id);
+      if (md5.convert(bytes) != digest) {
+        changed.add(buildLog.renderId(id));
+        continue;
+      }
+      final source = utf8.decode(bytes);
+      // The content is what was checked, so the edit is needed.
+      final sourceEdit = edit(source, id.sharedPartUri!)!;
+      await readerWriter.writeAsString(
+        id,
+        source.replaceRange(
+          sourceEdit.offset,
+          sourceEdit.offset + sourceEdit.length,
+          sourceEdit.replacement,
+        ),
+      );
+      added.add(line(id));
+    }
+    if (added.isNotEmpty) {
+      buildLog.error(
+        'Added missing `part` directives for generated code:\n\n'
+        '${(added..sort()).join('\n')}',
+      );
+    }
+    if (changed.isNotEmpty) {
+      buildLog.error(
+        'Not adding missing `part` directives to libraries that changed '
+        'during the build:\n\n'
+        '${(changed..sort()).join('\n')}',
+      );
+    }
   }
 
   /// The edit that adds `part '$partUri';` to library [source], or `null` if

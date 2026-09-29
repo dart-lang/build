@@ -176,7 +176,7 @@ imports should use *Add to Library* instead.
     `build_runner`. Files under `lib` correspond to part files under `lib/_br_`.
     Files outside `lib` correspond to part files under `_br_` in the package
     root.
--   The user includes the part in their code:
+-   The library includes the part:
 
 ```dart
 // lib/src/user.dart -> lib/_br_/src/user.part.dart
@@ -187,6 +187,10 @@ class User {
   ...
 }
 ```
+
+If the `part` directive is missing, `build_runner` adds it after any other
+`part` directives and rebuilds; with `--only-check` it reports the directive to
+add instead.
 
 ### Scoped imports
 
