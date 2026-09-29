@@ -1,5 +1,6 @@
 ## 4.8.11-wip
 
+- Call DDC with an AOT snapshot via `dart compile js-dev` instead of JIT snapshot.
 - Make `fes_manager` config directory and file user-private.
 - Use a token for socket authentication in `fes_manager`.
 - By default, prefer entrypoints from the `web` directory over
