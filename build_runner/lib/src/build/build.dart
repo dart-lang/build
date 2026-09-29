@@ -216,6 +216,11 @@ class Build {
         result = result.copyWith(status: BuildStatus.failure);
       }
     }
+
+    if (await _reportMissingPartDirectives()) {
+      result = result.copyWith(status: BuildStatus.failure);
+    }
+
     await resourceManager.disposeAll();
 
     resolvers.reset();
@@ -379,6 +384,39 @@ class Build {
         buildState: finishedBuildState,
       ),
     );
+  }
+
+  /// Reports libraries that have generated code but no `part` directive
+  /// including it, so the generated code has no effect.
+  ///
+  /// Returns whether any were reported.
+  Future<bool> _reportMissingPartDirectives() async {
+    final lines = <String>[];
+    for (final libraryId in buildState.sharedPartLibraryIds) {
+      if (buildState.sharedPartContent(libraryId) == null) continue;
+      final source = (await _builderFilesystem.contentOf(
+        libraryId,
+      )).stringValue();
+      final partUri = libraryId.sharedPartUri!;
+      if (_hasPartDirective(source, partUri)) continue;
+      lines.add("${buildLog.renderId(libraryId)}: part '$partUri';");
+    }
+    if (lines.isEmpty) return false;
+    lines.sort();
+    buildLog.error(
+      'Add missing `part` directives for generated code:\n\n'
+      '${lines.join('\n')}',
+    );
+    return true;
+  }
+
+  static bool _hasPartDirective(String source, String partUri) {
+    for (final directive in _parseCompilationUnit(source).directives) {
+      if (directive is PartDirective && directive.uri.stringValue == partUri) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /// Returns primary inputs for [package] in [phaseNumber].

@@ -16,6 +16,10 @@ void main() {
   group('part writer invalidation', () {
     setUp(() {
       tester.sources(['a', 'b']);
+      tester.partGraph({
+        'a': ['_br_/a.part'],
+        'b': ['_br_/b.part'],
+      });
       tester.builder(from: '', to: '.1')
         ..readsOther('b')
         ..writesPart('// part from builder 1');
@@ -59,6 +63,8 @@ void main() {
       });
       tester.partGraph({
         'a': ['_br_/a.part'],
+        'b': ['_br_/b.part'],
+        'c': ['_br_/c.part'],
       });
       // Builder 1 writes a part for 'a'. It depends on 'b', so
       // changing 'b' forces it to rerun and generate a new _br_/a.
@@ -125,6 +131,8 @@ void main() {
         });
         tester.partGraph({
           'a': ['_br_/a.part'],
+          'b': ['_br_/b.part'],
+          'c': ['_br_/c.part'],
         });
         tester.builder(from: '', to: '.1')
           ..readsOther('b')
@@ -176,6 +184,8 @@ void main() {
       });
       tester.partGraph({
         'a': ['_br_/a.part'],
+        'b': ['_br_/b.part'],
+        'c': ['_br_/c.part'],
       });
 
       // Builder 1 adds an import of 'b' to the shared part, and source that
@@ -235,6 +245,8 @@ void main() {
       });
       tester.partGraph({
         'a': ['_br_/a.part'],
+        'b': ['_br_/b.part'],
+        'c': ['_br_/c.part'],
       });
 
       tester.builder(from: '', to: '.1')

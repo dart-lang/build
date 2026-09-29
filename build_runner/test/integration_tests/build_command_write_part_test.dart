@@ -263,8 +263,27 @@ targets:
       },
     );
 
-    // One builder writes a part contribution.
+    // A library with generated code but no `part` directive including it
+    // fails the build, naming the line to add.
     var output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+      expectExitCode: 1,
+    );
+    expect(output, contains(BuildLog.failurePattern));
+    expect(
+      output,
+      contains('Add missing `part` directives for generated code:'),
+    );
+    expect(output, contains("lib/a.dart: part '_br_/a.part.dart';"));
+
+    // One builder writes a part contribution.
+    tester.write('root_pkg/lib/a.dart', r'''
+part '_br_/a.part.dart';
+
+class A {}
+''');
+    output = await tester.run(
       'root_pkg',
       'dart run build_runner build --force-jit',
     );
@@ -317,11 +336,6 @@ targets:
         enabled: true
       phase_part_pkg|part_generator_3:
         enabled: true
-''');
-    tester.write('root_pkg/lib/a.dart', r'''
-part '_br_/a.part.dart';
-
-class A {}
 ''');
     output = await tester.run(
       'root_pkg',
@@ -398,8 +412,16 @@ targets:
       write_part_pkg|write_part_builder:
         enabled: true
 ''');
-    tester.write('root_pkg/lib/a.dart', 'class A {}');
-    tester.write('root_pkg/lib/b.dart', 'class B {}');
+    tester.write('root_pkg/lib/a.dart', r'''
+part '_br_/a.part.dart';
+
+class A {}
+''');
+    tester.write('root_pkg/lib/b.dart', r'''
+part '_br_/b.part.dart';
+
+class B {}
+''');
     await tester.run('root_pkg', 'dart run build_runner build --force-jit');
     expect(
       tester.read('root_pkg/lib/_br_/a.part.dart'),
@@ -440,7 +462,10 @@ targets:
 part '_br_/a.part.dart';
 class A {}
 ''');
-    tester.write('root_pkg/lib/dep.dart', 'class Dep {}\n');
+    tester.write('root_pkg/lib/dep.dart', r'''
+part '_br_/dep.part.dart';
+class Dep {}
+''');
     output = await tester.run(
       'root_pkg',
       'dart run build_runner build --force-jit '
@@ -472,7 +497,10 @@ class Generated {
     // `a.dart` only reaches `dep.dart` through the import in its part, so
     // changing `dep.dart` invalidates `a.resolved.txt` only if the deps of the
     // part are tracked.
-    tester.write('root_pkg/lib/dep.dart', 'class Dep<T> {}\n');
+    tester.write('root_pkg/lib/dep.dart', r'''
+part '_br_/dep.part.dart';
+class Dep<T> {}
+''');
     output = await tester.run(
       'root_pkg',
       'dart run build_runner build --force-jit '
