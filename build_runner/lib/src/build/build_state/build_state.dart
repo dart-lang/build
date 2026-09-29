@@ -4,35 +4,52 @@
 
 import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
-import 'package:built_value/serializer.dart';
-
-import 'package:glob/glob.dart';
+import 'package:crypto/crypto.dart';
 import 'package:meta/meta.dart';
 
-import '../../build_plan/build_packages.dart';
+import '../../build_plan/build_phases.dart';
 import '../../build_plan/build_step_plan.dart';
+import '../../build_plan/phase.dart';
+import '../../contracts.dart';
 import '../asset_content.dart';
-
+import '../br_outputs.dart';
+import '../finished_shared_part.dart';
+import '../part_contribution.dart';
+import '../shared_part_accumulator.dart';
 import 'build_step_id.dart';
 import 'build_step_result.dart';
+import 'finished_build_state.dart';
 import 'glob_id.dart';
 import 'glob_result.dart';
+import 'incremental_build_state.dart';
 import 'post_process_build_step_id.dart';
 import 'post_process_build_step_result.dart';
-import 'serializers.dart';
-import 'sources.dart';
 
-part 'serialization.dart';
-
-/// Build state that is updated during the build then serialized to allow a
-/// follow-on incremental build.
+/// Build state that is updated during the build then converted to
+/// [IncrementalBuildState] and [FinishedBuildState] for serialization and
+/// follow-on incremental builds.
 ///
-/// - Sources and their digests; missing sources.
+/// - Sources and their digests.
 /// - Glob results.
+/// - Build step results.
 /// - Post process build step results.
+@Invariant(
+  '_partData.keys.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)',
+)
+@Invariant('_partData.keys.every((id) => id.sharedPartId != null)')
+@Invariant(
+  '_librariesWithRebuiltPart.every('
+  '(id) => id.package.isNotEmpty && id.path.isNotEmpty)',
+)
 class BuildState {
-  /// Sources and missing sources.
-  final Sources _sources;
+  /// The planned build steps for this build.
+  final BuildStepPlan buildStepPlan;
+
+  /// Sources.
+  final Set<AssetId> _sources;
+
+  /// Contents of sources and outputs populated during the build.
+  final Map<AssetId, AssetContent> _contents;
 
   /// All standard build step execution results by [AssetId] then phase number.
   final Map<AssetId, Map<int, BuildStepResult>> _buildStepResultsByPrimaryInput;
@@ -47,88 +64,99 @@ class BuildState {
   /// All post process build step outputs by the step that created them.
   final Map<AssetId, PostProcessBuildStepId> _postProcessOutputs;
 
-  BuildState([Map<AssetId, AssetContent?> sources = const {}])
-    : _sources = Sources(sources),
-      _postProcessResultsByInput = {},
-      _postProcessOutputs = {},
-      _buildStepResultsByPrimaryInput = {},
-      _globResults = {};
+  /// Source added using `buildStep.librarySourceSink`.
+  final Map<AssetId, SharedPartAccumulator> _partData = {};
 
-  // --  Predicates over IDs and iterables over IDs.
+  /// Retained output contents from previous build, used when keeping modified
+  /// outputs.
+  final Map<AssetId, AssetContent> _retainedOutputContents;
 
-  /// Whether [id] is one of: source, declared output or actual post process
-  /// output.
-  bool isFile({required BuildStepPlan? buildStepPlan, required AssetId id}) =>
-      isSource(id) ||
-      buildStepPlan?.isDeclaredOutput(id) == true ||
-      isActualPostOutput(id);
-
-  /// Files that are in [package] and match [glob].
+  /// Libraries whose shared part is rebuilt in this build.
   ///
-  /// To match declared outputs as well as sources, pass `buildStepPlan`. The
-  /// declared outputs that match might not exist yet if their build step hasn't
-  /// run, or might never exist if it runs but decides not to output them.
-  ///
-  /// Does not match post process outputs.
-  Iterable<AssetId> findFiles({
-    required String package,
-    required BuildStepPlan? buildStepPlan,
-    Glob? glob,
-  }) => _sources.findFiles(
-    package,
-    buildStepPlan?.declaredOutputs ?? const [],
-    glob: glob,
-  );
+  /// Retained output content is not used for these, as it is superseded by
+  /// what this build writes.
+  final Set<AssetId> _librariesWithRebuiltPart = {};
+
+  @Ensures('_sources.every((id) => !buildStepPlan.isDeclaredOutput(id))')
+  @Ensures('_sources.every((id) => !id.isBrOutput)')
+  @Ensures(
+    '_contents.keys.every((id) => '
+    'isSource(id) || '
+    'isActualOutput(id) || '
+    'isActualPostOutput(id) || '
+    'id.isBrOutput)',
+  )
+  BuildState({
+    required this.buildStepPlan,
+    required Map<AssetId, AssetContent?> sources,
+    Map<AssetId, AssetContent> retainedOutputContents = const {},
+  }) : _sources = sources.keys.toSet(),
+       _contents = {
+         for (final entry in sources.entries)
+           if (entry.value != null) entry.key: entry.value!,
+       },
+       _retainedOutputContents = Map.of(retainedOutputContents),
+       _postProcessResultsByInput = {},
+       _postProcessOutputs = {},
+       _buildStepResultsByPrimaryInput = {},
+       _globResults = {} {
+    for (final id in _sources) {
+      if (buildStepPlan.isDeclaredOutput(id)) {
+        throw ArgumentError(
+          'Source $id clashes with declared output in buildStepPlan.',
+        );
+      }
+    }
+  }
+
+  /// An empty [BuildState] with no sources and an empty plan.
+  @visibleForTesting
+  BuildState.empty()
+    : this(
+        buildStepPlan: BuildStepPlan(
+          (b) => b.buildPhases = BuildPhases(const <InBuildPhase>[]),
+        ),
+        sources: const {},
+      );
+
+  // -- Predicates over IDs and iterables over IDs.
 
   /// Sources.
-  ///
-  /// Files that were on disk in all packages in the build when the build
-  /// started, excluding any that were matched as prior `build_runner` outputs.
-  Iterable<AssetId> get sources => _sources.sourceIds;
+  Iterable<AssetId> get sources => _sources;
 
   /// Whether [id] is a source file.
-  bool isSource(AssetId id) => _sources.isSource(id);
+  bool isSource(AssetId id) => _sources.contains(id);
 
-  /// Whether [id] is a source file that has never been read.
-  ///
-  /// That means it is not a primary input and has never been read by any
-  /// builder as an additional input.
-  bool isUnreadSource(AssetId id) => _sources.isUnreadSource(id);
-
-  /// Whether [id] is a source file that was accessed but did not exist.
-  bool isMissingSource(AssetId id) => _sources.isMissingSource(id);
+  /// Whether [id] is one of: source, declared output, `_br_` output, or actual
+  /// post process output.
+  bool isKnownAsset(AssetId id) =>
+      isSource(id) ||
+      buildStepPlan.isDeclaredOutput(id) ||
+      id.isBrOutput ||
+      isActualPostOutput(id);
 
   /// Actual build step outputs.
   ///
   /// A subset of the declared outputs.
-  Iterable<AssetId> get actualOutputs =>
-      actualStepResults.expand((result) => result.outputs.keys);
-
-  /// All build step results that actually executed.
-  Iterable<BuildStepResult> get actualStepResults =>
-      _buildStepResultsByPrimaryInput.values.expand((map) => map.values);
+  Iterable<AssetId> get actualOutputs => _buildStepResultsByPrimaryInput.values
+      .expand((map) => map.values)
+      .expand((result) => result.outputs);
 
   /// Whether [id] is a declared build output that was actually generated.
-  bool isActualOutput({
-    required BuildStepPlan buildStepPlan,
-    required AssetId id,
-  }) {
+  bool isActualOutput(AssetId id) {
     final buildStepId = buildStepPlan.stepForDeclaredOutputOrNull(id);
     if (buildStepId == null) return false;
-    return stepResultOrNull(buildStepId)?.outputs.containsKey(id) ?? false;
+    return stepResultOrNull(buildStepId)?.outputs.contains(id) ?? false;
   }
 
   /// Whether [id] is a declared build output that was actually generated by
   /// a build step that succeeded.
-  bool isActualSuccessfulOutput({
-    required BuildStepPlan buildStepPlan,
-    required AssetId id,
-  }) {
+  bool isActualSuccessfulOutput(AssetId id) {
     final step = buildStepPlan.stepForDeclaredOutputOrNull(id);
     if (step == null) return false;
     final stepResult = stepResultOrNull(step);
     if (stepResult == null) return false;
-    return stepResult.succeeded && stepResult.outputs.containsKey(id);
+    return stepResult.succeeded && stepResult.outputs.contains(id);
   }
 
   /// Post process outputs.
@@ -138,22 +166,15 @@ class BuildState {
   /// previous build.
   Iterable<AssetId> get actualPostOutputs => _postProcessOutputs.keys;
 
-  /// All post process build step results that actually executed.
-  Iterable<PostProcessBuildStepResult> get actualPostProcessResults =>
-      _postProcessResultsByInput.values.expand((map) => map.values);
-
   /// Whether [id] is a post process build output that was actually generated.
   bool isActualPostOutput(AssetId id) => _postProcessOutputs.containsKey(id);
 
   /// Whether the builder for [id] has been processed during this build.
   ///
   /// That means it has been run, skipped, or it failed.
-  bool isProcessedOutput({
-    required BuildStepPlan? buildStepPlan,
-    required AssetId id,
-  }) {
+  bool isProcessedOutput(AssetId id) {
     if (isActualPostOutput(id)) return true;
-    final step = buildStepPlan?.stepForDeclaredOutputOrNull(id);
+    final step = buildStepPlan.stepForDeclaredOutputOrNull(id);
     if (step != null) return stepResultOrNull(step) != null;
     return false;
   }
@@ -163,81 +184,81 @@ class BuildState {
   /// Updates a source file content.
   ///
   /// Throws if not a source.
-  void updateSourceContent(AssetId id, AssetContent? content) {
-    _sources.updateContent(id, content);
-  }
-
-  /// Updates the [step] declared output [id] to [content].
-  ///
-  /// Throws if not a declared output.
-  void updateDeclaredOutputContent({
-    required BuildStepId step,
-    required AssetId id,
-    required AssetContent content,
-  }) {
-    final stepResult = stepResultOrNull(step);
-    if (stepResult == null || !stepResult.outputs.containsKey(id)) {
-      throw StateError(
-        'Step $step does not have result with declared output $id.',
-      );
+  @Ensures('isSource(id)')
+  @Ensures('_contents[id] == content')
+  @ThrowEnsures(StateError, '!isSource(id)')
+  void updateSourceContent(AssetId id, AssetContent content) {
+    if (!isSource(id)) {
+      throw StateError('Tried to update content of non-source $id.');
     }
-    updateBuildStepResult(
-      step,
-      stepResult.rebuild((b) => b..outputs[id] = content),
-    );
-  }
-
-  /// Updates the [step] post process output [id] to [content].
-  ///
-  /// Throws if not a post process output.
-  void updatePostProcessOutputContent({
-    required PostProcessBuildStepId step,
-    required AssetId id,
-    required AssetContent content,
-  }) {
-    final stepResult = postProcessBuildStepResultFor(step);
-    if (stepResult == null || !stepResult.outputs.containsKey(id)) {
-      throw StateError(
-        'Step $step does not have result with post process output $id.',
-      );
-    }
-    _postProcessResultsByInput[step.input]![step.actionNumber] = stepResult
-        .rebuild((b) => b..outputs[id] = content);
+    _contents[id] = content;
   }
 
   /// The content of [id].
   ///
-  /// If it is a source, returns `null` if it has not been read.
-  ///
-  /// If it is a build output, returns `null` if it has not been generated.
-  ///
-  /// If it is a post process output, returns `null` if it has not been
-  /// generated.
-  AssetContent? contentOf({BuildStepPlan? buildStepPlan, required AssetId id}) {
-    if (isSource(id)) return _sources.contentOfSource(id);
-    final step = buildStepPlan?.stepForDeclaredOutputOrNull(id);
-    if (step != null) {
-      return stepResultOrNull(step)?.outputs[id];
-    }
-    final postProcessStepId = _postProcessOutputs[id];
-    if (postProcessStepId != null) {
-      return postProcessBuildStepResultFor(postProcessStepId)?.outputs[id];
-    }
-    return null;
+  /// Returns `null` if it is an unread source or has not been generated.
+  AssetContent? contentOf(AssetId id) {
+    if (id.isBrOutput) return sharedPartContent(id);
+    return _contents[id];
   }
 
-  /// The content of source [id], or `null` if it has not been read.
-  ///
-  /// Throws if it is not a source.
-  AssetContent? contentOfSource(AssetId id) => _sources.contentOfSource(id);
+  /// The digest of [id], or `null` if not known.
+  Digest? digestOf(AssetId id) {
+    if (id.isBrOutput) return sharedPartContent(id)?.digest;
+    return _contents[id]?.digest;
+  }
 
-  // -- Missing sources.
+  @visibleForTesting
+  IncrementalBuildState toIncrementalBuildState() {
+    final builder = IncrementalBuildStateBuilder()..sources.addAll(_sources);
 
-  /// Adds a source that a builder tried to access but was missing.
-  ///
-  /// The builder must check and find there is no declared output or
-  /// source before calling this.
-  void addMissingSource(AssetId id) => _sources.addMissing(id);
+    for (final entry in _contents.entries) {
+      builder.digests[entry.key] = entry.value.digest;
+    }
+
+    for (final outer in _buildStepResultsByPrimaryInput.entries) {
+      final input = outer.key;
+      for (final inner in outer.value.entries) {
+        final stepId = BuildStepId(primaryInput: input, phaseNumber: inner.key);
+        builder.buildStepResults[stepId] = inner.value;
+      }
+    }
+
+    for (final outer in _postProcessResultsByInput.entries) {
+      final input = outer.key;
+      for (final inner in outer.value.entries) {
+        final stepId = PostProcessBuildStepId(
+          input: input,
+          actionNumber: inner.key,
+        );
+        builder.postProcessResults[stepId] = inner.value;
+      }
+    }
+
+    builder.globResults.addAll(_globResults);
+
+    for (final libraryId in _partData.keys) {
+      builder.digests[libraryId.sharedPartId!] = _partContent(libraryId).digest;
+    }
+
+    return builder.build();
+  }
+
+  FinishedBuildState toFinishedBuildState() {
+    final contents = Map<AssetId, AssetContent>.from(_contents);
+    for (final libraryId in _partData.keys) {
+      contents[libraryId.sharedPartId!] = _partContent(libraryId);
+    }
+    return FinishedBuildState(
+      buildStepPlan: buildStepPlan,
+      incremental: toIncrementalBuildState(),
+      contents: contents.build(),
+      sharedParts: BuiltMap<AssetId, FinishedSharedPart>({
+        for (final entry in _partData.entries)
+          entry.key: entry.value.toFinishedSharedPart(),
+      }),
+    );
+  }
 
   // -- Build steps.
 
@@ -251,13 +272,145 @@ class BuildState {
       _buildStepResultsByPrimaryInput[buildStep.primaryInput]?[buildStep
           .phaseNumber];
 
-  /// Updates a build step result after the step runs.
-  void updateBuildStepResult(BuildStepId buildStepId, BuildStepResult result) {
-    _buildStepResultsByPrimaryInput.putIfAbsent(
-      buildStepId.primaryInput,
+  /// Adds a build step result and its output contents.
+  ///
+  /// Throws if [contents] does not have keys matching outputs of [result],
+  /// or if [step] has already been recorded.
+  @Requires('step.phaseNumber >= 0')
+  @Ensures('result.outputs.every((id) => buildStepPlan.isDeclaredOutput(id))')
+  @Ensures('contents.keys.every((id) => _contents.containsKey(id))')
+  @ThrowEnsures(StateError, 'stepResultOrNull(step) != null')
+  void addBuildStepResult({
+    required BuildStepId step,
+    required BuildStepResult result,
+    Map<AssetId, AssetContent> contents = const {},
+  }) {
+    if (result.outputs.length != contents.length ||
+        !result.outputs.every(contents.containsKey)) {
+      throw ArgumentError(
+        'Step $step outputs ${result.outputs} '
+        'do not match contents ${contents.keys}.',
+      );
+    }
+    final results = _buildStepResultsByPrimaryInput.putIfAbsent(
+      step.primaryInput,
       () => {},
-    )[buildStepId.phaseNumber] = result;
+    );
+    if (results.containsKey(step.phaseNumber)) {
+      throw StateError('Already had build step result for $step.');
+    }
+    results[step.phaseNumber] = result;
+    _contents.addAll(contents);
   }
+
+  // -- Shared parts.
+
+  /// Whether the library [id] has a shared part.
+  bool hasSharedPart(AssetId id) =>
+      _partData.containsKey(id.sharedPartLibraryId ?? id);
+
+  /// The content of the shared part for [id], or `null` if it does not exist.
+  ///
+  /// [id] is either the library ID or the shared part ID.
+  AssetContent? sharedPartContent(AssetId id, {int? upToPhase}) {
+    final libraryId = id.sharedPartLibraryId ?? id;
+    final partData = _partData[libraryId];
+    if (partData == null) return null;
+    if (upToPhase == null) return _partContent(libraryId);
+    return partData.contentAt(upToPhase);
+  }
+
+  /// The content of the shared part for [libraryId] as it will be on disk.
+  ///
+  /// If the part is not rebuilt in this build then this is the content written
+  /// by the previous build, which is still correct and is kept as is.
+  ///
+  /// Throws if [libraryId] has no shared part.
+  AssetContent _partContent(AssetId libraryId) {
+    if (!_librariesWithRebuiltPart.contains(libraryId)) {
+      final retained = _retainedOutputContents[libraryId.sharedPartId!];
+      if (retained != null) return retained;
+    }
+    return _partData[libraryId]!.finalContent();
+  }
+
+  /// All libraries that have a shared part.
+  Iterable<AssetId> get sharedPartLibraryIds => _partData.keys;
+
+  /// Records that the shared part for [id] is rebuilt in this build.
+  ///
+  /// [id] is either the library ID or the shared part ID.
+  void markPartRebuilt(AssetId id) {
+    _librariesWithRebuiltPart.add(id.sharedPartLibraryId ?? id);
+  }
+
+  /// Whether the shared part for [id] is rebuilt in this build.
+  ///
+  /// [id] is either the library ID or the shared part ID.
+  bool hasRebuiltPart(AssetId id) =>
+      _librariesWithRebuiltPart.contains(id.sharedPartLibraryId ?? id);
+
+  /// Adds a contribution written by a builder in this build.
+  ///
+  /// Creates the shared part for [libraryId] if it does not exist yet.
+  ///
+  /// The contribution supersedes whatever the previous build wrote, so the
+  /// part is marked rebuilt.
+  @Requires('libraryId.package.isNotEmpty')
+  @Requires('libraryId.path.isNotEmpty')
+  @Requires('libraryId.sharedPartId != null')
+  @Requires('phase >= 0')
+  @Requires('contribution.builderKey.isNotEmpty')
+  void addPartContribution({
+    required AssetId libraryId,
+    required int phase,
+    required PartContribution contribution,
+    required String? languageVersion,
+  }) {
+    markPartRebuilt(libraryId);
+    _partDataFor(
+      libraryId,
+      languageVersion,
+    ).addContribution(phase, contribution);
+  }
+
+  /// Replays a contribution that [fromPart] recorded in the previous build.
+  ///
+  /// Creates the shared part for [libraryId] if it does not exist yet.
+  ///
+  /// Does nothing if [fromPart] is `null` or recorded nothing for [phase].
+  ///
+  /// The part is deliberately not marked rebuilt. The replayed contribution
+  /// reproduces what the previous build already wrote, so that content is
+  /// still correct and is kept rather than written again. Marking it rebuilt
+  /// would report the part as an output of this build.
+  @Requires('phase >= 0')
+  @Requires('fromPart == null || libraryId.package.isNotEmpty')
+  @Requires('fromPart == null || libraryId.path.isNotEmpty')
+  @Requires('fromPart == null || libraryId.sharedPartId != null')
+  void copyPartContribution({
+    required FinishedSharedPart? fromPart,
+    required AssetId libraryId,
+    required int phase,
+    required String? languageVersion,
+  }) {
+    if (fromPart == null) return;
+    final contribution = fromPart.contributions[phase];
+    if (contribution == null) return;
+    _partDataFor(
+      libraryId,
+      languageVersion ?? fromPart.languageVersion,
+    ).addContribution(phase, contribution);
+  }
+
+  /// The accumulator for [libraryId], creating it if it does not exist yet.
+  SharedPartAccumulator _partDataFor(
+    AssetId libraryId,
+    String? languageVersion,
+  ) => _partData[libraryId] ??= SharedPartAccumulator(
+    libraryId,
+    languageVersion,
+  );
 
   // -- Globs.
 
@@ -271,10 +424,29 @@ class BuildState {
 
   // -- Post process build steps.
 
-  void addPostProcessBuildStepResult(
-    PostProcessBuildStepId step,
-    PostProcessBuildStepResult result,
-  ) {
+  /// Adds a post process build step result and its output contents.
+  ///
+  /// Throws if [contents] does not have keys matching outputs of [result],
+  /// or if [step] has already been recorded.
+  @Requires('step.actionNumber >= 0')
+  @Ensures(
+    'result.outputs.every((id) => '
+    '!isSource(id) && !buildStepPlan.isDeclaredOutput(id))',
+  )
+  @Ensures('contents.keys.every((id) => _contents.containsKey(id))')
+  @ThrowEnsures(StateError, 'postProcessBuildStepResultFor(step) != null')
+  void addPostProcessBuildStepResult({
+    required PostProcessBuildStepId step,
+    required PostProcessBuildStepResult result,
+    Map<AssetId, AssetContent> contents = const {},
+  }) {
+    if (result.outputs.length != contents.length ||
+        !result.outputs.every(contents.containsKey)) {
+      throw ArgumentError(
+        'Post process step $step outputs ${result.outputs} '
+        'do not match contents ${contents.keys}.',
+      );
+    }
     final results = _postProcessResultsByInput.putIfAbsent(
       step.input,
       () => {},
@@ -283,24 +455,26 @@ class BuildState {
       throw StateError('Already had post process result for $step.');
     }
     results[step.actionNumber] = result;
-    for (final outputId in result.outputs.keys) {
+    for (final outputId in result.outputs) {
       _postProcessOutputs[outputId] = step;
     }
+    _contents.addAll(contents);
   }
 
   PostProcessBuildStepResult? postProcessBuildStepResultFor(
     PostProcessBuildStepId step,
   ) => _postProcessResultsByInput[step.input]?[step.actionNumber];
 
-  PostProcessBuildStepId? postProcessStepFor(AssetId id) =>
-      _postProcessOutputs[id];
-
-  bool isHiddenPostProcessOutput(AssetId id) {
+  bool _isArtifactTreePostProcessOutput(AssetId id) {
     final stepId = _postProcessOutputs[id];
     if (stepId == null) return false;
     final result = postProcessBuildStepResultFor(stepId);
-    return result?.hidden ?? false;
+    return result?.inArtifactTree ?? false;
   }
+
+  bool isInArtifactTree(AssetId id) =>
+      buildStepPlan.isDeclaredOutputInArtifactTree(id) ||
+      _isArtifactTreePostProcessOutput(id);
 
   Iterable<BuildStepId> get failedSteps {
     final results = <BuildStepId>[];
@@ -330,50 +504,17 @@ class BuildState {
     return results;
   }
 
-  Set<AssetId> get assetsDeletedByPostProcess {
-    final result = <AssetId>{};
-    for (final outer in _postProcessResultsByInput.entries) {
-      final input = outer.key;
-      for (final inner in outer.value.values) {
-        if (inner.deletedPrimaryInput) {
-          result.add(input);
-          break;
-        }
-      }
-    }
-    return result;
-  }
-
-  /// Returns outputs that were written to the source tree in packages that
-  /// still exist.
-  Iterable<AssetId> outputsToDelete(BuildPackages buildPackages) {
-    final result = <AssetId>[];
-    for (final map in _buildStepResultsByPrimaryInput.values) {
-      for (final stepResult in map.values) {
-        if (!stepResult.isHidden) {
-          for (final id in stepResult.outputs.keys) {
-            if (buildPackages[id.package] != null) result.add(id);
-          }
-        }
-      }
-    }
-    for (final results in _postProcessResultsByInput.values) {
-      for (final postProcessResults in results.values) {
-        if (!postProcessResults.hidden) {
-          for (final id in postProcessResults.outputs.keys) {
-            if (buildPackages[id.package] != null) result.add(id);
-          }
-        }
-      }
-    }
-    return result;
-  }
-
-  // -- Creation of the state and updates for incremental builds.
-
   // -- Testing.
 
   @visibleForTesting
-  void addSourceForTest(AssetId id, {AssetContent? digest}) =>
-      _sources.add(id, digest: digest);
+  @Requires('id.package.isNotEmpty')
+  @Requires('id.path.isNotEmpty')
+  @Requires('!buildStepPlan.isDeclaredOutput(id)')
+  @Requires('!id.isBrOutput')
+  void addSourceForTest(AssetId id, {AssetContent? content}) {
+    _sources.add(id);
+    if (content != null) {
+      _contents[id] = content;
+    }
+  }
 }

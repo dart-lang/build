@@ -12,8 +12,10 @@ import 'package:glob/glob.dart';
 import 'package:glob/list_local_fs.dart';
 import 'package:path/path.dart' as path;
 
+import '../build_plan/asset_file.dart';
 import '../build_plan/build_package.dart';
 import '../build_plan/build_packages.dart';
+import '../contracts.dart';
 import '../logging/timed_activities.dart';
 import 'asset_finder.dart';
 import 'asset_path_provider.dart';
@@ -24,17 +26,17 @@ import 'filesystem.dart';
 /// [AssetReader] and [AssetWriter] are the builder-facing file operations APIs,
 /// and are implemented here so that `TestReaderWriter` can offer them.
 ///
-/// Various methods accept `hidden`, which causes assets to be resolved under
-/// `.dart_tool/build/generated` instead of in the source tree.
+/// Various methods accept `inArtifactTree`, which causes assets to be resolved
+/// under `.dart_tool/build/generated` instead of at the package path.
 class ReaderWriter implements AssetReader, AssetWriter {
   final AssetFinder assetFinder;
   final AssetPathProvider assetPathProvider;
   final Filesystem filesystem;
 
-  /// Whether to force `hidden` to false.
+  /// Whether to force `inArtifactTree` to false.
   ///
   /// Used only in tests.
-  final bool forceVisibleForTesting;
+  final bool forceToPackagePathsForTesting;
 
   /// A [ReaderWriter] suitable for real builds.
   ///
@@ -42,48 +44,52 @@ class ReaderWriter implements AssetReader, AssetWriter {
   /// `dart-io` filesystem is used with no cache.
   factory ReaderWriter(
     BuildPackages buildPackages, {
-    bool forceVisibleForTesting = false,
+    bool forceToPackagePathsForTesting = false,
   }) => ReaderWriter.using(
     assetFinder: BuildPackagesAssetFinder(buildPackages),
     assetPathProvider: buildPackages,
     filesystem: IoFilesystem(),
-    forceVisibleForTesting: forceVisibleForTesting,
+    forceToPackagePathsForTesting: forceToPackagePathsForTesting,
   );
 
   ReaderWriter.using({
     required this.assetFinder,
     required this.assetPathProvider,
     required this.filesystem,
-    this.forceVisibleForTesting = false,
+    this.forceToPackagePathsForTesting = false,
   });
 
+  @Requires('id.package.isNotEmpty && id.path.isNotEmpty')
+  @Ensures('result.isNotEmpty')
   String _pathFor(
     AssetId id, {
-    bool hidden = false,
+    bool inArtifactTree = false,
     bool checkWriteAllowed = false,
   }) {
     return assetPathProvider.pathFor(
       id,
-      hide: hidden && !forceVisibleForTesting,
+      inArtifactTree: inArtifactTree && !forceToPackagePathsForTesting,
       checkWriteAllowed: checkWriteAllowed,
     );
   }
 
   @override
-  Future<bool> canRead(AssetId id, {bool hidden = false}) {
+  @Requires('id.package.isNotEmpty && id.path.isNotEmpty')
+  Future<bool> canRead(AssetId id, {bool inArtifactTree = false}) {
     return Future.value(
       TimedActivity.read.run(() {
-        final path = _pathFor(id, hidden: hidden);
+        final path = _pathFor(id, inArtifactTree: inArtifactTree);
         return filesystem.existsSync(path);
       }),
     );
   }
 
   @override
-  Future<List<int>> readAsBytes(AssetId id, {bool hidden = false}) {
+  @Requires('id.package.isNotEmpty && id.path.isNotEmpty')
+  Future<List<int>> readAsBytes(AssetId id, {bool inArtifactTree = false}) {
     return Future.value(
       TimedActivity.read.run(() {
-        final path = _pathFor(id, hidden: hidden);
+        final path = _pathFor(id, inArtifactTree: inArtifactTree);
         if (!filesystem.existsSync(path)) {
           throw AssetNotFoundException(id, path: path);
         }
@@ -93,14 +99,15 @@ class ReaderWriter implements AssetReader, AssetWriter {
   }
 
   @override
+  @Requires('id.package.isNotEmpty && id.path.isNotEmpty')
   Future<String> readAsString(
     AssetId id, {
     Encoding encoding = utf8,
-    bool hidden = false,
+    bool inArtifactTree = false,
   }) {
     return Future.value(
       TimedActivity.read.run(() {
-        final path = _pathFor(id, hidden: hidden);
+        final path = _pathFor(id, inArtifactTree: inArtifactTree);
         if (!filesystem.existsSync(path)) {
           throw AssetNotFoundException(id, path: path);
         }
@@ -112,53 +119,74 @@ class ReaderWriter implements AssetReader, AssetWriter {
   // [AssetWriter] methods.
 
   @override
+  @Requires('id.package.isNotEmpty && id.path.isNotEmpty')
   Future<void> writeAsBytes(
     AssetId id,
     List<int> bytes, {
-    bool hidden = false,
+    bool inArtifactTree = false,
   }) {
     TimedActivity.write.run(() {
-      final path = _pathFor(id, hidden: hidden, checkWriteAllowed: true);
+      final path = _pathFor(
+        id,
+        inArtifactTree: inArtifactTree,
+        checkWriteAllowed: true,
+      );
       filesystem.writeAsBytesSync(path, bytes);
     });
     return Future.value();
   }
 
   @override
+  @Requires('id.package.isNotEmpty && id.path.isNotEmpty')
   Future<void> writeAsString(
     AssetId id,
     String contents, {
     Encoding encoding = utf8,
-    bool hidden = false,
+    bool inArtifactTree = false,
   }) {
     TimedActivity.write.run(() {
-      final path = _pathFor(id, hidden: hidden, checkWriteAllowed: true);
+      final path = _pathFor(
+        id,
+        inArtifactTree: inArtifactTree,
+        checkWriteAllowed: true,
+      );
       filesystem.writeAsStringSync(path, contents, encoding: encoding);
     });
     return Future.value();
   }
 
   @override
-  Future<Digest> digest(AssetId id, {bool hidden = false}) async {
+  @Requires('id.package.isNotEmpty && id.path.isNotEmpty')
+  Future<Digest> digest(AssetId id, {bool inArtifactTree = false}) async {
     final digestSink = AccumulatorSink<Digest>();
     md5.startChunkedConversion(digestSink)
-      ..add(await readAsBytes(id, hidden: hidden))
+      ..add(await readAsBytes(id, inArtifactTree: inArtifactTree))
       ..add(id.toString().codeUnits)
       ..close();
     return digestSink.events.first;
   }
 
-  Future<void> delete(AssetId id, {bool hidden = false}) {
+  @Requires('file.id.package.isNotEmpty && file.id.path.isNotEmpty')
+  Future<void> delete(AssetFile file) {
     TimedActivity.write.run(() {
-      final path = _pathFor(id, hidden: hidden, checkWriteAllowed: true);
+      final path = _pathFor(
+        file.id,
+        inArtifactTree: file.inArtifactTree,
+        checkWriteAllowed: true,
+      );
       filesystem.deleteSync(path);
     });
     return Future.value();
   }
 
-  Future<void> deleteDirectory(AssetId id, {bool hidden = false}) {
+  @Requires('id.package.isNotEmpty && id.path.isNotEmpty')
+  Future<void> deleteDirectory(AssetId id, {bool inArtifactTree = false}) {
     TimedActivity.write.run(() {
-      final path = _pathFor(id, hidden: hidden, checkWriteAllowed: true);
+      final path = _pathFor(
+        id,
+        inArtifactTree: inArtifactTree,
+        checkWriteAllowed: true,
+      );
       filesystem.deleteDirectorySync(path);
     });
     return Future.value();
@@ -196,6 +224,8 @@ class BuildPackagesAssetFinder implements AssetFinder {
   }
 
   /// Creates an [AssetId] for [file], which is a part of [packageNode].
+  @Requires('packageNode.name.isNotEmpty')
+  @Ensures('result.package.isNotEmpty && result.path.isNotEmpty')
   static AssetId _fileToAssetId(File file, BuildPackage packageNode) {
     final filePath = path.normalize(file.absolute.path);
     final relativePath = path.relative(filePath, from: packageNode.path);

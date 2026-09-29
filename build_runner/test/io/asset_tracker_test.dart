@@ -8,13 +8,16 @@ import 'dart:io';
 import 'package:build/build.dart';
 import 'package:build_runner/src/build/asset_content.dart';
 import 'package:build_runner/src/build/build_state/build_state.dart';
-import 'package:build_runner/src/build/build_state/build_step_id.dart';
+import 'package:build_runner/src/build/library_cycle_graph/phased_asset_deps.dart';
+import 'package:build_runner/src/build_plan/asset_file.dart';
 import 'package:build_runner/src/build_plan/build_configs.dart';
+import 'package:build_runner/src/build_plan/build_options.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
-import 'package:build_runner/src/build_plan/build_phases.dart';
+import 'package:build_runner/src/build_plan/build_spec.dart';
 import 'package:build_runner/src/build_plan/build_step_plan.dart';
-import 'package:build_runner/src/build_plan/phase.dart';
+import 'package:build_runner/src/build_plan/builder_factories.dart';
+import 'package:build_runner/src/build_plan/previous_build.dart';
 import 'package:build_runner/src/build_plan/testing_overrides.dart';
 import 'package:build_runner/src/io/asset_tracker.dart';
 import 'package:build_runner/src/io/reader_writer.dart';
@@ -32,14 +35,10 @@ void main() {
 
   group('AssetTracker.collectChanges()', () {
     late AssetTracker assetTracker;
-    late BuildState buildState;
-    late BuildStepPlan buildStepPlan;
+    late PreviousBuild previousBuild;
 
     setUp(() async {
-      buildStepPlan = BuildStepPlan(
-        (BuildStepPlanBuilder b) =>
-            b..buildPhases = BuildPhases(const <InBuildPhase>[]),
-      );
+      final buildStepPlan = BuildStepPlan.empty();
       await d.dir('a', [
         d.dir('web', [d.file('a.txt', 'hello')]),
         d.dir('.dart_tool', [
@@ -60,45 +59,71 @@ void main() {
       ]);
       final reader = ReaderWriter(buildPackages);
       final aId = AssetId('a', 'web/a.txt');
-      buildState = BuildState({aId: null});
-      // Assign a digest so the source is recognized as having been used.
+      final buildState = BuildState(
+        buildStepPlan: buildStepPlan,
+        sources: {aId: null},
+      );
+      // Record the initial content so the finished state has a digest for
+      // change detection.
+      final bytes = await reader.readAsBytes(aId);
       final digest = await reader.digest(aId);
-      buildState.updateSourceContent(aId, AssetContent.digest(digest));
+      buildState.updateSourceContent(
+        aId,
+        AssetContent.bytes(bytes, digest: digest),
+      );
+      final finishedBuildState = buildState.toFinishedBuildState();
 
-      final buildConfigs = await BuildConfigs.load(
-        buildPackages: buildPackages,
+      final buildSpec = await BuildSpec.load(
+        builderFactories: BuilderFactories({}),
+        buildOptions: BuildOptions.forTests(),
         testingOverrides: TestingOverrides(
+          buildPackages: buildPackages,
           defaultRootPackageSources: ['web/**'].build(),
+          readerWriter: reader,
         ),
       );
-      assetTracker = AssetTracker(reader, buildPackages, buildConfigs);
+      final initialBuild = await PreviousBuild.load(buildSpec);
+
+      assetTracker = AssetTracker(
+        reader,
+        buildPackages,
+        buildSpec.buildConfigs,
+      );
       final updates = await assetTracker.collectChanges(
-        buildState: buildState,
-        buildStepPlan: buildStepPlan,
+        previousBuild: initialBuild.updateForNextBuild(
+          finishedBuildState: finishedBuildState,
+          previousPhasedAssetDeps: PhasedAssetDeps(),
+        ),
       );
       // Advance buildState for the next tests so these initial sources are
       // known.
-      final newSources = buildState.sources.toSet();
+      final newSources = finishedBuildState.sources.toSet();
       for (final entry in updates.entries) {
         if (entry.value != ChangeType.REMOVE) {
-          newSources.add(entry.key);
+          newSources.add(entry.key.id);
         } else {
-          newSources.remove(entry.key);
+          newSources.remove(entry.key.id);
         }
       }
-      final nextState = BuildState({for (final s in newSources) s: null});
+      final nextState = BuildState(
+        buildStepPlan: buildStepPlan,
+        sources: {for (final s in newSources) s: null},
+      );
       for (final id in newSources) {
-        if (buildState.isSource(id)) {
-          final digest = buildState.contentOfSource(id);
+        if (finishedBuildState.isSource(id)) {
+          final digest = finishedBuildState.contentOf(id);
           if (digest != null) nextState.updateSourceContent(id, digest);
         }
       }
-      buildState = nextState;
+      previousBuild = initialBuild.updateForNextBuild(
+        finishedBuildState: nextState.toFinishedBuildState(),
+        previousPhasedAssetDeps: PhasedAssetDeps(),
+      );
 
       // We should see no changes initially other than new sdk sources
       expect(
         updates..removeWhere(
-          (id, type) => id.package == r'$sdk' && type == ChangeType.ADD,
+          (file, type) => file.id.package == r'$sdk' && type == ChangeType.ADD,
         ),
         isEmpty,
       );
@@ -107,64 +132,120 @@ void main() {
     test('Collects file edits', () async {
       File(p.join(d.sandbox, 'a', 'web', 'a.txt')).writeAsStringSync('goodbye');
 
-      expect(
-        await assetTracker.collectChanges(
-          buildState: buildState,
-          buildStepPlan: buildStepPlan,
-        ),
-        {AssetId('a', 'web/a.txt'): ChangeType.MODIFY},
-      );
+      expect(await assetTracker.collectChanges(previousBuild: previousBuild), {
+        AssetFile.atPackagePath(AssetId('a', 'web/a.txt')): ChangeType.MODIFY,
+      });
     });
 
     test('Collects new files', () async {
       File(p.join(d.sandbox, 'a', 'web', 'b.txt')).writeAsStringSync('yo!');
 
-      expect(
-        await assetTracker.collectChanges(
-          buildState: buildState,
-          buildStepPlan: buildStepPlan,
-        ),
-        {AssetId('a', 'web/b.txt'): ChangeType.ADD},
+      expect(await assetTracker.collectChanges(previousBuild: previousBuild), {
+        AssetFile.atPackagePath(AssetId('a', 'web/b.txt')): ChangeType.ADD,
+      });
+    });
+
+    test('Collects new artifact tree files', () async {
+      final generatedDir = Directory(
+        p.join(d.sandbox, 'a', '.dart_tool', 'build', 'generated', 'a', 'web'),
       );
+      generatedDir.createSync(recursive: true);
+      File(
+        p.join(generatedDir.path, 'artifact.txt'),
+      ).writeAsStringSync('artifact');
+
+      expect(await assetTracker.collectChanges(previousBuild: previousBuild), {
+        AssetFile.inArtifactTree(AssetId('a', 'web/artifact.txt')):
+            ChangeType.ADD,
+      });
     });
 
     test('Collects deleted files', () async {
       File(p.join(d.sandbox, 'a', 'web', 'a.txt')).deleteSync();
 
-      expect(
-        await assetTracker.collectChanges(
-          buildState: buildState,
-          buildStepPlan: buildStepPlan,
+      expect(await assetTracker.collectChanges(previousBuild: previousBuild), {
+        AssetFile.atPackagePath(AssetId('a', 'web/a.txt')): ChangeType.REMOVE,
+      });
+    });
+  });
+
+  group('AssetTracker.findArtifactTreeFiles()', () {
+    test('discovers artifact tree files using IoFilesystem', () async {
+      await d.dir('pkg', [
+        d.dir('.dart_tool', [
+          d.dir('build', [
+            d.dir('generated', [
+              d.dir('pkg', [
+                d.dir('lib', [d.file('a.g.dart', '// generated')]),
+              ]),
+              d.dir('other_pkg', [
+                d.dir('lib', [d.file('b.g.dart', '// dep generated')]),
+              ]),
+            ]),
+          ]),
+        ]),
+      ]).create();
+
+      final buildPackages = BuildPackages.singlePackageBuild('pkg', [
+        BuildPackage(
+          name: 'pkg',
+          path: p.join(d.sandbox, 'pkg'),
+          languageVersion: LanguageVersion(2, 6),
+          watch: true,
+          isOutput: true,
         ),
-        {AssetId('a', 'web/a.txt'): ChangeType.REMOVE},
+      ]);
+      final reader = ReaderWriter(buildPackages);
+      final buildConfigs = await BuildConfigs.load(
+        buildPackages: buildPackages,
+        testingOverrides: TestingOverrides(
+          defaultRootPackageSources: ['lib/**'].build(),
+        ),
+      );
+      final tracker = AssetTracker(reader, buildPackages, buildConfigs);
+      final artifactTreeFiles = await tracker.findArtifactTreeFiles();
+
+      expect(
+        artifactTreeFiles,
+        unorderedEquals({
+          AssetId('pkg', 'lib/a.g.dart'),
+          AssetId('other_pkg', 'lib/b.g.dart'),
+        }),
       );
     });
 
-    test('Collects deleted declared outputs', () async {
-      // Create a buildState with no sources (so web/a.txt is not in sources).
-      final emptyBuildState = BuildState();
-
-      // Delete the file from disk so it's actually missing.
-      File(p.join(d.sandbox, 'a', 'web', 'a.txt')).deleteSync();
-
-      final outputId = AssetId('a', 'web/a.txt');
-      final buildStepId = BuildStepId(
-        primaryInput: AssetId('a', 'web/a.dart'),
-        phaseNumber: 0,
+    test('discovers artifact tree files using InMemoryFilesystem', () async {
+      final buildPackages = BuildPackages.singlePackageBuild('pkg', [
+        BuildPackage.forTesting(name: 'pkg', watch: true, isOutput: true),
+      ]);
+      final readerWriter = InternalTestReaderWriter(outputRootPackage: 'pkg');
+      await readerWriter.writeAsString(
+        AssetId('pkg', 'lib/a.g.dart'),
+        '// generated',
+        inArtifactTree: true,
+      );
+      await readerWriter.writeAsString(
+        AssetId('other_pkg', 'lib/b.g.dart'),
+        '// dep generated',
+        inArtifactTree: true,
       );
 
-      final planWithOutput = BuildStepPlan(
-        (BuildStepPlanBuilder b) => b
-          ..buildPhases = BuildPhases(const <InBuildPhase>[])
-          ..buildStepsByDeclaredOutput.addAll({outputId: buildStepId}),
+      final buildConfigs = await BuildConfigs.load(
+        buildPackages: buildPackages,
+        testingOverrides: TestingOverrides(
+          defaultRootPackageSources: ['lib/**'].build(),
+        ),
       );
+      final tracker = AssetTracker(readerWriter, buildPackages, buildConfigs);
+      final artifactTreeFiles = await tracker.findArtifactTreeFiles();
 
-      final changes = await assetTracker.collectChanges(
-        buildState: emptyBuildState,
-        buildStepPlan: planWithOutput,
+      expect(
+        artifactTreeFiles,
+        unorderedEquals({
+          AssetId('pkg', 'lib/a.g.dart'),
+          AssetId('other_pkg', 'lib/b.g.dart'),
+        }),
       );
-      changes.removeWhere((id, type) => id.package == r'$sdk');
-      expect(changes, {outputId: ChangeType.REMOVE});
     });
   });
 }

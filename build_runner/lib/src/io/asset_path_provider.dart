@@ -10,19 +10,17 @@ import '../constants.dart';
 abstract interface class AssetPathProvider {
   /// Converts [id] to a path.
   ///
-  /// Set [hide] to get a path in the hidden "build cache" folder instead of the
-  /// directory containing manually written source code.
+  /// Set [inArtifactTree] to get a path in the artifact tree instead of at the
+  /// package path.
   ///
   /// Set [checkWriteAllowed] to throw if the path is read only.
   String pathFor(
     AssetId id, {
-    required bool hide,
+    required bool inArtifactTree,
     bool checkWriteAllowed = false,
   });
 
-  /// Returns [id] hidden in [buildCachePackage].
-  static AssetId hide(AssetId id, String buildCachePackage) => AssetId(
-    buildCachePackage,
-    '$generatedOutputDirectory/${id.package}/${id.path}',
-  );
+  /// Returns [id] in the artifact tree for [rootPackage].
+  static AssetId inArtifactTree(AssetId id, String rootPackage) =>
+      AssetId(rootPackage, '$artifactTreePath/${id.package}/${id.path}');
 }

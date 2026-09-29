@@ -33,9 +33,9 @@ bool shouldBuildForDirs(
   final paths = BuildDirectory.buildPaths(buildDirs);
   buildFilters ??= BuiltSet();
   if (buildFilters.isEmpty) {
-    // Build asset if: It's built to source, it's public or if it's matched by
-    // a build directory.
-    return !phase.hideOutput ||
+    // Build asset if: It's built to package path, it's public or if it's
+    // matched by a build directory.
+    return !phase.outputsToArtifactTree ||
         paths.isEmpty ||
         paths.any(id.path.startsWith) ||
         buildConfigs.isPublicAsset(id);

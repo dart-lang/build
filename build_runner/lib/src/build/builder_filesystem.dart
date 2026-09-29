@@ -10,14 +10,17 @@ import '../build_plan/build_configs.dart';
 import '../build_plan/build_packages.dart';
 import '../build_plan/build_step_plan.dart';
 import '../build_plan/placeholders.dart';
+import '../contracts.dart';
 import '../io/reader_writer.dart';
 import 'asset_content.dart';
+import 'br_outputs.dart';
 import 'build_state/build_state.dart';
 import 'build_state/build_step_id.dart';
 import 'build_state/build_step_result.dart';
 import 'build_state/glob_id.dart';
+import 'build_state/post_process_build_step_id.dart';
+import 'build_state/post_process_build_step_result.dart';
 import 'library_cycle_graph/phased_value.dart';
-import 'resolver/asset_ids.dart';
 
 /// The filesystem from the point of view of a build step.
 ///
@@ -27,30 +30,20 @@ class BuilderFilesystem {
   final BuildPackages buildPackages;
   final BuildConfigs buildConfigs;
   final BuildState buildState;
-  final BuildStepPlan buildStepPlan;
   final ReaderWriter readerWriter;
-  final AssetBuilder? assetBuilder;
-  final GlobEvaluator? globEvaluator;
+  final AssetBuilder assetBuilder;
+  final GlobEvaluator globEvaluator;
 
   BuilderFilesystem({
     required this.buildPackages,
     required this.buildConfigs,
     required this.buildState,
-    required this.buildStepPlan,
     required this.readerWriter,
-    this.assetBuilder,
-    this.globEvaluator,
+    required this.assetBuilder,
+    required this.globEvaluator,
   });
 
-  /// Returns a copy without in-build hooks: [assetBuilder], [globEvaluator],
-  /// content update listener.
-  BuilderFilesystem forAfterBuild() => BuilderFilesystem(
-    buildPackages: buildPackages,
-    buildConfigs: buildConfigs,
-    buildState: buildState,
-    buildStepPlan: buildStepPlan,
-    readerWriter: readerWriter,
-  );
+  BuildStepPlan get buildStepPlan => buildState.buildStepPlan;
 
   void Function(AssetId, AssetContent?)? _onUpdateContent;
 
@@ -67,62 +60,67 @@ class BuilderFilesystem {
     _onUpdateContent = onUpdateContent;
   }
 
-  /// Updates the content of [id] and notifies update listener.
-  ///
-  /// Throws if not a source.
-  void updateSourceContent(AssetId id, AssetContent? content) {
-    buildState.updateSourceContent(id, content);
-    _onUpdateContent?.call(id, content);
+  /// Records the result and contents of [step] and notifies update listener.
+  @Requires('step.phaseNumber >= 0')
+  @Requires('step.phaseNumber < buildStepPlan.buildPhases.inBuildPhases.length')
+  @Requires('step.primaryInput.package.isNotEmpty')
+  @Requires('step.primaryInput.path.isNotEmpty')
+  void addBuildStepResult({
+    required BuildStepId step,
+    required BuildStepResult result,
+    Map<AssetId, AssetContent> contents = const {},
+  }) {
+    buildState.addBuildStepResult(
+      step: step,
+      result: result,
+      contents: contents,
+    );
+
+    final declaredOutputsForStep = buildStepPlan.declaredOutputsByStep[step];
+    for (final declaredOutput in declaredOutputsForStep) {
+      _onUpdateContent?.call(declaredOutput, contents[declaredOutput]);
+    }
+
+    final inBuildPhases = buildStepPlan.buildPhases.inBuildPhases;
+    final stepAddsToLibrary =
+        step.phaseNumber < inBuildPhases.length &&
+        inBuildPhases[step.phaseNumber].addsToLibrary;
+    if (result.wrotePartContribution == true || stepAddsToLibrary) {
+      final partId = step.primaryInput.sharedPartId!;
+      final partContent = buildState.sharedPartContent(
+        step.primaryInput,
+        upToPhase: step.phaseNumber,
+      );
+      _onUpdateContent?.call(partId, partContent);
+    }
   }
 
-  /// Updates the result of [buildStepId] and notifies update listener.
-  void updateBuildStepResult(BuildStepId buildStepId, BuildStepResult result) {
-    buildState.updateBuildStepResult(buildStepId, result);
+  /// Records the result and contents of [step] and notifies update listener.
+  @Requires('step.actionNumber >= 0')
+  @Requires(
+    'step.actionNumber < '
+    'buildStepPlan.buildPhases.postBuildPhase.builderActions.length',
+  )
+  @Requires('step.input.package.isNotEmpty')
+  @Requires('step.input.path.isNotEmpty')
+  void addPostProcessBuildStepResult({
+    required PostProcessBuildStepId step,
+    required PostProcessBuildStepResult result,
+    Map<AssetId, AssetContent> contents = const {},
+  }) {
+    buildState.addPostProcessBuildStepResult(
+      step: step,
+      result: result,
+      contents: contents,
+    );
 
-    for (final entry in result.outputs.entries) {
+    for (final entry in contents.entries) {
       _onUpdateContent?.call(entry.key, entry.value);
     }
-
-    final declaredOutputsForStep =
-        buildStepPlan.declaredOutputsByStep[buildStepId];
-    for (final declaredOutput in declaredOutputsForStep) {
-      if (!result.outputs.containsKey(declaredOutput)) {
-        _onUpdateContent?.call(declaredOutput, null);
-      }
-    }
   }
 
-  /// Updates [id] with [content].
-  ///
-  /// It must be a source, declared output or post process output.
-  void updateContent({required AssetId id, required AssetContent content}) {
-    if (buildState.isSource(id)) {
-      updateSourceContent(id, content);
-      return;
-    }
-    final step = buildStepPlan.stepForDeclaredOutputOrNull(id);
-    if (step != null) {
-      buildState.updateDeclaredOutputContent(
-        step: step,
-        id: id,
-        content: content,
-      );
-      _onUpdateContent?.call(id, content);
-      return;
-    }
-    final postProcessStep = buildState.postProcessStepFor(id);
-    if (postProcessStep != null) {
-      buildState.updatePostProcessOutputContent(
-        step: postProcessStep,
-        id: id,
-        content: content,
-      );
-      _onUpdateContent?.call(id, content);
-      return;
-    }
-    throw StateError('Cannot update content for unknown asset $id.');
-  }
-
+  @Requires('id.package.isNotEmpty')
+  @Requires('id.path.isNotEmpty')
   void checkInvalidInput(AssetId id) {
     final package = buildPackages[id.package];
     if (package == null) {
@@ -137,43 +135,36 @@ class BuilderFilesystem {
     }
   }
 
-  bool isFile(AssetId id) {
-    return buildState.isFile(id: id, buildStepPlan: buildStepPlan);
-  }
-
   /// Returns the content of [id].
   ///
-  /// It must be a known source or output.
+  /// It must be a known source or an output that has already been generated.
   ///
-  /// If it hasn't yet been read it will be read from the filesystem and stored
-  /// in memory.
+  /// If it's an unread source it will be read from the filesystem and stored in
+  /// memory.
+  @Requires('id.package.isNotEmpty')
+  @Requires('id.path.isNotEmpty')
   Future<AssetContent> contentOf(AssetId id) async {
-    final maybeResult = buildState.contentOf(
-      id: id,
-      buildStepPlan: buildStepPlan,
-    );
-    if (maybeResult != null && maybeResult.hasContent) return maybeResult;
+    final maybeResult = buildState.contentOf(id);
+    if (maybeResult != null) return maybeResult;
 
-    if (!isFile(id)) {
-      throw StateError('Cannot read $id, it is not a known source or output.');
+    if (!buildState.isSource(id)) {
+      throw StateError(
+        'Cannot read $id, it is not a known source or generated output.',
+      );
     }
 
     List<int> bytes;
     try {
       bytes = await readerWriter.readAsBytes(
         id,
-        hidden: id.isHidden(
-          buildStepPlan: buildStepPlan,
-          buildState: buildState,
-        ),
+        inArtifactTree: buildState.isInArtifactTree(id),
       );
     } on AssetNotFoundException {
       await ChildProcess.exitDueToAssetDeleted(id);
     }
-    final content = maybeResult != null
-        ? maybeResult.withBytes(bytes)
-        : AssetContent.bytes(bytes);
-    updateContent(id: id, content: content);
+    final content = AssetContent.bytes(bytes);
+    buildState.updateSourceContent(id, content);
+    _onUpdateContent?.call(id, content);
     return content;
   }
 
@@ -183,6 +174,9 @@ class BuilderFilesystem {
   /// If [catchInvalidInputs] is set to true and [checkInvalidInput] throws an
   /// [InvalidInputException], this method will return `false` instead of
   /// throwing.
+  @Requires('id.package.isNotEmpty')
+  @Requires('id.path.isNotEmpty')
+  @Requires('phase >= 0')
   Future<bool> isReadable(
     AssetId id,
     int phase, {
@@ -199,8 +193,7 @@ class BuilderFilesystem {
     }
 
     if (Placeholders.isPlaceholderPath(id.path)) return false;
-    if (!isFile(id)) {
-      buildState.addMissingSource(id);
+    if (!buildState.isKnownAsset(id)) {
       return false;
     }
 
@@ -210,25 +203,31 @@ class BuilderFilesystem {
   /// Checks whether [id] can be read by this step.
   ///
   /// If it's a declared output from an earlier phase, wait for it to be built.
+  @Requires('id.package.isNotEmpty')
+  @Requires('id.path.isNotEmpty')
+  @Requires('phase >= 0')
   Future<bool> isReadableId(AssetId id, int phase) async {
     if (buildState.isActualPostOutput(id)) {
       // Post process outputs are not readable until after the build.
       return false;
     }
+    // `_br_` assets are part files generated by the part-writer and are not
+    // readable by builders.
+    if (id.isBrOutput) {
+      return false;
+    }
     if (buildStepPlan.isDeclaredOutput(id)) {
       final step = buildStepPlan.stepForDeclaredOutput(id);
       if (step.phaseNumber >= phase) {
-        // Parallel outputs (or own outputs not caught earlier) are hidden.
+        // Parallel outputs, or own outputs not caught earlier, are not
+        // readable.
         return false;
       }
 
-      // If a build is running: build the asset if needed.
-      await assetBuilder?.call(id);
+      // Build the asset if needed.
+      await assetBuilder(id);
 
-      return buildState.isActualSuccessfulOutput(
-        buildStepPlan: buildStepPlan,
-        id: id,
-      );
+      return buildState.isActualSuccessfulOutput(id);
     }
     return buildState.isSource(id);
   }
@@ -236,6 +235,8 @@ class BuilderFilesystem {
   /// Returns all readable assets matching [glob] under [package].
   ///
   /// Throws if a build is not running.
+  @Requires('package.isNotEmpty')
+  @Requires('phase >= 0')
   Stream<AssetId> findAssets(
     Glob glob, {
     required String package,
@@ -249,7 +250,7 @@ class BuilderFilesystem {
       phaseNumber: phase,
     );
 
-    globEvaluator!(globId).then((_) {
+    globEvaluator(globId).then((_) {
       if (trackGlob != null) trackGlob(globId);
       final globResult = buildState.globResultFor(globId)!;
       streamCompleter.setSourceStream(Stream.fromIterable(globResult.results));
@@ -272,12 +273,40 @@ class BuilderFilesystem {
   /// a [PhasedValue.generated] specifying both when it was generated and
   /// its content. Note that generation might output nothing, in which case an
   /// empty string is returned for its content.
+  @Requires('phase >= 0')
+  @Requires('id.package.isNotEmpty')
+  @Requires('id.path.isNotEmpty')
   Future<PhasedValue<String>> readPhased(int phase, AssetId id) async {
-    if (!isFile(id)) {
-      buildState.addMissingSource(id);
+    if (!buildState.isKnownAsset(id)) {
       return PhasedValue.fixed('');
-    } else if (buildState.isMissingSource(id)) {
-      return PhasedValue.fixed('');
+    }
+
+    if (id.isBrOutput) {
+      // The shared part accumulates contributions phase by phase, and a
+      // contribution can add imports, so the deps change at every phase that
+      // contributes. Build one value per change. Content contributed at phase
+      // `p` is readable at phase `p + 1`.
+      final values = <ExpiringValue<String>>[];
+      var previous = '';
+      for (var readableAt = 1; readableAt <= phase; ++readableAt) {
+        final content =
+            buildState
+                .sharedPartContent(id, upToPhase: readableAt - 1)
+                ?.stringValue() ??
+            '';
+        if (content != previous) {
+          values.add(ExpiringValue(previous, expiresAfter: readableAt - 1));
+          previous = content;
+        }
+      }
+      // Nothing can be contributed after the last `adds_to_library` phase, so
+      // from the phase after that the value is final.
+      final lastAddsToLibraryPhase =
+          buildStepPlan.buildPhases.lastAddsToLibraryPhase;
+      final isFinal =
+          lastAddsToLibraryPhase == null || phase > lastAddsToLibraryPhase;
+      values.add(ExpiringValue(previous, expiresAfter: isFinal ? null : phase));
+      return PhasedValue((b) => b.values.addAll(values));
     }
 
     if (buildStepPlan.isDeclaredOutput(id)) {
@@ -286,16 +315,10 @@ class BuilderFilesystem {
       if (stepPhase >= phase) {
         return PhasedValue.unavailable(before: '', expiresAfter: stepPhase);
       } else {
-        if (!buildState.isProcessedOutput(
-          buildStepPlan: buildStepPlan,
-          id: id,
-        )) {
-          await assetBuilder?.call(id);
+        if (!buildState.isProcessedOutput(id)) {
+          await assetBuilder(id);
         }
-        final isSuccessOutput = buildState.isActualSuccessfulOutput(
-          buildStepPlan: buildStepPlan,
-          id: id,
-        );
+        final isSuccessOutput = buildState.isActualSuccessfulOutput(id);
         return PhasedValue.generated(
           atPhase: stepPhase,
           before: '',
@@ -309,10 +332,7 @@ class BuilderFilesystem {
     return PhasedValue.fixed(
       await readerWriter.canRead(
             id,
-            hidden: id.isHidden(
-              buildStepPlan: buildStepPlan,
-              buildState: buildState,
-            ),
+            inArtifactTree: buildState.isInArtifactTree(id),
           )
           ? (await contentOf(id)).dartStringValueOrEmptyFail(id: id)
           : '',

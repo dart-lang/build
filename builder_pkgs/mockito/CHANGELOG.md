@@ -1,3 +1,8 @@
+## 5.8.2-wip
+
+* Emit `// dart format off` in generated mock files to prevent reformatting.
+  [#4597](https://github.com/dart-lang/build/issues/4597)
+
 ## 5.8.1
 
 * Cast dummy values for extension types to the extension type so they satisfy

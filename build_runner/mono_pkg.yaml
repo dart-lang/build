@@ -8,6 +8,7 @@ stages:
 - analyze_and_format:
   - format
   - analyze: --fatal-infos .
+  - command: dart run build_runner build --workspace --force-jit --only-check
 - test:
   - test: -x integration1 -x integration2 -x integration3 -x integration4 --test-randomize-ordering-seed=random
   - test: -t integration1 --test-randomize-ordering-seed=random

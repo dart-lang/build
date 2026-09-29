@@ -38,7 +38,10 @@ runs_before       | List<[BuilderKey](#builderkey)>                             
 applies_builders  | List<[BuilderKey](#builderkey)>                             | none
 is_optional       | bool                                                        | false
 build_to          | [BuildTo](#buildto)                                         | `BuildTo.cache`
+adds_to_library   | bool                                                        | false
 defaults          | [TargetBuilderConfigDefaults](#targetbuilderconfigdefaults) | none
+
+Note: `adds_to_library: true` cannot be combined with `is_optional: true`.
 
 ## PostProcessBuilderDefinition
 
@@ -105,9 +108,9 @@ root_package | Applies to only the root (application) package.                  
 ## BuildTo
 
 value  | meaning
------- | -------------------------------------------------
-cache  | Writes all files to the cache directory
-source | Writes all files directly to the source directory
+------ | ---------------------------------------
+cache  | Writes all files in the artifact tree
+source | Writes all files at their package paths
 
 ## TargetKey
 

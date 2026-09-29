@@ -25,7 +25,7 @@ class TestingOverrides {
   final Duration? debounceDelay;
   final BuiltList<String>? defaultRootPackageSources;
   final DirectoryWatcher Function(String)? directoryWatcherFactory;
-  final bool forceVisibleForTesting;
+  final bool forceToPackagePathsForTesting;
   final void Function(LogRecord)? onLog;
   final ReaderWriter? readerWriter;
   final void Function(AssetId, Iterable<AssetId>)? reportUnusedAssetsForInput;
@@ -41,7 +41,7 @@ class TestingOverrides {
     this.debounceDelay,
     this.defaultRootPackageSources,
     this.directoryWatcherFactory,
-    this.forceVisibleForTesting = false,
+    this.forceToPackagePathsForTesting = false,
     this.onLog,
     this.readerWriter,
     this.reportUnusedAssetsForInput,
@@ -63,7 +63,7 @@ class TestingOverrides {
     debounceDelay: debounceDelay,
     defaultRootPackageSources: defaultRootPackageSources,
     directoryWatcherFactory: directoryWatcherFactory,
-    forceVisibleForTesting: forceVisibleForTesting,
+    forceToPackagePathsForTesting: forceToPackagePathsForTesting,
     onLog: onLog,
     readerWriter: readerWriter,
     reportUnusedAssetsForInput: reportUnusedAssetsForInput,

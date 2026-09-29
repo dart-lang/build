@@ -19,16 +19,22 @@ class WebEntrypointMarkerBuilder implements Builder {
   /// A no-op if [usesWebHotReload] is not set.
   final bool usesWebHotReload;
 
-  /// The directory containing the 'main' entrypoint for the web target.
+  /// The directories to search in for the web target's `main` entrypoint.
   ///
-  /// If null, searches all standard entrypoint directories
-  /// ('web', 'test', 'example', 'benchmark').
-  final String? webAssetsPath;
+  /// Directories are searched in the specified order.
+  /// Defaults to [defaultWebDirs].
+  final List<String> webAssetPaths;
 
+  /// Creates a builder that marks the web target's `main` entrypoint.
+  ///
+  /// Does nothing unless [usesWebHotReload] is `true`.
+  ///
+  /// The entrypoint is searched for in [webAssetPaths],
+  /// which defaults to [defaultWebDirs] if not specified.
   WebEntrypointMarkerBuilder({
     this.usesWebHotReload = false,
-    this.webAssetsPath,
-  });
+    List<String>? webAssetPaths,
+  }) : webAssetPaths = webAssetPaths ?? defaultWebDirs;
 
   @override
   final buildExtensions = const {
@@ -47,47 +53,86 @@ class WebEntrypointMarkerBuilder implements Builder {
       buildStep,
     );
 
-    final webEntrypointJson = <String, Object?>{};
-
-    if (hasCachedState) {
-      final asset = frontendServerState.entrypointAssetId!;
-      webEntrypointJson['entrypoint'] = asset.toString();
-      webEntrypointJson['canonicalUri'] = sourceArg(asset);
-    } else {
-      final searchGlob = webAssetsPath == null
-          ? '{${defaultWebDirs.join(',')}}/**'
-          : webAssetsPath!.contains(',')
-          ? '{$webAssetsPath}/**'
-          : '$webAssetsPath/**';
-      final webAssets = await buildStep.findAssets(Glob(searchGlob)).toList();
-
-      for (final asset in webAssets) {
-        if (asset.extension == '.dart') {
-          final moduleLibrary = ModuleLibrary.fromSource(
-            asset,
-            await buildStep.readAsString(asset),
-          );
-          if (moduleLibrary.hasMain && moduleLibrary.isEntryPoint) {
-            // We must save the main entrypoint as the recompilation target for
-            // the Frontend Server before any JS files are emitted.
-            frontendServerState.entrypointAssetId = asset;
-            webEntrypointJson['entrypoint'] = asset.toString();
-            webEntrypointJson['canonicalUri'] = sourceArg(asset);
-            break;
-          }
-        }
-      }
+    final entrypointAssetId = hasCachedState
+        ? frontendServerState.entrypointAssetId!
+        : await _findEntrypoint(buildStep);
+    if (entrypointAssetId != null) {
+      // We must save the main entrypoint as the recompilation target for the
+      // Frontend Server before any JS files are emitted.
+      frontendServerState.entrypointAssetId = entrypointAssetId;
     }
 
-    final rootDir = p.dirname(buildStep.inputId.path);
-    final webEntrypointAsset = AssetId(
-      buildStep.inputId.package,
-      p.join(rootDir, '.web.entrypoint.json'),
+    await buildStep.writeAsString(
+      webEntrypointStateAssetId(buildStep.inputId.package),
+      jsonEncode(<String, Object?>{
+        if (entrypointAssetId != null) ...{
+          'entrypoint': entrypointAssetId.toString(),
+          'canonicalUri': sourceArg(entrypointAssetId),
+        },
+      }),
     );
 
-    await buildStep.writeAsString(
-      webEntrypointAsset,
-      jsonEncode(webEntrypointJson),
+    if (entrypointAssetId == null) return;
+
+    // A generated entrypoint can only be read from a build step in its own
+    // package. Stage it here, in the root package, so that the DDC builds of
+    // dependency packages can compile against it instead; see
+    // `DdcFrontendServerBuilder`.
+    //
+    // This runs after the state above is written so that a failure to read the
+    // entrypoint doesn't take the recorded state down with it.
+    final scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
+    await buildStep.trackStage(
+      'EnsureAssets',
+      () => scratchSpace.ensureAssets([entrypointAssetId], buildStep),
     );
+    frontendServerState.stagedEntrypointAssetId = entrypointAssetId;
   }
+
+  /// Searches for and returns the highest-priority web app entrypoint,
+  /// or `null` if no entrypoint is found.
+  ///
+  /// The directories in [webAssetPaths] are searched in order,
+  /// with the candidates within each ranked by [_compareEntrypointPriority].
+  Future<AssetId?> _findEntrypoint(BuildStep buildStep) async {
+    for (final searchPath in webAssetPaths) {
+      final candidates =
+          await buildStep
+                .findAssets(Glob('$searchPath/**'))
+                .where((asset) => asset.extension == '.dart')
+                .toList()
+            ..sort(_compareEntrypointPriority);
+
+      for (final asset in candidates) {
+        final moduleLibrary = ModuleLibrary.fromSource(
+          asset,
+          await buildStep.readAsString(asset),
+        );
+        if (moduleLibrary.hasMain && moduleLibrary.isEntryPoint) return asset;
+      }
+    }
+    return null;
+  }
+}
+
+/// Compares [a] and [b] by how likely each is to be a web app's entrypoint.
+///
+/// Assets closer to the root of the searched directory sort first,
+/// then those named `main.dart`, then those that sort first alphabetically.
+int _compareEntrypointPriority(AssetId a, AssetId b) {
+  // A top-level entrypoint is usually the app itself,
+  // while a nested one is more often a secondary target,
+  // such as a debug or example page.
+  if (a.pathSegments.length.compareTo(b.pathSegments.length)
+      case final depthComparison when depthComparison != 0) {
+    return depthComparison;
+  }
+
+  // Among entrypoints alongside each other, `main.dart` is the convention.
+  final aIsMain = p.url.basename(a.path) == 'main.dart';
+  final bIsMain = p.url.basename(b.path) == 'main.dart';
+  if (aIsMain != bIsMain) return aIsMain ? -1 : 1;
+
+  // Fall back to a stable order so the entrypoint doesn't vary between builds.
+  return a.path.compareTo(b.path);
 }

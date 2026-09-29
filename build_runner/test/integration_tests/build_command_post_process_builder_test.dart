@@ -140,16 +140,56 @@ targets:
     );
     expect(tester.read('root_pkg/lib/a.txt.more_post'), 'c(default dev)');
 
-    // Hidden post process outputs are deleted on incremental build.
+    // Artifact tree post process outputs are deleted on incremental build.
     tester.writeFixturePackage(
       FixturePackages.postProcessCopyBuilder(buildToCache: true),
     );
     await tester.run('root_pkg', 'dart run build_runner build --force-jit');
-    final hiddenPostOutput =
+    final artifactTreePostOutput =
         'root_pkg/.dart_tool/build/generated/root_pkg/lib/a.txt.post';
-    expect(tester.read(hiddenPostOutput), 'c(default dev)');
+    expect(tester.read(artifactTreePostOutput), 'c(default dev)');
     tester.delete('root_pkg/lib/a.txt');
     await tester.run('root_pkg', 'dart run build_runner build --force-jit');
-    expect(tester.read(hiddenPostOutput), null);
+    expect(tester.read(artifactTreePostOutput), null);
+
+    // Post process output outside source globs is reused on restart.
+    tester.writeFixturePackage(
+      FixturePackages.postProcessCopyBuilder(buildToCache: false),
+    );
+    tester.write('root_pkg/build.yaml', r'''
+targets:
+  $default:
+    sources:
+      - "lib/a.txt"
+''');
+    tester.write('root_pkg/lib/a.txt', 'a');
+    await tester.run('root_pkg', 'dart run build_runner build --force-jit');
+    expect(tester.read('root_pkg/lib/a.txt.post'), 'a(default dev)');
+
+    // Restart with unchanged post process output outside source globs is
+    // reused.
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+    );
+    expect(output, contains('wrote 0 outputs'));
+
+    // Restart with modified post process output outside source globs reruns.
+    tester.write('root_pkg/lib/a.txt.post', 'modified');
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+    );
+    expect(output, contains('wrote 1 output'));
+    expect(tester.read('root_pkg/lib/a.txt.post'), 'a(default dev)');
+
+    // Restart with deleted post process output outside source globs reruns.
+    tester.delete('root_pkg/lib/a.txt.post');
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+    );
+    expect(output, contains('wrote 1 output'));
+    expect(tester.read('root_pkg/lib/a.txt.post'), 'a(default dev)');
   });
 }

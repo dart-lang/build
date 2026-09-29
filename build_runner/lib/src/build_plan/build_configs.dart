@@ -246,7 +246,8 @@ class BuildConfigs {
   /// choose to include `include/**` as a public asset.
   ///
   /// Public assets are added as default sources to the default target. They are
-  /// also not considered optional outputs for hidden build phases.
+  /// also not considered optional outputs for build phases that output to the
+  /// artifact tree.
   bool isPublicAsset(AssetId id) {
     final filter =
         _publicAssetsByPackage[id.package] ?? _defaultMatcherForDependency;

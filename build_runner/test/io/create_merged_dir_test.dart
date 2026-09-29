@@ -11,8 +11,6 @@ import 'package:build_runner/src/build/build_state/build_state.dart';
 import 'package:build_runner/src/build/build_state/build_step_result.dart';
 import 'package:build_runner/src/build/build_state/post_process_build_step_id.dart';
 import 'package:build_runner/src/build/build_state/post_process_build_step_result.dart';
-import 'package:build_runner/src/build/builder_filesystem.dart';
-import 'package:build_runner/src/build/resolver/asset_ids.dart';
 import 'package:build_runner/src/build_plan/build_configs.dart';
 import 'package:build_runner/src/build_plan/build_directory.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
@@ -27,7 +25,6 @@ import 'package:build_runner/src/build_plan/testing_overrides.dart';
 import 'package:build_runner/src/io/build_output_reader.dart';
 import 'package:build_runner/src/io/create_merged_dir.dart';
 import 'package:built_collection/built_collection.dart';
-import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
@@ -53,7 +50,7 @@ void main() {
         ),
         key: 'TestBuilder',
         package: 'b',
-        hideOutput: true,
+        outputsToArtifactTree: true,
       ),
     ]);
     final sources = {
@@ -110,41 +107,41 @@ void main() {
           ),
         ),
       );
-      buildState = BuildState(buildPlan.buildInputs.sourceContents.toMap());
-      buildOutputReader = BuildOutputReader(
-        builderFilesystem: BuilderFilesystem(
-          buildPackages: buildPlan.buildSpec.buildPackages,
-          buildConfigs: buildPlan.buildSpec.buildConfigs,
-          buildState: buildState,
-          buildStepPlan: buildPlan.buildStepPlan,
-          readerWriter: buildPlan.readerWriter,
-        ),
+      buildState = BuildState(
+        buildStepPlan: buildPlan.buildStepPlan,
+        sources: buildPlan.buildInputs.sourceContents.toMap(),
       );
 
       for (final id in [
         ...buildPlan.buildStepPlan.declaredOutputs,
         ...buildState.actualPostOutputs,
       ]) {
+        final content =
+            sources[buildPlan.buildStepPlan
+                .stepForDeclaredOutput(id)
+                .primaryInput]!;
+        final step = buildPlan.buildStepPlan.stepForDeclaredOutput(id);
         final stepResult = BuildStepResult((b) {
           b.result = true;
-          b.isHidden = false;
-          b.outputs[id] = AssetContent.digest(Digest([]));
+          b.inArtifactTree = false;
+          b.outputs.add(id);
         });
-        buildState.updateBuildStepResult(
-          buildPlan.buildStepPlan.stepForDeclaredOutput(id),
-          stepResult,
+        buildState.addBuildStepResult(
+          step: step,
+          result: stepResult,
+          contents: {id: AssetContent.string(content)},
         );
         await readerWriter.writeAsString(
           id,
-          sources[buildPlan.buildStepPlan
-              .stepForDeclaredOutput(id)
-              .primaryInput]!,
-          hidden: id.isHidden(
-            buildStepPlan: buildPlan.buildStepPlan,
-            buildState: buildState,
-          ),
+          content,
+          inArtifactTree: buildState.isInArtifactTree(id),
         );
       }
+      buildOutputReader = BuildOutputReader(
+        buildPackages: buildPlan.buildSpec.buildPackages,
+        readerWriter: buildPlan.readerWriter,
+        buildState: buildState.toFinishedBuildState(),
+      );
       tmpDir = await Directory.systemTemp.createTemp('build_tests');
       anotherTmpDir = await Directory.systemTemp.createTemp('build_tests');
     });
@@ -175,8 +172,16 @@ void main() {
     test('doesnt write deleted files', () async {
       final targetId = AssetId('b', 'lib/c.txt.copy');
       buildState.addPostProcessBuildStepResult(
-        PostProcessBuildStepId(input: targetId, actionNumber: 1),
-        PostProcessBuildStepResult(hidden: true, deletedPrimaryInput: true),
+        step: PostProcessBuildStepId(input: targetId, actionNumber: 1),
+        result: PostProcessBuildStepResult(
+          inArtifactTree: true,
+          deletedPrimaryInput: true,
+        ),
+      );
+      buildOutputReader = BuildOutputReader(
+        buildPackages: buildPlan.buildSpec.buildPackages,
+        readerWriter: buildPlan.readerWriter,
+        buildState: buildState.toFinishedBuildState(),
       );
 
       final success = await createMergedOutputDirectories(
@@ -224,6 +229,23 @@ void main() {
         buildDirs: {
           BuildDirectory('web', outputLocation: OutputLocation(tmpDir.path)),
           BuildDirectory('foo', outputLocation: OutputLocation(tmpDir.path)),
+        }.build(),
+        buildPackages: buildPackages,
+        buildOutputReader: buildOutputReader,
+        outputSymlinksOnly: false,
+      );
+      expect(success, isFalse);
+      expect(Directory(tmpDir.path).listSync(), isEmpty);
+    });
+
+    test('errors if conflicting directories are spelled differently', () async {
+      final success = await createMergedOutputDirectories(
+        buildDirs: {
+          BuildDirectory('web', outputLocation: OutputLocation(tmpDir.path)),
+          BuildDirectory(
+            'foo',
+            outputLocation: OutputLocation('${tmpDir.path}${p.separator}'),
+          ),
         }.build(),
         buildPackages: buildPackages,
         buildOutputReader: buildOutputReader,
@@ -362,13 +384,22 @@ void main() {
     });
 
     test('doesnt write files that werent output', () async {
+      buildState = BuildState(
+        buildStepPlan: buildPlan.buildStepPlan,
+        sources: buildPlan.buildInputs.sourceContents.toMap(),
+      );
       final targetId = AssetId('b', 'lib/c.txt.copy');
       final stepResult = BuildStepResult((b) {
-        b.isHidden = false;
+        b.inArtifactTree = false;
       });
-      buildState.updateBuildStepResult(
-        buildPlan.buildStepPlan.stepForDeclaredOutput(targetId),
-        stepResult,
+      buildState.addBuildStepResult(
+        step: buildPlan.buildStepPlan.stepForDeclaredOutput(targetId),
+        result: stepResult,
+      );
+      buildOutputReader = BuildOutputReader(
+        buildPackages: buildPlan.buildSpec.buildPackages,
+        readerWriter: buildPlan.readerWriter,
+        buildState: buildState.toFinishedBuildState(),
       );
 
       final success = await createMergedOutputDirectories(
@@ -387,13 +418,9 @@ void main() {
 
     test('doesnt always write files not matching outputDirs', () async {
       buildOutputReader = BuildOutputReader(
-        builderFilesystem: BuilderFilesystem(
-          buildPackages: buildPlan.buildSpec.buildPackages,
-          buildConfigs: buildPlan.buildSpec.buildConfigs,
-          buildState: buildState,
-          buildStepPlan: buildPlan.buildStepPlan,
-          readerWriter: buildPlan.readerWriter,
-        ),
+        buildPackages: buildPlan.buildSpec.buildPackages,
+        readerWriter: buildPlan.readerWriter,
+        buildState: buildState.toFinishedBuildState(),
       );
       final success = await createMergedOutputDirectories(
         buildDirs: {
@@ -465,19 +492,18 @@ void main() {
         for (final remove in removes) {
           final removeId = makeAssetId(remove);
           buildState.addPostProcessBuildStepResult(
-            PostProcessBuildStepId(input: removeId, actionNumber: 1),
-            PostProcessBuildStepResult(hidden: true, deletedPrimaryInput: true),
+            step: PostProcessBuildStepId(input: removeId, actionNumber: 1),
+            result: PostProcessBuildStepResult(
+              inArtifactTree: true,
+              deletedPrimaryInput: true,
+            ),
           );
         }
         // Recreate buildOutputReader so it notices the delete.
         buildOutputReader = BuildOutputReader(
-          builderFilesystem: BuilderFilesystem(
-            buildPackages: buildPlan.buildSpec.buildPackages,
-            buildConfigs: buildPlan.buildSpec.buildConfigs,
-            buildState: buildState,
-            buildStepPlan: buildPlan.buildStepPlan,
-            readerWriter: buildPlan.readerWriter,
-          ),
+          buildPackages: buildPlan.buildSpec.buildPackages,
+          readerWriter: buildPlan.readerWriter,
+          buildState: buildState.toFinishedBuildState(),
         );
         success = await createMergedOutputDirectories(
           buildDirs: {

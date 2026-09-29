@@ -313,8 +313,9 @@ class BuildRunnerProcess {
   ///
   /// Otherwise, waits until [pattern] appears, then completes.
   ///
-  /// Throws if the process appears to be stuck or done: if it outputs nothing
-  /// for 30s.
+  /// A process that hangs is caught by the test timeout, which is set in
+  /// `dart_test.yaml` and scaled by `--timeout` for runs that are expected to
+  /// be slow.
   Future<void> expect(Pattern pattern, {Pattern? failOn}) async =>
       expectAndGetLine(pattern, failOn: failOn);
 
@@ -328,8 +329,9 @@ class BuildRunnerProcess {
   ///
   /// Otherwise, waits until [pattern] appears, returns the matching line.
   ///
-  /// Throws if the process appears to be stuck or done: if it outputs nothing
-  /// for 30s.
+  /// A process that hangs is caught by the test timeout, which is set in
+  /// `dart_test.yaml` and scaled by `--timeout` for runs that are expected to
+  /// be slow.
   Future<String> expectAndGetLine(Pattern pattern, {Pattern? failOn}) async {
     printOnFailure(
       '--- $_testLine expects `$pattern`'
@@ -337,11 +339,9 @@ class BuildRunnerProcess {
     );
     failOn ??= BuildLog.failurePattern;
     while (true) {
-      String? line;
+      String line;
       try {
-        line = await _outputs.next.timeout(const Duration(seconds: 30));
-      } on TimeoutException catch (_) {
-        throw fail('While expecting `$pattern`, timed out after 30s.');
+        line = await _outputs.next;
       } catch (_) {
         throw fail('While expecting `$pattern`, process exited.');
       }
@@ -363,8 +363,9 @@ class BuildRunnerProcess {
   ///
   /// Otherwise, waits until [pattern] appears, returns all text seen.
   ///
-  /// Throws if the process appears to be stuck or done: if it outputs nothing
-  /// for 30s.
+  /// A process that hangs is caught by the test timeout, which is set in
+  /// `dart_test.yaml` and scaled by `--timeout` for runs that are expected to
+  /// be slow.
   Future<String> expectAndGetBlock(Pattern pattern, {Pattern? failOn}) async {
     printOnFailure(
       '--- $_testLine expects `$pattern`'
@@ -373,12 +374,10 @@ class BuildRunnerProcess {
     failOn ??= BuildLog.failurePattern;
     final lines = StringBuffer();
     while (true) {
-      String? line;
+      String line;
       try {
-        line = await _outputs.next.timeout(const Duration(seconds: 30));
+        line = await _outputs.next;
         lines.writeln(line);
-      } on TimeoutException catch (_) {
-        throw fail('While expecting `$pattern`, timed out after 30s.');
       } catch (_) {
         throw fail('While expecting `$pattern`, process exited.');
       }
@@ -486,58 +485,10 @@ class Pubspecs {
   static Future<Pubspecs>? _loadFuture;
 
   /// Creates [Pubspecs] with package config from the current isolate.
-  ///
-  /// Packages not in the pub cache are copied to a temporary directory so that
-  /// they are safe from concurrent modifications during tests.
   static Future<Pubspecs> load() => _loadFuture ??= _load();
 
-  static Future<Pubspecs> _load() async {
-    final config = await loadPackageConfigUri((await Isolate.packageConfig)!);
-    final copiedPackagesDir = Directory.systemTemp.createTempSync(
-      'BuildRunnerTester-packages-',
-    );
-
-    final updatedPackages = <Package>[];
-    for (final package in config.packages) {
-      if (package.root.path.contains('.pub-cache') ||
-          package.root.path.contains('pub/Cache') ||
-          // The workspace is awkward to copy and not needed.
-          package.name == 'build_workspace') {
-        updatedPackages.add(package);
-        continue;
-      }
-      final destinationPath = p.join(copiedPackagesDir.path, package.name);
-      _copyPackage(package.root.toFilePath(), destinationPath);
-      final newRoot = Uri.directory(destinationPath);
-      updatedPackages.add(
-        Package(
-          package.name,
-          newRoot,
-          packageUriRoot: newRoot.resolve('lib/'),
-          languageVersion: package.languageVersion,
-          extraData: package.extraData,
-        ),
-      );
-    }
-    return Pubspecs(
-      PackageConfig(updatedPackages, extraData: config.extraData),
-    );
-  }
-
-  static void _copyPackage(String source, String dest) {
-    for (final name in ['lib', 'bin']) {
-      final entityPath = p.join(source, name);
-      if (FileSystemEntity.isDirectorySync(entityPath)) {
-        copyPathSync(entityPath, p.join(dest, name));
-      }
-    }
-    for (final name in ['pubspec.yaml', 'build.yaml']) {
-      final entityPath = p.join(source, name);
-      if (FileSystemEntity.isFileSync(entityPath)) {
-        File(entityPath).copySync(p.join(dest, name));
-      }
-    }
-  }
+  static Future<Pubspecs> _load() async =>
+      Pubspecs(await loadPackageConfigUri((await Isolate.packageConfig)!));
 
   /// Returns `pubspec.yaml` content for the package called [name].
   ///

@@ -68,12 +68,12 @@ for PKG in ${PKGS}; do
         dart analyze --fatal-infos . || EXIT_CODE=$?
         ;;
       command_0)
-        echo '../tool/leak_check.sh'
-        ../tool/leak_check.sh || EXIT_CODE=$?
+        echo 'dart run build_runner build --workspace --force-jit --only-check'
+        dart run build_runner build --workspace --force-jit --only-check || EXIT_CODE=$?
         ;;
       command_1)
-        echo 'dart run build_runner build --force-jit --only-check'
-        dart run build_runner build --force-jit --only-check || EXIT_CODE=$?
+        echo '../tool/leak_check.sh'
+        ../tool/leak_check.sh || EXIT_CODE=$?
         ;;
       format)
         echo 'dart format --output=none --set-exit-if-changed .'

@@ -82,7 +82,7 @@ void checkOutputs(
         if (!writer.testing.exists(mappedAssetId)) {
           // Then try the usual mapping for generated assets.
           mappedAssetId = AssetId(
-            (writer as InternalTestReaderWriter).buildCachePackage,
+            (writer as InternalTestReaderWriter).outputRootPackage,
             '.dart_tool/build/generated/${assetId.package}/${assetId.path}',
           );
         }
@@ -190,6 +190,7 @@ Future<TestBuilderResult> testBuilders(
   Set<Builder> optionalBuilders = const {},
   Set<Builder> visibleOutputBuilders = const {},
   Set<PostProcessBuilder> visibleOutputPostProcessBuilders = const {},
+  Set<Builder> addsToLibraryBuilders = const {},
   Map<Builder, List<String>> appliesBuilders = const {},
   bool testingBuilderConfig = true,
   TestReaderWriter? readerWriter,
@@ -199,6 +200,7 @@ Future<TestBuilderResult> testBuilders(
   final builderFactories = <BuilderFactory>[];
   final optionalBuilderFactories = Set<BuilderFactory>.identity();
   final visibleOutputBuilderFactories = Set<BuilderFactory>.identity();
+  final addsToLibraryBuilderFactories = Set<BuilderFactory>.identity();
   final appliesBuildersToFactories = <BuilderFactory, List<String>>{};
   for (final builder in builders) {
     Builder builderFactory(_) => builder;
@@ -208,6 +210,9 @@ Future<TestBuilderResult> testBuilders(
     }
     if (visibleOutputBuilders.contains(builder)) {
       visibleOutputBuilderFactories.add(builderFactory);
+    }
+    if (addsToLibraryBuilders.contains(builder)) {
+      addsToLibraryBuilderFactories.add(builderFactory);
     }
     if (appliesBuilders.containsKey(builder)) {
       appliesBuildersToFactories[builderFactory] = appliesBuilders[builder]!;
@@ -239,6 +244,7 @@ Future<TestBuilderResult> testBuilders(
     visibleOutputBuilderFactories: visibleOutputBuilderFactories,
     visibleOutputPostProcessBuilderFactories:
         visibleOutputPostProcessBuilderFactories,
+    addsToLibraryBuilderFactories: addsToLibraryBuilderFactories,
     appliesBuilders: appliesBuildersToFactories,
     testingBuilderConfig: testingBuilderConfig,
     readerWriter: readerWriter,
@@ -291,13 +297,12 @@ Future<TestBuilderResult> testBuilders(
 /// Optional builders only run if their output is used by a non-optional
 /// builder.
 ///
-/// To mark a builder's output as visible, add it to
-/// [visibleOutputBuilderFactories]. The builder then writes its outputs next to
-/// its input, instead of hidden under `.dart_tool`.
+/// To cause a builder to output to the package path instead of the artifact
+/// tree under `.dart_tool`, add it to [visibleOutputBuilderFactories].
 ///
-/// To mark a post process builder's output as visible, add it to
-/// [visibleOutputPostProcessBuilderFactories]. The builder then writes its
-/// outputs next to its input, instead of hidden under `.dart_tool`.
+/// To cause a post process builder to output to the package path instead of the
+/// artifact tree under `.dart_tool`, add it to
+/// [visibleOutputPostProcessBuilderFactories].
 ///
 /// To cause a builder to apply another builder, as `applies_builders` in
 /// `build.yaml`, pass [appliesBuilders].
@@ -312,9 +317,9 @@ Future<TestBuilderResult> testBuilders(
 /// info logging from builders.
 ///
 /// By default generated outputs are written to the `TestReaderWriter` where
-/// they would be written in a real `build_runner` build, which means "hidden"
-/// outputs go in the `.dart_tool/build/generated` folder in the root package.
-/// Pass [flattenOutput] to instead output next to each package source.
+/// they would be written in a real `build_runner` build, which means artifact
+/// tree outputs go in the `.dart_tool/build/generated` folder in the root
+/// package. Pass [flattenOutput] to instead output next to each package source.
 ///
 /// Returns a [TestBuilderResult] with the [BuildResult] and the
 /// [TestReaderWriter] used for the build, which can be used for further
@@ -335,6 +340,7 @@ Future<TestBuilderResult> testBuilderFactories(
   Set<BuilderFactory> visibleOutputBuilderFactories = const {},
   Set<PostProcessBuilderFactory> visibleOutputPostProcessBuilderFactories =
       const {},
+  Set<BuilderFactory> addsToLibraryBuilderFactories = const {},
   Map<BuilderFactory, List<String>> appliesBuilders = const {},
   bool testingBuilderConfig = true,
   TestReaderWriter? readerWriter,
@@ -372,11 +378,11 @@ Future<TestBuilderResult> testBuilderFactories(
   if (internalReaderWriter == null) {
     internalReaderWriter = InternalTestReaderWriter(
       outputRootPackage: rootPackage,
-      forceVisibleForTesting: flattenOutput,
+      forceToPackagePathsForTesting: flattenOutput,
     );
   } else {
     internalReaderWriter = internalReaderWriter.copyWith(
-      forceVisibleForTesting: flattenOutput,
+      forceToPackagePathsForTesting: flattenOutput,
     );
   }
   readerWriter = internalReaderWriter;
@@ -443,7 +449,10 @@ Future<TestBuilderResult> testBuilderFactories(
           name,
           autoApply: build_config.AutoApply.allPackages,
           isOptional: optionalBuilderFactories.contains(builderFactory),
-          hideOutput: !visibleOutputBuilderFactories.contains(builderFactory),
+          outputsToArtifactTree: !visibleOutputBuilderFactories.contains(
+            builderFactory,
+          ),
+          addsToLibrary: addsToLibraryBuilderFactories.contains(builderFactory),
           appliesBuilders: appliesBuilders[builderFactory] ?? const [],
         ),
         applyToPackages: inputPackages,
@@ -467,9 +476,8 @@ Future<TestBuilderResult> testBuilderFactories(
     builderDefinitions.add(
       PostProcessBuilderDefinition(
         name,
-        hideOutput: !visibleOutputPostProcessBuilderFactories.contains(
-          postProcessBuilderFactory,
-        ),
+        outputsToArtifactTree: !visibleOutputPostProcessBuilderFactories
+            .contains(postProcessBuilderFactory),
       ),
     );
     postProcessBuilderNameToBuilderFactory[name] = postProcessBuilderFactory;
@@ -515,7 +523,7 @@ Future<TestBuilderResult> testBuilderFactories(
           }.build()
         : null,
     reportUnusedAssetsForInput: reportUnusedAssetsForInput,
-    forceVisibleForTesting: flattenOutput,
+    forceToPackagePathsForTesting: flattenOutput,
   );
 
   final buildPlan = await BuildPlan.load(
@@ -621,7 +629,10 @@ class _ApplyBuilderDefinitionToPackages implements BuilderDefinition {
   String get package => delegate.package;
 
   @override
-  bool get hideOutput => delegate.hideOutput;
+  bool get outputsToArtifactTree => delegate.outputsToArtifactTree;
+
+  @override
+  bool get addsToLibrary => delegate.addsToLibrary;
 
   @override
   bool get isOptional => delegate.isOptional;

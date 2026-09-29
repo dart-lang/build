@@ -49,6 +49,23 @@ class DdcFrontendServerBuilder implements Builder {
       for (final dep in transitiveDeps) ...dep.sources,
     ];
     final scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
+    // The entrypoint always has to be in the scratch space: any module can
+    // trigger a compilation of the main app, including a deferred one.
+    //
+    // Stage it from here whenever this build step can read it, which also
+    // records it as an input so that this step is rerun when it changes. A
+    // generated entrypoint in another package can't be read here at all, as
+    // it's a hidden output of a build phase that runs after this one; fall
+    // back to the copy `WebEntrypointMarkerBuilder` staged in that case.
+    //
+    // The marker builder is guaranteed to have run first not because of its
+    // `runs_before`, which can only order builders within a single package,
+    // but because the DDC builders are optional: they are demand driven from
+    // the root package's entrypoint builder, which runs after the marker.
+    final entrypointIsStaged =
+        frontendServerState.stagedEntrypointAssetId == entrypointAssetId;
+    final stageEntrypoint =
+        !entrypointIsStaged || await buildStep.canRead(entrypointAssetId);
     final root = getRootPackageName();
     final driver = await buildStep.fetchResource(
       frontendServerProxyDriverResource,
@@ -68,7 +85,7 @@ class DdcFrontendServerBuilder implements Builder {
       final changedAssetUris = <Uri>[];
       frontendServerState.triggerSharedCompilation(entrypointAssetId, () async {
         await scratchSpace.ensureAssets([
-          entrypointAssetId,
+          if (stageEntrypoint) entrypointAssetId,
           ...module.sources,
           ...transitiveSources,
         ], buildStep);

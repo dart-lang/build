@@ -63,9 +63,8 @@ void main() {
 
 class FakeBuildSeries implements BuildSeries {
   @override
-  Future<BuildResult> get currentBuildResult => Future.value(
-    BuildResult(status: BuildStatus.success, buildOutputReader: null),
-  );
+  Future<BuildResult> get currentBuildResult =>
+      Future.value(BuildResult(status: BuildStatus.success));
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

@@ -142,8 +142,8 @@ giving your own feedback in the
 
 ### Output files
 
-Output is written directly to your package source, for example under `lib`.
-This makes it immediately available to all tools including compilers and IDEs.
+Outputs written at their package paths, for example under `lib`, are
+immediately available to tools including compilers and IDEs.
 
 You can choose whether or not to check generated files into source control.
 
@@ -152,11 +152,18 @@ Users getting your package via `pub` cannot run the build step themselves.
 
 ### Internal files
 
-`build_runner`uses a folder called `.dart_tool` in your package for internal files.
+`build_runner` uses `.dart_tool/build` for artifacts internal to the build.
+Other generated outputs are written in the artifact tree under
+`.dart_tool/build/generated`. These and other `.dart_tool/build` artifacts are
+internal to the build, except that builders might choose to make them available
+when served with `dart run build_runner serve` or when a merged output
+directory is created using `--output`.
+
 These are private to `build_runner` and should not be edited, checked in,
 published or used in any other way.
 
-So, tools such as `git` must be configured to ignore them. Make `git` ignore `.dart_tool` by adding to your `.gitignore` file:
+So, tools such as `git` must be configured to ignore them. Make `git` ignore
+`.dart_tool` by adding to your `.gitignore` file:
 
 ```bash
 .dart_tool
@@ -209,10 +216,12 @@ the workspace root, if there is one.
 
 ## Writing your own builder
 
-For advanced use cases it's possible to write your own builder.
+For advanced use cases it's possible to write your own builder:
 
-Get started with the [build package documentation](https://pub.dev/packages/build).
-For testing builders, see the [`build_test` package](https://pub.dev/packages/build_test).
+- Read [Writing builders](https://github.com/dart-lang/build/blob/master/docs/writing_builders.md)
+  to understand builder types, output strategies, and how builders integrate with Dart libraries.
+- Get started with the [build package documentation](https://pub.dev/packages/build).
+- For testing builders, see the [`build_test` package](https://pub.dev/packages/build_test).
 
 ## Debugging builds
 

@@ -4,6 +4,7 @@
 
 import 'dart:async';
 
+import 'package:built_collection/built_collection.dart';
 import 'package:stream_transform/stream_transform.dart';
 
 import '../../bootstrap/build_process_state.dart';
@@ -16,10 +17,14 @@ import 'asset_change.dart';
 import 'build_package_watcher.dart';
 import 'build_packages_watcher.dart';
 import 'collect_changes.dart';
+import 'filtered_changes.dart';
 
 class Watcher {
   final BuildPlan _buildPlan;
   final BuildSeries _buildSeries;
+
+  final StreamController<BuildResult> _buildResultsController =
+      StreamController.broadcast();
 
   Watcher._(this._buildPlan, this._buildSeries);
 
@@ -32,7 +37,7 @@ class Watcher {
     return result;
   }
 
-  Stream<BuildResult> get buildResults => _buildSeries.buildResults;
+  Stream<BuildResult> get buildResults => _buildResultsController.stream;
   Future<BuildResult> get currentBuildResult => _buildSeries.currentBuildResult;
 
   /// Runs a build any time relevant files change.
@@ -71,13 +76,14 @@ class Watcher {
               const Duration(milliseconds: 250),
         )
         .asyncMap(_buildSeries.filterChanges)
-        .where((changes) => changes.isNotEmpty)
+        .where((filtered) => filtered.isNotEmpty)
         .takeUntil(terminate)
-        .asyncMapBuffer(_doBuild)
+        .asyncMapBuffer(_doBuildOrNotify)
         .drain<void>()
         .then((_) async {
           await currentBuildResult;
           await _buildSeries.close();
+          await _buildResultsController.close();
           if (buildProcessState.isLockRequested()) {
             buildLog.flushAndPrint(
               'Exiting as requested by another build_runner process.',
@@ -87,15 +93,46 @@ class Watcher {
         .ignore();
 
     await packagesWatcher.ready;
-    await _buildSeries.run({}, recentlyBootstrapped: true);
+    final initialResult = await _buildSeries.run(
+      {},
+      recentlyBootstrapped: true,
+    );
+    _buildResultsController.add(initialResult);
   }
 
-  Future<BuildResult> _doBuild(List<List<AssetChange>> changes) async {
-    final mergedChanges = collectChanges(changes);
-    final result = await _buildSeries.run(
-      mergedChanges,
-      recentlyBootstrapped: false,
-    );
-    return result;
+  /// Runs a build if there are accepted changes, or emits a synthetic build
+  /// result if only consumed rejected changes occurred.
+  ///
+  /// Accepted changes affect build outputs, so they trigger a new build.
+  ///
+  /// Rejected changes do not affect build outputs, but if they were read or
+  /// digested outside the build, for example by an asset server, listeners need
+  /// a notification that the files were updated.
+  Future<void> _doBuildOrNotify(List<FilteredChanges> changesList) async {
+    final allAccepted = [for (final c in changesList) ...c.accepted];
+    final allRejected = [for (final c in changesList) ...c.rejected];
+
+    if (allAccepted.isNotEmpty) {
+      final mergedChanges = collectChanges([allAccepted]);
+      final result = await _buildSeries.run(
+        mergedChanges,
+        recentlyBootstrapped: false,
+      );
+      _buildResultsController.add(result);
+      return;
+    }
+
+    if (allRejected.isNotEmpty) {
+      final lastResult = await currentBuildResult;
+      final reader = lastResult.buildOutputReader;
+      final consumedRejected = allRejected
+          .where((c) => reader?.wasSourceConsumedOutsideBuild(c.id) ?? false)
+          .toList();
+
+      if (consumedRejected.isNotEmpty) {
+        final syntheticResult = lastResult.copyWith(outputs: BuiltList());
+        _buildResultsController.add(syntheticResult);
+      }
+    }
   }
 }

@@ -9,12 +9,18 @@ import 'package:built_collection/built_collection.dart';
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 
+import '../contracts.dart';
 import '../exceptions.dart';
 import '../logging/build_log.dart';
 import 'phase.dart';
 
 /// The [BuildPhases] defining the sequence of actions in a build, and their
 /// [Digest] and options digests.
+@Invariant('inBuildPhasesOptionsDigests.length == inBuildPhases.length')
+@Invariant(
+  'postBuildActionsOptionsDigests.length == '
+  'postBuildPhase.builderActions.length',
+)
 class BuildPhases {
   /// The sequence of actions in the main build.
   final BuiltList<InBuildPhase> inBuildPhases;
@@ -32,6 +38,10 @@ class BuildPhases {
   /// A [Digest] that can be used to detect any change to the phases.
   final Digest digest;
 
+  /// The number of the last of [inBuildPhases] that can add to a library, or
+  /// `null` if there is none.
+  final int? lastAddsToLibraryPhase;
+
   BuildPhases(
     Iterable<InBuildPhase> inBuildPhases, [
     PostBuildPhase? postBuildPhase,
@@ -41,7 +51,8 @@ class BuildPhases {
        postBuildActionsOptionsDigests = _digestsOf(
          postBuildPhase?.builderActions ?? [],
        ),
-       digest = _computeDigest([...inBuildPhases, ?postBuildPhase]);
+       digest = _computeDigest([...inBuildPhases, ?postBuildPhase]),
+       lastAddsToLibraryPhase = _lastAddsToLibraryPhase(inBuildPhases);
 
   /// The phases, [inBuildPhases] followed by [postBuildPhase], by number.
   BuildPhase operator [](int index) {
@@ -59,6 +70,16 @@ class BuildPhases {
   /// non-empty.
   int get length =>
       inBuildPhases.length + (postBuildPhase.builderActions.isEmpty ? 0 : 1);
+
+  static int? _lastAddsToLibraryPhase(Iterable<InBuildPhase> phases) {
+    int? result;
+    var phaseNumber = 0;
+    for (final phase in phases) {
+      if (phase.addsToLibrary) result = phaseNumber;
+      ++phaseNumber;
+    }
+    return result;
+  }
 
   static Digest _computeDigest(Iterable<BuildPhase> phases) {
     final digestSink = AccumulatorSink<Digest>();
@@ -82,7 +103,8 @@ class BuildPhases {
 
   /// Checks that outputs are to allowed locations.
   ///
-  /// Valid outputs are hidden or to packages in [packagesInBuild].
+  /// Valid outputs are in the artifact tree or in packages in
+  /// [packagesInBuild].
   ///
   /// If the phases are not valid, logs then throws
   /// [CannotBuildException].
@@ -90,16 +112,16 @@ class BuildPhases {
     for (final action in inBuildPhases.cast<BuildAction>().followedBy(
       postBuildPhase.builderActions,
     )) {
-      if (action.hideOutput) continue;
+      if (action.outputsToArtifactTree) continue;
       if (packagesInBuild.contains(action.package)) continue;
-      // This should happen only with a manual build script since the build
-      // phases generation filters these out.
+      // BuildPhaseCreator filters these out; this should only be reachable
+      // if there is a bug.
       final name = action is InBuildPhase
           ? action.displayName
           : (action as PostBuildAction).builderLabel;
       buildLog.error(
-        'A build phase ($name) is attempting '
-        'to operate on package "${action.package}" without "hideOutput". '
+        'A build phase ($name) is attempting to operate on package '
+        '"${action.package}" without "outputsToArtifactTree". '
         'This is only allowed for packages in the build, not for dependency '
         'packages.',
       );

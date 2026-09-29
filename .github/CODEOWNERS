@@ -1,0 +1,7 @@
+# Suggested reviewers for PRs to packages in this repository.
+#
+# These are suggestions; it is fine to have your changes reviewed by someone
+# else.
+
+*                                   @davidmorgan
+builder_pkgs/build_web_compilers/   @Markzipan @davidmorgan

@@ -50,6 +50,34 @@ void main() {
       expect(buildPhases1.digest, isNot(buildPhases2.digest));
     });
 
+    test('digest changes on addsToLibrary change', () {
+      final buildPhases1 = BuildPhases([
+        InBuildPhase(
+          builder: TestBuilder(
+            buildExtensions: {
+              '.dart': ['.g.dart'],
+            },
+          ),
+          key: 'TestBuilder',
+          package: 'a',
+        ),
+      ]);
+      final buildPhases2 = BuildPhases([
+        InBuildPhase(
+          builder: TestBuilder(
+            buildExtensions: {
+              '.dart': ['.g.dart'],
+            },
+          ),
+          key: 'TestBuilder',
+          package: 'a',
+          addsToLibrary: true,
+        ),
+      ]);
+
+      expect(buildPhases1.digest, isNot(buildPhases2.digest));
+    });
+
     test('digest does not change on builder change', () {
       // Changes to builder code is checked via changes to the build script and
       // deps, not by `BuildPhases`.
@@ -114,7 +142,7 @@ void main() {
             options: const BuilderOptions({}),
             targetSources: const InputSet(),
             generateFor: const InputSet(),
-            hideOutput: true,
+            outputsToArtifactTree: true,
           ),
         ]),
       );
@@ -127,7 +155,7 @@ void main() {
             options: const BuilderOptions({'a': 'b'}),
             targetSources: const InputSet(),
             generateFor: const InputSet(),
-            hideOutput: true,
+            outputsToArtifactTree: true,
           ),
         ]),
       );
@@ -135,6 +163,49 @@ void main() {
       expect(
         buildPhases1.postBuildActionsOptionsDigests,
         isNot(buildPhases2.postBuildActionsOptionsDigests),
+      );
+    });
+  });
+
+  group('InBuildPhase', () {
+    test('rejects addsToLibrary with a non-Dart input', () {
+      expect(
+        () => InBuildPhase(
+          builder: TestBuilder(
+            buildExtensions: {
+              '.txt': ['.txt.copy'],
+            },
+          ),
+          key: 'TestBuilder',
+          package: 'a',
+          addsToLibrary: true,
+        ),
+        throwsA(
+          isArgumentError.having(
+            (e) => e.message,
+            'message',
+            contains(
+              'A builder with `adds_to_library: true` can only have `.dart` '
+              "inputs, but has: '.txt'.",
+            ),
+          ),
+        ),
+      );
+    });
+
+    test('allows addsToLibrary with a Dart input', () {
+      expect(
+        InBuildPhase(
+          builder: TestBuilder(
+            buildExtensions: {
+              '.dart': ['.g.dart'],
+            },
+          ),
+          key: 'TestBuilder',
+          package: 'a',
+          addsToLibrary: true,
+        ).addsToLibrary,
+        isTrue,
       );
     });
   });

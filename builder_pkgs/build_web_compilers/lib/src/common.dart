@@ -31,16 +31,7 @@ final fesJsExtension = '.dart.lib.js';
 final fesJsAlternateExtension = '.lib.js';
 final fesSourceMapExtension = '.dart.lib.js.map';
 
-final defaultAnalysisOptionsId = AssetId(
-  'build_modules',
-  'lib/src/analysis_options.default.yaml',
-);
-
 final sdkDir = p.dirname(p.dirname(Platform.resolvedExecutable));
-
-String defaultAnalysisOptionsArg(ScratchSpace scratchSpace) =>
-    '--options=${scratchSpace.fileFor(defaultAnalysisOptionsId).path}';
-
 String get sdkDdcKernelPath =>
     p.url.join('lib', '_internal', 'ddc_outline.dill');
 
@@ -158,26 +149,6 @@ String ddcModuleName(AssetId jsId) {
       ? jsId.path.replaceFirst('lib/', 'packages/${jsId.package}/')
       : jsId.path;
   return jsPath.substring(0, jsPath.length - jsModuleExtension.length);
-}
-
-String ddcLibraryId(AssetId jsId) {
-  final jsPath = jsId.path.startsWith('lib/')
-      ? jsId.path.replaceFirst('lib/', 'package:${jsId.package}/')
-      : '$multiRootScheme:///${jsId.path}';
-  final prefix = jsPath.substring(0, jsPath.length - jsModuleExtension.length);
-  return '$prefix.dart';
-}
-
-AssetId changeAssetIdExtension(
-  AssetId inputId,
-  String inputExtension,
-  String outputExtension,
-) {
-  assert(inputId.path.endsWith(inputExtension));
-  final newPath =
-      inputId.path.substring(0, inputId.path.length - inputExtension.length) +
-      outputExtension;
-  return AssetId(inputId.package, newPath);
 }
 
 enum ModuleStrategy { fine, coarse }

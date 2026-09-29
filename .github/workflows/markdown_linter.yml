@@ -1,4 +1,7 @@
 name: markdown_link_check
+permissions:
+  contents: read
+
 on:
   push:
     branches:
@@ -12,6 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3
+        with:
+          persist-credentials: false
       - uses: tcort/github-action-markdown-link-check@e047c5b37f24ab722bbef1a27b6fab7f96bc4068
         with:
           use-quiet-mode: 'yes'

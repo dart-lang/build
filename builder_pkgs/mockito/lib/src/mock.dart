@@ -66,17 +66,6 @@ final List<dynamic> _capturedArgs = [];
 final List<ArgMatcher> _storedArgs = <ArgMatcher>[];
 final Map<String, ArgMatcher> _storedNamedArgs = <String, ArgMatcher>{};
 
-@Deprecated(
-  'This function is not a supported function, and may be deleted as early as '
-  'Mockito 5.0.0',
-)
-void setDefaultResponse(
-  Mock mock,
-  CallPair<dynamic> Function() defaultResponse,
-) {
-  mock._defaultResponse = defaultResponse;
-}
-
 /// Opt-into [Mock] throwing [NoSuchMethodError] for unimplemented methods.
 ///
 /// The default behavior when not using this is to always return `null`.

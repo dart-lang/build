@@ -1,5 +1,14 @@
-## 3.5.20-wip
+## 3.5.21-wip
 
+- Add `addsToLibraryBuilders` to `testBuilders` and
+  `addsToLibraryBuilderFactories` to `testBuilderFactories` to support testing
+  builders that use `BuildStep.librarySourceSink`.
+- Use `build_runner` 2.16.2.
+
+## 3.5.20
+
+- Clarify terminology: refer to `.dart_tool/build/generated` as the "artifact
+  tree", and the normal output location as the "package path".
 - Use `build_runner` 2.16.1.
 
 ## 3.5.19

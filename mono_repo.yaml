@@ -7,3 +7,13 @@ merge_stages:
 github:
   permissions:
     contents: read
+  on_completion:
+    # Job that runs always and fails if any prior job failed to provide that
+    # information with a stable job name.
+    - name: ci
+      runs-on: ubuntu-latest
+      if: always()
+      steps:
+        - name: Fail if any job failed or was cancelled
+          if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+          run: exit 1

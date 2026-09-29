@@ -102,9 +102,9 @@ builders:
   test_builder:
     import: "package:builder_pkg/builder.dart"
     builder_factories: ["testBuilder"]
-    build_extensions: {".dart": [".unused"]}
+    build_extensions: {".dart": [".g.dart"]}
     auto_apply: all_packages
-    build_to: cache
+    build_to: source
     applies_builders:
       - builder_pkg:test_post_process_builder
 post_process_builders:
@@ -126,10 +126,18 @@ TestPostProcessBuilder testPostProcessBuilder(BuilderOptions options)
 
 class TestBuilder implements Builder {
   @override
-  Map<String, List<String>> get buildExtensions => {'.dart': ['.unused']};
+  Map<String, List<String>> get buildExtensions => {'.dart': ['.g.dart']};
 
   @override
-  Future<void> build(BuildStep buildStep) async {}
+  Future<void> build(BuildStep buildStep) async {
+    final lib = await buildStep.inputLibrary;
+    final imported = lib.firstFragment.libraryImports.first.importedLibrary!;
+    final names = imported.topLevelVariables.map((v) => v.name).toList();
+    await buildStep.writeAsString(
+      buildStep.inputId.changeExtension('.g.dart'),
+      '// \$names',
+    );
+  }
 }
 
 class TestPostProcessBuilder implements PostProcessBuilder {
@@ -141,11 +149,17 @@ class TestPostProcessBuilder implements PostProcessBuilder {
 
   @override
   Future<void> build(PostProcessBuildStep buildStep) async {
-    log.warning('post process builder ran');
-    log.severe('post process builder failed');
+    final content = await buildStep.readInputAsString();
+    if (content == 'crash') {
+      throw StateError('post process builder crashed');
+    }
+    if (content != 'ok') {
+      log.warning('post process builder ran');
+      log.severe('post process builder failed');
+    }
     await buildStep.writeAsString(
       buildStep.inputId.addExtension(outputExtension),
-      'failed output',
+      'output: \$content',
     );
   }
 }
@@ -178,5 +192,45 @@ class TestPostProcessBuilder implements PostProcessBuilder {
     );
     expect(output, isNot(contains('post process builder ran')));
     expect(output, contains('post process builder failed'));
+
+    // An unhandled error crashes the post process phase, omitting later inputs.
+    // On an incremental build after fixing the crash, the omitted input runs.
+    tester.write('root_pkg/web/a.txt', 'crash');
+    tester.write('root_pkg/web/b.txt', 'ok');
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+      expectExitCode: 1,
+    );
+    expect(output, contains('post process builder crashed'));
+
+    // Fix a.txt. b.txt was omitted in the previous build and must run now.
+    tester.write('root_pkg/web/a.txt', 'ok');
+    await tester.run('root_pkg', 'dart run build_runner build --force-jit');
+    expect(
+      tester.read(
+        'root_pkg/.dart_tool/build/generated/root_pkg/web/b.txt.post',
+      ),
+      'output: ok',
+    );
+
+    // An unhandled build failure preserves resolver dependency information so
+    // subsequent incremental builds rebuild on transitive changes.
+    tester.write('root_pkg/lib/a.dart', "import 'b.dart';");
+    tester.write('root_pkg/lib/b.dart', 'const b1 = 1;');
+    await tester.run('root_pkg', 'dart run build_runner build --force-jit');
+    expect(tester.read('root_pkg/lib/a.g.dart'), '// [b1]');
+
+    tester.write('root_pkg/web/a.txt', 'crash');
+    await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+      expectExitCode: 1,
+    );
+
+    tester.write('root_pkg/web/a.txt', 'ok');
+    tester.write('root_pkg/lib/b.dart', 'const b2 = 2;');
+    await tester.run('root_pkg', 'dart run build_runner build --force-jit');
+    expect(tester.read('root_pkg/lib/a.g.dart'), '// [b2]');
   });
 }

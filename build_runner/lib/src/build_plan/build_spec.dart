@@ -72,7 +72,8 @@ abstract class BuildSpec implements Built<BuildSpec, BuildSpecBuilder> {
         testingOverrides.readerWriter ??
         ReaderWriter(
           buildPackages,
-          forceVisibleForTesting: testingOverrides.forceVisibleForTesting,
+          forceToPackagePathsForTesting:
+              testingOverrides.forceToPackagePathsForTesting,
         );
     final buildConfigs = await BuildConfigs.load(
       readerWriter: readerWriter,

@@ -1,11 +1,8 @@
 reporter: failures-only
+timeout: 3m
 
 tags:
   integration1:
-    timeout: 3m
   integration2:
-    timeout: 3m
   integration3:
-    timeout: 3m
   integration4:
-    timeout: 3m

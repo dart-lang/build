@@ -8,13 +8,27 @@ import 'package:built_value/built_value.dart';
 
 import '../build/build_state/build_step_id.dart';
 import '../build/build_state/exceptions.dart';
-import '../constants.dart';
+import '../contracts.dart';
 import 'build_phases.dart';
 import 'phase.dart';
 
 part 'build_step_plan.g.dart';
 
 /// Planned build steps for one build and their declared outputs.
+@Invariant('buildStepsByPhase.length == buildPhases.inBuildPhases.length')
+@Invariant(
+  'buildStepsByDeclaredOutput.values.every('
+  '(step) => step.phaseNumber < buildPhases.inBuildPhases.length)',
+)
+@Invariant(
+  'buildStepsByDeclaredOutput.keys.every('
+  '(id) => id.package.isNotEmpty && id.path.isNotEmpty)',
+)
+@Invariant(
+  'declaredOutputsByStep.asMap().entries.every('
+  '(entry) => entry.value.every('
+  '(out) => buildStepsByDeclaredOutput[out] == entry.key))',
+)
 abstract class BuildStepPlan
     implements Built<BuildStepPlan, BuildStepPlanBuilder> {
   BuildPhases get buildPhases;
@@ -30,6 +44,10 @@ abstract class BuildStepPlan
   factory BuildStepPlan([void Function(BuildStepPlanBuilder)? updates]) =
       _$BuildStepPlan;
   BuildStepPlan._();
+
+  /// An empty [BuildStepPlan] with no phases and no outputs.
+  factory BuildStepPlan.empty() =>
+      BuildStepPlan((b) => b.buildPhases = BuildPhases(const <InBuildPhase>[]));
 
   /// Plans build steps from [buildPhases], placeholder IDs and source IDs.
   factory BuildStepPlan.compute({
@@ -123,36 +141,49 @@ abstract class BuildStepPlan
     return action.targetSources.matches(currentInput);
   }
 
-  bool isHidden(AssetId id) {
-    if (id.path.startsWith(generatedOutputDirectory) ||
-        id.path.startsWith(cacheDirectoryPath)) {
-      return false;
-    }
+  /// Whether [id] is a declared output that is declared in the artifact tree.
+  bool isDeclaredOutputInArtifactTree(AssetId id) {
     final step = stepForDeclaredOutputOrNull(id);
     if (step == null) return false;
-    return buildPhases.inBuildPhases[step.phaseNumber].hideOutput;
+    return buildPhases.inBuildPhases[step.phaseNumber].outputsToArtifactTree;
+  }
+
+  /// Whether [id] is a declared output that is declared in the package path.
+  bool isDeclaredOutputAtPackagePath(AssetId id) {
+    final step = stepForDeclaredOutputOrNull(id);
+    if (step == null) return false;
+    return !buildPhases.inBuildPhases[step.phaseNumber].outputsToArtifactTree;
   }
 
   Iterable<AssetId> get declaredOutputs => buildStepsByDeclaredOutput.keys;
 
+  @Requires('id.package.isNotEmpty')
+  @Requires('id.path.isNotEmpty')
   bool isDeclaredOutput(AssetId id) =>
       buildStepsByDeclaredOutput.containsKey(id);
 
+  @Requires('isDeclaredOutput(id)')
   BuildStepId stepForDeclaredOutput(AssetId id) =>
       buildStepsByDeclaredOutput[id]!;
 
   BuildStepId? stepForDeclaredOutputOrNull(AssetId id) =>
       buildStepsByDeclaredOutput[id];
 
+  @Requires('id.package.isNotEmpty')
+  @Requires('id.path.isNotEmpty')
   Iterable<AssetId> declaredOutputsOf(AssetId id) =>
       declaredOutputsByPrimaryInput[id];
 
+  /// Returns all transitive declared outputs produced from [ids].
+  ///
+  /// Does not include [ids] themselves unless an asset is also declared as an
+  /// output of one of the steps.
   Set<AssetId> transitiveDeclaredOutputsOf(Iterable<AssetId> ids) {
     final results = <AssetId>{};
 
     void addTransitive(AssetId id) {
-      if (results.add(id)) {
-        for (final output in declaredOutputsOf(id)) {
+      for (final output in declaredOutputsOf(id)) {
+        if (results.add(output)) {
           addTransitive(output);
         }
       }

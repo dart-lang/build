@@ -92,7 +92,6 @@ StackTrace mapStackTrace(
 }
 
 final escapedPipe = '\$124';
-final escapedPound = '\$35';
 
 /// Reformats a JS member name to make it look more Dart-like.
 ///

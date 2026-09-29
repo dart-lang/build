@@ -1,7 +1,58 @@
-## 2.16.1-wip
+## 2.16.2-wip
 
+- Add `SharedPartAccumulator` and `SharedPartAccumulatorCodec` for shared part
+  outputs.
+- Support shared parts written using `BuildStep.librarySourceSink` when builders
+  opt in with `adds_to_library: true` in `build.yaml`.
+- The `serve` command now rejects non-loopback `Host` and `Origin` headers when
+  bound to a loopback interface, and validates them against `--hostname` when a
+  specific host is given.
+- Require `build` 4.1.0.
+- Require `build_config` 1.4.0.
+- Bug fix: allow calling `BuildStep.canRead` on outputs written by the same
+  build step.
+- Bug fix: run post-process builder on incremental builds when no prior step
+  result exists.
+- Bug fix: preserve analyzer dependency information on unhandled build failures,
+  preventing subsequent incremental builds from missing changes to transitively
+  imported files.
+- Require `analyzer` 14.3.0.
+- Bug fix: complete the active building future in daemon mode when the build
+  script is updated, preventing asset server requests from hanging.
+- Bug fix: write the SDK summary deps file atomically, so a concurrently
+  running build does not read it while it is empty; and rebuild the summary
+  instead of failing if the deps file turns out to be corrupt.
+- Bug fix: handle deletions of unread sources during watch, serve, and
+  daemon modes.
+- Bug fix: in watch, serve, and daemon modes, do not run a build when nothing
+  changed that can affect any output. A file can be written without changing
+  its content, and one write can produce more than one filesystem event.
+- Bug fix: detect duplicate `--output` directories that are spelled
+  differently, for example `build` and `build/`, instead of writing both and
+  silently keeping only the last.
+- Bug fix: in watch, serve, and daemon modes, notice a generated file being
+  deleted after a previous build deleted and then rewrote that same file.
+  Previously the delete was mistaken for the build's own earlier delete and
+  ignored, so deleting a generated file no longer forced it to be regenerated.
+
+## 2.16.1
+
+- Clarify terminology: refer to `.dart_tool/build/generated` as the "artifact
+  tree", and the normal output location as the "package path".
 - Reduce logged compile progress output for non-interactive builds, for example
   presubmits.
+- In `serve` and `daemon` modes, source files not involved in the build are no
+  longer cached on read. They are re-read when requested.
+- Bug fix: make post-process output behavior match normal outputs: by default,
+  rebuild if deleted or incorrect. Follow `--keep-modified-outputs` and
+  `--only-check`.
+- Bug fix: in incremental builds, detect and delete conflicting outputs in the
+  source directory rather than treating them as sources, which could cause
+  builder dependency cycles and hangs; fix #5079.
+- Bug fix: restrict incompatible build output deletion to output packages; do
+  not attempt to delete files in dependency packages.
+- Bug fix: do not invalidate retained package path outputs when conflicting
+  artifact tree files appear; avoid unnecessary build step reruns.
 
 ## 2.16.0
 
