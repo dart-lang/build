@@ -107,6 +107,8 @@ Future<void> _createDevCompilerModule(
 
   ProcessResult result;
   try {
+    // Use standalone process instead of the worker due to
+    // https://github.com/dart-lang/sdk/issues/49441
     final execSuffix = Platform.isWindows ? '.exe' : '';
     final dartPath = p.join(sdkDir, 'bin', 'dart$execSuffix');
     result = await Process.run(dartPath, [
