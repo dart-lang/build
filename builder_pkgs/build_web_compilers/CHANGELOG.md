@@ -5,7 +5,8 @@
   Windows.
 - Wait for the persistent Frontend Server to exit before deleting the scratch
   space.
-- Call DDC with an AOT snapshot via `dart compile js-dev` instead of JIT snapshot.
+- Call DDC with an AOT snapshot via `dart compile js-dev` instead of JIT
+  snapshot.
 
 ## 4.8.11
 

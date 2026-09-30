@@ -114,6 +114,7 @@ Future<void> _createDevCompilerModule(
     result = await Process.run(dartPath, [
       'compile',
       'js-dev',
+      '--suppress-analytics',
       '--multi-root-scheme=org-dartlang-sdk',
       '--modules=${ddcLibraryBundle ? 'ddc' : 'amd'}',
       if (canaryFeatures || ddcLibraryBundle) '--canary',
