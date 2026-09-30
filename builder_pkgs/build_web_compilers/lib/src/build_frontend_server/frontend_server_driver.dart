@@ -348,7 +348,11 @@ class PersistentFrontendServer {
         '--enable-experiment=$experiment',
     ];
     final dartaotruntime = p.join(sdkRoot, 'bin', 'dartaotruntime');
-    final process = await _startWithReaper(dartaotruntime, args);
+    final process = await _startWithReaper(
+      dartaotruntime,
+      args,
+      workingDirectory: fileSystemRoot.toFilePath(),
+    );
     final fileSystem = WebMemoryFilesystem(fileSystemRoot, rootPackage);
     final stdoutHandler = StdoutHandler(logger: _log);
     process.stdout
@@ -431,12 +435,24 @@ class PersistentFrontendServer {
 
   /// `Process.start` plus a reaper script so that the child process is killed
   /// if the parent process is killed.
+  ///
+  /// Both processes run in [workingDirectory]. On Windows a process's current
+  /// directory can't be deleted, so it should not be in the package directory.
   static Future<Process> _startWithReaper(
     String command,
-    List<String> arguments,
-  ) async {
-    final result = await Process.start(command, arguments);
-    final reaper = await _startReaper(parentPid: pid, childPid: result.pid);
+    List<String> arguments, {
+    required String workingDirectory,
+  }) async {
+    final result = await Process.start(
+      command,
+      arguments,
+      workingDirectory: workingDirectory,
+    );
+    final reaper = await _startReaper(
+      parentPid: pid,
+      childPid: result.pid,
+      workingDirectory: workingDirectory,
+    );
     if (reaper != null) {
       result.exitCode.then<void>((_) {
         reaper.kill();
@@ -453,6 +469,7 @@ class PersistentFrontendServer {
   static Future<Process?> _startReaper({
     required int parentPid,
     required int childPid,
+    required String workingDirectory,
   }) async {
     try {
       if (Platform.isWindows) {
@@ -461,12 +478,17 @@ class PersistentFrontendServer {
           'Bypass',
           '-Command',
           'Wait-Process -Id $parentPid; Stop-Process -Id $childPid -Force',
-        ]);
+        ], workingDirectory: workingDirectory);
       } else {
-        return await Process.start('bash', [
-          '-c',
-          'while kill -0 $parentPid; do sleep 1; done; kill -9 $childPid',
-        ], mode: ProcessStartMode.detachedWithStdio);
+        return await Process.start(
+          'bash',
+          [
+            '-c',
+            'while kill -0 $parentPid; do sleep 1; done; kill -9 $childPid',
+          ],
+          mode: ProcessStartMode.detachedWithStdio,
+          workingDirectory: workingDirectory,
+        );
       }
     } on ProcessException catch (_) {
       return null;

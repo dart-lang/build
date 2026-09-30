@@ -1,3 +1,9 @@
+## 4.8.12-wip
+
+- Start the persistent Frontend Server and its reaper process in the scratch
+  space instead of the package directory, so they do not block deleting it on
+  Windows.
+
 ## 4.8.11
 
 - Allow Dart SDK 3.14.x and 3.15 prerelease.
