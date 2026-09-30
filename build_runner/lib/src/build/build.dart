@@ -53,6 +53,7 @@ import 'post_process_build_step_impl.dart';
 import 'resolver/analysis_driver_model.dart';
 import 'resolver/resolvers_impl.dart';
 import 'shared_part_accumulator.dart';
+import 'source_edit.dart';
 
 final ResolversImpl _defaultResolvers = ResolversImpl(
   analysisDriverModel: AnalysisDriverModel(),
@@ -398,7 +399,7 @@ class Build {
         libraryId,
       )).stringValue();
       final partUri = libraryId.sharedPartUri!;
-      if (_hasPartDirective(source, partUri)) continue;
+      if (SourceEdit.ensurePartDirective(source, partUri) == null) continue;
       lines.add("${buildLog.renderId(libraryId)}: part '$partUri';");
     }
     if (lines.isEmpty) return false;
@@ -408,15 +409,6 @@ class Build {
       '${lines.join('\n')}',
     );
     return true;
-  }
-
-  static bool _hasPartDirective(String source, String partUri) {
-    for (final directive in _parseCompilationUnit(source).directives) {
-      if (directive is PartDirective && directive.uri.stringValue == partUri) {
-        return true;
-      }
-    }
-    return false;
   }
 
   /// Returns primary inputs for [package] in [phaseNumber].

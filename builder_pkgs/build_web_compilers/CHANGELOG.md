@@ -1,6 +1,15 @@
-## 4.8.11-wip
+## 4.8.12-wip
 
+- Start the persistent Frontend Server and its reaper process in the scratch
+  space instead of the package directory, so they do not block deleting it on
+  Windows.
+- Wait for the persistent Frontend Server to exit before deleting the scratch
+  space.
 - Call DDC with an AOT snapshot via `dart compile js-dev` instead of JIT snapshot.
+
+## 4.8.11
+
+- Allow Dart SDK 3.14.x and 3.15 prerelease.
 - Make `fes_manager` config directory and file user-private.
 - Use a token for socket authentication in `fes_manager`.
 - By default, prefer entrypoints from the `web` directory over
