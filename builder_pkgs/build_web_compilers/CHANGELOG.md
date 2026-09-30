@@ -1,5 +1,6 @@
-## 4.8.11-wip
+## 4.8.11
 
+- Allow Dart SDK 3.14.x and 3.15 prerelease.
 - Make `fes_manager` config directory and file user-private.
 - Use a token for socket authentication in `fes_manager`.
 - By default, prefer entrypoints from the `web` directory over
