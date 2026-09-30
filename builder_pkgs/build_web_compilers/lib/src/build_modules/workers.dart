@@ -54,10 +54,7 @@ BazelWorkerDriver get _dartdevkDriver {
   return __dartdevkDriver ??= BazelWorkerDriver(
     () => Process.start(
       p.join(sdkDir, 'bin', 'dart'),
-      [
-        p.join(sdkDir, 'bin', 'snapshots', 'dartdevc.dart.snapshot'),
-        '--persistent_worker',
-      ],
+      ['--suppress-analytics', 'compile', 'js-dev', '--persistent_worker'],
       mode: _processMode,
       workingDirectory: scratchSpace.tempDir.path,
     ),
