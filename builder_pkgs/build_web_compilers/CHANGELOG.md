@@ -3,6 +3,8 @@
 - Start the persistent Frontend Server and its reaper process in the scratch
   space instead of the package directory, so they do not block deleting it on
   Windows.
+- Wait for the persistent Frontend Server to exit before deleting the scratch
+  space.
 
 ## 4.8.11
 

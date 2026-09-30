@@ -125,10 +125,13 @@ FrontendServerProxyDriver? __frontendServerProxyDriver;
 final frontendServerProxyDriverResource = Resource<FrontendServerProxyDriver>(
   () async => _frontendServerProxyDriver,
   beforeExit: () async {
-    _frontendServerProxyWorkersAreDoneCompleter?.complete();
-    await __frontendServerProxyDriver?.terminate();
-    _frontendServerProxyWorkersAreDoneCompleter = null;
-    __frontendServerProxyDriver = null;
+    try {
+      await __frontendServerProxyDriver?.terminate();
+    } finally {
+      _frontendServerProxyWorkersAreDoneCompleter?.complete();
+      _frontendServerProxyWorkersAreDoneCompleter = null;
+      __frontendServerProxyDriver = null;
+    }
   },
 );
 
