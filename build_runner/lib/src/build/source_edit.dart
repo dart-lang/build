@@ -38,42 +38,37 @@ abstract class SourceEdit implements Built<SourceEdit, SourceEditBuilder> {
     final directive = "part '$partUri';";
     final parts = unit.directives.whereType<PartDirective>();
     if (parts.any((part) => part.uri.stringValue == partUri)) return null;
-    final eol = source.contains('\r\n') ? '\r\n' : '\n';
+
+    // Inserted text uses the line ending of the first line.
+    final eol = source.startsWith('\r\n', source.lineEnd(0)) ? '\r\n' : '\n';
 
     // After the last directive and any comment on the same line. Parts come
     // after imports and exports, so this is after the last part if there are
     // any; if not, the directive starts a section of its own.
     if (unit.directives.isNotEmpty) {
-      final lineEnd = source.indexOf(eol, unit.directives.last.end);
       final separator = parts.isEmpty ? '$eol$eol' : eol;
       return SourceEdit.of(
-        offset: lineEnd == -1 ? source.length : lineEnd,
+        offset: source.lineEnd(unit.directives.last.end),
         length: 0,
         replacement: '$separator$directive',
       );
     }
 
-    // Before the first declaration and the comments attached to it, meaning
-    // those with no blank line between them and the declaration. The language
-    // version comment must stay first, so it is never attached.
+    // Before the first declaration and the comments that belong to it. File
+    // header comments, such as a license, stay first: these are the comments
+    // followed by a blank line. The comments with no blank line before the
+    // declaration, such as `// ignore:` comments, belong to it and must stay
+    // with it. The language version comment is always a file header comment,
+    // even with no blank line after it.
     if (unit.declarations.isNotEmpty) {
       final declaration = unit.declarations.first;
       final firstToken = declaration.metadata.isEmpty
           ? declaration.firstTokenAfterCommentAndMetadata
           : declaration.metadata.first.beginToken;
-      final comments = <Token>[];
-      for (
-        Token? comment = firstToken.precedingComments;
-        comment != null;
-        comment = comment.next
-      ) {
-        comments.add(comment);
-      }
       var offset = firstToken.offset;
-      for (final comment in comments.reversed) {
+      for (final comment in firstToken.precedingCommentList.reversed) {
         if (comment.offset == unit.languageVersionToken?.offset) break;
-        final gap = source.substring(comment.end, offset);
-        if (eol.allMatches(gap).length > 1) break;
+        if (source.hasBlankLine(comment.end, offset)) break;
         offset = comment.offset;
       }
       return SourceEdit.of(
@@ -84,11 +79,46 @@ abstract class SourceEdit implements Built<SourceEdit, SourceEditBuilder> {
     }
 
     // At the end.
-    final newline = source.isEmpty || source.endsWith(eol) ? '' : eol;
+    final newline = source.isEmpty || source.endsWith('\n') ? '' : eol;
     return SourceEdit.of(
       offset: source.length,
       length: 0,
       replacement: '$newline$directive$eol',
     );
+  }
+}
+
+extension on String {
+  /// The end of the line containing [offset], before its line ending.
+  ///
+  /// Lines end with `\n` or `\r\n`; files can mix them.
+  int lineEnd(int offset) {
+    final newline = indexOf('\n', offset);
+    if (newline == -1) return length;
+    return newline > 0 && this[newline - 1] == '\r' ? newline - 1 : newline;
+  }
+
+  /// Whether there is a blank line between [start] and [end], which must
+  /// contain only whitespace.
+  bool hasBlankLine(int start, int end) {
+    final first = indexOf('\n', start);
+    if (first == -1 || first >= end) return false;
+    final second = indexOf('\n', first + 1);
+    return second != -1 && second < end;
+  }
+}
+
+extension on Token {
+  /// The comments before this token, in source order.
+  List<Token> get precedingCommentList {
+    final result = <Token>[];
+    for (
+      Token? comment = precedingComments;
+      comment != null;
+      comment = comment.next
+    ) {
+      result.add(comment);
+    }
+    return result;
   }
 }

@@ -17,77 +17,236 @@ void main() {
       );
     }
 
+    String crlf(String source) => source.replaceAll('\n', '\r\n');
+
     test('is null if the directive is present', () {
-      expect(fixed("part 'p.dart';\n"), isNull);
+      expect(
+        fixed('''
+part 'p.dart';
+'''),
+        isNull,
+      );
     });
 
     test('inserts after the last part', () {
       expect(
-        fixed("import 'a.dart';\n\npart 'a.dart';\npart 'z.dart';\n"),
-        "import 'a.dart';\n\npart 'a.dart';\npart 'z.dart';\npart 'p.dart';\n",
+        fixed('''
+import 'a.dart';
+
+part 'a.dart';
+part 'z.dart';
+'''),
+        '''
+import 'a.dart';
+
+part 'a.dart';
+part 'z.dart';
+part 'p.dart';
+''',
       );
       expect(
-        fixed("part 'z.dart';\n\nclass A {}\n"),
-        "part 'z.dart';\npart 'p.dart';\n\nclass A {}\n",
+        fixed('''
+part 'z.dart';
+
+class A {}
+'''),
+        '''
+part 'z.dart';
+part 'p.dart';
+
+class A {}
+''',
       );
     });
 
     test('inserts a section after the last directive if no parts', () {
       expect(
-        fixed("import 'a.dart';\nexport 'b.dart';\n\nclass A {}\n"),
-        "import 'a.dart';\nexport 'b.dart';\n\npart 'p.dart';\n\nclass A {}\n",
+        fixed('''
+import 'a.dart';
+export 'b.dart';
+
+class A {}
+'''),
+        '''
+import 'a.dart';
+export 'b.dart';
+
+part 'p.dart';
+
+class A {}
+''',
       );
     });
 
     test('inserts after a comment on the line of the last directive', () {
       expect(
-        fixed("import 'a.dart'; // ignore: x\n\nclass A {}\n"),
-        "import 'a.dart'; // ignore: x\n\npart 'p.dart';\n\nclass A {}\n",
+        fixed('''
+import 'a.dart'; // ignore: x
+
+class A {}
+'''),
+        '''
+import 'a.dart'; // ignore: x
+
+part 'p.dart';
+
+class A {}
+''',
       );
       expect(
-        fixed("import 'a.dart'; // ignore: x"),
-        "import 'a.dart'; // ignore: x\n\npart 'p.dart';",
+        fixed('''
+import 'a.dart'; // ignore: x'''),
+        '''
+import 'a.dart'; // ignore: x
+
+part 'p.dart';''',
       );
       expect(
-        fixed("part 'a.dart'; // ignore: x\n"),
-        "part 'a.dart'; // ignore: x\npart 'p.dart';\n",
+        fixed('''
+part 'a.dart'; // ignore: x
+'''),
+        '''
+part 'a.dart'; // ignore: x
+part 'p.dart';
+''',
       );
     });
 
     test('inserts before the first declaration and its comments', () {
       expect(
-        fixed('// @dart=3.0\n// Header.\n\n/// Docs.\nclass A {}\n'),
-        "// @dart=3.0\n// Header.\n\npart 'p.dart';\n\n/// Docs.\nclass A {}\n",
+        fixed('''
+// @dart=3.0
+// Header.
+
+/// Docs.
+class A {}
+'''),
+        '''
+// @dart=3.0
+// Header.
+
+part 'p.dart';
+
+/// Docs.
+class A {}
+''',
       );
       expect(
-        fixed('// Header.\n\n// ignore: x\n/// Docs.\nclass A {}\n'),
-        "// Header.\n\npart 'p.dart';\n\n// ignore: x\n/// Docs.\nclass A {}\n",
+        fixed('''
+// Header.
+
+// ignore: x
+/// Docs.
+class A {}
+'''),
+        '''
+// Header.
+
+part 'p.dart';
+
+// ignore: x
+/// Docs.
+class A {}
+''',
       );
       expect(
-        fixed('// ignore: x\n@a\nclass A {}\n'),
-        "part 'p.dart';\n\n// ignore: x\n@a\nclass A {}\n",
+        fixed('''
+// ignore: x
+@a
+class A {}
+'''),
+        '''
+part 'p.dart';
+
+// ignore: x
+@a
+class A {}
+''',
       );
     });
 
     test('inserts after an adjacent language version comment', () {
       expect(
-        fixed('// @dart=3.0\nclass A {}\n'),
-        "// @dart=3.0\npart 'p.dart';\n\nclass A {}\n",
+        fixed('''
+// @dart=3.0
+class A {}
+'''),
+        '''
+// @dart=3.0
+part 'p.dart';
+
+class A {}
+''',
       );
     });
 
     test('uses the line ending of the source', () {
       expect(
-        fixed("import 'a.dart';\r\n\r\nclass A {}\r\n"),
-        "import 'a.dart';\r\n\r\npart 'p.dart';\r\n\r\nclass A {}\r\n",
+        fixed(
+          crlf('''
+import 'a.dart';
+
+class A {}
+'''),
+        ),
+        crlf('''
+import 'a.dart';
+
+part 'p.dart';
+
+class A {}
+'''),
       );
-      expect(fixed('class A {}\r\n'), "part 'p.dart';\r\n\r\nclass A {}\r\n");
+      expect(
+        fixed(
+          crlf('''
+class A {}
+'''),
+        ),
+        crlf('''
+part 'p.dart';
+
+class A {}
+'''),
+      );
+    });
+
+    test('handles mixed line endings', () {
+      expect(
+        fixed("import 'a.dart';\n\nclass A {\r\n}\r\n"),
+        "import 'a.dart';\n\npart 'p.dart';\n\nclass A {\r\n}\r\n",
+      );
+      expect(
+        fixed('// Header.\r\n\n/// Docs.\nclass A {}\n'),
+        "// Header.\r\n\npart 'p.dart';\r\n\r\n/// Docs.\nclass A {}\n",
+      );
+      expect(
+        fixed('// Header.\r\n// More.\n'),
+        "// Header.\r\n// More.\npart 'p.dart';\r\n",
+      );
     });
 
     test('appends to a library with no directives or declarations', () {
-      expect(fixed(''), "part 'p.dart';\n");
-      expect(fixed('// Header.\n'), "// Header.\npart 'p.dart';\n");
-      expect(fixed('// Header.'), "// Header.\npart 'p.dart';\n");
+      expect(fixed(''), '''
+part 'p.dart';
+''');
+      expect(
+        fixed('''
+// Header.
+'''),
+        '''
+// Header.
+part 'p.dart';
+''',
+      );
+      expect(
+        fixed('''
+// Header.'''),
+        '''
+// Header.
+part 'p.dart';
+''',
+      );
     });
   });
 }
