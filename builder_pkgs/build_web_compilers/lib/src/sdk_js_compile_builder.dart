@@ -112,9 +112,9 @@ Future<void> _createDevCompilerModule(
     final execSuffix = Platform.isWindows ? '.exe' : '';
     final dartPath = p.join(sdkDir, 'bin', 'dart$execSuffix');
     result = await Process.run(dartPath, [
+      '--suppress-analytics',
       'compile',
       'js-dev',
-      '--suppress-analytics',
       '--multi-root-scheme=org-dartlang-sdk',
       '--modules=${ddcLibraryBundle ? 'ddc' : 'amd'}',
       if (canaryFeatures || ddcLibraryBundle) '--canary',
