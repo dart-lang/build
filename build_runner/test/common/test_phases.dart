@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
+import 'package:build/experiments.dart';
 // ignore: implementation_imports
 import 'package:build_runner/src/internal.dart';
 import 'package:build_test/build_test.dart';
@@ -24,6 +25,13 @@ void _printOnFailure(LogRecord record) {
     '${record.stackTrace == null ? '' : '  ${record.stackTrace}'}',
   );
 }
+
+/// Resolvers for [testPhases], one per set of enabled experiments.
+///
+/// A [ResolversImpl] fixes the enabled experiments when first used, so builds
+/// with different experiments can't share one. Builds with the same
+/// experiments share one, like the builds of a `build_runner` process.
+final _resolversByExperiments = <String, ResolversImpl>{};
 
 /// Runs [builders] in a test environment.
 ///
@@ -139,6 +147,10 @@ Future<TestBuildersResult> testPhases(
         builderDefinitions: builders.build(),
         buildPackages: buildPackages,
         readerWriter: readerWriter,
+        resolvers: _resolversByExperiments.putIfAbsent(
+          enabledExperiments.join(','),
+          ResolversImpl.custom,
+        ),
       ),
     ),
   );
