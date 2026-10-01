@@ -634,6 +634,61 @@ var content = 1;
       );
     });
 
+    test('builds with the `enhanced-parts` experiment after a build without '
+        'it', () async {
+      final builderFactories = BuilderFactories({
+        'a:builder1': [
+          (_) =>
+              PartWritingBuilder('var content1 = 1;', 'lib/b.txt', '.b1.dart'),
+        ],
+        'a:builder2': [
+          (_) =>
+              PartWritingBuilder('var content2 = 1;', 'lib/c.txt', '.b2.dart'),
+        ],
+      });
+      final builderDefinitions = [
+        BuilderDefinition(
+          'a:builder1',
+          outputsToArtifactTree: false,
+          autoApply: AutoApply.allPackages,
+          addsToLibrary: true,
+        ),
+        BuilderDefinition(
+          'a:builder2',
+          outputsToArtifactTree: false,
+          autoApply: AutoApply.allPackages,
+          addsToLibrary: true,
+        ),
+      ];
+      final inputs = {
+        'a|lib/a.dart': "part '_br_/a.part.dart';\n",
+        'a|lib/b.txt': 'b',
+        'a|lib/c.txt': 'c',
+      };
+
+      await testPhases(
+        builderFactories,
+        builderDefinitions,
+        inputs,
+        status: BuildStatus.failure,
+        onLog: (_) {},
+      );
+      final result = await withEnabledExperiments(
+        () => testPhases(
+          builderFactories,
+          builderDefinitions,
+          inputs,
+          checkBuildStatus: false,
+        ),
+        ['enhanced-parts'],
+      );
+      expect(
+        result.buildResult.status,
+        BuildStatus.success,
+        reason: '${result.buildResult}',
+      );
+    });
+
     partsTest('earlier phase builder does not see later phase part '
         'contribution in incremental build', () async {
       final builderFactories = BuilderFactories({
