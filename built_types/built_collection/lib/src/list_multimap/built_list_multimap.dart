@@ -173,7 +173,13 @@ class _BuiltListMultimap<K, V> extends BuiltListMultimap<K, V> {
     : super._(<K, BuiltList<V>>{}) {
     for (final key in keys) {
       if (key is K) {
-        _map[key] = BuiltList<V>(lookup(key));
+        final values = BuiltList<V>(lookup(key));
+        // A key with no values is absent: builders drop such keys in
+        // [ListMultimapBuilder.build], so the factory must do the same for
+        // consistent behaviour (dart-lang/build#5177).
+        if (values.isNotEmpty) {
+          _map[key] = values;
+        }
       } else {
         throw ArgumentError('map contained invalid key: $key');
       }
