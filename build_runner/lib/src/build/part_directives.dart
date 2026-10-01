@@ -54,21 +54,24 @@ abstract final class PartDirectives {
     ReaderWriter readerWriter, {
     required bool onlyCheck,
   }) async {
-    String line(AssetId id) =>
+    String directive(AssetId id) =>
         "${buildLog.renderId(id)}: part '${id.sharedPartUri}';";
+    String lines(Iterable<AssetId> ids, String Function(AssetId) render) =>
+        (ids.map(render).toList()..sort()).join('\n');
+
     if (onlyCheck) {
       buildLog.error(
         'Add missing `part` directives for generated code:\n\n'
-        '${(libraries.keys.map(line).toList()..sort()).join('\n')}',
+        '${lines(libraries.keys, directive)}',
       );
       return;
     }
-    final added = <String>[];
-    final changed = <String>[];
+    final edited = <AssetId>[];
+    final changedDuringBuild = <AssetId>[];
     for (final MapEntry(key: id, value: digest) in libraries.entries) {
       final bytes = await readerWriter.readAsBytes(id);
       if (md5.convert(bytes) != digest) {
-        changed.add(buildLog.renderId(id));
+        changedDuringBuild.add(id);
         continue;
       }
       final source = utf8.decode(bytes);
@@ -82,19 +85,19 @@ abstract final class PartDirectives {
           sourceEdit.replacement,
         ),
       );
-      added.add(line(id));
+      edited.add(id);
     }
-    if (added.isNotEmpty) {
+    if (edited.isNotEmpty) {
       buildLog.error(
         'Added missing `part` directives for generated code:\n\n'
-        '${(added..sort()).join('\n')}',
+        '${lines(edited, directive)}',
       );
     }
-    if (changed.isNotEmpty) {
+    if (changedDuringBuild.isNotEmpty) {
       buildLog.error(
         'Not adding missing `part` directives to libraries that changed '
         'during the build:\n\n'
-        '${(changed..sort()).join('\n')}',
+        '${lines(changedDuringBuild, buildLog.renderId)}',
       );
     }
   }
