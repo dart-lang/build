@@ -49,11 +49,11 @@ import 'library_cycle_graph/library_cycle_graph.dart';
 import 'library_cycle_graph/library_cycle_graph_loader.dart';
 import 'library_cycle_graph/phased_asset_deps.dart';
 import 'part_contribution.dart';
+import 'part_directives.dart';
 import 'post_process_build_step_impl.dart';
 import 'resolver/analysis_driver_model.dart';
 import 'resolver/resolvers_impl.dart';
 import 'shared_part_accumulator.dart';
-import 'source_edit.dart';
 
 final ResolversImpl _defaultResolvers = ResolversImpl(
   analysisDriverModel: AnalysisDriverModel(),
@@ -218,8 +218,15 @@ class Build {
       }
     }
 
-    if (await _reportMissingPartDirectives()) {
-      result = result.copyWith(status: BuildStatus.failure);
+    final librariesMissingPartDirective = await PartDirectives.findMissing(
+      buildState,
+      _builderFilesystem,
+    );
+    if (librariesMissingPartDirective.isNotEmpty) {
+      result = result.copyWith(
+        status: BuildStatus.failure,
+        librariesMissingPartDirective: librariesMissingPartDirective,
+      );
     }
 
     await resourceManager.disposeAll();
@@ -385,30 +392,6 @@ class Build {
         buildState: finishedBuildState,
       ),
     );
-  }
-
-  /// Reports libraries that have generated code but no `part` directive
-  /// including it, so the generated code has no effect.
-  ///
-  /// Returns whether any were reported.
-  Future<bool> _reportMissingPartDirectives() async {
-    final lines = <String>[];
-    for (final libraryId in buildState.sharedPartLibraryIds) {
-      if (buildState.sharedPartContent(libraryId) == null) continue;
-      final source = (await _builderFilesystem.contentOf(
-        libraryId,
-      )).stringValue();
-      final partUri = libraryId.sharedPartUri!;
-      if (SourceEdit.ensurePartDirective(source, partUri) == null) continue;
-      lines.add("${buildLog.renderId(libraryId)}: part '$partUri';");
-    }
-    if (lines.isEmpty) return false;
-    lines.sort();
-    buildLog.error(
-      'Add missing `part` directives for generated code:\n\n'
-      '${lines.join('\n')}',
-    );
-    return true;
   }
 
   /// Returns primary inputs for [package] in [phaseNumber].

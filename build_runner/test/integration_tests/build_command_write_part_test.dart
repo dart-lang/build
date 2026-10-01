@@ -50,6 +50,46 @@ class WritePartBuilder implements Builder {
     );
 
     tester.writePackage(
+      name: 'edit_during_build_pkg',
+      dependencies: ['build', 'build_runner'],
+      files: {
+        'build.yaml': r'''
+builders:
+  edit_during_build_builder:
+    import: 'package:edit_during_build_pkg/builder.dart'
+    builder_factories: ['editDuringBuildBuilderFactory']
+    build_extensions: {'.dart': []}
+    build_to: 'cache'
+    adds_to_library: true
+''',
+        'lib/builder.dart': r'''
+import 'dart:io';
+
+import 'package:build/build.dart';
+
+Builder editDuringBuildBuilderFactory(BuilderOptions options) =>
+    EditDuringBuildBuilder();
+
+/// Writes a part contribution and, unless already done, edits its input
+/// after reading it, as if the user saved a change during the build.
+class EditDuringBuildBuilder implements Builder {
+  @override
+  Map<String, List<String>> get buildExtensions => {'.dart': []};
+
+  @override
+  Future<void> build(BuildStep buildStep) async {
+    final source = await buildStep.readAsString(buildStep.inputId);
+    if (!source.contains('// edited')) {
+      File(buildStep.inputId.path).writeAsStringSync('$source // edited');
+    }
+    (await buildStep.librarySourceSink)?.add('// part content');
+  }
+}
+''',
+      },
+    );
+
+    tester.writePackage(
       name: 'multi_part_pkg',
       dependencies: ['build', 'build_runner'],
       files: {
@@ -246,6 +286,7 @@ class ResolvePartBuilder implements Builder {
       name: 'root_pkg',
       dependencies: ['build_runner'],
       pathDependencies: [
+        'edit_during_build_pkg',
         'multi_part_pkg',
         'phase_part_pkg',
         'write_part_imports_pkg',
@@ -263,11 +304,11 @@ targets:
       },
     );
 
-    // A library with generated code but no `part` directive including it
-    // fails the build, naming the line to add.
+    // With `--only-check`, a library with generated code but no `part`
+    // directive including it fails the build, naming the line to add.
     var output = await tester.run(
       'root_pkg',
-      'dart run build_runner build --force-jit',
+      'dart run build_runner build --force-jit --only-check',
       expectExitCode: 1,
     );
     expect(output, contains(BuildLog.failurePattern));
@@ -276,18 +317,24 @@ targets:
       contains('Add missing `part` directives for generated code:'),
     );
     expect(output, contains("lib/a.dart: part '_br_/a.part.dart';"));
+    expect(tester.read('root_pkg/lib/a.dart'), 'class A {}');
+    expect(output, isNot(contains('Starting build #2.')));
 
-    // One builder writes a part contribution.
-    tester.write('root_pkg/lib/a.dart', r'''
-part '_br_/a.part.dart';
-
-class A {}
-''');
+    // Otherwise the directive is added and the build reruns.
     output = await tester.run(
       'root_pkg',
       'dart run build_runner build --force-jit',
     );
+    expect(
+      output,
+      contains('Added missing `part` directives for generated code:'),
+    );
+    expect(output, contains("lib/a.dart: part '_br_/a.part.dart';"));
     expect(output, contains(BuildLog.successPattern));
+    expect(
+      tester.read('root_pkg/lib/a.dart'),
+      "part '_br_/a.part.dart';\n\nclass A {}",
+    );
     expect(tester.read('root_pkg/lib/_br_/a.part.dart'), r'''
 // dart format off
 part of '../a.dart';
@@ -296,6 +343,55 @@ part of '../a.dart';
 // part content
 
 ''');
+
+    // `watch` adds a directive that is removed, and the change to the library
+    // triggers another build.
+    final watch = await tester.start(
+      'root_pkg',
+      'dart run build_runner watch --force-jit',
+    );
+    await watch.expect(BuildLog.successPattern);
+    tester.write('root_pkg/lib/a.dart', 'class A {}');
+    await watch.expect('Added missing `part` directives for generated code:');
+    await watch.expect(BuildLog.failurePattern);
+    await watch.expect(BuildLog.successPattern);
+    await watch.kill();
+    expect(
+      tester.read('root_pkg/lib/a.dart'),
+      "part '_br_/a.part.dart';\n\nclass A {}",
+    );
+
+    // A library that changed during the build gets no directive from that
+    // build, which checked the old content. The rerun checks the new content
+    // and adds it; that build fails, as any build adding directives does.
+    tester.write('root_pkg/build.yaml', r'''
+targets:
+  $default:
+    builders:
+      edit_during_build_pkg|edit_during_build_builder:
+        enabled: true
+''');
+    tester.write('root_pkg/lib/a.dart', 'class A {}');
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+      expectExitCode: 1,
+    );
+    expect(
+      output,
+      contains(
+        'Not adding missing `part` directives to libraries that changed '
+        'during the build:',
+      ),
+    );
+    expect(
+      output,
+      contains('Added missing `part` directives for generated code:'),
+    );
+    expect(
+      tester.read('root_pkg/lib/a.dart'),
+      "part '_br_/a.part.dart';\n\nclass A {} // edited",
+    );
 
     // Two builders writing parts to the same library concatenate.
     tester.write('root_pkg/build.yaml', r'''
