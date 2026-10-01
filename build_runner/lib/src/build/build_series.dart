@@ -233,6 +233,21 @@ class BuildSeries {
   Future<BuildResult> get currentBuildResult =>
       _currentBuildResult ?? buildResults.first;
 
+  /// Closes the series because the build script must restart.
+  ///
+  /// The result keeps the previous build's outputs, so until shutdown an asset
+  /// request is served from them instead of failing.
+  Future<BuildResult> _exitForRestart() async {
+    final previousResult = await _currentBuildResult;
+    final result = BuildResult.buildScriptChanged(
+      buildOutputReader: previousResult?.buildOutputReader,
+    );
+    _currentBuildResult = Future.value(result);
+    _buildResultsController.add(result);
+    await close();
+    return result;
+  }
+
   /// Runs a single build.
   ///
   /// For the first build, pass any changes since the `BuildSeries` was created
@@ -262,11 +277,7 @@ class BuildSeries {
       final kernelFreshness = await _buildPlan.buildSpec.bootstrapper
           .checkCompileFreshness(digestsAreFresh: false);
       if (!kernelFreshness.outputIsFresh) {
-        final result = BuildResult.buildScriptChanged();
-        _currentBuildResult = Future.value(result);
-        _buildResultsController.add(result);
-        await close();
-        return result;
+        return _exitForRestart();
       }
     }
 
@@ -275,11 +286,7 @@ class BuildSeries {
       // A config change might have caused new builders to be needed, which
       // needs a restart to change the build script.
       if (_buildPlan.buildSpec.restartIsNeeded) {
-        final result = BuildResult.buildScriptChanged();
-        _currentBuildResult = Future.value(result);
-        _buildResultsController.add(result);
-        await close();
-        return result;
+        return _exitForRestart();
       }
     }
 

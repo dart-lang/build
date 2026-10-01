@@ -41,6 +41,8 @@
   deleted after a previous build deleted and then rewrote that same file.
   Previously the delete was mistaken for the build's own earlier delete and
   ignored, so deleting a generated file no longer forced it to be regenerated.
+- Bug fix: in daemon mode, after a builder change keep serving the previous
+  build's outputs until shutdown, instead of returning 404.
 
 ## 2.16.2
 
