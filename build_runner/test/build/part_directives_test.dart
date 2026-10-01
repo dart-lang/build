@@ -3,12 +3,13 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build_runner/src/build/part_directives.dart';
+import 'package:build_runner/src/build/source_edit.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('PartDirectives.edit', () {
+  group('PartDirectives.addEdit', () {
     String? fixed(String source) {
-      final edit = PartDirectives.edit(source, 'p.dart');
+      final edit = PartDirectives.addEdit(source, 'p.dart');
       if (edit == null) return null;
       return source.replaceRange(
         edit.offset,
@@ -247,6 +248,92 @@ part 'p.dart';
 part 'p.dart';
 ''',
       );
+    });
+  });
+
+  group('PartDirectives.removeEdit', () {
+    String apply(String source, SourceEdit edit) => source.replaceRange(
+      edit.offset,
+      edit.offset + edit.length,
+      edit.replacement,
+    );
+    String added(String source) =>
+        apply(source, PartDirectives.addEdit(source, 'p.dart')!);
+    String? removed(String source) {
+      final edit = PartDirectives.removeEdit(source, 'p.dart');
+      return edit == null ? null : apply(source, edit);
+    }
+
+    String crlf(String source) => source.replaceAll('\n', '\r\n');
+
+    test('is null if the directive is absent', () {
+      expect(removed('class A {}\n'), isNull);
+      expect(removed("part 'a.dart';\n\nclass A {}\n"), isNull);
+    });
+
+    // Each source here has no directive for `p.dart`; removing what adding
+    // added gives back the source.
+    final sources = [
+      '',
+      'class A {}\n',
+      "import 'a.dart';\n\npart 'a.dart';\npart 'z.dart';\n",
+      "part 'z.dart';\n\nclass A {}\n",
+      "import 'a.dart';\nexport 'b.dart';\n\nclass A {}\n",
+      "import 'a.dart'; // ignore: x\n\nclass A {}\n",
+      "part 'a.dart'; // ignore: x\n",
+      '// @dart=3.0\n// Header.\n\n/// Docs.\nclass A {}\n',
+      '// Header.\n\n// ignore: x\n/// Docs.\nclass A {}\n',
+      '// ignore: x\n@a\nclass A {}\n',
+      '// Header.\n',
+    ];
+
+    test('undoes adding', () {
+      for (final source in sources) {
+        expect(removed(added(source)), source, reason: source);
+      }
+    });
+
+    test('undoes adding with the line ending of the source', () {
+      for (final source in sources.map(crlf)) {
+        expect(removed(added(source)), source, reason: source);
+      }
+    });
+
+    test('removes a comment on the line of the directive', () {
+      expect(
+        removed("import 'a.dart';\n\npart 'p.dart'; // generated\n"),
+        "import 'a.dart';\n",
+      );
+    });
+
+    test('removes only the directive from a line with other code', () {
+      expect(removed("part 'a.dart'; part 'p.dart';\n"), "part 'a.dart';\n");
+      expect(removed("part 'p.dart'; part 'z.dart';\n"), "part 'z.dart';\n");
+      expect(
+        removed("part 'p.dart'; /* c */ int x = 1;\n"),
+        '/* c */ int x = 1;\n',
+      );
+    });
+
+    test('keeps a comment after the directive that is not a line comment', () {
+      expect(
+        removed("part 'p.dart'; /* c\n  d */\nclass A {}\n"),
+        '/* c\n  d */\nclass A {}\n',
+      );
+      expect(
+        removed("part 'p.dart'; /// Docs.\nvoid f() {}\n"),
+        '/// Docs.\nvoid f() {}\n',
+      );
+    });
+
+    test('is null if the directive has metadata or a doc comment', () {
+      expect(removed("@a\npart 'p.dart';\n\nvoid f() {}\n"), isNull);
+      expect(removed("/// Docs.\npart 'p.dart';\n\nvoid f() {}\n"), isNull);
+    });
+
+    test('is null if the source has parse errors', () {
+      expect(removed("part 'p.dart'\nclass A {}\n"), isNull);
+      expect(removed("part 'p.dart' if (dart.library.io) 'b.dart';\n"), isNull);
     });
   });
 }

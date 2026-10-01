@@ -35,7 +35,7 @@ abstract final class PartDirectives {
       if (!buildState.isSource(libraryId)) continue;
       if (buildState.sharedPartContent(libraryId) == null) continue;
       final content = await filesystem.contentOf(libraryId);
-      if (edit(content.stringValue(), libraryId.sharedPartUri!) == null) {
+      if (addEdit(content.stringValue(), libraryId.sharedPartUri!) == null) {
         continue;
       }
       result[libraryId] = md5.convert(content.bytes);
@@ -78,7 +78,7 @@ abstract final class PartDirectives {
       }
       final source = utf8.decode(bytes);
       // The content is what was checked, so the edit is needed.
-      final sourceEdit = edit(source, id.sharedPartUri!)!;
+      final sourceEdit = addEdit(source, id.sharedPartUri!)!;
       await readerWriter.writeAsString(
         id,
         source.replaceRange(
@@ -111,7 +111,7 @@ abstract final class PartDirectives {
   /// augmentations, `part` directive order can matter, and last is always
   /// correct. The directive is only added if missing, so tools that later
   /// reorder directives are not fought.
-  static SourceEdit? edit(String source, String partUri) {
+  static SourceEdit? addEdit(String source, String partUri) {
     final unit = parseString(content: source, throwIfDiagnostics: false).unit;
     final directive = "part '$partUri';";
     final parts = unit.directives.whereType<PartDirective>();
@@ -164,9 +164,87 @@ abstract final class PartDirectives {
       replacement: '$newline$directive$eol',
     );
   }
+
+  /// The edit that removes `part '$partUri';` from library [source], or
+  /// `null` if [source] does not have it or it is not safe to remove.
+  ///
+  /// It is not safe to remove if [source] has parse errors, or if the
+  /// directive has metadata or a doc comment: these belong to the library,
+  /// and without the directive they would belong to whatever follows.
+  ///
+  /// Removes the line of the directive, including any `//` comment after it,
+  /// unless the line has other code or another kind of comment. A blank line
+  /// left next to another blank line, or at the start or end of the file, is
+  /// removed too, so that removing what [addEdit] added gives back the
+  /// original source.
+  static SourceEdit? removeEdit(String source, String partUri) {
+    final result = parseString(content: source, throwIfDiagnostics: false);
+    if (result.errors.isNotEmpty) return null;
+    final directive = result.unit.directives
+        .whereType<PartDirective>()
+        .where((part) => part.uri.stringValue == partUri)
+        .firstOrNull;
+    if (directive == null) return null;
+    if (directive.metadata.isNotEmpty) return null;
+    if (directive.documentationComment != null) return null;
+
+    var start = source.lineStart(directive.offset);
+    var end = source.lineEnd(directive.end);
+    final next = directive.endToken.next!;
+    final following = next.precedingCommentList.firstOrNull ?? next;
+
+    // Other code before it on the line: remove the directive and the space
+    // that separates it from that code.
+    if (!source.isBlank(start, directive.offset)) {
+      start = directive.offset;
+      while (source[start - 1] == ' ' || source[start - 1] == '\t') {
+        start--;
+      }
+      return SourceEdit.of(
+        offset: start,
+        length: directive.end - start,
+        replacement: '',
+      );
+    }
+
+    // Other code or a comment that is not a `//` comment after it on the
+    // line: remove the directive and the space up to what follows.
+    final onlyLineComments = next.precedingCommentList
+        .where((comment) => comment.offset < end)
+        .every(
+          (comment) =>
+              comment.lexeme.startsWith('//') &&
+              !comment.lexeme.startsWith('///'),
+        );
+    if (next.offset < end || !onlyLineComments) {
+      return SourceEdit.of(
+        offset: directive.offset,
+        length: following.offset - directive.offset,
+        replacement: '',
+      );
+    }
+
+    // The whole line.
+    end = source.nextLineStart(end);
+    final previousStart = start == 0 ? null : source.lineStart(start - 1);
+    final previousIsBlank =
+        previousStart != null && source.isBlank(previousStart, start);
+    final nextIsBlank =
+        end < source.length && source.isBlank(end, source.lineEnd(end));
+    if ((start == 0 || previousIsBlank) && nextIsBlank) {
+      end = source.nextLineStart(source.lineEnd(end));
+    } else if (previousIsBlank && end == source.length) {
+      start = previousStart;
+    }
+    return SourceEdit.of(offset: start, length: end - start, replacement: '');
+  }
 }
 
 extension on String {
+  /// The start of the line containing [offset].
+  int lineStart(int offset) =>
+      offset == 0 ? 0 : lastIndexOf('\n', offset - 1) + 1;
+
   /// The end of the line containing [offset], before its line ending.
   ///
   /// Lines end with `\n` or `\r\n`; files can mix them.
@@ -175,6 +253,16 @@ extension on String {
     if (newline == -1) return length;
     return newline > 0 && this[newline - 1] == '\r' ? newline - 1 : newline;
   }
+
+  /// The start of the line after the line ending at [lineEnd], or [length] if
+  /// there is none.
+  int nextLineStart(int lineEnd) {
+    final newline = indexOf('\n', lineEnd);
+    return newline == -1 ? length : newline + 1;
+  }
+
+  /// Whether there is only whitespace between [start] and [end].
+  bool isBlank(int start, int end) => substring(start, end).trim().isEmpty;
 
   /// Whether there is a blank line between [start] and [end], which must
   /// contain only whitespace.
