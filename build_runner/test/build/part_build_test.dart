@@ -937,7 +937,7 @@ class Class2 {}
         ];
 
         await testPhases(builderFactories, builderDefinitions, {
-          'a|lib/a.dart': 'part \'_br_/a.part.dart\';\n',
+          'a|lib/a.dart': 'class A {}\n',
         }, outputs: {});
       },
     );
@@ -956,7 +956,7 @@ class Class2 {}
       ];
 
       await testPhases(builderFactories, builderDefinitions, {
-        'a|lib/a.dart': 'part \'_br_/a.part.dart\';\n',
+        'a|lib/a.dart': 'class A {}\n',
       }, outputs: {});
     });
 
@@ -990,6 +990,39 @@ class Class2 {}
         'class G {}\n',
       );
     });
+
+    partsTest(
+      'does not remove part directive from generated library',
+      () async {
+        final builderFactories = BuilderFactories({
+          'a:generator': [(_) => LibraryGeneratingBuilder()],
+          'a:builder1': [(_) => EmptyPartWritingBuilder()],
+        });
+        final builderDefinitions = [
+          BuilderDefinition(
+            'a:generator',
+            outputsToArtifactTree: false,
+            autoApply: AutoApply.allPackages,
+          ),
+          BuilderDefinition(
+            'a:builder1',
+            outputsToArtifactTree: false,
+            autoApply: AutoApply.allPackages,
+            addsToLibrary: true,
+          ),
+        ];
+
+        const generated = 'part \'_br_/g.part.dart\';\nclass G {}\n';
+        final result = await testPhases(builderFactories, builderDefinitions, {
+          'a|lib/g.txt': generated,
+        }, checkBuildStatus: false);
+        expect(result.buildResult.status, BuildStatus.success);
+        expect(
+          result.readerWriter.testing.readString(AssetId('a', 'lib/g.dart')),
+          generated,
+        );
+      },
+    );
 
     partsTest('_br_ assets are invisible to asset reader calls', () async {
       final builderFactories = BuilderFactories({

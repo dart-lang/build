@@ -18,8 +18,8 @@ import 'build_state/build_state.dart';
 import 'builder_filesystem.dart';
 import 'source_edit.dart';
 
-/// Missing `part` directives for generated code: finding, placing and adding
-/// them.
+/// `part` directives for generated code: finding missing and unused ones,
+/// and adding and removing them.
 abstract final class PartDirectives {
   /// Libraries that have generated code but no `part` directive including it,
   /// so the generated code has no effect.
@@ -43,18 +43,109 @@ abstract final class PartDirectives {
     return result.build();
   }
 
+  /// Libraries with a `part` directive for a shared part that is not written,
+  /// because every builder that adds to the library succeeded and chose to
+  /// write nothing.
+  ///
+  /// A library with no builder that adds to it is not included: then nothing
+  /// says whether the directive is used.
+  ///
+  /// Values are the md5 digests of the library content that was checked.
+  static Future<BuiltMap<AssetId, Digest>> findUnused(
+    BuildState buildState,
+    BuilderFilesystem filesystem,
+  ) async {
+    final plan = buildState.buildStepPlan;
+    final phases = plan.buildPhases.inBuildPhases;
+    final allSucceeded = <AssetId, bool>{};
+    for (var phase = 0; phase != phases.length; ++phase) {
+      if (!phases[phase].addsToLibrary) continue;
+      for (final step in plan.buildStepsByPhase[phase]) {
+        final succeeded = buildState.stepResultOrNull(step)?.succeeded ?? false;
+        allSucceeded.update(
+          step.primaryInput,
+          (previous) => previous && succeeded,
+          ifAbsent: () => succeeded,
+        );
+      }
+    }
+
+    final result = <AssetId, Digest>{};
+    for (final MapEntry(key: libraryId, value: succeeded)
+        in allSucceeded.entries) {
+      if (!succeeded || buildState.hasSharedPart(libraryId)) continue;
+      // Generated libraries are owned by the builder that generates them.
+      if (!buildState.isSource(libraryId)) continue;
+      final partUri = libraryId.sharedPartUri;
+      if (partUri == null) continue;
+      final content = await filesystem.contentOf(libraryId);
+      final source = content.stringValue();
+      // Most libraries do not mention the part, so check that before parsing.
+      if (!source.contains(partUri)) continue;
+      if (removeEdit(source, partUri) == null) continue;
+      result[libraryId] = md5.convert(content.bytes);
+    }
+    return result.build();
+  }
+
   /// Reports [libraries] as missing the `part` directive for their generated
   /// code and, unless [onlyCheck], adds it.
   ///
-  /// [libraries] maps each library to the md5 digest of the content that was
-  /// checked, as returned by [findMissing]. A library that changed since then
-  /// is not edited: the finding is stale, and the next build decides again.
-  /// `build` reruns with the library as an update, and `watch` builds because
-  /// of the change.
+  /// [libraries] is as returned by [findMissing]; see [_edit].
   static Future<void> addMissing(
     BuiltMap<AssetId, Digest> libraries,
     ReaderWriter readerWriter, {
     required bool onlyCheck,
+  }) => _edit(
+    libraries,
+    readerWriter,
+    onlyCheck: onlyCheck,
+    edit: addEdit,
+    check: 'Add missing `part` directives for generated code:',
+    edited: 'Added missing `part` directives for generated code:',
+    changedDuringBuild:
+        'Not adding missing `part` directives to libraries that changed '
+        'during the build:',
+  );
+
+  /// Reports [libraries] as having an unused `part` directive for generated
+  /// code and, unless [onlyCheck], removes it.
+  ///
+  /// [libraries] is as returned by [findUnused]; see [_edit].
+  static Future<void> removeUnused(
+    BuiltMap<AssetId, Digest> libraries,
+    ReaderWriter readerWriter, {
+    required bool onlyCheck,
+  }) => _edit(
+    libraries,
+    readerWriter,
+    onlyCheck: onlyCheck,
+    edit: removeEdit,
+    check: 'Remove unused `part` directives for generated code:',
+    edited: 'Removed unused `part` directives for generated code:',
+    changedDuringBuild:
+        'Not removing unused `part` directives from libraries that changed '
+        'during the build:',
+  );
+
+  /// Applies [edit] to [libraries] and reports it, or with [onlyCheck] only
+  /// reports what to do.
+  ///
+  /// [libraries] maps each library to the md5 digest of the content that was
+  /// checked. A library that changed since then is not edited: the finding is
+  /// stale, and the next build decides again. `build` reruns with the library
+  /// as an update, and `watch` builds because of the change.
+  ///
+  /// [check], [edited] and [changedDuringBuild] are the headings of the
+  /// reports.
+  static Future<void> _edit(
+    BuiltMap<AssetId, Digest> libraries,
+    ReaderWriter readerWriter, {
+    required bool onlyCheck,
+    required SourceEdit? Function(String source, String partUri) edit,
+    required String check,
+    required String edited,
+    required String changedDuringBuild,
   }) async {
     String directive(AssetId id) =>
         "${buildLog.renderId(id)}: part '${id.sharedPartUri}';";
@@ -62,23 +153,20 @@ abstract final class PartDirectives {
         (ids.map(render).toList()..sort()).join('\n');
 
     if (onlyCheck) {
-      buildLog.error(
-        'Add missing `part` directives for generated code:\n\n'
-        '${lines(libraries.keys, directive)}',
-      );
+      buildLog.error('$check\n\n${lines(libraries.keys, directive)}');
       return;
     }
-    final edited = <AssetId>[];
-    final changedDuringBuild = <AssetId>[];
+    final editedIds = <AssetId>[];
+    final changedDuringBuildIds = <AssetId>[];
     for (final MapEntry(key: id, value: digest) in libraries.entries) {
       final bytes = await readerWriter.readAsBytes(id);
       if (md5.convert(bytes) != digest) {
-        changedDuringBuild.add(id);
+        changedDuringBuildIds.add(id);
         continue;
       }
       final source = utf8.decode(bytes);
       // The content is what was checked, so the edit is needed.
-      final sourceEdit = addEdit(source, id.sharedPartUri!)!;
+      final sourceEdit = edit(source, id.sharedPartUri!)!;
       await readerWriter.writeAsString(
         id,
         source.replaceRange(
@@ -87,19 +175,15 @@ abstract final class PartDirectives {
           sourceEdit.replacement,
         ),
       );
-      edited.add(id);
+      editedIds.add(id);
     }
-    if (edited.isNotEmpty) {
-      buildLog.error(
-        'Added missing `part` directives for generated code:\n\n'
-        '${lines(edited, directive)}',
-      );
+    if (editedIds.isNotEmpty) {
+      buildLog.error('$edited\n\n${lines(editedIds, directive)}');
     }
-    if (changedDuringBuild.isNotEmpty) {
+    if (changedDuringBuildIds.isNotEmpty) {
       buildLog.error(
-        'Not adding missing `part` directives to libraries that changed '
-        'during the build:\n\n'
-        '${lines(changedDuringBuild, buildLog.renderId)}',
+        '$changedDuringBuild\n\n'
+        '${lines(changedDuringBuildIds, buildLog.renderId)}',
       );
     }
   }

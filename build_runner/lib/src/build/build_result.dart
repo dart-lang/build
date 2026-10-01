@@ -55,6 +55,12 @@ class BuildResult {
   /// Values are the md5 digests of the library content that was checked.
   final BuiltMap<AssetId, Digest> librariesMissingPartDirective;
 
+  /// Libraries with a `part` directive for generated code that no builder
+  /// contributed to.
+  ///
+  /// Values are the md5 digests of the library content that was checked.
+  final BuiltMap<AssetId, Digest> librariesWithUnusedPartDirective;
+
   BuildResult({
     required this.status,
     BuiltList<String>? errors,
@@ -64,6 +70,7 @@ class BuildResult {
     this.buildState,
     FailureType? failureType,
     BuiltMap<AssetId, Digest>? librariesMissingPartDirective,
+    BuiltMap<AssetId, Digest>? librariesWithUnusedPartDirective,
   }) : failureType = failureType == null && status == BuildStatus.failure
            ? FailureType.general
            : failureType,
@@ -71,7 +78,9 @@ class BuildResult {
        outputs = outputs ?? BuiltList(),
        phasedAssetDeps = phasedAssetDeps ?? PhasedAssetDeps(),
        librariesMissingPartDirective =
-           librariesMissingPartDirective ?? BuiltMap();
+           librariesMissingPartDirective ?? BuiltMap(),
+       librariesWithUnusedPartDirective =
+           librariesWithUnusedPartDirective ?? BuiltMap();
 
   BuildResult copyWith({
     BuildStatus? status,
@@ -82,6 +91,7 @@ class BuildResult {
     BuildOutputReader? buildOutputReader,
     FinishedBuildState? buildState,
     BuiltMap<AssetId, Digest>? librariesMissingPartDirective,
+    BuiltMap<AssetId, Digest>? librariesWithUnusedPartDirective,
   }) => BuildResult(
     status: status ?? this.status,
     failureType: failureType ?? this.failureType,
@@ -92,6 +102,9 @@ class BuildResult {
     buildState: buildState ?? this.buildState,
     librariesMissingPartDirective:
         librariesMissingPartDirective ?? this.librariesMissingPartDirective,
+    librariesWithUnusedPartDirective:
+        librariesWithUnusedPartDirective ??
+        this.librariesWithUnusedPartDirective,
   );
 
   @override
