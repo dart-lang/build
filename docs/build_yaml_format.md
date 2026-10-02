@@ -41,7 +41,8 @@ build_to          | [BuildTo](#buildto)                                         
 adds_to_library   | bool                                                        | false
 defaults          | [TargetBuilderConfigDefaults](#targetbuilderconfigdefaults) | none
 
-Note: `adds_to_library: true` cannot be combined with `is_optional: true`.
+Note: `adds_to_library: true` requires `build_to: source` and cannot be combined
+with `is_optional: true`.
 
 ## PostProcessBuilderDefinition
 

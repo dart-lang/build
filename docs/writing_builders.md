@@ -237,11 +237,13 @@ builders:
     builder_factories: ["myBuilder"]
     # No explicit declared output is needed.
     build_extensions: {".dart": []}
+    build_to: source
     adds_to_library: true
     auto_apply: dependents
 ```
 
-A builder that sets `adds_to_library: true` cannot be `is_optional: true`.
+A builder that sets `adds_to_library: true` must set `build_to: source`, because
+the shared part is written to source, and cannot be `is_optional: true`.
 
 #### 2. Writing code in the builder
 

@@ -200,6 +200,24 @@ builders:
       ),
     );
   });
+
+  test('for builder with adds_to_library and build_to cache', () {
+    final buildYaml = r'''
+builders:
+  package_name:builder:
+    builder_factories: ["someFactory"]
+    import: package:package_name/builders.dart
+    build_extensions: {".dart": []}
+    adds_to_library: true
+''';
+
+    _expectThrows(
+      buildYaml,
+      contains(
+        'A builder with `adds_to_library: true` must set `build_to: source`.',
+      ),
+    );
+  });
 }
 
 void _expectThrows(String buildYaml, Object matcher) => expect(
