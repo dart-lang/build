@@ -31,6 +31,8 @@ abstract final class PartDirectives {
   ) async {
     final result = <AssetId, Digest>{};
     for (final libraryId in buildState.sharedPartLibraryIds) {
+      // Generated libraries are owned by the builder that generates them.
+      if (!buildState.isSource(libraryId)) continue;
       if (buildState.sharedPartContent(libraryId) == null) continue;
       final content = await filesystem.contentOf(libraryId);
       if (edit(content.stringValue(), libraryId.sharedPartUri!) == null) {

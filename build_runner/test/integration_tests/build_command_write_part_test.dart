@@ -28,7 +28,7 @@ builders:
     import: 'package:write_part_pkg/builder.dart'
     builder_factories: ['writePartBuilderFactory']
     build_extensions: {'.dart': []}
-    build_to: 'cache'
+    build_to: 'source'
     adds_to_library: true
 ''',
         'lib/builder.dart': r'''
@@ -59,7 +59,7 @@ builders:
     import: 'package:edit_during_build_pkg/builder.dart'
     builder_factories: ['editDuringBuildBuilderFactory']
     build_extensions: {'.dart': []}
-    build_to: 'cache'
+    build_to: 'source'
     adds_to_library: true
 ''',
         'lib/builder.dart': r'''
@@ -99,13 +99,13 @@ builders:
     import: 'package:multi_part_pkg/builder.dart'
     builder_factories: ['factory1']
     build_extensions: {'.dart': []}
-    build_to: 'cache'
+    build_to: 'source'
     adds_to_library: true
   builder2:
     import: 'package:multi_part_pkg/builder.dart'
     builder_factories: ['factory2']
     build_extensions: {'.dart': []}
-    build_to: 'cache'
+    build_to: 'source'
     adds_to_library: true
 ''',
         'lib/builder.dart': r'''
@@ -140,20 +140,20 @@ builders:
     import: 'package:phase_part_pkg/builder.dart'
     builder_factories: ['partGen1Factory']
     build_extensions: {'.dart': ['.dummy1']}
-    build_to: 'cache'
+    build_to: 'source'
     adds_to_library: true
   part_generator_2:
     import: 'package:phase_part_pkg/builder.dart'
     builder_factories: ['partGen2Factory']
     build_extensions: {'.dart': ['.dummy2']}
-    build_to: 'cache'
+    build_to: 'source'
     required_inputs: ['.dummy1']
     adds_to_library: true
   part_generator_3:
     import: 'package:phase_part_pkg/builder.dart'
     builder_factories: ['partGen3Factory']
     build_extensions: {'.dart': ['.resolved.txt']}
-    build_to: 'cache'
+    build_to: 'source'
     required_inputs: ['.dummy2']
     adds_to_library: true
 ''',
@@ -225,7 +225,7 @@ builders:
     import: 'package:write_part_imports_pkg/builder.dart'
     builder_factories: ['writePartBuilderFactory']
     build_extensions: {'.dart': ['.dummy']}
-    build_to: 'cache'
+    build_to: 'source'
     adds_to_library: true
   resolve_part_builder:
     import: 'package:write_part_imports_pkg/builder.dart'
@@ -439,9 +439,7 @@ targets:
     );
     expect(output, contains(BuildLog.successPattern));
     expect(
-      tester.read(
-        'root_pkg/.dart_tool/build/generated/root_pkg/lib/a.resolved.txt',
-      ),
+      tester.read('root_pkg/lib/a.resolved.txt'),
       contains('Gen3 checks - Class1: true, Class2: true, Class3: false'),
     );
     expect(tester.read('root_pkg/lib/_br_/a.part.dart'), r'''

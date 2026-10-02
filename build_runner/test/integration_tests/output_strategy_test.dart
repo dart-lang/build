@@ -30,7 +30,7 @@ builders:
     builder_factories: ['writePartBuilderFactory']
     build_extensions: {'.dart': []}
     auto_apply: 'root_package'
-    build_to: 'cache'
+    build_to: 'source'
     adds_to_library: true
 ''',
         'lib/builder.dart': '''

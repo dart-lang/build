@@ -196,6 +196,22 @@ class WhitespacePartWritingBuilder implements Builder {
   }
 }
 
+/// Generates a library from a `.txt` file with the same content.
+class LibraryGeneratingBuilder implements Builder {
+  @override
+  Map<String, List<String>> get buildExtensions => {
+    '.txt': ['.dart'],
+  };
+
+  @override
+  Future<void> build(BuildStep buildStep) async {
+    await buildStep.writeAsString(
+      buildStep.inputId.changeExtension('.dart'),
+      await buildStep.readAsString(buildStep.inputId),
+    );
+  }
+}
+
 class PartVerifyingInvisibilityBuilder implements Builder {
   @override
   Map<String, List<String>> get buildExtensions => {
@@ -942,6 +958,37 @@ class Class2 {}
       await testPhases(builderFactories, builderDefinitions, {
         'a|lib/a.dart': 'part \'_br_/a.part.dart\';\n',
       }, outputs: {});
+    });
+
+    partsTest('does not add part directive to generated library', () async {
+      final builderFactories = BuilderFactories({
+        'a:generator': [(_) => LibraryGeneratingBuilder()],
+        'a:builder1': [
+          (_) => PartWritingBuilder('var content = 1;', 'lib/b.txt', '.b.dart'),
+        ],
+      });
+      final builderDefinitions = [
+        BuilderDefinition(
+          'a:generator',
+          outputsToArtifactTree: false,
+          autoApply: AutoApply.allPackages,
+        ),
+        BuilderDefinition(
+          'a:builder1',
+          outputsToArtifactTree: false,
+          autoApply: AutoApply.allPackages,
+          addsToLibrary: true,
+        ),
+      ];
+
+      final result = await testPhases(builderFactories, builderDefinitions, {
+        'a|lib/g.txt': 'class G {}\n',
+      }, checkBuildStatus: false);
+      expect(result.buildResult.status, BuildStatus.success);
+      expect(
+        result.readerWriter.testing.readString(AssetId('a', 'lib/g.dart')),
+        'class G {}\n',
+      );
     });
 
     partsTest('_br_ assets are invisible to asset reader calls', () async {

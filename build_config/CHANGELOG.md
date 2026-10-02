@@ -1,7 +1,8 @@
 ## 1.4.0-wip
 
 - Add boolean `adds_to_library` builder configuration that grants access to new
-  builder feature `BuildStep.librarySourceSink`.
+  builder feature `BuildStep.librarySourceSink`. It requires
+  `build_to: source`.
 
 ## 1.3.3
 

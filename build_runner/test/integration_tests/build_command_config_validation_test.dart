@@ -154,5 +154,28 @@ builders:
         "inputs, but has: '.txt'.",
       ),
     );
+
+    // Builder with adds_to_library: true and build_to: cache is rejected.
+    tester.write('root_pkg/build.yaml', r'''
+builders:
+  part_builder:
+    import: 'tool/builder.dart'
+    builder_factories: ['partFactory']
+    build_extensions: {'.dart': []}
+    auto_apply: root_package
+    build_to: cache
+    adds_to_library: true
+''');
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+      expectExitCode: ExitCode.config.code,
+    );
+    expect(
+      output,
+      contains(
+        'A builder with `adds_to_library: true` must set `build_to: source`.',
+      ),
+    );
   });
 }

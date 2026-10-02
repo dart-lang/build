@@ -151,6 +151,11 @@ class BuilderDefinition {
           "inputs, but has: ${nonDartInputs.map((i) => "'$i'").join(', ')}.",
         );
       }
+      if (this.buildTo != BuildTo.source) {
+        throw ArgumentError(
+          'A builder with `adds_to_library: true` must set `build_to: source`.',
+        );
+      }
     }
   }
 
