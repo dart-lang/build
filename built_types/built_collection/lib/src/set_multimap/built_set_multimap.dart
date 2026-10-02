@@ -106,7 +106,8 @@ abstract class BuiltSetMultimap<K, V> {
   /// Returns an unmodifiable [Map] view without copying its entries.
   ///
   /// Useful when producing or using APIs that need the [Map] interface.
-  /// Unlike [toMap], the returned map throws if you try to modify it.
+  /// Unlike [toMap], which returns a mutable copy, the returned map throws if
+  /// you try to modify it.
   /// The values are immutable [BuiltSet]s.
   Map<K, Iterable<V>> asMap() => UnmodifiableMapView<K, Iterable<V>>(_map);
 

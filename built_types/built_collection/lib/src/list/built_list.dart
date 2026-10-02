@@ -92,7 +92,8 @@ abstract class BuiltList<E> implements Iterable<E>, BuiltIterable<E> {
   /// Returns an unmodifiable [List] view without copying its elements.
   ///
   /// Useful when producing or using APIs that need the [List] interface.
-  /// Unlike [toList], the returned list throws if you try to modify it.
+  /// Unlike [toList], which returns a mutable copy, the returned list throws
+  /// if you try to modify it.
   List<E> asList() => UnmodifiableListView<E>(_list);
 
   // List.

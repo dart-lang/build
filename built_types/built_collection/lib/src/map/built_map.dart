@@ -64,7 +64,8 @@ abstract class BuiltMap<K, V> {
   /// Returns an unmodifiable [Map] view without copying its entries.
   ///
   /// Useful when producing or using APIs that need the [Map] interface.
-  /// Unlike [toMap], the returned map throws if you try to modify it.
+  /// Unlike [toMap], which returns a mutable copy, the returned map throws if
+  /// you try to modify it.
   /// The view retains the key equality of this map's base collection.
   Map<K, V> asMap() => UnmodifiableMapView<K, V>(_map);
 
