@@ -61,12 +61,12 @@ abstract class BuiltMap<K, V> {
   BuiltMap<K, V> rebuild(Function(MapBuilder<K, V>) updates) =>
       (toBuilder()..update(updates)).build();
 
-  /// Returns as an immutable map.
+  /// Returns an unmodifiable [Map] view without copying its entries.
   ///
   /// Useful when producing or using APIs that need the [Map] interface.
-  /// Unlike [toMap], which returns a mutable copy, the returned map throws if
-  /// you try to modify it.
-  Map<K, V> asMap() => Map<K, V>.unmodifiable(_map);
+  /// Unlike [toMap], the returned map throws if you try to modify it.
+  /// The view retains the key equality of this map's base collection.
+  Map<K, V> asMap() => UnmodifiableMapView<K, V>(_map);
 
   /// Converts to a [Map].
   ///

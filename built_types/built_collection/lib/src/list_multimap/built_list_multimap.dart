@@ -100,12 +100,12 @@ abstract class BuiltListMultimap<K, V> {
   @override
   String toString() => _map.toString();
 
-  /// Returns as an immutable map.
+  /// Returns an unmodifiable [Map] view without copying its entries.
   ///
   /// Useful when producing or using APIs that need the [Map] interface.
-  /// Unlike [toMap], which returns a mutable copy, the returned map throws if
-  /// you try to modify it.
-  Map<K, Iterable<V>> asMap() => Map<K, Iterable<V>>.unmodifiable(_map);
+  /// Unlike [toMap], the returned map throws if you try to modify it.
+  /// The values are immutable [BuiltList]s.
+  Map<K, Iterable<V>> asMap() => UnmodifiableMapView<K, Iterable<V>>(_map);
 
   // ListMultimap.
 

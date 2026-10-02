@@ -104,6 +104,12 @@
 /// a copy, but return a copy-on-write wrapper. So, Built Collections can be
 /// efficiently and easily used with code that needs core SDK collections but
 /// does not mutate them.
+///
+/// When you want to provide a collection that explicitly throws when a
+/// mutation is attempted, use `BuiltList.asList`, `BuiltListMultimap.asMap`,
+/// `BuiltSet.asSet`, `BuiltSetMultimap.asMap` and `BuiltMap.asMap`.
+/// These methods return unmodifiable views without copying the underlying
+/// collections. Changes to a builder do not affect a previously returned view.
 library;
 
 export 'src/list.dart' hide OverriddenHashcodeBuiltList;

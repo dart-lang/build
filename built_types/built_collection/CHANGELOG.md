@@ -3,6 +3,12 @@
 ## 5.1.3-wip
 
 - Clarify the docs of `asList`, `asSet` and `asMap`.
+- Avoid copying in `BuiltList.asList`, `BuiltMap.asMap`,
+  `BuiltListMultimap.asMap` and `BuiltSetMultimap.asMap` by returning
+  unmodifiable views.
+- Use the SDK unmodifiable set view for `BuiltSet.asSet`, while retaining
+  the base collection's behavior when casting and creating sets.
+- `BuiltMap.asMap` now preserves the base map's custom key equality.
 
 ## 5.1.2
 

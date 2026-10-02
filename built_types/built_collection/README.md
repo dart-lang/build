@@ -110,6 +110,9 @@ mutation is attempted, use `BuiltList.asList`,
 `BuiltListMultimap.asMap`, `BuiltSet.asSet`, `BuiltSetMultimap.asMap`
 and `BuiltMap.asMap`.
 
+These methods return unmodifiable views without copying the underlying
+collections. Changes to a builder do not affect a previously returned view.
+
 ## Features and bugs
 
 Please file feature requests and bugs at the [issue tracker][tracker].

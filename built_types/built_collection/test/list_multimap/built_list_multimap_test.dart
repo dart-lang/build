@@ -102,6 +102,37 @@ void main() {
       expect(immutableMap, isEmpty);
     });
 
+    group('asMap', () {
+      test(
+        'stays unchanged after builder writes and keeps immutable values',
+        () {
+          final builder = ListMultimapBuilder<int, String>({
+            1: ['one', 'two'],
+          });
+          final built = builder.build();
+          final view = built.asMap();
+          final values = built[1];
+          expect(view[1], same(values));
+          builder[1]
+            ..[0] = 'changed'
+            ..add('three');
+          builder.add(2, 'other');
+          expect(builder.build()[1], ['changed', 'two', 'three']);
+          final replacement = built.toBuilder();
+          replacement[1].clear();
+          expect(replacement.build().isEmpty, isTrue);
+          expect(view.keys, [1]);
+          expect(view[1], ['one', 'two']);
+          expect(view.clear, throwsUnsupportedError);
+          expect(
+            () => view.cast<num, Iterable<Object>>().clear(),
+            throwsUnsupportedError,
+          );
+          expect(() => values.asList().add('mutate'), throwsUnsupportedError);
+        },
+      );
+    });
+
     test('can be converted to ListMultimapBuilder<K, V>', () {
       expect(
         BuiltListMultimap<int, String>().toBuilder(),
