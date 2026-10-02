@@ -4,15 +4,14 @@
 
 import 'dart:collection' as collection;
 
-/// An SDK unmodifiable view that forwards set-producing operations to its base.
+/// An unmodifiable view that preserves the wrapped set's behavior.
 class UnmodifiableSetView<E> extends collection.UnmodifiableSetView<E> {
   final Set<E> _set;
 
   UnmodifiableSetView(this._set) : super(_set);
 
-  // SetBase.cast does not forward the base's factory for creating new sets.
-  // Casting the base instead preserves its behavior, such as sorting or
-  // identity equality, when the cast view produces a new set.
+  // SetBase.cast does not forward _set's factory for creating sets.
+  // Cast _set directly to preserve ordering and identity equality in copies.
   @override
   Set<T> cast<T>() => UnmodifiableSetView<T>(_set.cast<T>());
 
