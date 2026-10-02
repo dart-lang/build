@@ -47,13 +47,39 @@ class DartPlatform {
     );
   }
 
-  const DartPlatform._(this.name, this._supportedLibraries);
+  const DartPlatform._(
+    this.name,
+    this._supportedLibraries, [
+    this._librariesUnavailableToConditions = const {},
+  ]);
+
+  /// Supported libraries for which `dart.library.<name>` is still `false`.
+  final Set<String> _librariesUnavailableToConditions;
 
   /// Returns whether or not [library] is supported on this platform.
   ///
   /// The [library] is path portion of a `dart:` import (should not include the
   /// scheme).
   bool supportsLibrary(String library) => _supportedLibraries.contains(library);
+
+  /// Returns whether `dart.library.<library>` is `true` on this platform, which
+  /// selects that branch of a conditional import.
+  bool supportsConditionalImportOf(String library) =>
+      supportsLibrary(library) &&
+      !_librariesUnavailableToConditions.contains(library);
+
+  /// Returns a copy of this platform on which `dart.library.<name>` is `false`
+  /// for each of [libraries].
+  ///
+  /// The copy still reports [libraries] in [supportsLibrary], so modules that
+  /// import them are still compiled and the compiler reports why they are not
+  /// allowed. The copy is equal to this platform, since it has the same [name].
+  DartPlatform withLibrariesUnavailableToConditions(
+    Iterable<String> libraries,
+  ) => DartPlatform._(name, _supportedLibraries, {
+    ..._librariesUnavailableToConditions,
+    ...libraries,
+  });
 
   @override
   int get hashCode => name.hashCode;

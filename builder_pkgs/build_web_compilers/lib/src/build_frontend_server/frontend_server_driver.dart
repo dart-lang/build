@@ -289,6 +289,7 @@ class PersistentFrontendServer {
     String? librariesPath,
     String? platformSdk,
     String? sdkKernelPath,
+    bool? deprecatedJsInterop,
   }) async {
     final rootPackage = getRootPackageName();
     final socketConnection = await _tryConnectToFESManager(fileSystemRoot);
@@ -342,6 +343,7 @@ class PersistentFrontendServer {
       '--platform=$platformDill',
       '--output-dill=${outputDillUri.toFilePath()}',
       '--output-incremental-dill=${outputDillUri.toFilePath()}',
+      ?deprecatedJsInteropArg(deprecatedJsInterop),
       for (final define in environment.entries)
         '-D${define.key}=${define.value}',
       for (final experiment in enabledExperiments)

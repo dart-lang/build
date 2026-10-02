@@ -4,6 +4,36 @@
 
 import 'build_modules/build_modules.dart';
 
+/// The `dart:` libraries that the compilers disallow with
+/// `--no-deprecated-js-interop`.
+///
+/// Must match `deprecatedJsInteropLibraryNames` in the SDK's `front_end`.
+const deprecatedJsInteropLibraries = {
+  'html',
+  'html_common',
+  'indexed_db',
+  'js',
+  'js_util',
+  'svg',
+  'web_audio',
+  'web_gl',
+};
+
+/// Returns [platform] as the compilers see it when compiling with
+/// [deprecatedJsInterop] (`null` means the compiler default).
+///
+/// With `--no-deprecated-js-interop`, `dart.library.<name>` is `false` for
+/// every library in [deprecatedJsInteropLibraries], so conditional imports
+/// must resolve the same way when computing modules.
+DartPlatform platformForDeprecatedJsInterop(
+  DartPlatform platform,
+  bool? deprecatedJsInterop,
+) => deprecatedJsInterop == false
+    ? platform.withLibrariesUnavailableToConditions(
+        deprecatedJsInteropLibraries,
+      )
+    : platform;
+
 /// `dart:` SDK libraries available in every platform supported by
 /// build_web_compilers.
 const _coreLibraries = [

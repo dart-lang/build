@@ -9,6 +9,7 @@ import 'build_web_compilers.dart';
 import 'src/build_modules/build_modules.dart';
 import 'src/common.dart';
 import 'src/ddc_frontend_server_builder.dart';
+import 'src/platforms.dart' show platformForDeprecatedJsInterop;
 import 'src/sdk_js_compile_builder.dart';
 import 'src/sdk_js_copy_builder.dart';
 import 'src/web_entrypoint_marker_builder.dart';
@@ -17,6 +18,7 @@ import 'src/web_entrypoint_marker_builder.dart';
 Builder webEntrypointBuilder(BuilderOptions options) {
   _ensureSamePlatformOptions(options);
   _ensureSameDdcHotReloadOptions(options);
+  _ensureSameDeprecatedJsInteropOptions(options);
   return WebEntrypointBuilder.fromOptions(options);
 }
 
@@ -33,18 +35,24 @@ Builder webEntrypointMarkerBuilder(BuilderOptions options) {
 Builder ddcMetaModuleBuilder(BuilderOptions options) {
   _ensureSamePlatformOptions(options);
   _ensureSameDdcHotReloadOptions(options);
-  return MetaModuleBuilder.forOptions(ddcPlatform, options);
+  _ensureSameDeprecatedJsInteropOptions(options);
+  return MetaModuleBuilder.forOptions(
+    _platformForOptions(ddcPlatform, options),
+    options,
+  );
 }
 
 Builder ddcMetaModuleCleanBuilder(BuilderOptions options) {
   _ensureSamePlatformOptions(options);
   _ensureSameDdcHotReloadOptions(options);
+  _ensureSameDeprecatedJsInteropOptions(options);
   return MetaModuleCleanBuilder(ddcPlatform);
 }
 
 Builder ddcModuleBuilder(BuilderOptions options) {
   _ensureSamePlatformOptions(options);
   _ensureSameDdcHotReloadOptions(options);
+  _ensureSameDeprecatedJsInteropOptions(options);
   return ModuleBuilder(
     ddcPlatform,
     usesWebHotReload: _readWebHotReloadOption(options),
@@ -56,6 +64,7 @@ Builder ddcBuilder(BuilderOptions options) {
   _ensureSamePlatformOptions(options);
   _ensureSameDdcHotReloadOptions(options);
   _ensureSameDdcOptions(options);
+  _ensureSameDeprecatedJsInteropOptions(options);
 
   final scratchDir = _readScratchSpaceDirOption(options);
   if (scratchDir != null) {
@@ -64,6 +73,7 @@ Builder ddcBuilder(BuilderOptions options) {
 
   if (_readWebHotReloadOption(options)) {
     frontendServerEnvironment = _readEnvironmentOption(options);
+    frontendServerDeprecatedJsInterop = readDeprecatedJsInteropOption(options);
     return DdcFrontendServerBuilder();
   }
 
@@ -82,6 +92,7 @@ Builder ddcBuilder(BuilderOptions options) {
     librariesPath: _readLibrariesPathOption(options),
     platformSdk: _readPlatformSdkOption(options),
     environment: _readEnvironmentOption(options),
+    deprecatedJsInterop: readDeprecatedJsInteropOption(options),
   );
 }
 
@@ -92,6 +103,7 @@ Builder ddcKernelBuilder(BuilderOptions options) {
   _ensureSamePlatformOptions(options);
   _ensureSameDdcHotReloadOptions(options);
   _ensureSameDdcOptions(options);
+  _ensureSameDeprecatedJsInteropOptions(options);
 
   return KernelBuilder(
     summaryOnly: true,
@@ -102,6 +114,7 @@ Builder ddcKernelBuilder(BuilderOptions options) {
     useIncrementalCompiler: _readUseIncrementalCompilerOption(options),
     trackUnusedInputs: _readTrackInputsCompilerOption(options),
     platformSdk: _readPlatformSdkOption(options),
+    deprecatedJsInterop: readDeprecatedJsInteropOption(options),
   );
 }
 
@@ -126,16 +139,22 @@ Builder sdkJsCompile(BuilderOptions options) {
 // Dart2js related builders
 Builder dart2jsMetaModuleBuilder(BuilderOptions options) {
   _ensureSamePlatformOptions(options);
-  return MetaModuleBuilder.forOptions(dart2jsPlatform, options);
+  _ensureSameDeprecatedJsInteropOptions(options);
+  return MetaModuleBuilder.forOptions(
+    _platformForOptions(dart2jsPlatform, options),
+    options,
+  );
 }
 
 Builder dart2jsMetaModuleCleanBuilder(BuilderOptions options) {
   _ensureSamePlatformOptions(options);
+  _ensureSameDeprecatedJsInteropOptions(options);
   return MetaModuleCleanBuilder(dart2jsPlatform);
 }
 
 Builder dart2jsModuleBuilder(BuilderOptions options) {
   _ensureSamePlatformOptions(options);
+  _ensureSameDeprecatedJsInteropOptions(options);
   return ModuleBuilder(dart2jsPlatform);
 }
 
@@ -235,6 +254,37 @@ void _ensureSamePlatformOptions(BuilderOptions options) {
   }
 }
 
+/// Throws if `deprecated-js-interop` differs between builders.
+///
+/// Modules are computed with the same conditional import resolution as the
+/// compilers use, so all of these builders must agree on the option.
+void _ensureSameDeprecatedJsInteropOptions(BuilderOptions options) {
+  final deprecatedJsInterop = readDeprecatedJsInteropOption(options);
+  final previous = _lastDeprecatedJsInteropValue;
+  if (previous == null) {
+    _lastDeprecatedJsInteropValue = (deprecatedJsInterop,);
+  } else if (previous.$1 != deprecatedJsInterop) {
+    throw ArgumentError(
+      '`$deprecatedJsInteropOption` must be configured the same across the '
+      'following builders: build_web_compilers:ddc, '
+      'build_web_compilers|entrypoint, '
+      'build_web_compilers|ddc_modules, '
+      'and build_web_compilers|dart2js_modules.'
+      '\n\nPlease use the `global_options` section in '
+      '`build.yaml` or the `--define` flag to set global options.',
+    );
+  }
+}
+
+/// Returns [platform] adjusted for the `deprecated-js-interop` option.
+DartPlatform _platformForOptions(
+  DartPlatform platform,
+  BuilderOptions options,
+) => platformForDeprecatedJsInterop(
+  platform,
+  readDeprecatedJsInteropOption(options),
+);
+
 bool _readUseIncrementalCompilerOption(BuilderOptions options) {
   return options.config[_useIncrementalCompilerOption] as bool? ?? true;
 }
@@ -329,6 +379,10 @@ Map<String, String> _readEnvironmentOption(BuilderOptions options) {
 Map<String, dynamic>? _previousDdcConfig;
 bool? _lastWebHotReloadValue;
 bool? _lastUseUiLibrariesValue;
+
+/// The first `deprecated-js-interop` value seen, wrapped in a record so that
+/// an unset (`null`) option is distinguishable from no value seen yet.
+(bool?,)? _lastDeprecatedJsInteropValue;
 const _useIncrementalCompilerOption = 'use-incremental-compiler';
 const _generateFullDillOption = 'generate-full-dill';
 const _emitDebugSymbolsOption = 'emit-debug-symbols';
@@ -361,4 +415,5 @@ const _supportedOptions = [
   _usePrebuiltSdkFromPathOption,
   _webAssetsPathOption,
   _scratchSpaceDirOption,
+  deprecatedJsInteropOption,
 ];

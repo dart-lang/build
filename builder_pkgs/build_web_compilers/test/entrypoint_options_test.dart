@@ -104,4 +104,25 @@ loader: .dart.js
           .having((e) => e.extension, 'extension', '.custom_extension.js'),
     ]);
   });
+
+  group('deprecated-js-interop', () {
+    test('is null by default', () {
+      final options = EntrypointBuilderOptions.fromOptions(
+        const BuilderOptions({'compiler': 'dart2js'}),
+      );
+      expect(options.deprecatedJsInterop, isNull);
+    });
+
+    for (final value in [true, false]) {
+      test('parses $value', () {
+        final options = EntrypointBuilderOptions.fromOptions(
+          BuilderOptions({
+            'compiler': 'dart2js',
+            'deprecated-js-interop': value,
+          }),
+        );
+        expect(options.deprecatedJsInterop, value);
+      });
+    }
+  });
 }
