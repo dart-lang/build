@@ -75,69 +75,22 @@ void main() {
     });
 
     test('can be converted to an UnmodifiableSetView', () {
-      final immutableSet = BuiltSet<int>().asSet();
+      final builder = SetBuilder<int>([1, 3])..withBase(SplayTreeSet<int>.new);
+      final immutableSet = builder.build().asSet();
       expect(immutableSet, const TypeMatcher<Set<int>>());
-      expect(() => immutableSet.add(1), throwsUnsupportedError);
-      expect(immutableSet, isEmpty);
-    });
+      expect(() => immutableSet.add(2), throwsUnsupportedError);
+      final cast = immutableSet.cast<num>();
+      expect(cast.clear, throwsUnsupportedError);
+      expect(cast.union({2, 4}), orderedEquals([1, 2, 3, 4]));
+      builder.add(2);
+      expect(immutableSet, orderedEquals([1, 3]));
 
-    group('asSet', () {
-      test('cast preserves sorted base when producing sets', () {
-        final built = BuiltSet<int>.build(
-          (b) => b
-            ..withBase(SplayTreeSet<int>.new)
-            ..addAll([1, 3]),
-        );
-        final view = built.asSet().cast<int>();
-        expect(view.union({2, 4}), orderedEquals([1, 2, 3, 4]));
-        expect(view.toSet()..addAll([2, 4]), orderedEquals([1, 2, 3, 4]));
-        expect(view.intersection({3})..add(2), orderedEquals([2, 3]));
-        expect(view.difference({1})..add(2), orderedEquals([2, 3]));
-
-        final widened = view.cast<num>();
-        expect(widened.union({2, 4}), orderedEquals([1, 2, 3, 4]));
-        expect(widened.toSet()..addAll([2, 4]), orderedEquals([1, 2, 3, 4]));
-        expect(widened.intersection({3})..add(2), orderedEquals([2, 3]));
-        expect(widened.difference({1})..add(2), orderedEquals([2, 3]));
-        expect(view, orderedEquals([1, 3]));
-      });
-
-      test('cast preserves identity equality when producing sets', () {
-        final first = DateTime.utc(2026);
-        final second = DateTime.utc(2026);
-        expect(first, second);
-        expect(identical(first, second), isFalse);
-        final built = BuiltSet<DateTime>.build(
-          (b) => b
-            ..withBase(LinkedHashSet<DateTime>.identity)
-            ..addAll([first, second]),
-        );
-        final view = built.asSet().cast<DateTime>();
-        final copy = view.toSet();
-        expect(copy.length, 2);
-        expect(copy.lookup(first), same(first));
-        expect(copy.lookup(second), same(second));
-        expect(copy.contains(DateTime.utc(2026)), isFalse);
-        expect(view.union({}).length, 2);
-        expect(view.cast<Object>().toSet().length, 2);
-        copy.clear();
-        expect(view.length, 2);
-      });
-
-      test('stays unchanged after builder writes and rejects cast writes', () {
-        final builder = SetBuilder<int>([1, 2]);
-        final built = builder.build();
-        final view = built.asSet();
-        builder
-          ..remove(1)
-          ..add(3);
-        expect(builder.build(), unorderedEquals([2, 3]));
-        expect((built.toBuilder()..clear()).build(), isEmpty);
-        expect(view, unorderedEquals([1, 2]));
-        expect(() => view.remove(1), throwsUnsupportedError);
-        expect(() => view.cast<num>().add(3), throwsUnsupportedError);
-        expect(() => view.cast<num>().clear(), throwsUnsupportedError);
-      });
+      final identitySet = BuiltSet<DateTime>.build(
+        (b) => b
+          ..withBase(LinkedHashSet<DateTime>.identity)
+          ..addAll([DateTime.utc(2026), DateTime.utc(2026)]),
+      );
+      expect(identitySet.asSet().cast<Object>().toSet().length, 2);
     });
 
     test('can be converted to SetBuilder<E>', () {

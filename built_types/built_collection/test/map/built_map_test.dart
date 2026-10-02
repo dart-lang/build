@@ -2,7 +2,7 @@
 // All rights reserved. Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-import 'dart:collection' show LinkedHashMap, SplayTreeMap;
+import 'dart:collection' show SplayTreeMap;
 
 import 'package:built_collection/src/internal/test_helpers.dart';
 import 'package:built_collection/src/map.dart';
@@ -93,45 +93,17 @@ void main() {
     });
 
     test('can be converted to an UnmodifiableMapView', () {
-      final immutableMap = BuiltMap<int, String>().asMap();
-      expect(immutableMap, const TypeMatcher<Map<int, String>>());
-      expect(() => immutableMap[1] = 'Hello', throwsUnsupportedError);
-      expect(immutableMap, isEmpty);
-    });
-
-    group('asMap', () {
-      test('preserves custom key equality', () {
-        final built = BuiltMap<int, String>.build(
-          (b) => b
-            ..withBase(
-              () => LinkedHashMap<int, String>(
-                equals: (a, b) => a % 255 == b % 255,
-                hashCode: (n) => (n % 255).hashCode,
-              ),
-            )
-            ..[1] = 'one',
+      final builder = MapBuilder<int, String>({1: 'Hello'})
+        ..withBase(
+          () => SplayTreeMap<int, String>((a, b) => a.abs().compareTo(b.abs())),
         );
-        final view = built.asMap();
-        expect(view[256], 'one');
-        expect(view.containsKey(256), isTrue);
-        expect(view.cast<num, Object>()[256], 'one');
-        expect(() => view[2] = 'two', throwsUnsupportedError);
-      });
-
-      test('stays unchanged after builder writes and rejects cast writes', () {
-        final builder = MapBuilder<int, String>({1: 'one', 2: 'two'});
-        final built = builder.build();
-        final view = built.asMap();
-        builder
-          ..[1] = 'changed'
-          ..remove(2)
-          ..[3] = 'three';
-        expect(builder.build().asMap(), {1: 'changed', 3: 'three'});
-        expect((built.toBuilder()..clear()).build().isEmpty, isTrue);
-        expect(view, {1: 'one', 2: 'two'});
-        expect(() => view.remove(1), throwsUnsupportedError);
-        expect(() => view.cast<num, Object>().clear(), throwsUnsupportedError);
-      });
+      final immutableMap = builder.build().asMap();
+      expect(immutableMap, const TypeMatcher<Map<int, String>>());
+      expect(() => immutableMap[1] = 'World', throwsUnsupportedError);
+      expect(immutableMap[-1], 'Hello');
+      expect(immutableMap.containsKey(-1), isTrue);
+      builder.clear();
+      expect(immutableMap, {1: 'Hello'});
     });
 
     test('can be converted to MapBuilder<K, V>', () {

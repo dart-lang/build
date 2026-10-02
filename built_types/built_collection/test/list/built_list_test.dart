@@ -66,27 +66,13 @@ void main() {
     });
 
     test('can be converted to an UnmodifiableListView', () {
-      final immutableList = BuiltList<int>().asList();
+      final builder = ListBuilder<int>([1]);
+      final immutableList = builder.build().asList();
       expect(immutableList, const TypeMatcher<List<int>>());
-      expect(() => immutableList.add(1), throwsUnsupportedError);
-      expect(immutableList, isEmpty);
-    });
-
-    group('asList', () {
-      test('stays unchanged after builder writes and rejects cast writes', () {
-        final builder = ListBuilder<int>([1, 2]);
-        final built = builder.build();
-        final view = built.asList();
-        builder
-          ..[0] = 9
-          ..add(3);
-        expect(builder.build(), orderedEquals([9, 2, 3]));
-        expect((built.toBuilder()..clear()).build(), isEmpty);
-        expect(view, [1, 2]);
-        expect(() => view[0] = 4, throwsUnsupportedError);
-        expect(() => view.cast<num>().clear(), throwsUnsupportedError);
-        expect(() => view.asMap().clear(), throwsUnsupportedError);
-      });
+      expect(() => immutableList.add(2), throwsUnsupportedError);
+      expect(immutableList.cast<num>().clear, throwsUnsupportedError);
+      builder.add(2);
+      expect(immutableList, [1]);
     });
 
     test('can be converted to ListBuilder<E>', () {

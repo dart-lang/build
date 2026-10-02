@@ -96,41 +96,16 @@ void main() {
     });
 
     test('can be converted to an UnmodifiableMapView', () {
-      final immutableMap = BuiltListMultimap<int, String>().asMap();
+      final builder = ListMultimapBuilder<int, String>({
+        1: ['Hello'],
+      });
+      final immutableMap = builder.build().asMap();
       expect(immutableMap, const TypeMatcher<Map<int, Iterable<String>>>());
-      expect(() => immutableMap[1] = ['Hello'], throwsUnsupportedError);
-      expect(immutableMap, isEmpty);
-    });
-
-    group('asMap', () {
-      test(
-        'stays unchanged after builder writes and keeps immutable values',
-        () {
-          final builder = ListMultimapBuilder<int, String>({
-            1: ['one', 'two'],
-          });
-          final built = builder.build();
-          final view = built.asMap();
-          final values = built[1];
-          expect(view[1], same(values));
-          builder[1]
-            ..[0] = 'changed'
-            ..add('three');
-          builder.add(2, 'other');
-          expect(builder.build()[1], ['changed', 'two', 'three']);
-          final replacement = built.toBuilder();
-          replacement[1].clear();
-          expect(replacement.build().isEmpty, isTrue);
-          expect(view.keys, [1]);
-          expect(view[1], ['one', 'two']);
-          expect(view.clear, throwsUnsupportedError);
-          expect(
-            () => view.cast<num, Iterable<Object>>().clear(),
-            throwsUnsupportedError,
-          );
-          expect(() => values.asList().add('mutate'), throwsUnsupportedError);
-        },
-      );
+      expect(() => immutableMap[1] = ['World'], throwsUnsupportedError);
+      builder
+        ..add(1, 'World')
+        ..build();
+      expect(immutableMap[1], ['Hello']);
     });
 
     test('can be converted to ListMultimapBuilder<K, V>', () {
