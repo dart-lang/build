@@ -63,8 +63,8 @@ Builder ddcBuilder(BuilderOptions options) {
   validateOptions(options.config, _supportedOptions, 'build_web_compilers:ddc');
   _ensureSamePlatformOptions(options);
   _ensureSameDdcHotReloadOptions(options);
-  _ensureSameDdcOptions(options);
   _ensureSameDeprecatedJsInteropOptions(options);
+  _ensureSameDdcOptions(options);
 
   final scratchDir = _readScratchSpaceDirOption(options);
   if (scratchDir != null) {
@@ -102,8 +102,8 @@ Builder ddcKernelBuilder(BuilderOptions options) {
   validateOptions(options.config, _supportedOptions, 'build_web_compilers:ddc');
   _ensureSamePlatformOptions(options);
   _ensureSameDdcHotReloadOptions(options);
-  _ensureSameDdcOptions(options);
   _ensureSameDeprecatedJsInteropOptions(options);
+  _ensureSameDdcOptions(options);
 
   return KernelBuilder(
     summaryOnly: true,

@@ -172,9 +172,17 @@ String? deprecatedJsInteropArg(bool? deprecatedJsInterop) =>
       false => '--no-deprecated-js-interop',
     };
 
+/// Parses a `--[no-]deprecated-js-interop` compiler argument to its boolean
+/// value, or returns `null` if [arg] is not a deprecated JS interop flag.
+bool? parseDeprecatedJsInteropArg(String arg) => switch (arg) {
+  '--deprecated-js-interop' => true,
+  '--no-deprecated-js-interop' => false,
+  _ => null,
+};
+
 /// Whether [arg] is a `--[no-]deprecated-js-interop` compiler argument.
 bool isDeprecatedJsInteropArg(String arg) =>
-    arg == '--deprecated-js-interop' || arg == '--no-deprecated-js-interop';
+    parseDeprecatedJsInteropArg(arg) != null;
 
 enum ModuleStrategy { fine, coarse }
 

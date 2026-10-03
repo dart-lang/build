@@ -11,7 +11,52 @@ import 'package:build_web_compilers/src/dart2js_bootstrap.dart';
 import 'package:build_web_compilers/src/platforms.dart';
 import 'package:test/test.dart';
 
+import '../bin/fes_manager.dart';
+
 void main() {
+  group('parseDeprecatedJsInteropArg', () {
+    test('parses both forms', () {
+      expect(parseDeprecatedJsInteropArg('--deprecated-js-interop'), isTrue);
+      expect(
+        parseDeprecatedJsInteropArg('--no-deprecated-js-interop'),
+        isFalse,
+      );
+    });
+
+    test('returns null for non-matching arguments', () {
+      expect(parseDeprecatedJsInteropArg('-O4'), isNull);
+      expect(
+        parseDeprecatedJsInteropArg('--deprecated-js-interop=false'),
+        isNull,
+      );
+      expect(parseDeprecatedJsInteropArg(''), isNull);
+    });
+  });
+
+  group('parseFesManagerOptionalArgs', () {
+    test('parses environment defines and deprecated-js-interop', () {
+      final parsed = parseFesManagerOptionalArgs([
+        '-DFOO=bar',
+        '--no-deprecated-js-interop',
+        '-DBAZ=qux=extra',
+      ]);
+      expect(parsed.environment, {'FOO': 'bar', 'BAZ': 'qux=extra'});
+      expect(parsed.deprecatedJsInterop, isFalse);
+    });
+
+    test('parses --deprecated-js-interop', () {
+      final parsed = parseFesManagerOptionalArgs(['--deprecated-js-interop']);
+      expect(parsed.deprecatedJsInterop, isTrue);
+      expect(parsed.environment, isEmpty);
+    });
+
+    test('defaults to null when omitted', () {
+      final parsed = parseFesManagerOptionalArgs(['-DFOO=bar']);
+      expect(parsed.deprecatedJsInterop, isNull);
+      expect(parsed.environment, {'FOO': 'bar'});
+    });
+  });
+
   group('deprecatedJsInteropArg', () {
     test('is null when not configured', () {
       expect(deprecatedJsInteropArg(null), isNull);

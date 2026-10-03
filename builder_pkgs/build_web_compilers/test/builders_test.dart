@@ -13,8 +13,12 @@ void main() {
     const disallowed = BuilderOptions({'deprecated-js-interop': false});
     final builders = [
       ddcMetaModuleBuilder,
+      ddcMetaModuleCleanBuilder,
       ddcModuleBuilder,
+      ddcBuilder,
+      ddcKernelBuilder,
       dart2jsMetaModuleBuilder,
+      dart2jsMetaModuleCleanBuilder,
       dart2jsModuleBuilder,
       webEntrypointBuilder,
     ];
