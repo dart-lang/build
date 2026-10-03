@@ -31,6 +31,22 @@ void main() {
       await tempDir.delete(recursive: true);
     });
 
+    test(
+      'prints usage and exits with error code when arguments are missing',
+      () async {
+        final scriptPath = _resolveFesManagerScriptPath();
+        final result = await Process.run('dart', [scriptPath]);
+        expect(result.exitCode, 1);
+        expect(
+          result.stdout,
+          contains(
+            'Usage: fes_manager <sdkRoot> <fileSystemRoot> <packagesFile> '
+            '[--[no-]deprecated-js-interop] [-Dkey=value ...]',
+          ),
+        );
+      },
+    );
+
     test('writes a config file and can receive messages', () async {
       final fileSystemRoot = tempDir.uri.resolve('fes_root/');
       await Directory.fromUri(fileSystemRoot).create(recursive: true);

@@ -231,7 +231,7 @@ class ModuleLibrary {
           );
         }
         final library = condition.substring('dart.library.'.length);
-        if (platform.supportsLibrary(library)) {
+        if (platform.supportsConditionalImportOf(library)) {
           selectedImport = conditions[condition]!;
           break;
         }

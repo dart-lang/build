@@ -29,7 +29,7 @@ void main(List<String> args) async {
   if (args.length < 3) {
     print(
       'Usage: fes_manager <sdkRoot> <fileSystemRoot> <packagesFile> '
-      '[-Dkey=value ...]',
+      '[--[no-]deprecated-js-interop] [-Dkey=value ...]',
     );
     exit(1);
   }
@@ -41,19 +41,7 @@ void main(List<String> args) async {
 
   final packagesFile = Uri.parse(args[2]);
 
-  // Parse environment variables.
-  final environment = <String, String>{};
-  for (var i = 3; i < args.length; i++) {
-    final arg = args[i];
-    if (arg.startsWith('-D')) {
-      final parts = arg.substring(2).split('=');
-      if (parts.length >= 2) {
-        final key = parts[0];
-        final value = parts.sublist(1).join('=');
-        environment[key] = value;
-      }
-    }
-  }
+  final parsedArgs = parseFesManagerOptionalArgs(args.skip(3));
 
   // Delete stale config files if they exist. This manager will spin up a FES
   // instance and write its new config.
@@ -64,7 +52,8 @@ void main(List<String> args) async {
     sdkRoot: sdkRoot,
     fileSystemRoot: fileSystemRoot,
     packagesFile: packagesFile,
-    environment: environment,
+    environment: parsedArgs.environment,
+    deprecatedJsInterop: parsedArgs.deprecatedJsInterop,
   );
 
   final token = FesServerInfo.generateToken();
@@ -133,6 +122,28 @@ void main(List<String> args) async {
   });
 }
 
+/// Parses optional arguments passed to `fes_manager` after `<packagesFile>`,
+/// which may include environment defines (`-Dkey=value`) and
+/// `--[no-]deprecated-js-interop`.
+({Map<String, String> environment, bool? deprecatedJsInterop})
+parseFesManagerOptionalArgs(Iterable<String> args) {
+  bool? deprecatedJsInterop;
+  final environment = <String, String>{};
+  for (final arg in args) {
+    if (parseDeprecatedJsInteropArg(arg) case final value?) {
+      deprecatedJsInterop = value;
+    } else if (arg.startsWith('-D')) {
+      final parts = arg.substring(2).split('=');
+      if (parts.length >= 2) {
+        final key = parts[0];
+        final value = parts.sublist(1).join('=');
+        environment[key] = value;
+      }
+    }
+  }
+  return (environment: environment, deprecatedJsInterop: deprecatedJsInterop);
+}
+
 /// Manages a persistent Frontend Server and driver instance exposed via a local
 /// socket.
 ///
@@ -160,12 +171,14 @@ class FesManager {
     required Uri fileSystemRoot,
     required Uri packagesFile,
     Map<String, String> environment = const {},
+    bool? deprecatedJsInterop,
   }) async {
     final fes = await PersistentFrontendServer.start(
       sdkRoot: sdkRoot,
       fileSystemRoot: fileSystemRoot,
       packagesFile: packagesFile,
       environment: environment,
+      deprecatedJsInterop: deprecatedJsInterop,
     );
     final driver = FrontendServerProxyDriver()..init(fes);
     final packageConfig = await PackageConfig.load(File.fromUri(packagesFile));
