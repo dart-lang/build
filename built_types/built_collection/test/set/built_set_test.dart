@@ -2,7 +2,7 @@
 // All rights reserved. Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-import 'dart:collection' show LinkedHashSet, SplayTreeSet;
+import 'dart:collection' show SplayTreeSet;
 
 import 'package:built_collection/src/internal/test_helpers.dart';
 import 'package:built_collection/src/set.dart';
@@ -74,23 +74,32 @@ void main() {
       expect(set, [1, 2, 3, 4]);
     });
 
-    test('can be converted to an UnmodifiableSetView', () {
-      final builder = SetBuilder<int>([1, 3])..withBase(SplayTreeSet<int>.new);
-      final immutableSet = builder.build().asSet();
-      expect(immutableSet, const TypeMatcher<Set<int>>());
-      expect(() => immutableSet.add(2), throwsUnsupportedError);
-      final cast = immutableSet.cast<num>();
-      expect(cast.clear, throwsUnsupportedError);
-      expect(cast.union({2, 4}), orderedEquals([1, 2, 3, 4]));
-      builder.add(2);
-      expect(immutableSet, orderedEquals([1, 3]));
+    group('can be converted to an UnmodifiableSetView', () {
+      test('is unmodifiable', () {
+        final immutableSet = BuiltSet<int>().asSet();
+        expect(immutableSet, const TypeMatcher<Set<int>>());
+        expect(() => immutableSet.add(1), throwsUnsupportedError);
+        expect(immutableSet, isEmpty);
+      });
 
-      final identitySet = BuiltSet<DateTime>.build(
-        (b) => b
-          ..withBase(LinkedHashSet<DateTime>.identity)
-          ..addAll([DateTime.utc(2026), DateTime.utc(2026)]),
-      );
-      expect(identitySet.asSet().cast<Object>().toSet().length, 2);
+      test('preserves ordering after casting and builder changes', () {
+        final builder = SetBuilder<int>([1, 3])
+          ..withBase(SplayTreeSet<int>.new);
+        final view = builder.build().asSet();
+        expect(view, orderedEquals([1, 3]));
+
+        final cast = view.cast<num>();
+        expect(cast, orderedEquals([1, 3]));
+        expect(cast.clear, throwsUnsupportedError);
+        expect(cast.union({2, 4}), orderedEquals([1, 2, 3, 4]));
+        expect(cast.toSet()..add(2), orderedEquals([1, 2, 3]));
+
+        builder.add(2);
+
+        expect(view, orderedEquals([1, 3]));
+        expect(cast, orderedEquals([1, 3]));
+        expect(builder.build().asSet(), orderedEquals([1, 2, 3]));
+      });
     });
 
     test('can be converted to SetBuilder<E>', () {

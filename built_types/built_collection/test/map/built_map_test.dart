@@ -92,18 +92,35 @@ void main() {
       expect(map.keys, [1, 2, 3, 4]);
     });
 
-    test('can be converted to an UnmodifiableMapView', () {
-      final builder = MapBuilder<int, String>({1: 'Hello'})
-        ..withBase(
-          () => SplayTreeMap<int, String>((a, b) => a.abs().compareTo(b.abs())),
-        );
-      final immutableMap = builder.build().asMap();
-      expect(immutableMap, const TypeMatcher<Map<int, String>>());
-      expect(() => immutableMap[1] = 'World', throwsUnsupportedError);
-      expect(immutableMap[-1], 'Hello');
-      expect(immutableMap.containsKey(-1), isTrue);
-      builder.clear();
-      expect(immutableMap, {1: 'Hello'});
+    group('can be converted to an UnmodifiableMapView', () {
+      test('is unmodifiable', () {
+        final immutableMap = BuiltMap<int, String>().asMap();
+        expect(immutableMap, const TypeMatcher<Map<int, String>>());
+        expect(() => immutableMap[1] = 'Hello', throwsUnsupportedError);
+        expect(immutableMap, isEmpty);
+      });
+
+      test('retains key equality after casting and builder changes', () {
+        final builder = MapBuilder<int, String>({1: 'Hello'})
+          ..withBase(
+            () =>
+                SplayTreeMap<int, String>((a, b) => a.abs().compareTo(b.abs())),
+          );
+        final view = builder.build().asMap();
+        expect(view, {1: 'Hello'});
+        expect(view[-1], 'Hello');
+        expect(view.containsKey(-1), isTrue);
+
+        final cast = view.cast<num, Object>();
+        expect(cast[-1], 'Hello');
+        expect(cast.containsKey(-1), isTrue);
+
+        builder.clear();
+
+        expect(view, {1: 'Hello'});
+        expect(cast, {1: 'Hello'});
+        expect(builder.build().asMap(), isEmpty);
+      });
     });
 
     test('can be converted to MapBuilder<K, V>', () {
