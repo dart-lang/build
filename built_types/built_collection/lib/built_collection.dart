@@ -14,7 +14,6 @@
 /// * are immutable, if the elements/keys/values used are immutable;
 /// * are comparable;
 /// * are hashable;
-/// * reject nulls;
 /// * require generic type parameters;
 /// * reject wrong-type elements;
 /// * use copy-on-write to avoid copying unnecessarily.
@@ -73,12 +72,6 @@
 /// comparisons.
 ///
 ///
-/// # Built Collections Reject Nulls
-///
-/// A `null` in a collection is usually a bug, so Built Collections and their
-/// builders throw if given a `null` element, key or value.
-///
-///
 /// # Built Collections Require Generic Type Parameters
 ///
 /// A `List<dynamic>` is error-prone because it can be assigned to a `List` of
@@ -109,7 +102,7 @@
 /// mutation is attempted, use `BuiltList.asList`, `BuiltListMultimap.asMap`,
 /// `BuiltSet.asSet`, `BuiltSetMultimap.asMap` and `BuiltMap.asMap`.
 /// These methods return unmodifiable views without copying the underlying
-/// collections. Changes to a builder do not affect a previously returned view.
+/// collections.
 library;
 
 export 'src/list.dart' hide OverriddenHashcodeBuiltList;
