@@ -10,6 +10,16 @@ class UnmodifiableSetView<E> extends collection.UnmodifiableSetView<E> {
 
   UnmodifiableSetView(this._set) : super(_set);
 
+  // SetBase.first uses an iterator. Forward to _set so SplayTreeSet can
+  // splay the minimum element for faster repeated reads.
+  @override
+  E get first => _set.first;
+
+  // SetBase.last scans the entire set. Forward to _set to use optimized
+  // getters provided by sets such as LinkedHashSet and SplayTreeSet.
+  @override
+  E get last => _set.last;
+
   // Forward to _set to preserve the behavior of custom sets supplied by
   // SetBuilder.withBase. SetBase relies on toSet(), which may return a
   // different set type.
