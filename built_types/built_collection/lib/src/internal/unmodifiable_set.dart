@@ -10,11 +10,9 @@ class UnmodifiableSetView<E> extends collection.UnmodifiableSetView<E> {
 
   UnmodifiableSetView(this._set) : super(_set);
 
-  // SetBase.cast does not forward _set's factory for creating sets.
-  // Cast _set directly to preserve ordering and identity equality in copies.
-  @override
-  Set<T> cast<T>() => UnmodifiableSetView<T>(_set.cast<T>());
-
+  // Forward to _set to preserve the behavior of custom sets supplied by
+  // SetBuilder.withBase. SetBase relies on toSet(), which may return a
+  // different set type.
   @override
   Set<E> intersection(Set<Object?> other) => _set.intersection(other);
 
@@ -23,4 +21,9 @@ class UnmodifiableSetView<E> extends collection.UnmodifiableSetView<E> {
 
   @override
   Set<E> difference(Set<Object?> other) => _set.difference(other);
+
+  // SetBase.cast does not forward _set's factory for creating sets.
+  // Cast _set directly to preserve ordering and identity equality in copies.
+  @override
+  Set<T> cast<T>() => UnmodifiableSetView<T>(_set.cast<T>());
 }
