@@ -100,27 +100,37 @@ void main() {
         expect(immutableMap, isEmpty);
       });
 
-      test('retains key equality after casting and builder changes', () {
-        final builder = MapBuilder<int, String>({1: 'Hello'})
-          ..withBase(
-            () =>
-                SplayTreeMap<int, String>((a, b) => a.abs().compareTo(b.abs())),
-          );
-        final view = builder.build().asMap();
-        expect(view, {1: 'Hello'});
-        expect(view[-1], 'Hello');
-        expect(view.containsKey(-1), isTrue);
+      test(
+        'preserves key equality and sorted contents across casts and builder changes',
+        () {
+          final builder = MapBuilder<int, String>({2: '2', 1: '1'})
+            ..withBase(
+              () => SplayTreeMap<int, String>(
+                (a, b) => a.abs().compareTo(b.abs()),
+              ),
+            );
 
-        final cast = view.cast<num, Object>();
-        expect(cast[-1], 'Hello');
-        expect(cast.containsKey(-1), isTrue);
+          final view = builder.build().asMap();
+          expect(view, {1: '1', 2: '2'});
+          expect(view[-1], '1');
+          expect(view.containsKey(-1), isTrue);
+          expect(view.keys, orderedEquals([1, 2]));
 
-        builder.clear();
+          // Casting must preserve the comparator, so -1 still finds key 1
+          // and keys remain sorted.
+          final cast = view.cast<num, Object>();
+          expect(cast[-1], '1');
+          expect(cast.containsKey(-1), isTrue);
+          expect(cast.keys, orderedEquals([1, 2]));
 
-        expect(view, {1: 'Hello'});
-        expect(cast, {1: 'Hello'});
-        expect(builder.build().asMap(), isEmpty);
-      });
+          builder.clear();
+
+          // Clearing the builder must leave both existing views unchanged.
+          expect(view, {1: '1', 2: '2'});
+          expect(cast, {1: '1', 2: '2'});
+          expect(builder.build().asMap(), isEmpty);
+        },
+      );
     });
 
     test('can be converted to MapBuilder<K, V>', () {
