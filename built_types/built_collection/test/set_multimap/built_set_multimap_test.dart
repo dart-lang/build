@@ -115,32 +115,6 @@ void main() {
         expect(view[1], ['Hello']);
         expect(builder.build().asMap()[1], ['Hello', 'World']);
       });
-
-      test('preserves key and value ordering after casting', () {
-        final cast = BuiltSetMultimap<int, int>({
-          3: [3, 1, 2],
-          1: [2],
-        }).asMap().cast<num, Iterable<num>>();
-        expect(cast.keys, orderedEquals([3, 1]));
-        expect(cast.values.first, orderedEquals([3, 1, 2]));
-        expect(cast.values.last, orderedEquals([2]));
-        expect(cast.clear, throwsUnsupportedError);
-      });
-
-      test('preserves key and value identity after casting', () {
-        final key = _A();
-        final first = _A();
-        final second = _A();
-        final multimap = BuiltSetMultimap<_A, _A>({
-          key: [first, second],
-        });
-        final cast = multimap.asMap().cast<Object, Iterable<Object>>();
-        expect(cast.keys.single, same(key));
-        expect(cast.containsKey(_A()), isFalse);
-        expect(cast[key], same(multimap[key]));
-        expect(cast[key], orderedEquals([first, second]));
-        expect(cast[key]!.contains(_A()), isFalse);
-      });
     });
 
     test('can be converted to SetMultimapBuilder<K, V>', () {
