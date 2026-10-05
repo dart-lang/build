@@ -130,7 +130,7 @@ class RunCommand implements BuildRunnerCommand {
     try {
       await Isolate.spawnUri(
         p.toUri(scriptPath),
-        runOptions.options.asList(),
+        [...runOptions.options],
         null,
         errorsAreFatal: true,
         onExit: onExit.sendPort,
