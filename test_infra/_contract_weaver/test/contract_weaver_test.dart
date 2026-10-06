@@ -1245,5 +1245,83 @@ class A {
         expect(() => ContractWeaver().weave(input), throwsFormatException);
       });
     });
+
+    group('constructors with no body', () {
+      for (final (kind, constructor) in [
+        ('const', 'const A(this.x);'),
+        ('redirecting', 'A.other() : this(1);'),
+        ('redirecting factory', 'factory A.other(int x) = A;'),
+      ]) {
+        test('throws FormatException for contracts on a $kind constructor', () {
+          final input =
+              '''
+class A {
+  final int x;
+  A(this.x);
+  @Requires('x > 0')
+  $constructor
+}
+''';
+          expect(() => ContractWeaver().weave(input), throwsFormatException);
+        });
+      }
+
+      test('skips a const constructor of a class with an invariant', () {
+        const input = '''
+@Invariant('x > 0')
+class A {
+  final int x;
+  const A(this.x);
+}
+''';
+        final output = ContractWeaver().weave(input);
+        expect(output, contains('const A(this.x);'));
+      });
+
+      test('throws FormatException for contracts on an external factory', () {
+        const input = '''
+class A {
+  @Requires('x > 0')
+  external factory A(int x);
+}
+''';
+        expect(() => ContractWeaver().weave(input), throwsFormatException);
+      });
+    });
+
+    group('methods with no body', () {
+      for (final (kind, method) in [
+        ('abstract', 'void f(int x);'),
+        ('external', 'external void f(int x);'),
+      ]) {
+        for (final annotation in [
+          "@Requires('x > 0')",
+          "@Ensures('x > 0')",
+          "@ThrowEnsures(StateError, 'x > 0')",
+        ]) {
+          test('throws FormatException for $annotation on a $kind method', () {
+            final input =
+                '''
+abstract class A {
+  $annotation
+  $method
+}
+''';
+            expect(() => ContractWeaver().weave(input), throwsFormatException);
+          });
+        }
+
+        test('skips a $kind method with no contract', () {
+          final input =
+              '''
+@Invariant('true')
+abstract class A {
+  $method
+}
+''';
+          expect(ContractWeaver().weave(input), contains(method));
+        });
+      }
+    });
   });
 }

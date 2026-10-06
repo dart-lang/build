@@ -195,5 +195,19 @@ void main() {
       expect(typeOf('stage/pkgs'), FileSystemEntityType.link);
       expect(read('p/pkgs/b/lib/b.dart'), _contracted);
     });
+
+    test('matches kept names only at their own level', () {
+      // `pkgs` and `lib` are kept, as real directories, only on the path down
+      // to the member; deeper entries with those names are linked as part of
+      // their parents.
+      write('p/a/pkgs/b/lib/b.dart', _contracted);
+      write('p/pkgs/b/tool/lib/t.dart', _contracted);
+      final s = stager(member: 'pkgs/b');
+      expect(s.stage(), result(1, 0));
+      expect(typeOf('stage/a'), FileSystemEntityType.link);
+      expect(typeOf('stage/pkgs/b/tool'), FileSystemEntityType.link);
+      expect(read('p/a/pkgs/b/lib/b.dart'), _contracted);
+      expect(read('p/pkgs/b/tool/lib/t.dart'), _contracted);
+    });
   });
 }

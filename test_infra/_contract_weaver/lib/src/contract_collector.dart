@@ -132,9 +132,18 @@ class ContractCollector extends RecursiveAstVisitor<void> {
   /// Weaves the contract of [node] into it; if [checksInvariant], public
   /// instance methods also become invariant scopes.
   void _weaveMethod(MethodDeclaration node, {required bool checksInvariant}) {
-    if (node.body is EmptyFunctionBody) return;
-
     final contract = _reader.read(node.metadata);
+    if (node.body is EmptyFunctionBody) {
+      // An abstract or external method has no body to weave into. Contracts
+      // are not inherited by overrides, so silently ignoring them would be
+      // worse.
+      if (contract.isEmpty) return;
+      throw FormatException(
+        'Contracts are not supported on methods with no body: '
+        '${node.name.lexeme}.',
+      );
+    }
+
     final returnType = node.returnType?.toSource();
     final isVoid = node.isSetter || returnType == 'void';
     ReservedNameChecker.check(

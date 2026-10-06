@@ -51,6 +51,11 @@ class BodyWeaver {
         exitRewriter: exitRewriter,
         guard: guard,
       );
+    } else {
+      throw const FormatException(
+        'Cannot weave contracts into a function with no body, such as an '
+        'external one.',
+      );
     }
   }
 

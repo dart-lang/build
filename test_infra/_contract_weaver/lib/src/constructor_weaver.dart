@@ -28,16 +28,14 @@ class ConstructorWeaver {
   /// Weaves the contract of [node], a constructor of [className], into it.
   ///
   /// If [classHasInvariant], generative constructors also check the invariant
-  /// on exit. Constructors that cannot be woven are skipped without reading
-  /// their annotations.
+  /// on exit. Const and redirecting constructors have no body to weave into:
+  /// contract annotations on them are an error, and they do not check the
+  /// invariant.
   void weave(
     ConstructorDeclaration node, {
     required String className,
     required bool classHasInvariant,
   }) {
-    if (node.redirectedConstructor != null) return;
-    if (node.constKeyword != null) return;
-
     // There is no place to put a catch clause. Silently ignoring the
     // annotation would be worse.
     if (reader.throwClauses(node.metadata).isNotEmpty) {
@@ -45,24 +43,35 @@ class ConstructorWeaver {
         '@ThrowEnsures is not supported on constructors.',
       );
     }
+    final contract = reader.read(node.metadata);
+
+    final unweavable = _unweavableKind(node);
+    if (unweavable != null) {
+      if (contract.isEmpty) return;
+      throw FormatException(
+        'Contracts are not supported on $unweavable constructors.',
+      );
+    }
 
     if (node.factoryKeyword != null) {
-      _weaveFactory(
+      _weaveFactory(node, className: className, contract: contract);
+    } else {
+      _weaveGenerative(
         node,
-        className: className,
-        contract: reader.read(node.metadata),
+        classHasInvariant: classHasInvariant,
+        contract: contract,
       );
-      return;
     }
+  }
 
+  /// Why [node] has no body to weave into, or `null` if it has one.
+  static String? _unweavableKind(ConstructorDeclaration node) {
+    if (node.constKeyword != null) return 'const';
+    if (node.redirectedConstructor != null) return 'redirecting factory';
     if (node.initializers.any((i) => i is RedirectingConstructorInvocation)) {
-      return;
+      return 'redirecting';
     }
-    _weaveGenerative(
-      node,
-      classHasInvariant: classHasInvariant,
-      contract: reader.read(node.metadata),
-    );
+    return null;
   }
 
   /// A factory body is woven like a method body that returns [className], with
@@ -131,6 +140,10 @@ class ConstructorWeaver {
       );
     } else if (body is BlockFunctionBody) {
       _weaveGenerativeBlock(body.block, entry: '$entry', exit: '$exit');
+    } else {
+      throw FormatException(
+        'Cannot weave contracts into a ${body.runtimeType} constructor body.',
+      );
     }
   }
 

@@ -234,6 +234,12 @@ class Stager {
   /// are removed. A workspace member that was renamed or removed would
   /// otherwise stay as a dangling link, and the staged pubspec would not
   /// resolve.
+  ///
+  /// Only the immediate entries of [src] and [dest] are listed, so a name is
+  /// the path of an entry relative to its directory: a deeper entry with a
+  /// name in [keep] is linked as part of its parent. Entries of [dest] are
+  /// listed without following links, so removing a link never touches what it
+  /// points to.
   static void _linkEntries(
     Directory src,
     Directory dest, {
@@ -241,11 +247,11 @@ class Stager {
   }) {
     final linked = <String>{};
     for (final entity in src.listSync()) {
-      final name = entity.uri.pathSegments.where((s) => s.isNotEmpty).last;
+      final name = p.basename(entity.path);
       if (name.startsWith('.') || keep.contains(name)) continue;
       linked.add(name);
 
-      final linkPath = '${dest.path}/$name';
+      final linkPath = p.join(dest.path, name);
       var type = FileSystemEntity.typeSync(linkPath, followLinks: false);
       if (type == FileSystemEntityType.link) {
         if (Link(linkPath).targetSync() != entity.absolute.path) {
@@ -266,7 +272,7 @@ class Stager {
     }
 
     for (final entity in dest.listSync(followLinks: false)) {
-      final name = entity.uri.pathSegments.where((s) => s.isNotEmpty).last;
+      final name = p.basename(entity.path);
       if (name.startsWith('.') ||
           keep.contains(name) ||
           linked.contains(name)) {
