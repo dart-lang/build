@@ -58,6 +58,42 @@ class WritePartBuilder implements Builder {
     );
 
     tester.writePackage(
+      name: 'generate_library_pkg',
+      dependencies: ['build', 'build_runner'],
+      files: {
+        'build.yaml': r'''
+builders:
+  generate_library_builder:
+    import: 'package:generate_library_pkg/builder.dart'
+    builder_factories: ['generateLibraryBuilderFactory']
+    build_extensions: {'.txt': ['.dart']}
+    build_to: 'source'
+    runs_before: ['write_part_pkg:write_part_builder']
+''',
+        'lib/builder.dart': r'''
+import 'package:build/build.dart';
+
+Builder generateLibraryBuilderFactory(BuilderOptions options) =>
+    GenerateLibraryBuilder();
+
+/// Copies `.txt` to `.dart`.
+class GenerateLibraryBuilder implements Builder {
+  @override
+  Map<String, List<String>> get buildExtensions => {'.txt': ['.dart']};
+
+  @override
+  Future<void> build(BuildStep buildStep) async {
+    await buildStep.writeAsString(
+      buildStep.inputId.changeExtension('.dart'),
+      await buildStep.readAsString(buildStep.inputId),
+    );
+  }
+}
+''',
+      },
+    );
+
+    tester.writePackage(
       name: 'edit_during_build_pkg',
       dependencies: ['build', 'build_runner'],
       files: {
@@ -295,6 +331,7 @@ class ResolvePartBuilder implements Builder {
       dependencies: ['build_runner'],
       pathDependencies: [
         'edit_during_build_pkg',
+        'generate_library_pkg',
         'multi_part_pkg',
         'phase_part_pkg',
         'write_part_imports_pkg',
@@ -363,11 +400,21 @@ part of '../a.dart';
     await watch.expect('Added missing `part` directives for generated code:');
     await watch.expect(BuildLog.failurePattern);
     await watch.expect(BuildLog.successPattern);
-    await watch.kill();
     expect(
       tester.read('root_pkg/lib/a.dart'),
       "part '_br_/a.part.dart';\n\nclass A {}",
     );
+
+    // `watch` also removes a directive that is unused.
+    tester.write(
+      'root_pkg/lib/a.dart',
+      "part '_br_/a.part.dart';\n\n// no part\nclass A {}\n",
+    );
+    await watch.expect('Removed unused `part` directives for generated code:');
+    await watch.expect(BuildLog.failurePattern);
+    await watch.expect(BuildLog.successPattern);
+    await watch.kill();
+    expect(tester.read('root_pkg/lib/a.dart'), '// no part\nclass A {}\n');
 
     // A library that changed during the build gets no directive from that
     // build, which checked the old content. The rerun checks the new content
@@ -489,6 +536,48 @@ targets:
       tester.read('root_pkg/lib/a.dart'),
       "part '_br_/a.part.dart';\n\nclass A {}\n",
     );
+
+    // A generated library is owned by the builder that generates it, so its
+    // missing directive is not added, even though it gets a shared part.
+    tester.write('root_pkg/build.yaml', r'''
+targets:
+  $default:
+    builders:
+      generate_library_pkg|generate_library_builder:
+        enabled: true
+      write_part_pkg|write_part_builder:
+        enabled: true
+''');
+    tester.write('root_pkg/lib/gen.txt', 'class Gen {}\n');
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+    );
+    expect(output, contains(BuildLog.successPattern));
+    expect(output, isNot(contains('missing `part` directives')));
+    expect(tester.read('root_pkg/lib/gen.dart'), 'class Gen {}\n');
+    expect(
+      tester.read('root_pkg/lib/_br_/gen.part.dart'),
+      contains('// part content'),
+    );
+
+    // Nor is its unused directive removed.
+    tester.write(
+      'root_pkg/lib/gen.txt',
+      "part '_br_/gen.part.dart';\n\n// no part\nclass Gen {}\n",
+    );
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+    );
+    expect(output, contains(BuildLog.successPattern));
+    expect(output, isNot(contains('unused `part` directives')));
+    expect(
+      tester.read('root_pkg/lib/gen.dart'),
+      "part '_br_/gen.part.dart';\n\n// no part\nclass Gen {}\n",
+    );
+    tester.delete('root_pkg/lib/gen.txt');
+    tester.delete('root_pkg/lib/gen.dart');
 
     // Two builders writing parts to the same library concatenate.
     tester.write('root_pkg/build.yaml', r'''
