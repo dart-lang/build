@@ -36,12 +36,15 @@ import 'package:build/build.dart';
 
 Builder writePartBuilderFactory(BuilderOptions options) => WritePartBuilder();
 
+/// Writes a part contribution, unless the library says `// no part`.
 class WritePartBuilder implements Builder {
   @override
   Map<String, List<String>> get buildExtensions => {'.dart': []};
 
   @override
   Future<void> build(BuildStep buildStep) async {
+    final source = await buildStep.readAsString(buildStep.inputId);
+    if (source.contains('// no part')) return;
     (await buildStep.librarySourceSink)?.add('// part content');
   }
 }
@@ -391,6 +394,79 @@ targets:
     expect(
       tester.read('root_pkg/lib/a.dart'),
       "part '_br_/a.part.dart';\n\nclass A {} // edited",
+    );
+
+    // With `--only-check`, a library whose builders all succeed and write
+    // nothing fails the build if it has a `part` directive for the shared
+    // part, naming the line to remove.
+    tester.write('root_pkg/build.yaml', r'''
+targets:
+  $default:
+    builders:
+      write_part_pkg|write_part_builder:
+        enabled: true
+''');
+    tester.write(
+      'root_pkg/lib/a.dart',
+      "part '_br_/a.part.dart';\n\n// no part\nclass A {}\n",
+    );
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit --only-check',
+      expectExitCode: 1,
+    );
+    expect(
+      output,
+      contains('Remove unused `part` directives for generated code:'),
+    );
+    expect(output, contains("lib/a.dart: part '_br_/a.part.dart';"));
+    expect(
+      tester.read('root_pkg/lib/a.dart'),
+      "part '_br_/a.part.dart';\n\n// no part\nclass A {}\n",
+    );
+
+    // Otherwise the directive is removed and the build reruns.
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+    );
+    expect(
+      output,
+      contains('Removed unused `part` directives for generated code:'),
+    );
+    expect(output, contains(BuildLog.successPattern));
+    expect(tester.read('root_pkg/lib/a.dart'), '// no part\nclass A {}\n');
+
+    // The URI is compared by value, so it can be written with escapes.
+    tester.write(
+      'root_pkg/lib/a.dart',
+      "part '_br_/a.part.dar\\x74';\n\n// no part\nclass A {}\n",
+    );
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+    );
+    expect(
+      output,
+      contains('Removed unused `part` directives for generated code:'),
+    );
+    expect(tester.read('root_pkg/lib/a.dart'), '// no part\nclass A {}\n');
+
+    // With no builder that adds to the library, nothing says whether the
+    // directive is used, so it is left alone.
+    tester.delete('root_pkg/build.yaml');
+    tester.write(
+      'root_pkg/lib/a.dart',
+      "part '_br_/a.part.dart';\n\nclass A {}\n",
+    );
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+    );
+    expect(output, isNot(contains('unused `part` directives')));
+    expect(
+      tester.read('root_pkg/lib/a.dart'),
+      "part '_br_/a.part.dart';\n\nclass A {}\n",
     );
 
     // Two builders writing parts to the same library concatenate.

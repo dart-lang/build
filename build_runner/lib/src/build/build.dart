@@ -228,6 +228,16 @@ class Build {
         librariesMissingPartDirective: librariesMissingPartDirective,
       );
     }
+    final librariesWithUnusedPartDirective = await PartDirectives.findUnused(
+      buildState,
+      _builderFilesystem,
+    );
+    if (librariesWithUnusedPartDirective.isNotEmpty) {
+      result = result.copyWith(
+        status: BuildStatus.failure,
+        librariesWithUnusedPartDirective: librariesWithUnusedPartDirective,
+      );
+    }
 
     await resourceManager.disposeAll();
 
