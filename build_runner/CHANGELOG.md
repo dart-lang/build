@@ -9,8 +9,9 @@
   opt in with `adds_to_library: true` and `build_to: source` in `build.yaml`. If
   a library is missing the `part` directive for its shared part, `build_runner`
   adds it and rebuilds; if the directive is unused because builders ran and
-  contributed nothing, `build_runner` removes it and rebuilds. With
-  `--only-check` it reports the directives to add or remove instead.
+  contributed nothing, and nothing in the build failed, `build_runner` removes
+  it and rebuilds. With `--only-check` it reports the directives to add or
+  remove instead.
 - The `serve` command now rejects non-loopback `Host` and `Origin` headers when
   bound to a loopback interface, and validates them against `--hostname` when a
   specific host is given.

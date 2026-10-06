@@ -36,7 +36,8 @@ import 'package:build/build.dart';
 
 Builder writePartBuilderFactory(BuilderOptions options) => WritePartBuilder();
 
-/// Writes a part contribution, unless the library says `// no part`.
+/// Writes a part contribution, unless the library says `// no part`; fails
+/// if it says `// fail`.
 class WritePartBuilder implements Builder {
   @override
   Map<String, List<String>> get buildExtensions => {'.dart': []};
@@ -44,6 +45,10 @@ class WritePartBuilder implements Builder {
   @override
   Future<void> build(BuildStep buildStep) async {
     final source = await buildStep.readAsString(buildStep.inputId);
+    if (source.contains('// fail')) {
+      log.severe('failed');
+      return;
+    }
     if (source.contains('// no part')) return;
     (await buildStep.librarySourceSink)?.add('// part content');
   }
@@ -424,6 +429,22 @@ targets:
       tester.read('root_pkg/lib/a.dart'),
       "part '_br_/a.part.dart';\n\n// no part\nclass A {}\n",
     );
+
+    // If any build step fails, even for another library, unused directives
+    // are left alone: the failure might be why nothing was written.
+    tester.write('root_pkg/lib/b.dart', '// fail\nclass B {}\n');
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+      expectExitCode: 1,
+    );
+    expect(output, contains('on lib/b.dart:\n  failed'));
+    expect(output, isNot(contains('unused `part` directives')));
+    expect(
+      tester.read('root_pkg/lib/a.dart'),
+      "part '_br_/a.part.dart';\n\n// no part\nclass A {}\n",
+    );
+    tester.delete('root_pkg/lib/b.dart');
 
     // Otherwise the directive is removed and the build reruns.
     output = await tester.run(
