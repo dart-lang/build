@@ -437,6 +437,21 @@ targets:
     expect(output, contains(BuildLog.successPattern));
     expect(tester.read('root_pkg/lib/a.dart'), '// no part\nclass A {}\n');
 
+    // The URI is compared by value, so it can be written with escapes.
+    tester.write(
+      'root_pkg/lib/a.dart',
+      "part '_br_/a.part.dar\\x74';\n\n// no part\nclass A {}\n",
+    );
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+    );
+    expect(
+      output,
+      contains('Removed unused `part` directives for generated code:'),
+    );
+    expect(tester.read('root_pkg/lib/a.dart'), '// no part\nclass A {}\n');
+
     // With no builder that adds to the library, nothing says whether the
     // directive is used, so it is left alone.
     tester.delete('root_pkg/build.yaml');

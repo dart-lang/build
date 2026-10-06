@@ -271,8 +271,8 @@ part 'p.dart';
       expect(removed("part 'a.dart';\n\nclass A {}\n"), isNull);
     });
 
-    // Each source here has no directive for `p.dart`; removing what adding
-    // added gives back the source.
+    // Sources with no directive for `p.dart`. Adding the directive to any of
+    // them and then removing it gives back the original source.
     final sources = [
       '',
       'class A {}\n',
@@ -309,6 +309,10 @@ part 'p.dart';
     test('removes only the directive from a line with other code', () {
       expect(removed("part 'a.dart'; part 'p.dart';\n"), "part 'a.dart';\n");
       expect(removed("part 'p.dart'; part 'z.dart';\n"), "part 'z.dart';\n");
+      expect(
+        removed("part 'a.dart'; part 'p.dart'; part 'z.dart';\n"),
+        "part 'a.dart'; part 'z.dart';\n",
+      );
       expect(
         removed("part 'p.dart'; /* c */ int x = 1;\n"),
         '/* c */ int x = 1;\n',

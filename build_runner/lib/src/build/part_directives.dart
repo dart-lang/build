@@ -21,6 +21,8 @@ import 'source_edit.dart';
 /// `part` directives for generated code: finding missing and unused ones,
 /// and adding and removing them.
 abstract final class PartDirectives {
+  static final _partKeyword = RegExp(r'\bpart\b');
+
   /// Libraries that have generated code but no `part` directive including it,
   /// so the generated code has no effect.
   ///
@@ -80,8 +82,10 @@ abstract final class PartDirectives {
       if (partUri == null) continue;
       final content = await filesystem.contentOf(libraryId);
       final source = content.stringValue();
-      // Most libraries do not mention the part, so check that before parsing.
-      if (!source.contains(partUri)) continue;
+      // Most libraries have no `part` directive, so check that before
+      // parsing. The URI could be written with escapes, but the keyword
+      // could not, and it is always a whole word.
+      if (!source.contains(_partKeyword)) continue;
       if (removeEdit(source, partUri) == null) continue;
       result[libraryId] = md5.convert(content.bytes);
     }
@@ -272,55 +276,54 @@ abstract final class PartDirectives {
     if (directive.metadata.isNotEmpty) return null;
     if (directive.documentationComment != null) return null;
 
-    var start = source.lineStart(directive.offset);
-    var end = source.lineEnd(directive.end);
-    final next = directive.endToken.next!;
-    final following = next.precedingCommentList.firstOrNull ?? next;
+    SourceEdit remove(int start, int end) =>
+        SourceEdit.of(offset: start, length: end - start, replacement: '');
+    final lineStart = source.lineStart(directive.offset);
 
     // Other code before it on the line: remove the directive and the space
     // that separates it from that code.
-    if (!source.isBlank(start, directive.offset)) {
-      start = directive.offset;
-      while (source[start - 1] == ' ' || source[start - 1] == '\t') {
-        start--;
+    if (!source.isBlank(lineStart, directive.offset)) {
+      var spaceStart = directive.offset;
+      while (source[spaceStart - 1] == ' ' || source[spaceStart - 1] == '\t') {
+        spaceStart--;
       }
-      return SourceEdit.of(
-        offset: start,
-        length: directive.end - start,
-        replacement: '',
-      );
+      return remove(spaceStart, directive.end);
     }
 
     // Other code or a comment that is not a `//` comment after it on the
     // line: remove the directive and the space up to what follows.
+    final lineEnd = source.lineEnd(directive.end);
+    final next = directive.endToken.next!;
     final onlyLineComments = next.precedingCommentList
-        .where((comment) => comment.offset < end)
+        .where((comment) => comment.offset < lineEnd)
         .every(
           (comment) =>
               comment.lexeme.startsWith('//') &&
               !comment.lexeme.startsWith('///'),
         );
-    if (next.offset < end || !onlyLineComments) {
-      return SourceEdit.of(
-        offset: directive.offset,
-        length: following.offset - directive.offset,
-        replacement: '',
-      );
+    if (next.offset < lineEnd || !onlyLineComments) {
+      final following = next.precedingCommentList.firstOrNull ?? next;
+      return remove(directive.offset, following.offset);
     }
 
     // The whole line.
-    end = source.nextLineStart(end);
-    final previousStart = start == 0 ? null : source.lineStart(start - 1);
+    final nextLineStart = source.nextLineStart(lineEnd);
+    final previousLineStart = lineStart == 0
+        ? null
+        : source.lineStart(lineStart - 1);
     final previousIsBlank =
-        previousStart != null && source.isBlank(previousStart, start);
+        previousLineStart != null &&
+        source.isBlank(previousLineStart, lineStart);
     final nextIsBlank =
-        end < source.length && source.isBlank(end, source.lineEnd(end));
-    if ((start == 0 || previousIsBlank) && nextIsBlank) {
-      end = source.nextLineStart(source.lineEnd(end));
-    } else if (previousIsBlank && end == source.length) {
-      start = previousStart;
+        nextLineStart < source.length &&
+        source.isBlank(nextLineStart, source.lineEnd(nextLineStart));
+    if ((lineStart == 0 || previousIsBlank) && nextIsBlank) {
+      return remove(lineStart, source.nextLineStart(nextLineStart));
     }
-    return SourceEdit.of(offset: start, length: end - start, replacement: '');
+    if (previousIsBlank && nextLineStart == source.length) {
+      return remove(previousLineStart, nextLineStart);
+    }
+    return remove(lineStart, nextLineStart);
   }
 }
 
@@ -338,10 +341,10 @@ extension on String {
     return newline > 0 && this[newline - 1] == '\r' ? newline - 1 : newline;
   }
 
-  /// The start of the line after the line ending at [lineEnd], or [length] if
-  /// there is none.
-  int nextLineStart(int lineEnd) {
-    final newline = indexOf('\n', lineEnd);
+  /// The start of the line after the line containing [offset], or [length]
+  /// if there is none.
+  int nextLineStart(int offset) {
+    final newline = indexOf('\n', offset);
     return newline == -1 ? length : newline + 1;
   }
 
