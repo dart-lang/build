@@ -64,7 +64,11 @@ Builder ddcBuilder(BuilderOptions options) {
 
   if (_readWebHotReloadOption(options)) {
     frontendServerEnvironment = _readEnvironmentOption(options);
-    return DdcFrontendServerBuilder();
+    return DdcFrontendServerBuilder(
+      librariesPath: _readLibrariesPathOption(options),
+      platformSdk: _readPlatformSdkOption(options),
+      sdkKernelPath: _readDdcKernelPathOption(options),
+    );
   }
 
   return DevCompilerBuilder(

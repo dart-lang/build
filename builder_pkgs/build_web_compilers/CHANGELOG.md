@@ -7,6 +7,8 @@
   space.
 - Call DDC with an AOT snapshot via `dart compile js-dev` instead of JIT
   snapshot.
+- Fix `DdcFrontendServerBuilder` to support the same custom sdk build options
+  as `DevCompilerBuilder`.
 
 ## 4.8.11
 

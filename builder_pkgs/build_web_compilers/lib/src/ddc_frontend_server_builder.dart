@@ -14,6 +14,15 @@ import 'platforms.dart';
 
 /// A builder that compiles DDC modules with the Frontend Server.
 class DdcFrontendServerBuilder implements Builder {
+  final String? librariesPath;
+  final String? platformSdk;
+  final String? sdkKernelPath;
+
+  DdcFrontendServerBuilder({
+    this.librariesPath,
+    this.platformSdk,
+    this.sdkKernelPath,
+  });
   @override
   Map<String, List<String>> get buildExtensions => {
     moduleExtension(ddcPlatform): [
@@ -67,10 +76,17 @@ class DdcFrontendServerBuilder implements Builder {
     final stageEntrypoint =
         !entrypointIsStaged || await buildStep.canRead(entrypointAssetId);
     final root = getRootPackageName();
+    final frontendServer = await buildStep.fetchResource(
+      persistentFrontendServerResource,
+    );
+    await frontendServer.ensureStarted(
+      librariesPath: librariesPath,
+      platformSdk: platformSdk,
+      sdkKernelPath: sdkKernelPath,
+    );
     final driver = await buildStep.fetchResource(
       frontendServerProxyDriverResource,
     );
-    await buildStep.fetchResource(persistentFrontendServerResource);
     final entrypointArg = sourceArg(entrypointAssetId);
     // Translates an AssetId to its scratch space file path.
     //
@@ -80,7 +96,6 @@ class DdcFrontendServerBuilder implements Builder {
     String assetPath(AssetId id) => id.package == root
         ? id.path
         : 'packages/${id.package}/${id.path.replaceFirst('lib/', '')}';
-
     try {
       final changedAssetUris = <Uri>[];
       frontendServerState.triggerSharedCompilation(entrypointAssetId, () async {

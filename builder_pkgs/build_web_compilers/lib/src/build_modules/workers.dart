@@ -147,7 +147,7 @@ Future<PersistentFrontendServer> startFrontendServerWorker() async {
   // We bind the Frontend Server worker's filesystem root to that of the scratch
   // space.
   final fesRoot = scratchSpace.tempDir.uri;
-  final fes = await PersistentFrontendServer.start(
+  final fes = PersistentFrontendServer(
     sdkRoot: sdkDir,
     fileSystemRoot: fesRoot,
     packagesFile: fesRoot.resolve(packagesFilePath),
