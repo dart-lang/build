@@ -11,5 +11,4 @@
 /// annotations are matched by name, so each package declares its own.
 library;
 
-export 'src/contract_import_rule.dart' show ContractImportRule;
 export 'src/contract_weaver.dart' show ContractWeaver;

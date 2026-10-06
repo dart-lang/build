@@ -49,7 +49,7 @@ class ContractWeaverCommand {
     final stager = Stager(
       layout: layout,
       stagePath: options.stageDir ?? Stager.defaultStagePath(layout.root),
-      weaver: ContractWeaver(importRules: options.importRules),
+      weaver: ContractWeaver(),
     );
     final stagePath = stager.stageDir.path;
 

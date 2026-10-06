@@ -4,20 +4,14 @@
 
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
-import 'package:built_collection/built_collection.dart';
 import 'package:dart_style/dart_style.dart';
 
+import 'clause_reader.dart';
 import 'contract_collector.dart';
-import 'contract_import_rule.dart';
 import 'source_edits.dart';
 
 /// Weaves executable checks for contract annotations into Dart source.
 class ContractWeaver {
-  ContractWeaver({Iterable<ContractImportRule> importRules = const []})
-    : importRules = importRules.toBuiltList();
-
-  final BuiltList<ContractImportRule> importRules;
-
   /// [source] with its contracts woven in, or [source] unchanged if it has
   /// none.
   ///
@@ -34,33 +28,50 @@ class ContractWeaver {
     final edits = SourceEdits(source);
     unit.accept(ContractCollector(edits));
     if (edits.isEmpty) return source;
-
-    return _format(_addImports(unit, edits.apply()));
+    _addContractImports(unit, edits);
+    return _format(edits.apply());
   }
 
-  /// [woven] with the imports that [importRules] call for.
-  String _addImports(CompilationUnit unit, String woven) {
-    // A library that already imports the target does not need it again. The
-    // existing import is often relative where the rule is absolute, so compare
-    // file names: importing two libraries of the same name is rare, and getting
-    // it wrong fails visibly as an undefined name in the woven copy.
-    final importedFileNames = {
+  /// Adds an import for each `@ContractImport` on the library directive or a
+  /// top level declaration of [unit].
+  ///
+  /// Clauses are strings until they are woven, so a clause can use a library,
+  /// typically for an extension member, that the original cannot import
+  /// without the import being reported as unused. Cofoja has the same
+  /// annotation.
+  void _addContractImports(CompilationUnit unit, SourceEdits edits) {
+    final reader = ClauseReader(edits.source);
+    final imported = {
       for (final directive in unit.directives.whereType<ImportDirective>())
-        if (directive.uri.stringValue case final uri?) uri.split('/').last,
+        directive.uri.stringValue,
     };
-
-    var result = woven;
-    for (final rule in importRules) {
-      if (importedFileNames.contains(rule.import.split('/').last)) continue;
-      if (!rule.markers.any(result.contains)) continue;
-      final firstImport = result.indexOf('import ');
-      if (firstImport == -1) continue;
-      result =
-          '${result.substring(0, firstImport)}'
-          "import '${rule.import}';\n"
-          '${result.substring(firstImport)}';
+    final uris = <String>{
+      for (final directive in unit.directives)
+        ...reader.contractImports(directive.metadata),
+      for (final declaration in unit.declarations)
+        ...reader.contractImports(declaration.metadata),
+    }.difference(imported);
+    if (uris.isEmpty) return;
+    if (unit.directives.any((d) => d is PartOfDirective)) {
+      throw const FormatException(
+        '@ContractImport must be in the library, not in a part.',
+      );
     }
-    return result;
+
+    edits.insert(
+      _importOffset(unit),
+      [for (final uri in uris) "import '$uri';\n"].join(),
+    );
+  }
+
+  /// Where an import can be inserted into [unit]: before its first import,
+  /// export or part directive, or else after its library directive.
+  static int _importOffset(CompilationUnit unit) {
+    for (final directive in unit.directives) {
+      if (directive is! LibraryDirective) return directive.offset;
+    }
+    final library = unit.directives.whereType<LibraryDirective>().firstOrNull;
+    return library == null ? 0 : library.end;
   }
 
   String _format(String woven) {

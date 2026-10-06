@@ -21,6 +21,7 @@ class ClauseReader {
     'Ensures',
     'ThrowEnsures',
     'Invariant',
+    'ContractImport',
   };
 
   /// The source that the annotations were parsed from.
@@ -37,6 +38,11 @@ class ClauseReader {
   /// The `@Invariant` clauses on a class.
   BuiltList<String> invariants(NodeList<Annotation> metadata) =>
       _clauses(metadata, 'Invariant').toBuiltList();
+
+  /// The URIs of the `@ContractImport` annotations in [metadata]: libraries
+  /// that clauses use but the annotated library does not import.
+  List<String> contractImports(NodeList<Annotation> metadata) =>
+      _clauses(metadata, 'ContractImport');
 
   /// The clauses of each annotation called [name] in [metadata], in order.
   ///

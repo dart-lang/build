@@ -1175,5 +1175,75 @@ class Box {
 ''';
       expect(() => ContractWeaver().weave(input), throwsFormatException);
     });
+
+    group('@ContractImport', () {
+      test('imports the URI into a woven library', () {
+        const input = '''
+@ContractImport('package:p/ext.dart')
+library;
+
+import 'contracts.dart';
+
+@Requires('x.isGood')
+void f(int x) {}
+''';
+        final output = ContractWeaver().weave(input);
+        expect(output, contains("library;\n\nimport 'package:p/ext.dart';"));
+      });
+
+      test('on a class, imports before the first import', () {
+        const input = '''
+import 'contracts.dart';
+
+@ContractImport('package:p/ext.dart')
+class A {
+  @Requires('x.isGood')
+  void f(int x) {}
+}
+''';
+        final output = ContractWeaver().weave(input);
+        expect(
+          output,
+          startsWith(
+            "import 'package:p/ext.dart';\n\nimport 'contracts.dart';\n",
+          ),
+        );
+      });
+
+      test('does not import a URI that is already imported', () {
+        const input = '''
+import 'package:p/ext.dart';
+
+@ContractImport('package:p/ext.dart')
+class A {
+  @Requires('x.isGood')
+  void f(int x) {}
+}
+''';
+        final output = ContractWeaver().weave(input);
+        expect("import 'package:p/ext.dart';".allMatches(output), hasLength(1));
+      });
+
+      test('leaves a library with nothing to weave unchanged', () {
+        const input = '''
+@ContractImport('package:p/ext.dart')
+class A {}
+''';
+        expect(ContractWeaver().weave(input), input);
+      });
+
+      test('throws FormatException in a part', () {
+        const input = '''
+part of 'a.dart';
+
+@ContractImport('package:p/ext.dart')
+class A {
+  @Requires('x.isGood')
+  void f(int x) {}
+}
+''';
+        expect(() => ContractWeaver().weave(input), throwsFormatException);
+      });
+    });
   });
 }

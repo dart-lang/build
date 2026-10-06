@@ -18,8 +18,6 @@ class _$WeaverOptions extends WeaverOptions {
   @override
   final String? package;
   @override
-  final BuiltList<ContractImportRule> importRules;
-  @override
   final BuiltList<String> testArgs;
 
   factory _$WeaverOptions([void Function(WeaverOptionsBuilder)? updates]) =>
@@ -31,7 +29,6 @@ class _$WeaverOptions extends WeaverOptions {
     required this.analyzeOnly,
     this.stageDir,
     this.package,
-    required this.importRules,
     required this.testArgs,
   }) : super._();
   @override
@@ -50,7 +47,6 @@ class _$WeaverOptions extends WeaverOptions {
         analyzeOnly == other.analyzeOnly &&
         stageDir == other.stageDir &&
         package == other.package &&
-        importRules == other.importRules &&
         testArgs == other.testArgs;
   }
 
@@ -62,7 +58,6 @@ class _$WeaverOptions extends WeaverOptions {
     _$hash = $jc(_$hash, analyzeOnly.hashCode);
     _$hash = $jc(_$hash, stageDir.hashCode);
     _$hash = $jc(_$hash, package.hashCode);
-    _$hash = $jc(_$hash, importRules.hashCode);
     _$hash = $jc(_$hash, testArgs.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
@@ -76,7 +71,6 @@ class _$WeaverOptions extends WeaverOptions {
           ..add('analyzeOnly', analyzeOnly)
           ..add('stageDir', stageDir)
           ..add('package', package)
-          ..add('importRules', importRules)
           ..add('testArgs', testArgs))
         .toString();
   }
@@ -106,12 +100,6 @@ class WeaverOptionsBuilder
   String? get package => _$this._package;
   set package(String? package) => _$this._package = package;
 
-  ListBuilder<ContractImportRule>? _importRules;
-  ListBuilder<ContractImportRule> get importRules =>
-      _$this._importRules ??= ListBuilder<ContractImportRule>();
-  set importRules(ListBuilder<ContractImportRule>? importRules) =>
-      _$this._importRules = importRules;
-
   ListBuilder<String>? _testArgs;
   ListBuilder<String> get testArgs =>
       _$this._testArgs ??= ListBuilder<String>();
@@ -127,7 +115,6 @@ class WeaverOptionsBuilder
       _analyzeOnly = $v.analyzeOnly;
       _stageDir = $v.stageDir;
       _package = $v.package;
-      _importRules = $v.importRules.toBuilder();
       _testArgs = $v.testArgs.toBuilder();
       _$v = null;
     }
@@ -170,14 +157,11 @@ class WeaverOptionsBuilder
             ),
             stageDir: stageDir,
             package: package,
-            importRules: importRules.build(),
             testArgs: testArgs.build(),
           );
     } catch (_) {
       late String _$failedField;
       try {
-        _$failedField = 'importRules';
-        importRules.build();
         _$failedField = 'testArgs';
         testArgs.build();
       } catch (e) {

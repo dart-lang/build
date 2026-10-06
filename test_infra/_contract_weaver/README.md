@@ -100,6 +100,11 @@ class Invariant {
   final String clause;
   const Invariant(this.clause);
 }
+
+class ContractImport {
+  final String uri;
+  const ContractImport(this.uri);
+}
 ```
 
 That library should import nothing. The weaver injects the runtime support
@@ -110,6 +115,12 @@ copy exists only to be checked, so it always checks.
 
 Any annotation with a matching name is woven. That is a deliberate trade: no
 coupling, at the cost of no type identity.
+
+A clause may use a library that its own library does not import, typically for
+an extension member; importing it there would be reported as unused, because
+clauses are strings. Put `@ContractImport('package:p/src/x.dart')` on the
+library directive or on any top level declaration, and the woven copy of the
+library imports it. Cofoja has the same annotation.
 
 ### Run
 
@@ -132,11 +143,6 @@ Options:
 | `--stage-dir=PATH` | Where to build the woven copy. Defaults to a directory under the system temp directory. |
 | `--clean` | Delete the stage directory first. |
 | `--analyze-only` | Analyze the woven copy and skip the tests. |
-| `--contract-import=M1,M2=URI` | Import `URI` into woven sources mentioning any marker. Repeatable. |
-
-`--contract-import` exists because a clause may name something the library does
-not import, typically an extension member. Cofoja solves this with
-`@ContractImport` on the enclosing type; that is the intended replacement.
 
 ## The CI gate
 

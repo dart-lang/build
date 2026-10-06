@@ -6,7 +6,6 @@ import 'package:args/args.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 
-import '../contract_import_rule.dart';
 import 'weaver_exception.dart';
 
 part 'weaver_options.g.dart';
@@ -38,12 +37,6 @@ abstract class WeaverOptions
       'analyze-only',
       negatable: false,
       help: 'Analyze the woven copy and skip the tests.',
-    )
-    ..addMultiOption(
-      'contract-import',
-      valueHelp: 'M1,M2=URI',
-      splitCommas: false,
-      help: 'Import URI into woven sources mentioning any marker. Repeatable.',
     );
 
   static String get usage => '''
@@ -64,8 +57,6 @@ ${_parser.usage}''';
 
   String? get package;
 
-  BuiltList<ContractImportRule> get importRules;
-
   /// Arguments passed through to `dart test`.
   BuiltList<String> get testArgs;
 
@@ -84,22 +75,6 @@ ${_parser.usage}''';
       throw WeaverException('${e.message}\n\n$usage');
     }
 
-    final importRules = <ContractImportRule>[];
-    for (final spec in results.multiOption('contract-import')) {
-      final split = spec.lastIndexOf('=');
-      if (split == -1) {
-        throw WeaverException(
-          'Malformed --contract-import, expected MARKERS=URI: $spec',
-        );
-      }
-      importRules.add(
-        ContractImportRule.of(
-          markers: spec.substring(0, split).split(','),
-          import: spec.substring(split + 1),
-        ),
-      );
-    }
-
     return WeaverOptions(
       (b) => b
         ..help = results.flag('help')
@@ -107,7 +82,6 @@ ${_parser.usage}''';
         ..analyzeOnly = results.flag('analyze-only')
         ..stageDir = results.option('stage-dir')
         ..package = results.option('package')
-        ..importRules.replace(importRules)
         ..testArgs.replace(results.rest),
     );
   }

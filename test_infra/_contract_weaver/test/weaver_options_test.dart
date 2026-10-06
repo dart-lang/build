@@ -4,7 +4,6 @@
 
 import 'package:_contract_weaver/src/cli/weaver_exception.dart';
 import 'package:_contract_weaver/src/cli/weaver_options.dart';
-import 'package:_contract_weaver/src/contract_import_rule.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -67,29 +66,6 @@ void main() {
         expect(options.help, isTrue);
         expect(options.testArgs, isEmpty);
       }
-    });
-
-    test('parses repeated import rules', () {
-      expect(
-        WeaverOptions.parse([
-          '--contract-import=.a,.b=package:p/a.dart',
-          '--contract-import=.c=package:p/c.dart',
-        ]).importRules,
-        [
-          ContractImportRule.of(
-            markers: ['.a', '.b'],
-            import: 'package:p/a.dart',
-          ),
-          ContractImportRule.of(markers: ['.c'], import: 'package:p/c.dart'),
-        ],
-      );
-    });
-
-    test('rejects an import rule without a URI', () {
-      expect(
-        () => WeaverOptions.parse(['--contract-import=.a']),
-        throwsA(isA<WeaverException>()),
-      );
     });
   });
 }
