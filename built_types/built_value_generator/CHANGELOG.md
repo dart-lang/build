@@ -1,7 +1,11 @@
 # Changelog
 
-## 8.13.1-wip
+## 8.14.0-wip
 
+- Support generating to `BuildStep.librarySourceSink`, new and experimental
+  in `build` 4.1.0. A library with `part 'x.g.dart';` still generates to
+  `x.g.dart`; a library without it now generates to the shared part file that
+  `build_runner` adds. Requires `build` 4.1.0.
 - Allow `built_collection` 6.x.
 - Migrate to `package:dart_flutter_team_lints`.
 - Fix analysis issues and remove the lint suppressions that hid them.

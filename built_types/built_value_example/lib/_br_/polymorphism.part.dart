@@ -1,11 +1,7 @@
-// GENERATED CODE - DO NOT MODIFY BY HAND
+// dart format off
+part of '../polymorphism.dart';
 
-part of 'polymorphism.dart';
-
-// **************************************************************************
-// BuiltValueGenerator
-// **************************************************************************
-
+// === built_value_generator:br_part contribution.
 Serializer<Cat> _$catSerializer = _$CatSerializer();
 Serializer<Fish> _$fishSerializer = _$FishSerializer();
 
@@ -313,3 +309,4 @@ class FishBuilder implements Builder<Fish, FishBuilder>, AnimalBuilder {
 }
 
 // ignore_for_file: deprecated_member_use_from_same_package,type=lint
+

@@ -1,5 +1,5 @@
 name: built_value_generator
-version: 8.13.1-wip
+version: 8.14.0-wip
 description: >
   Value types with builders, Dart classes as enums, and serialization.
   This library is the dev dependency.
@@ -16,7 +16,7 @@ environment:
 
 dependencies:
   analyzer: '>=13.0.0 <15.0.0'
-  build: '>=3.0.0 <5.0.0'
+  build: '>=4.1.0-wip <5.0.0'
   build_config: ^1.2.0
   built_collection: '>=5.0.0 <7.0.0'
   built_value: '>=8.1.0 <8.14.0'
