@@ -390,8 +390,6 @@ class PersistentFrontendServer {
       if (roots != null)
         for (final root in roots) '--filesystem-root=${root.toFilePath()}',
       if (librariesPath != null) '--libraries-spec=$librariesPath',
-      if (platformSdk != null) '--platform-sdk=$platformSdk',
-      if (sdkKernelPath != null) '--sdk-kernel-path=$sdkKernelPath',
       '--platform=$platformDill',
       '--output-dill=${outputDillUri.toFilePath()}',
       '--output-incremental-dill=${outputDillUri.toFilePath()}',
