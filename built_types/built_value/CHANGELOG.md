@@ -1,5 +1,12 @@
 # Changelog
 
+## 8.13.1-wip
+
+- Allow `built_collection` 6.x.
+- Document how missing and `null` fields are deserialized.
+- Migrate to `package:dart_flutter_team_lints`.
+- Fix analysis issues and remove the lint suppressions that hid them.
+
 ## 8.13.0
 
 - Support generating from classes and enums that use the `new` syntax for

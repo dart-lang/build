@@ -33,8 +33,8 @@ class ListMultimapBuilder<K, V> {
   /// number of `BuiltListMultimap`s.
   BuiltListMultimap<K, V> build() {
     if (_builtMapOwner == null) {
-      for (var key in _builderMap.keys) {
-        var builtList = _builderMap[key]!.build();
+      for (final key in _builderMap.keys) {
+        final builtList = _builderMap[key]!.build();
         if (builtList.isEmpty) {
           _builtMap.remove(key);
         } else {
@@ -76,10 +76,12 @@ class ListMultimapBuilder<K, V> {
   ///
   /// [key] and [value] default to the identity function. [values] is ignored
   /// if not specified.
-  void addIterable<T>(Iterable<T> iterable,
-      {K Function(T)? key,
-      V Function(T)? value,
-      Iterable<V> Function(T)? values}) {
+  void addIterable<T>(
+    Iterable<T> iterable, {
+    K Function(T)? key,
+    V Function(T)? value,
+    Iterable<V> Function(T)? values,
+  }) {
     if (value != null && values != null) {
       throw ArgumentError('expected value or values to be set, got both');
     }
@@ -87,12 +89,12 @@ class ListMultimapBuilder<K, V> {
     key ??= (T x) => x as K;
 
     if (values != null) {
-      for (var element in iterable) {
+      for (final element in iterable) {
         addValues(key(element), values(element));
       }
     } else {
       value ??= (T x) => x as V;
-      for (var element in iterable) {
+      for (final element in iterable) {
         add(key(element), value(element));
       }
     }
@@ -111,9 +113,9 @@ class ListMultimapBuilder<K, V> {
   /// As [ListMultimap.addValues].
   void addValues(K key, Iterable<V> values) {
     // _disown is called in add.
-    values.forEach((value) {
+    for (final value in values) {
       add(key, value);
-    });
+    }
   }
 
   /// As [ListMultimap.remove].
@@ -127,12 +129,12 @@ class ListMultimapBuilder<K, V> {
   BuiltList<V> removeAll(Object? key) {
     if (key is! K) return BuiltList<V>();
     _makeWriteableCopy();
-    var builder = _builderMap[key];
+    final builder = _builderMap[key];
     if (builder == null) {
       _builderMap[key] = ListBuilder<V>();
       return _builtMap[key] ?? BuiltList<V>();
     }
-    var old = builder.build();
+    final old = builder.build();
     builder.clear();
     return old;
   }
@@ -158,7 +160,7 @@ class ListMultimapBuilder<K, V> {
   ListBuilder<V> _getValuesBuilder(K key) {
     var result = _builderMap[key];
     if (result == null) {
-      var builtValues = _builtMap[key];
+      final builtValues = _builtMap[key];
       if (builtValues == null) {
         result = ListBuilder<V>();
       } else {
@@ -189,14 +191,15 @@ class ListMultimapBuilder<K, V> {
     _builtMap = <K, BuiltList<V>>{};
     _builderMap = <K, ListBuilder<V>>{};
 
-    for (var key in keys) {
+    for (final key in keys) {
       if (key is K) {
-        for (var value in lookup(key)) {
+        for (final value in lookup(key)) {
           if (value is V) {
             add(key, value);
           } else {
             throw ArgumentError(
-                'map contained invalid value: $value, for key $key');
+              'map contained invalid value: $value, for key $key',
+            );
           }
         }
       } else {

@@ -23,9 +23,11 @@ void expectMuchFaster(Function fastFunction, Function slowFunction) {
     }
   }
 
-  throw 'Expected first function to be at least 10x faster than second!'
-      ' Measured: first=${fastStopWatch.elapsedMicroseconds}'
-      ' second=${slowStopWatch.elapsedMicroseconds}';
+  throw StateError(
+    'Expected first function to be at least 10x faster than second!'
+    ' Measured: first=${fastStopWatch.elapsedMicroseconds}'
+    ' second=${slowStopWatch.elapsedMicroseconds}',
+  );
 }
 
 void expectNotMuchFaster(Function notFastFunction, Function slowFunction) {
@@ -49,9 +51,11 @@ void expectNotMuchFaster(Function notFastFunction, Function slowFunction) {
     }
   }
 
-  throw 'Expected first function to be less than 10x faster than second!'
-      ' Measured: first=${fastStopWatch.elapsedMicroseconds}'
-      ' second=${slowStopWatch.elapsedMicroseconds}';
+  throw StateError(
+    'Expected first function to be less than 10x faster than second!'
+    ' Measured: first=${fastStopWatch.elapsedMicroseconds}'
+    ' second=${slowStopWatch.elapsedMicroseconds}',
+  );
 }
 
 class HashCodeSpy {

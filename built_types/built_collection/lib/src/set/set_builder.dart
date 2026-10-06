@@ -17,11 +17,6 @@ class SetBuilder<E> {
   late Set<E> _set;
   _BuiltSet<E>? _setOwner;
 
-  /// Instantiates with elements from an [Iterable<E>].
-  factory SetBuilder.of(Iterable<E> iterable) {
-    return SetBuilder<E>._uninitialized().._replaceOf(iterable);
-  }
-
   /// Instantiates with elements from an [Iterable].
   factory SetBuilder([Iterable iterable = const []]) {
     return SetBuilder<E>._uninitialized()..replace(iterable);
@@ -47,8 +42,8 @@ class SetBuilder<E> {
       _withOwner(iterable);
     } else {
       // Can't use addAll because it requires an Iterable<E>.
-      var set = _createSet();
-      for (var element in iterable) {
+      final set = _createSet();
+      for (final element in iterable) {
         if (element is E) {
           set.add(element);
         } else {
@@ -56,15 +51,6 @@ class SetBuilder<E> {
         }
       }
       _setSafeSet(set);
-    }
-  }
-
-  /// Replaces all elements with elements from an [Iterable<E>].
-  void _replaceOf(Iterable<E> iterable) {
-    if (iterable is _BuiltSet<E> && iterable._setFactory == _setFactory) {
-      _withOwner(iterable);
-    } else {
-      _setSafeSet(_createSet()..addAll(iterable));
     }
   }
 
@@ -84,7 +70,7 @@ class SetBuilder<E> {
   /// same type.
   ///
   /// Use [withDefaultBase] to reset `base` to the default value.
-  void withBase(_SetFactory<E> base) {
+  void withBase(Set<E> Function() base) {
     ArgumentError.checkNotNull(base, 'base');
     _setFactory = base;
     _setSafeSet(_createSet()..addAll(_set));
@@ -155,7 +141,7 @@ class SetBuilder<E> {
 
   /// As [Iterable.map], but updates the builder in place. Returns nothing.
   void map(E Function(E) f) {
-    var result = _createSet()..addAll(_set.map(f));
+    final result = _createSet()..addAll(_set.map(f));
     _maybeCheckElements(result);
     _setSafeSet(result);
   }
@@ -167,7 +153,7 @@ class SetBuilder<E> {
 
   /// As [Iterable.expand], but updates the builder in place. Returns nothing.
   void expand(Iterable<E> Function(E) f) {
-    var result = _createSet()..addAll(_set.expand(f));
+    final result = _createSet()..addAll(_set.expand(f));
     _maybeCheckElements(result);
     _setSafeSet(result);
   }
@@ -199,13 +185,15 @@ class SetBuilder<E> {
   SetBuilder._uninitialized();
 
   SetBuilder._fromBuiltSet(_BuiltSet<E> set)
-      : _setFactory = set._setFactory,
-        _set = set._set,
-        _setOwner = set;
+    : _setFactory = set._setFactory,
+      _set = set._set,
+      _setOwner = set;
 
   void _withOwner(_BuiltSet<E> setOwner) {
-    assert(setOwner._setFactory == _setFactory,
-        "Can't reuse a built set that uses a different base");
+    assert(
+      setOwner._setFactory == _setFactory,
+      "Can't reuse a built set that uses a different base",
+    );
     _set = setOwner._set;
     _setOwner = setOwner;
   }
@@ -239,7 +227,7 @@ class SetBuilder<E> {
 
   void _maybeCheckElements(Iterable<E> elements) {
     if (!_needsNullCheck) return;
-    for (var element in elements) {
+    for (final element in elements) {
       _checkElement(element);
     }
   }

@@ -2,7 +2,7 @@
 // All rights reserved. Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-library built_value_generator.source_class;
+library;
 
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/ast/ast.dart';
@@ -11,17 +11,17 @@ import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
-import 'package:built_value_generator/src/fixes.dart';
-import 'package:built_value_generator/src/memoized_getter.dart';
-import 'package:built_value_generator/src/metadata.dart';
-import 'package:built_value_generator/src/parsed_library_results.dart';
-import 'package:built_value_generator/src/strings.dart';
-import 'package:built_value_generator/src/value_source_field.dart';
 import 'package:collection/collection.dart';
 import 'package:source_gen/source_gen.dart';
 
 import 'dart_types.dart';
+import 'fixes.dart';
 import 'library_elements.dart';
+import 'memoized_getter.dart';
+import 'metadata.dart';
+import 'parsed_library_results.dart';
+import 'strings.dart';
+import 'value_source_field.dart';
 
 part 'value_source_class.g.dart';
 
@@ -68,7 +68,7 @@ abstract class ValueSourceClass
 
   @memoized
   ClassElement? get builderElement {
-    var result = element.library.getClass(name + 'Builder');
+    final result = element.library.getClass('${name}Builder');
     if (result == null) return null;
     // If the builder is in a generated file, then we're analyzing _after_ code
     // generation. Ignore it. This happens when running as an analyzer plugin.
@@ -97,7 +97,7 @@ abstract class ValueSourceClass
     // This means it _is_ allowed to have concrete getters as well as
     // concrete and abstract methods.
 
-    for (var supertype in [
+    for (final supertype in [
       element.supertype,
       ...element.supertype!.element.allSupertypes,
     ]) {
@@ -134,11 +134,11 @@ abstract class ValueSourceClass
 
   @memoized
   BuiltValue get settings {
-    var annotations = element.metadata.annotations
+    final annotations = element.metadata.annotations
         .map((annotation) => annotation.computeConstantValue())
         .where((value) => DartTypes.tryGetName(value?.type) == 'BuiltValue');
     if (annotations.isEmpty) return const BuiltValue();
-    var annotation = annotations.single!;
+    final annotation = annotations.single!;
     // If a field does not exist, that means an old `built_value` version; use
     // the default.
     return BuiltValue(
@@ -168,7 +168,7 @@ abstract class ValueSourceClass
   @memoized
   BuiltList<String> get genericBounds => BuiltList<String>(
         element.typeParameters.map((element) {
-          var bound = element.bound;
+          final bound = element.bound;
           if (bound == null) return '';
           return DartTypes.getName(bound) +
               (element.bound!.nullabilitySuffix == NullabilitySuffix.question
@@ -203,15 +203,15 @@ abstract class ValueSourceClass
 
   @memoized
   BuiltMap<String, BuiltValueHook> get hooks {
-    var result = MapBuilder<String, BuiltValueHook>();
-    for (var method in element.methods) {
-      var annotations = method.metadata.annotations
+    final result = MapBuilder<String, BuiltValueHook>();
+    for (final method in element.methods) {
+      final annotations = method.metadata.annotations
           .map((annotation) => annotation.computeConstantValue())
           .where(
             (value) => DartTypes.tryGetName(value?.type) == 'BuiltValueHook',
           );
       if (annotations.isEmpty) continue;
-      var annotation = annotations.single!;
+      final annotation = annotations.single!;
       // If a field does not exist, that means an old `built_value` version; use
       // the default.
       result[method.name!] = BuiltValueHook(
@@ -230,7 +230,7 @@ abstract class ValueSourceClass
         .where((interfaceType) => interfaceType.element.name == 'Builder')
         .single
         .typeArguments
-        .map((type) => DartTypes.getName(type))
+        .map(DartTypes.getName)
         .join(', ');
   }
 
@@ -248,7 +248,7 @@ abstract class ValueSourceClass
 
   @memoized
   String get partStatement {
-    var fileName = element.library.firstFragment.source.shortName.replaceAll(
+    final fileName = element.library.firstFragment.source.shortName.replaceAll(
       '.dart',
       '',
     );
@@ -257,7 +257,7 @@ abstract class ValueSourceClass
 
   @memoized
   bool get hasPartStatement {
-    var expectedCode = partStatement;
+    final expectedCode = partStatement;
     return source.contains(expectedCode);
   }
 
@@ -370,11 +370,9 @@ abstract class ValueSourceClass
 
   String _parentBuilderInterfaceName(InterfaceType interface) {
     final displayName = DartTypes.getName(interface);
-    if (!displayName.contains('<')) return displayName + 'Builder';
+    if (!displayName.contains('<')) return '${displayName}Builder';
     final index = displayName.indexOf('<');
-    return displayName.substring(0, index) +
-        'Builder' +
-        displayName.substring(index);
+    return '${displayName.substring(0, index)}Builder${displayName.substring(index)}';
   }
 
   bool get _implementsParentBuilder =>
@@ -382,13 +380,13 @@ abstract class ValueSourceClass
 
   @memoized
   bool get implementsHashCode {
-    var getter = element.getGetter('hashCode');
+    final getter = element.getGetter('hashCode');
     return getter != null && !getter.isAbstract;
   }
 
   @memoized
   bool get declaresMemoizedHashCode {
-    var getter = element.getGetter('hashCode');
+    final getter = element.getGetter('hashCode');
     return getter != null &&
         getter.isAbstract &&
         getter.metadata.annotations.any(
@@ -403,8 +401,8 @@ abstract class ValueSourceClass
   bool get implementsToString {
     // Check for any `toString` implementation apart from the one defined on
     // `Object`.
-    var method = element.lookUpConcreteMethod('toString', element.library)!;
-    var clazz = method.enclosingElement;
+    final method = element.lookUpConcreteMethod('toString', element.library)!;
+    final clazz = method.enclosingElement;
     return clazz is! ClassElement || clazz.name != 'Object';
   }
 
@@ -431,14 +429,14 @@ abstract class ValueSourceClass
       ..._checkValueClass(),
       ..._checkBuilderClass(),
       ..._checkFieldList(),
-      for (var field in fields) ...field.computeErrors(),
+      for (final field in fields) ...field.computeErrors(),
     ];
   }
 
   Iterable<GeneratorError> _checkPart() {
     if (hasPartStatement) return [];
 
-    var directives = (classDeclaration.parent as CompilationUnit).directives;
+    final directives = (classDeclaration.parent as CompilationUnit).directives;
     if (directives.isEmpty) {
       return [
         GeneratorError(
@@ -480,7 +478,7 @@ abstract class ValueSourceClass
   }
 
   Iterable<GeneratorError> _checkValueClass() {
-    var result = <GeneratorError>[];
+    final result = <GeneratorError>[];
 
     if (!valueClassIsAbstract) {
       result.add(
@@ -516,10 +514,11 @@ abstract class ValueSourceClass
       );
     }
 
-    var implementsClause = classDeclaration.implementsClause;
-    var expectedInterface = 'Built<$name$_generics, ${name}Builder$_generics>';
+    final implementsClause = classDeclaration.implementsClause;
+    final expectedInterface =
+        'Built<$name$_generics, ${name}Builder$_generics>';
 
-    var implementsClauseIsCorrect = implementsClause != null &&
+    final implementsClauseIsCorrect = implementsClause != null &&
         implementsClause.interfaces.any(
           (type) => type.toSource() == expectedInterface,
         );
@@ -529,7 +528,7 @@ abstract class ValueSourceClass
     // case of the `Built` interface being implemented. This is to allow
     // omitting the `Built` interface to work around having to implement the
     // same interface twice with different type parameters.
-    var implementsClauseIsAllowedToBeIncorrect = !settings.instantiable &&
+    final implementsClauseIsAllowedToBeIncorrect = !settings.instantiable &&
         (implementsClause == null ||
             !implementsClause.interfaces.any(
               (type) =>
@@ -646,12 +645,12 @@ abstract class ValueSourceClass
           );
         }
       }
-      for (var hook in hooks.entries.where(
+      for (final hook in hooks.entries.where(
         (hook) => hook.value.initializeBuilder || hook.value.finalizeBuilder,
       )) {
         if (hook.key == '_initializeBuilder') continue;
         if (hook.key == '_finalizeBuilder') continue;
-        var method =
+        final method =
             element.methods.where((method) => method.name == hook.key).single;
         if (!isStaticBuilderHook(method)) {
           result.add(
@@ -687,7 +686,7 @@ abstract class ValueSourceClass
         );
       } else if (valueClassConstructors.length > 1) {
         var found = false;
-        for (var constructor in valueClassConstructors) {
+        for (final constructor in valueClassConstructors) {
           if (constructorCheck(constructor)) {
             found = true;
           } else {
@@ -728,7 +727,7 @@ abstract class ValueSourceClass
                   : 'Make class have exactly one constructor: $expectedConstructor'
               ..offset = valueClassConstructors.single.offset
               ..length = valueClassConstructors.single.length
-              ..fix = expectedConstructor + ';',
+              ..fix = '$expectedConstructor;',
           ),
         );
       }
@@ -799,7 +798,7 @@ abstract class ValueSourceClass
   }
 
   Iterable<GeneratorError> _checkBuilderClass() {
-    var result = <GeneratorError>[];
+    final result = <GeneratorError>[];
     if (!hasBuilder) return result;
 
     if (!builderClassIsAbstract) {
@@ -909,31 +908,29 @@ abstract class ValueSourceClass
         ? [
             GeneratorError(
               (b) => b
-                ..message = 'Make builder have exactly these fields: ' +
-                    fields.map((field) => field.name).join(', '),
+                ..message =
+                    'Make builder have exactly these fields: ${fields.map((field) => field.name).join(', ')}',
             ),
           ]
         : [];
   }
 
   String get _generics =>
-      genericParameters.isEmpty ? '' : '<' + genericParameters.join(', ') + '>';
+      genericParameters.isEmpty ? '' : '<${genericParameters.join(', ')}>';
 
   String get _boundedGenerics => genericParameters.isEmpty
       ? ''
-      : '<' +
-          IterableZip([genericParameters, genericBounds]).map((zipped) {
-            final parameter = zipped[0];
-            final bound = zipped[1];
-            return bound.isEmpty ? parameter : '$parameter extends $bound';
-          }).join(', ') +
-          '>';
+      : '<${IterableZip([genericParameters, genericBounds]).map((zipped) {
+          final parameter = zipped[0];
+          final bound = zipped[1];
+          return bound.isEmpty ? parameter : '$parameter extends $bound';
+        }).join(', ')}>';
 
   String generateCode() {
-    var errors = computeErrors();
+    final errors = computeErrors();
     if (errors.isNotEmpty) throw _makeError(errors);
 
-    var result = StringBuffer();
+    final result = StringBuffer();
     if (settings.instantiable) result.write(_generateImpl());
     if (settings.instantiable) {
       result.write(_generateBuilder());
@@ -945,19 +942,19 @@ abstract class ValueSourceClass
 
   /// Generates the value class implementation.
   String _generateImpl() {
-    var result = StringBuffer();
+    final result = StringBuffer();
     result.writeln(
       'class $implName$_boundedGenerics '
       'extends $name$_generics {',
     );
-    for (var field in fields) {
+    for (final field in fields) {
       final type = field.typeInLibraryFragment(libraryFragment);
       result.writeln('@override');
       result.writeln(
         'final $type${field.isNullable ? '?' : ''} ${field.name};',
       );
     }
-    for (var memoizedGetter in memoizedGetters) {
+    for (final memoizedGetter in memoizedGetters) {
       result.writeln('${memoizedGetter.returnType}? __${memoizedGetter.name};');
       if (memoizedGetter.isNullable) {
         // Nullable memoiozed getters needs a field to store whether they are
@@ -994,7 +991,7 @@ abstract class ValueSourceClass
       result.write('$implName._({');
       result.write(
         fields.map((field) {
-          var maybeRequired = field.isNullable ? '' : 'required ';
+          final maybeRequired = field.isNullable ? '' : 'required ';
           return '${maybeRequired}this.${field.name}';
         }).join(', '),
       );
@@ -1002,7 +999,7 @@ abstract class ValueSourceClass
     }
     result.writeln();
 
-    for (var memoizedGetter in memoizedGetters) {
+    for (final memoizedGetter in memoizedGetters) {
       result.writeln('@override');
       if (memoizedGetter.isNullable) {
         result.writeln(
@@ -1080,7 +1077,7 @@ abstract class ValueSourceClass
 
   /// Generates the builder implementation.
   String _generateBuilder() {
-    var result = StringBuffer();
+    final result = StringBuffer();
     if (hasBuilder) {
       result.writeln(
         'class ${implName}Builder$_boundedGenerics '
@@ -1103,7 +1100,7 @@ abstract class ValueSourceClass
     result.writeln('$implName$_generics? _\$v;');
     result.writeln('');
 
-    for (var field in fields) {
+    for (final field in fields) {
       late final String type;
 
       if (field.isNestedBuilder) {
@@ -1192,7 +1189,7 @@ abstract class ValueSourceClass
       if (hasBuilderInitializer) {
         result.writeln('$name._initializeBuilder(this);');
       }
-      for (var hook in hooks.entries) {
+      for (final hook in hooks.entries) {
         if (hook.value.initializeBuilder) {
           result.writeln('$name.${hook.key}(this);');
         }
@@ -1208,14 +1205,14 @@ abstract class ValueSourceClass
       result.writeln('${name}Builder$_generics get _\$this {');
       result.writeln('final \$v = _\$v;');
       result.writeln('if (\$v != null) {');
-      for (var field in fields) {
+      for (final field in fields) {
         final name = field.name;
         final nameInBuilder =
             field.builderFieldExists && !field.builderFieldIsAbstract
                 ? 'super.$name'
                 : '_$name';
         if (field.isNestedBuilder) {
-          var maybeOrNull = field.isNullable ? '?' : '';
+          final maybeOrNull = field.isNullable ? '?' : '';
           result.writeln(
             '$nameInBuilder = '
             '\$v.$name$maybeOrNull.toBuilder();',
@@ -1264,7 +1261,7 @@ abstract class ValueSourceClass
     if (hasBuilderFinalizer) {
       result.writeln('$name._finalizeBuilder(this);');
     }
-    for (var hook in hooks.entries) {
+    for (final hook in hooks.entries) {
       if (hook.value.finalizeBuilder) {
         result.writeln('$name.${hook.key}(this);');
       }
@@ -1273,10 +1270,10 @@ abstract class ValueSourceClass
     // Construct a map from field to how it's built. If it's a normal field,
     // this is just the field name; if it's a nested builder, this is an
     // invocation of the nested builder taking into account nullability.
-    var fieldBuilders = <String, String>{};
-    var needsNullCheck = <String>{};
-    var genericFields = <String, String>{};
-    fields.forEach((field) {
+    final fieldBuilders = <String, String>{};
+    final needsNullCheck = <String>{};
+    final genericFields = <String, String>{};
+    for (final field in fields) {
       final name = field.name;
       if (!field.isNestedBuilder) {
         fieldBuilders[name] = name;
@@ -1301,11 +1298,11 @@ abstract class ValueSourceClass
         fieldBuilders[name] = '_$name?.build()';
         if (!field.isNullable) needsNullCheck.add(name);
       }
-    });
+    }
 
     // If there are nested builders then wrap the build in a try/catch so we
     // can add information should a nested builder fail.
-    var needsTryCatchOnBuild = fieldBuilders.keys.any(
+    final needsTryCatchOnBuild = fieldBuilders.keys.any(
       (field) => fieldBuilders[field] != field,
     );
 
@@ -1378,20 +1375,20 @@ abstract class ValueSourceClass
   }
 
   String _generateEqualsAndHashcode({bool forBuilder = false}) {
-    var result = StringBuffer();
+    final result = StringBuffer();
 
-    var comparedFields = fields
+    final comparedFields = fields
         .where(
           (field) => field.builtValueField.compare ?? settings.defaultCompare,
         )
         .toList();
-    var comparedFunctionFields =
+    final comparedFunctionFields =
         comparedFields.where((field) => field.isFunctionType).toList();
     result.writeln('@override');
     result.writeln('bool operator==(Object other) {');
     result.writeln('  if (identical(other, this)) return true;');
 
-    var needsDynamic =
+    final needsDynamic =
         comparedFunctionFields.isNotEmpty && genericParameters.isNotEmpty;
 
     if (needsDynamic) {
@@ -1402,7 +1399,7 @@ abstract class ValueSourceClass
       result.writeln('&&');
       result.writeln(
         comparedFields.map((field) {
-          var nameOrThisDotName =
+          final nameOrThisDotName =
               field.name == 'other' ? 'this.other' : field.name;
           return needsDynamic && field.isFunctionType
               ? '$nameOrThisDotName == _\$dynamicOther.${field.name}'
@@ -1414,7 +1411,7 @@ abstract class ValueSourceClass
     result.writeln('}');
     result.writeln();
 
-    var generateMemoizedHashCode =
+    final generateMemoizedHashCode =
         declaresMemoizedHashCode && comparedFields.isNotEmpty;
     if (generateMemoizedHashCode) {
       result.writeln('int? __hashCode;');
@@ -1435,7 +1432,7 @@ abstract class ValueSourceClass
       final seed = forBuilder ? 1 : 0;
       result.writeln('var _\$hash  = $seed;');
 
-      for (var field in comparedFields) {
+      for (final field in comparedFields) {
         result.writeln('_\$hash = \$jc(_\$hash, ${field.name}.hashCode);');
       }
 
@@ -1455,13 +1452,13 @@ abstract class ValueSourceClass
 
   /// Generates an abstract builder with just abstract setters and getters.
   String _generateAbstractBuilder() {
-    var result = StringBuffer();
+    final result = StringBuffer();
 
     // The "Built" interface has been omitted to work around dart2js issue
     // https://github.com/dart-lang/sdk/issues/14729. So, we can't implement
     // "Builder". Add the methods explicitly. We can however implement any
     // other built_value interfaces.
-    var interfaces = [...builderImplements.skip(1), ...builderMixins];
+    final interfaces = [...builderImplements.skip(1), ...builderMixins];
 
     if (implementsBuilt) {
       result.writeln(
@@ -1471,7 +1468,7 @@ abstract class ValueSourceClass
     } else {
       result.writeln(
         'abstract $_class ${name}Builder$_boundedGenerics '
-        '${interfaces.isEmpty ? '' : 'implements ' + interfaces.join(', ')}'
+        '${interfaces.isEmpty ? '' : 'implements ${interfaces.join(', ')}'}'
         '{',
       );
 
@@ -1485,8 +1482,8 @@ abstract class ValueSourceClass
       );
     }
 
-    for (var field in fields) {
-      var type = field.isNestedBuilder
+    for (final field in fields) {
+      final type = field.isNestedBuilder
           ? field.typeInBuilder(libraryFragment)
           : field.typeInLibraryFragment(libraryFragment);
       final name = field.name;
@@ -1511,7 +1508,7 @@ abstract class ValueSourceClass
 }
 
 InvalidGenerationSourceError _makeError(Iterable<GeneratorError> todos) {
-  var message = StringBuffer(
+  final message = StringBuffer(
     'Please make the following changes to use BuiltValue:\n',
   );
   for (var i = 0; i != todos.length; ++i) {

@@ -21,6 +21,8 @@ class _$BuildInputs extends BuildInputs {
   final BuiltSet<AssetId> deletedSources;
   @override
   final BuiltSet<AssetId> invalidOutputs;
+  @override
+  final BuiltMap<AssetId, FinishedSharedPart> sharedParts;
 
   factory _$BuildInputs([void Function(BuildInputsBuilder)? updates]) =>
       (BuildInputsBuilder()..update(updates))._build();
@@ -33,6 +35,7 @@ class _$BuildInputs extends BuildInputs {
     required this.updatedSources,
     required this.deletedSources,
     required this.invalidOutputs,
+    required this.sharedParts,
   }) : super._();
   @override
   BuildInputs rebuild(void Function(BuildInputsBuilder) updates) =>
@@ -51,7 +54,8 @@ class _$BuildInputs extends BuildInputs {
         retainedOutputContents == other.retainedOutputContents &&
         updatedSources == other.updatedSources &&
         deletedSources == other.deletedSources &&
-        invalidOutputs == other.invalidOutputs;
+        invalidOutputs == other.invalidOutputs &&
+        sharedParts == other.sharedParts;
   }
 
   @override
@@ -64,6 +68,7 @@ class _$BuildInputs extends BuildInputs {
     _$hash = $jc(_$hash, updatedSources.hashCode);
     _$hash = $jc(_$hash, deletedSources.hashCode);
     _$hash = $jc(_$hash, invalidOutputs.hashCode);
+    _$hash = $jc(_$hash, sharedParts.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -77,7 +82,8 @@ class _$BuildInputs extends BuildInputs {
           ..add('retainedOutputContents', retainedOutputContents)
           ..add('updatedSources', updatedSources)
           ..add('deletedSources', deletedSources)
-          ..add('invalidOutputs', invalidOutputs))
+          ..add('invalidOutputs', invalidOutputs)
+          ..add('sharedParts', sharedParts))
         .toString();
   }
 }
@@ -124,6 +130,12 @@ class BuildInputsBuilder implements Builder<BuildInputs, BuildInputsBuilder> {
   set invalidOutputs(SetBuilder<AssetId>? invalidOutputs) =>
       _$this._invalidOutputs = invalidOutputs;
 
+  MapBuilder<AssetId, FinishedSharedPart>? _sharedParts;
+  MapBuilder<AssetId, FinishedSharedPart> get sharedParts =>
+      _$this._sharedParts ??= MapBuilder<AssetId, FinishedSharedPart>();
+  set sharedParts(MapBuilder<AssetId, FinishedSharedPart>? sharedParts) =>
+      _$this._sharedParts = sharedParts;
+
   BuildInputsBuilder();
 
   BuildInputsBuilder get _$this {
@@ -136,6 +148,7 @@ class BuildInputsBuilder implements Builder<BuildInputs, BuildInputsBuilder> {
       _updatedSources = $v.updatedSources.toBuilder();
       _deletedSources = $v.deletedSources.toBuilder();
       _invalidOutputs = $v.invalidOutputs.toBuilder();
+      _sharedParts = $v.sharedParts.toBuilder();
       _$v = null;
     }
     return this;
@@ -171,6 +184,7 @@ class BuildInputsBuilder implements Builder<BuildInputs, BuildInputsBuilder> {
             updatedSources: updatedSources.build(),
             deletedSources: deletedSources.build(),
             invalidOutputs: invalidOutputs.build(),
+            sharedParts: sharedParts.build(),
           );
     } catch (_) {
       late String _$failedField;
@@ -187,6 +201,8 @@ class BuildInputsBuilder implements Builder<BuildInputs, BuildInputsBuilder> {
         deletedSources.build();
         _$failedField = 'invalidOutputs';
         invalidOutputs.build();
+        _$failedField = 'sharedParts';
+        sharedParts.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'BuildInputs',

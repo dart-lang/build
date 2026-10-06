@@ -63,8 +63,9 @@ abstract class BuiltMap<K, V> {
 
   /// Returns as an immutable map.
   ///
-  /// Useful when producing or using APIs that need the [Map] interface. This
-  /// differs from [toMap] where mutations are explicitly disallowed.
+  /// Useful when producing or using APIs that need the [Map] interface.
+  /// Unlike [toMap], which returns a mutable copy, the returned map throws if
+  /// you try to modify it.
   Map<K, V> asMap() => Map<K, V>.unmodifiable(_map);
 
   /// Converts to a [Map].
@@ -83,10 +84,12 @@ abstract class BuiltMap<K, V> {
   /// pairs in any order. Then, the `hashCode` is guaranteed to be the same.
   @override
   int get hashCode {
-    _hashCode ??= hashObjects(_map.keys
-        .map((key) => hash2(key.hashCode, _map[key].hashCode))
-        .toList(growable: false)
-      ..sort());
+    _hashCode ??= hashObjects(
+      _map.keys
+          .map((key) => hash2(key.hashCode, _map[key].hashCode))
+          .toList(growable: false)
+        ..sort(),
+    );
     return _hashCode!;
   }
 
@@ -100,8 +103,11 @@ abstract class BuiltMap<K, V> {
     if (other is! BuiltMap) return false;
     if (other.length != length) return false;
     if (other.hashCode != hashCode) return false;
-    for (var key in keys) {
-      if (other[key] != this[key]) return false;
+    for (final key in keys) {
+      final value = this[key];
+      if (other[key] != value) return false;
+      // A lookup can't distinguish a missing key from one mapped to null.
+      if (value == null && !other._map.containsKey(key)) return false;
     }
     return true;
   }
@@ -161,14 +167,13 @@ abstract class BuiltMap<K, V> {
 
 /// Default implementation of the public [BuiltMap] interface.
 class _BuiltMap<K, V> extends BuiltMap<K, V> {
-  _BuiltMap.withSafeMap(_MapFactory<K, V>? mapFactory, Map<K, V> map)
-      : super._(mapFactory, map);
+  _BuiltMap.withSafeMap(super.mapFactory, super.map) : super._();
 
   _BuiltMap.copyAndCheckTypes(Iterable keys, Function lookup)
-      : super._(null, <K, V>{}) {
-    for (var key in keys) {
+    : super._(null, <K, V>{}) {
+    for (final key in keys) {
       if (key is K) {
-        var value = lookup(key);
+        final value = lookup(key);
         if (value is V) {
           _map[key] = value;
         } else {
@@ -181,14 +186,14 @@ class _BuiltMap<K, V> extends BuiltMap<K, V> {
   }
 
   _BuiltMap.copyAndCheckForNull(Iterable<K> keys, V Function(K) lookup)
-      : super._(null, <K, V>{}) {
-    var checkKeys = !isSoundMode && null is! K;
-    var checkValues = !isSoundMode && null is! V;
-    for (var key in keys) {
+    : super._(null, <K, V>{}) {
+    final checkKeys = !isSoundMode && null is! K;
+    final checkValues = !isSoundMode && null is! V;
+    for (final key in keys) {
       if (checkKeys && identical(key, null)) {
         throw ArgumentError('map contained invalid key: null');
       }
-      var value = lookup(key);
+      final value = lookup(key);
       if (checkValues && value == null) {
         throw ArgumentError('map contained invalid value: null');
       }

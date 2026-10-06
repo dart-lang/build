@@ -15,7 +15,9 @@ import 'package:build/build.dart' hide Resource;
 import 'package:path/path.dart' as p;
 
 import '../../build_plan/build_inputs.dart';
+import '../../contracts.dart';
 import '../asset_content.dart';
+import '../br_outputs.dart';
 import '../builder_filesystem.dart';
 import 'asset_ids.dart';
 
@@ -26,6 +28,7 @@ import 'asset_ids.dart';
 ///
 /// During the build, set [phase] to change the phase that the files are viewed
 /// at.
+@Invariant('_phase >= 0')
 class AnalysisDriverFilesystem
     implements UriResolver, ResourceProvider, FileContentCache {
   late BuilderFilesystem _builderFilesystem;
@@ -46,6 +49,11 @@ class AnalysisDriverFilesystem
   /// A generated file is only visible if it was generated at an earlier phase.
   ///
   /// Records changes due to the phase change in [changedPaths].
+  @Requires('phase >= 0')
+  @Requires(
+    'phase <= _builderFilesystem.buildStepPlan.buildStepsByPhase.length',
+  )
+  @Ensures('_phase == phase')
   set phase(int phase) {
     if (phase == _phase) return;
     final previousPhase = _phase;
@@ -60,6 +68,10 @@ class AnalysisDriverFilesystem
           _changedPaths.add(output.asPath);
         }
       }
+    }
+    for (final libraryId
+        in _builderFilesystem.buildState.sharedPartLibraryIds) {
+      _updateSharedPartContent(libraryId.sharedPartId!);
     }
   }
 
@@ -109,6 +121,15 @@ class AnalysisDriverFilesystem
       _updateContent(id, builderFilesystem.buildState.contentOf(id));
     }
     _changedPathsThisBuild.clear();
+
+    final sharedPartPaths = _data.keys.where((path) {
+      return tryParseAssetPath(path)?.isBrSharedPart ?? false;
+    }).toList();
+    for (final path in sharedPartPaths) {
+      if (_data.remove(path) != null) {
+        _changedPaths.add(path);
+      }
+    }
   }
 
   void _updateContent(AssetId id, AssetContent? content) {
@@ -119,6 +140,10 @@ class AnalysisDriverFilesystem
       if (_data.remove(path) != null) {
         _changedPaths.add(path);
       }
+      return;
+    }
+    if (id.isBrSharedPart) {
+      _updateSharedPartContent(id);
       return;
     }
     final phase =
@@ -137,6 +162,30 @@ class AnalysisDriverFilesystem
     );
   }
 
+  void _updateSharedPartContent(AssetId id) {
+    final libraryId = id.sharedPartLibraryId!;
+    final partContent = _builderFilesystem.buildState.sharedPartContent(
+      libraryId,
+      upToPhase: _phase - 1,
+    );
+    if (partContent == null) {
+      final path = id.asPath;
+      if (_data.remove(path) != null) {
+        _changedPaths.add(path);
+      }
+      return;
+    }
+    _writeContent(
+      BuildRunnerFileContent(
+        path: id.asPath,
+        exists: true,
+        content: partContent.stringValue(),
+        contentHash: partContent.digest.toString(),
+        phase: -1,
+      ),
+    );
+  }
+
   /// Whether [path] exists.
   bool exists(String path) {
     final content = _data[path];
@@ -147,6 +196,8 @@ class AnalysisDriverFilesystem
   /// Reads the data previously written to [path].
   ///
   /// Throws if ![exists].
+  @Requires('exists(path)')
+  @Ensures('result == _data[path]!.content')
   String read(String path) {
     if (!exists(path)) throw StateError('Read of non-existent file.');
     return _data[path]!.content;
@@ -167,7 +218,11 @@ class AnalysisDriverFilesystem
     if (isVisible) {
       _changedPaths.add(path);
     }
-    assert(_changedPathsThisBuild.add(path), path);
+    assert(
+      _changedPathsThisBuild.add(path) ||
+          (tryParseAssetPath(path)?.isBrSharedPart ?? false),
+      path,
+    );
   }
 
   /// Paths that were modified by [_writeContent] since the last
@@ -205,6 +260,8 @@ class AnalysisDriverFilesystem
   /// /<package>/lib/<rest> --> package:<package>/<rest>
   /// /<package>/<rest> --> asset:<package>/<rest>
   /// ```
+  @Requires('path.startsWith("/")')
+  @Ensures('result.isScheme("package") || result.isScheme("asset")')
   @override
   Uri pathToUri(String path) {
     if (!path.startsWith('/')) {
@@ -269,6 +326,12 @@ class AnalysisDriverFilesystem
     return null;
   }
 
+  /// Parses in-memory filesystem [path] into an [AssetId].
+  ///
+  /// Returns null if the path cannot be parsed.
+  static AssetId? tryParseAssetPath(String path) =>
+      parseAsset(Uri(scheme: 'file', path: path));
+
   // `ResourceProvider` methods.
 
   @override
@@ -292,6 +355,8 @@ class AnalysisDriverFilesystem
   Folder? getStateLocation(String pluginId) => throw UnimplementedError();
 }
 
+@Invariant('path.startsWith("/")')
+@Invariant('exists || (content.isEmpty && contentHash.isEmpty && phase == -1)')
 class BuildRunnerFileContent implements FileContent {
   @override
   final String path;

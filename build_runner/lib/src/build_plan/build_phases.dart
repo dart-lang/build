@@ -9,12 +9,18 @@ import 'package:built_collection/built_collection.dart';
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 
+import '../contracts.dart';
 import '../exceptions.dart';
 import '../logging/build_log.dart';
 import 'phase.dart';
 
 /// The [BuildPhases] defining the sequence of actions in a build, and their
 /// [Digest] and options digests.
+@Invariant('inBuildPhasesOptionsDigests.length == inBuildPhases.length')
+@Invariant(
+  'postBuildActionsOptionsDigests.length == '
+  'postBuildPhase.builderActions.length',
+)
 class BuildPhases {
   /// The sequence of actions in the main build.
   final BuiltList<InBuildPhase> inBuildPhases;
@@ -32,6 +38,10 @@ class BuildPhases {
   /// A [Digest] that can be used to detect any change to the phases.
   final Digest digest;
 
+  /// The number of the last of [inBuildPhases] that can add to a library, or
+  /// `null` if there is none.
+  final int? lastAddsToLibraryPhase;
+
   BuildPhases(
     Iterable<InBuildPhase> inBuildPhases, [
     PostBuildPhase? postBuildPhase,
@@ -41,7 +51,8 @@ class BuildPhases {
        postBuildActionsOptionsDigests = _digestsOf(
          postBuildPhase?.builderActions ?? [],
        ),
-       digest = _computeDigest([...inBuildPhases, ?postBuildPhase]);
+       digest = _computeDigest([...inBuildPhases, ?postBuildPhase]),
+       lastAddsToLibraryPhase = _lastAddsToLibraryPhase(inBuildPhases);
 
   /// The phases, [inBuildPhases] followed by [postBuildPhase], by number.
   BuildPhase operator [](int index) {
@@ -59,6 +70,16 @@ class BuildPhases {
   /// non-empty.
   int get length =>
       inBuildPhases.length + (postBuildPhase.builderActions.isEmpty ? 0 : 1);
+
+  static int? _lastAddsToLibraryPhase(Iterable<InBuildPhase> phases) {
+    int? result;
+    var phaseNumber = 0;
+    for (final phase in phases) {
+      if (phase.addsToLibrary) result = phaseNumber;
+      ++phaseNumber;
+    }
+    return result;
+  }
 
   static Digest _computeDigest(Iterable<BuildPhase> phases) {
     final digestSink = AccumulatorSink<Digest>();

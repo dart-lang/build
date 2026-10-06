@@ -7,10 +7,13 @@ import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
+import '../../contracts.dart';
+
 part 'post_process_build_step_result.g.dart';
 
 /// The outputs and errors of a post process build step, and whether its
 /// outputs are in the artifact tree.
+@Invariant('outputs.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)')
 abstract class PostProcessBuildStepResult
     implements
         Built<PostProcessBuildStepResult, PostProcessBuildStepResultBuilder> {

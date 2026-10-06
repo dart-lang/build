@@ -10,10 +10,10 @@ import 'package:test/test.dart';
 
 void main() {
   group('Missing builder factory', () {
-    var data = BuiltList<int>([1, 2, 3]);
-    var specifiedType = const FullType(BuiltList, [FullType(int)]);
-    var serializers = Serializers();
-    var serialized = json.decode(json.encode([1, 2, 3])) as Object;
+    final data = BuiltList<int>([1, 2, 3]);
+    final specifiedType = const FullType(BuiltList, [FullType(int)]);
+    final serializers = Serializers();
+    final serialized = json.decode(json.encode([1, 2, 3])) as Object;
 
     test('serialize throws with nice message', () {
       expect(

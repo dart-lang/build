@@ -2,15 +2,16 @@
 // All rights reserved. Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-library built_value_generator.enum_source_library;
+library;
 
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
-import 'package:built_value_generator/src/enum_source_class.dart';
-import 'package:built_value_generator/src/parsed_library_results.dart';
 import 'package:source_gen/source_gen.dart';
+
+import 'enum_source_class.dart';
+import 'parsed_library_results.dart';
 
 part 'enum_source_library.g.dart';
 
@@ -45,9 +46,9 @@ abstract class EnumSourceLibrary
 
   @memoized
   BuiltList<EnumSourceClass> get classes {
-    var result = ListBuilder<EnumSourceClass>();
+    final result = ListBuilder<EnumSourceClass>();
 
-    for (var classElement in element.classes) {
+    for (final classElement in element.classes) {
       if (EnumSourceClass.needsEnumClass(classElement)) {
         result.add(EnumSourceClass(parsedLibraryResults, classElement));
       }
@@ -58,7 +59,7 @@ abstract class EnumSourceLibrary
   String? generateCode() {
     if (classes.isEmpty) return null;
 
-    var errors = _computeErrors();
+    final errors = _computeErrors();
     if (errors.isNotEmpty) throw _makeError(errors);
 
     return classes.map((c) => c.generateCode()).join('\n');
@@ -68,13 +69,13 @@ abstract class EnumSourceLibrary
     return [
       ..._checkPart(),
       ..._checkIdentifiers(),
-      for (var c in classes) ...c.computeErrors(),
+      for (final c in classes) ...c.computeErrors(),
     ];
   }
 
   Iterable<String> _checkPart() {
-    var expectedCode = "part '$fileName.g.dart';";
-    var alternativeExpectedCode = 'part "$fileName.g.dart";';
+    final expectedCode = "part '$fileName.g.dart';";
+    final alternativeExpectedCode = 'part "$fileName.g.dart";';
     return source.contains(expectedCode) ||
             source.contains(alternativeExpectedCode)
         ? <String>[]
@@ -82,12 +83,12 @@ abstract class EnumSourceLibrary
   }
 
   Iterable<String> _checkIdentifiers() {
-    var result = <String>[];
-    var seenIdentifiers = <String>{};
-    var reportedIdentifiers = <String>{};
+    final result = <String>[];
+    final seenIdentifiers = <String>{};
+    final reportedIdentifiers = <String>{};
 
-    for (var sourceClass in classes) {
-      for (var identifier in sourceClass.identifiers) {
+    for (final sourceClass in classes) {
+      for (final identifier in sourceClass.identifiers) {
         if (seenIdentifiers.contains(identifier) &&
             !reportedIdentifiers.contains(identifier)) {
           reportedIdentifiers.add(identifier);

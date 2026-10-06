@@ -7,7 +7,10 @@ import 'package:built_collection/built_collection.dart';
 import 'package:meta/meta.dart';
 
 import '../../build_plan/build_step_plan.dart';
+import '../../contracts.dart';
 import '../asset_content.dart';
+import '../br_outputs.dart';
+import '../finished_shared_part.dart';
 import 'build_step_id.dart';
 import 'build_step_result.dart';
 import 'incremental_build_state.dart';
@@ -20,6 +23,24 @@ import 'post_process_build_step_result.dart';
 /// available.
 ///
 /// Used by post-build consumers and to prepare the next incremental build.
+@Invariant(
+  'contents.keys.every((id) => '
+  'isSource(id) || '
+  'isActualOutput(id) || '
+  'isActualPostOutput(id) || '
+  'id.isBrOutput)',
+)
+@Invariant('sources.every((id) => !buildStepPlan.isDeclaredOutput(id))')
+@Invariant('sources.every((id) => !isActualPostOutput(id))')
+@Invariant('sources.every((id) => !id.isBrOutput)')
+@Invariant('actualOutputs.every((id) => buildStepPlan.isDeclaredOutput(id))')
+@Invariant(
+  'sharedParts.keys.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)',
+)
+@Invariant('sharedParts.keys.every((id) => id.sharedPartId != null)')
+@Invariant(
+  'sharedParts.keys.every((id) => contents.containsKey(id.sharedPartId!))',
+)
 class FinishedBuildState {
   /// Description of the build.
   final BuildStepPlan buildStepPlan;
@@ -33,18 +54,23 @@ class FinishedBuildState {
   /// [IncrementalBuildState] does not store file content.
   final BuiltMap<AssetId, AssetContent> contents;
 
+  /// Shared parts from the build.
+  final BuiltMap<AssetId, FinishedSharedPart> sharedParts;
+
   FinishedBuildState({
     required this.buildStepPlan,
     required this.incremental,
     required this.contents,
-  });
+    BuiltMap<AssetId, FinishedSharedPart>? sharedParts,
+  }) : sharedParts = sharedParts ?? BuiltMap<AssetId, FinishedSharedPart>();
 
   /// An empty [FinishedBuildState] with no sources and an empty plan.
   @visibleForTesting
   FinishedBuildState.empty()
     : buildStepPlan = BuildStepPlan.empty(),
       incremental = IncrementalBuildState(),
-      contents = BuiltMap<AssetId, AssetContent>();
+      contents = BuiltMap<AssetId, AssetContent>(),
+      sharedParts = BuiltMap<AssetId, FinishedSharedPart>();
 
   BuiltSet<AssetId> get sources => incremental.sources;
   BuiltMap<BuildStepId, BuildStepResult> get buildStepResults =>
@@ -97,6 +123,7 @@ class FinishedBuildState {
   bool isInArtifactTree(AssetId id) =>
       buildStepPlan.isDeclaredOutputInArtifactTree(id) ||
       _isArtifactTreePostProcessOutput(id);
+
   AssetContent? contentOf(AssetId id) => contents[id];
 
   Iterable<MapEntry<AssetId, AssetContent>> get sourceContents =>
@@ -104,4 +131,14 @@ class FinishedBuildState {
 
   Iterable<MapEntry<AssetId, AssetContent>> get outputContents =>
       contents.entries.where((e) => !isSource(e.key));
+
+  // -- Shared parts.
+
+  Iterable<AssetId> get sharedPartLibraryIds => sharedParts.keys;
+
+  Iterable<AssetId> get sharedPartIds =>
+      sharedPartLibraryIds.map((id) => id.sharedPartId!);
+
+  bool hasSharedPart(AssetId id) =>
+      sharedParts.containsKey(id.sharedPartLibraryId ?? id);
 }

@@ -33,9 +33,11 @@ void main() {
   // corresponding builder type.
 
   // For example, to add some elements then sort:
-  builtList = builtList.rebuild((b) => b
-    ..addAll([7, 6, 5])
-    ..sort());
+  builtList = builtList.rebuild(
+    (b) => b
+      ..addAll([7, 6, 5])
+      ..sort(),
+  );
 
   // Generally, built collections match the SDK collections, except that the
   // API has been split in two: read only methods go on the `Built` collection
@@ -44,7 +46,7 @@ void main() {
   // If you need to keep a mutable version of the collection around for a
   // while, for example to pass it to other methods, you can use `toBuilder`.
   // Then, later, the collection is made immutable again by calling `build`.
-  var listBuilder = builtList.toBuilder();
+  final listBuilder = builtList.toBuilder();
   listBuilder.addAll([10, 9, 8]);
   // More changes could go here, including passing the builder to other
   // methods.

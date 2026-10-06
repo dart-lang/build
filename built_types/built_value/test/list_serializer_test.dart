@@ -9,10 +9,10 @@ import 'package:test/test.dart';
 
 void main() {
   group('List with known specifiedType but missing builder', () {
-    var data = <int>[1, 2, 3];
-    var specifiedType = const FullType(List, [FullType(int)]);
-    var serializers = Serializers();
-    var serialized = json.decode(json.encode([1, 2, 3])) as Object;
+    final data = <int>[1, 2, 3];
+    final specifiedType = const FullType(List, [FullType(int)]);
+    final serializers = Serializers();
+    final serialized = json.decode(json.encode([1, 2, 3])) as Object;
 
     test('serialize throws', () {
       expect(() => serializers.serialize(data, specifiedType: specifiedType),
@@ -28,12 +28,12 @@ void main() {
   });
 
   group('List with known specifiedType and correct builder', () {
-    var data = <int>[1, 2, 3];
-    var specifiedType = const FullType(List, [FullType(int)]);
-    var serializers = (Serializers().toBuilder()
+    final data = <int>[1, 2, 3];
+    final specifiedType = const FullType(List, [FullType(int)]);
+    final serializers = (Serializers().toBuilder()
           ..addBuilderFactory(specifiedType, () => <int>[]))
         .build();
-    var serialized = json.decode(json.encode([1, 2, 3])) as Object;
+    final serialized = json.decode(json.encode([1, 2, 3])) as Object;
 
     test('can be serialized', () {
       expect(serializers.serialize(data, specifiedType: specifiedType),
@@ -55,20 +55,20 @@ void main() {
   });
 
   group('List nested with known specifiedType and correct builders', () {
-    var data = <List<int>>[
+    final data = <List<int>>[
       [1, 2, 3],
       [4, 5, 6],
       [7, 8, 9]
     ];
-    var specifiedType = const FullType(List, [
+    final specifiedType = const FullType(List, [
       FullType(List, [FullType(int)])
     ]);
-    var serializers = (Serializers().toBuilder()
+    final serializers = (Serializers().toBuilder()
           ..addBuilderFactory(specifiedType, () => <List<int>>[])
           ..addBuilderFactory(
               const FullType(List, [FullType(int)]), () => <int>[]))
         .build();
-    var serialized = json.decode(json.encode([
+    final serialized = json.decode(json.encode([
       [1, 2, 3],
       [4, 5, 6],
       [7, 8, 9]
@@ -86,10 +86,10 @@ void main() {
   });
 
   group('List with unknown specifiedType and no builders', () {
-    var data = <int>[1, 2, 3];
-    var specifiedType = FullType.unspecified;
-    var serializers = Serializers();
-    var serialized = json.decode(json.encode([
+    final data = <int>[1, 2, 3];
+    final specifiedType = FullType.unspecified;
+    final serializers = Serializers();
+    final serialized = json.decode(json.encode([
       'List',
       ['int', 1],
       ['int', 2],

@@ -11,7 +11,7 @@ void main() {
     test('has correct fields', () {
       // If it has any unwanted fields they will not be nullable so this will
       // throw.
-      var value = GetsCorrectFieldsViaMixins((b) => b..shouldBeAField = 1);
+      final value = GetsCorrectFieldsViaMixins((b) => b..shouldBeAField = 1);
       expect(value.shouldBeAField, 1);
     });
   });

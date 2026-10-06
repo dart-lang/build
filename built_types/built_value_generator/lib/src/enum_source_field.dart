@@ -2,7 +2,7 @@
 // All rights reserved. Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-library built_value_generator.enum_source_field;
+library;
 
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/element/element.dart';
@@ -33,13 +33,13 @@ abstract class EnumSourceField
 
   @memoized
   BuiltValueEnumConst get settings {
-    var annotations = element.metadata.annotations
+    final annotations = element.metadata.annotations
         .map((annotation) => annotation.computeConstantValue())
         .where(
           (value) => DartTypes.tryGetName(value?.type) == 'BuiltValueEnumConst',
         );
     if (annotations.isEmpty) return const BuiltValueEnumConst();
-    var annotation = annotations.single!;
+    final annotation = annotations.single!;
     return BuiltValueEnumConst(
       fallback: annotation.getField('fallback')?.toBoolValue() ?? false,
       wireName: annotation.getField('wireName')!.toStringValue(),
@@ -50,7 +50,7 @@ abstract class EnumSourceField
 
   @memoized
   String get generatedIdentifier {
-    var fieldName = element.displayName;
+    final fieldName = element.displayName;
     return parsedLibrary
         .getFragmentDeclaration(element.firstFragment)!
         .node
@@ -68,10 +68,10 @@ abstract class EnumSourceField
     ParsedLibraryResult parsedLibrary,
     InterfaceElement classElement,
   ) {
-    var result = ListBuilder<EnumSourceField>();
+    final result = ListBuilder<EnumSourceField>();
 
-    var enumName = classElement.displayName;
-    for (var fieldElement in classElement.fields) {
+    final enumName = classElement.displayName;
+    for (final fieldElement in classElement.fields) {
       final type = DartTypes.tryGetName(fieldElement.getter?.returnType);
       if (fieldElement.isOriginDeclaration &&
           (type == enumName || type == 'dynamic')) {
@@ -83,7 +83,7 @@ abstract class EnumSourceField
   }
 
   Iterable<String> get errors {
-    var result = <String>[];
+    final result = <String>[];
 
     if (type == 'dynamic') {
       result.add('Specify a type for field "$name".');

@@ -18,7 +18,11 @@ abstract class BuiltList<E> implements Iterable<E>, BuiltIterable<E> {
   int? _hashCode;
 
   /// Instantiates with elements from an [Iterable].
-  factory BuiltList([Iterable iterable = const []]) {
+  factory BuiltList([Iterable iterable = const []]) =>
+      BuiltList<E>.from(iterable);
+
+  /// Instantiates with elements from an [Iterable].
+  factory BuiltList.from(Iterable iterable) {
     if (iterable is _BuiltList && iterable.hasExactElementType(E)) {
       return iterable as BuiltList<E>;
     } else {
@@ -44,7 +48,7 @@ abstract class BuiltList<E> implements Iterable<E>, BuiltIterable<E> {
   /// Converts to a [ListBuilder] for modification.
   ///
   /// The `BuiltList` remains immutable and can continue to be used.
-  ListBuilder<E> toBuilder() => ListBuilder<E>.of(this);
+  ListBuilder<E> toBuilder() => ListBuilder<E>(this);
 
   /// Converts to a [ListBuilder], applies updates to it, and builds.
   BuiltList<E> rebuild(Function(ListBuilder<E>) updates) =>
@@ -87,8 +91,9 @@ abstract class BuiltList<E> implements Iterable<E>, BuiltIterable<E> {
 
   /// Returns as an immutable list.
   ///
-  /// Useful when producing or using APIs that need the [List] interface. This
-  /// differs from [toList] where mutations are explicitly disallowed.
+  /// Useful when producing or using APIs that need the [List] interface.
+  /// Unlike [toList], which returns a mutable copy, the returned list throws
+  /// if you try to modify it.
   List<E> asList() => List<E>.unmodifiable(_list);
 
   // List.
@@ -239,15 +244,15 @@ abstract class BuiltList<E> implements Iterable<E>, BuiltIterable<E> {
 
 /// Default implementation of the public [BuiltList] interface.
 class _BuiltList<E> extends BuiltList<E> {
-  _BuiltList.withSafeList(List<E> list) : super._(list);
+  _BuiltList.withSafeList(super.list) : super._();
 
   _BuiltList.from([Iterable iterable = const []])
-      : super._(List<E>.from(iterable, growable: false)) {
+    : super._(List<E>.from(iterable, growable: false)) {
     _maybeCheckForNull();
   }
 
   _BuiltList.of(Iterable<E> iterable)
-      : super._(List<E>.from(iterable, growable: false)) {
+    : super._(List<E>.from(iterable, growable: false)) {
     _maybeCheckForNull();
   }
 
@@ -255,7 +260,7 @@ class _BuiltList<E> extends BuiltList<E> {
 
   void _maybeCheckForNull() {
     if (!_needsNullCheck) return;
-    for (var element in _list) {
+    for (final element in _list) {
       if (identical(element, null)) {
         throw ArgumentError('iterable contained invalid element: null');
       }

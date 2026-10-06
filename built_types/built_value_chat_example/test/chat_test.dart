@@ -3,8 +3,9 @@
 // license that can be found in the LICENSE file.
 
 import 'package:built_value_chat_example/data_model/data_model.dart';
-import 'package:built_value_chat_example/testing/fake_environment.dart';
 import 'package:test/test.dart';
+
+import 'testing/fake_environment.dart';
 
 void main() {
   late FakeEnvironment environment;

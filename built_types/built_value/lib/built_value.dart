@@ -254,9 +254,9 @@ class BuiltValueHook {
   /// @BuiltValueHook(initializeBuilder: true)
   /// static void _initialize(MyClassBuilder b) =>
   ///    b..name = 'defaultName';
+  /// ```
   ///
   /// Defaults to `false`.
-  /// ```
   final bool initializeBuilder;
 
   /// Marks a static method that will be called immediately before the builder
@@ -270,9 +270,9 @@ class BuiltValueHook {
   /// @BuiltValueHook(finalizeBuilder: true)
   /// static void _finalize(MyClassBuilder b) =>
   ///    b..items.sort();
+  /// ```
   ///
   /// Defaults to `false`.
-  /// ```
   final bool finalizeBuilder;
 
   const BuiltValueHook(
@@ -319,7 +319,7 @@ typedef BuiltValueToStringHelperProvider = BuiltValueToStringHelper Function(
 /// are [IndentingBuiltValueToStringHelper], which is the default, and
 /// [FlatBuiltValueToStringHelper].
 BuiltValueToStringHelperProvider newBuiltValueToStringHelper =
-    (String className) => IndentingBuiltValueToStringHelper(className);
+    IndentingBuiltValueToStringHelper.new;
 
 /// Interface for built_value toString() output helpers.
 ///
@@ -364,7 +364,7 @@ class IndentingBuiltValueToStringHelper implements BuiltValueToStringHelper {
     _result!
       ..write(' ' * _indentingBuiltValueToStringHelperIndent)
       ..write('}');
-    var stringResult = _result.toString();
+    final stringResult = _result.toString();
     _result = null;
     return stringResult;
   }
@@ -398,7 +398,7 @@ class FlatBuiltValueToStringHelper implements BuiltValueToStringHelper {
   @override
   String toString() {
     _result!.write('}');
-    var stringResult = _result.toString();
+    final stringResult = _result.toString();
     _result = null;
     return stringResult;
   }

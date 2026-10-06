@@ -2,7 +2,7 @@
 // All rights reserved. Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-import 'package:built_value/serializer.dart';
+import 'serializer.dart';
 
 /// Deserializer for `BuiltList` that runs asynchronously.
 ///
@@ -12,11 +12,11 @@ import 'package:built_value/serializer.dart';
 class BuiltListAsyncDeserializer {
   Stream<Object?> deserialize(Serializers serializers, Iterable serialized,
       {FullType specifiedType = FullType.unspecified}) async* {
-    var elementType = specifiedType.parameters.isEmpty
+    final elementType = specifiedType.parameters.isEmpty
         ? FullType.unspecified
         : specifiedType.parameters[0];
 
-    for (var item in serialized) {
+    for (final item in serialized) {
       yield serializers.deserialize(item, specifiedType: elementType);
     }
   }

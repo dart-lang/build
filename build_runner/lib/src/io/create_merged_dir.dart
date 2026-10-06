@@ -65,7 +65,10 @@ Future<bool> createMergedOutputDirectories({
 Set<String> _conflicts(BuiltSet<BuildDirectory> buildDirs) {
   final seen = <String>{};
   final conflicts = <String>{};
-  final outputLocations = buildDirs.map((d) => d.outputLocation?.path).nonNulls;
+  final outputLocations = buildDirs
+      .map((d) => d.outputLocation?.path)
+      .nonNulls
+      .map(p.normalize);
   for (final location in outputLocations) {
     if (!seen.add(location)) conflicts.add(location);
   }

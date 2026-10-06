@@ -5,15 +5,15 @@
 
 import 'dart:convert';
 
-import 'package:built_collection/built_collection.dart';
-import 'package:built_value/serializer.dart';
 import 'package:_built_value_end_to_end_test/collections.dart';
 import 'package:_built_value_end_to_end_test/serializers.dart';
+import 'package:built_collection/built_collection.dart';
+import 'package:built_value/serializer.dart';
 import 'package:test/test.dart';
 
 void main() {
   group('Collections', () {
-    var data = Collections((b) => b
+    final data = Collections((b) => b
       ..list.add(1)
       ..set.add('two')
       ..map['three'] = 4
@@ -30,7 +30,7 @@ void main() {
         null,
         BuiltList<int?>(<int?>[1, null]),
       ]));
-    var serialized = json.decode(json.encode([
+    final serialized = json.decode(json.encode([
       'Collections',
       'list',
       [1],
@@ -76,8 +76,9 @@ void main() {
         [1, null],
       ],
     ])) as Object;
-    var serializersWithBuilder = (serializers.toBuilder()
-          ..addBuilderFactory(FullType(BuiltList, [FullType.nullable(int)]),
+    final serializersWithBuilder = (serializers.toBuilder()
+          ..addBuilderFactory(
+              const FullType(BuiltList, [FullType.nullable(int)]),
               () => ListBuilder<int?>()))
         .build();
 

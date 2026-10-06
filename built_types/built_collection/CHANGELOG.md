@@ -1,9 +1,15 @@
 # Changelog
 
-## 6.0.0-wip
+## 5.1.3-wip
 
-- Remove `from` constructor from `BuiltList`.
-- Add `of` constructors to `ListBuilder` and `SetBuilder`.
+- Clarify the docs of `asList`, `asSet` and `asMap`.
+
+## 5.1.2
+
+- Bug fix: `BuiltMap` equality no longer returns true for maps with null
+  values, different keys and colliding hash codes.
+- Require Dart SDK `^3.11.0`.
+- Moved repository to `dart-lang/build`.
 
 ## 5.1.1
 

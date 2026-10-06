@@ -1,7 +1,20 @@
 ## 2.16.2-wip
 
+- Allow `built_collection` 6.x.
+- Fix `build_runner run` with `built_collection` 6.x by passing
+  `Isolate.spawnUri` a plain list of arguments.
+- Add `SharedPartAccumulator` and `SharedPartAccumulatorCodec` for shared part
+  outputs.
+- Support shared parts written using `BuildStep.librarySourceSink` when builders
+  opt in with `adds_to_library: true` and `build_to: source` in `build.yaml`. If
+  a library is missing the `part` directive for its shared part, `build_runner`
+  adds it and rebuilds; if the directive is unused because builders ran and
+  contributed nothing, and nothing in the build failed, `build_runner` removes
+  it and rebuilds. With `--only-check` it reports the directives to add or
+  remove instead.
 - The `serve` command now rejects non-loopback `Host` and `Origin` headers when
-  bound to a loopback interface.
+  bound to a loopback interface, and validates them against `--hostname` when a
+  specific host is given.
 - Require `build` 4.1.0.
 - Require `build_config` 1.4.0.
 - Bug fix: allow calling `BuildStep.canRead` on outputs written by the same
@@ -11,8 +24,24 @@
 - Bug fix: preserve analyzer dependency information on unhandled build failures,
   preventing subsequent incremental builds from missing changes to transitively
   imported files.
+- Require `analyzer` 14.3.0.
 - Bug fix: complete the active building future in daemon mode when the build
   script is updated, preventing asset server requests from hanging.
+- Bug fix: write the SDK summary deps file atomically, so a concurrently
+  running build does not read it while it is empty; and rebuild the summary
+  instead of failing if the deps file turns out to be corrupt.
+- Bug fix: handle deletions of unread sources during watch, serve, and
+  daemon modes.
+- Bug fix: in watch, serve, and daemon modes, do not run a build when nothing
+  changed that can affect any output. A file can be written without changing
+  its content, and one write can produce more than one filesystem event.
+- Bug fix: detect duplicate `--output` directories that are spelled
+  differently, for example `build` and `build/`, instead of writing both and
+  silently keeping only the last.
+- Bug fix: in watch, serve, and daemon modes, notice a generated file being
+  deleted after a previous build deleted and then rewrote that same file.
+  Previously the delete was mistaken for the build's own earlier delete and
+  ignored, so deleting a generated file no longer forced it to be regenerated.
 
 ## 2.16.1
 

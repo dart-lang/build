@@ -68,7 +68,8 @@ abstract class BuiltSet<E> implements Iterable<E>, BuiltIterable<E> {
   @override
   int get hashCode {
     _hashCode ??= hashObjects(
-        _set.map((e) => e.hashCode).toList(growable: false)..sort());
+      _set.map((e) => e.hashCode).toList(growable: false)..sort(),
+    );
     return _hashCode!;
   }
 
@@ -90,8 +91,9 @@ abstract class BuiltSet<E> implements Iterable<E>, BuiltIterable<E> {
 
   /// Returns as an immutable set.
   ///
-  /// Useful when producing or using APIs that need the [Set] interface. This
-  /// differs from [toSet] where mutations are explicitly disallowed.
+  /// Useful when producing or using APIs that need the [Set] interface.
+  /// Unlike [toSet], which returns a mutable copy, the returned set throws if
+  /// you try to modify it.
   Set<E> asSet() => UnmodifiableSetView<E>(_set);
 
   // Set.
@@ -228,8 +230,7 @@ abstract class BuiltSet<E> implements Iterable<E>, BuiltIterable<E> {
 
 /// Default implementation of the public [BuiltSet] interface.
 class _BuiltSet<E> extends BuiltSet<E> {
-  _BuiltSet.withSafeSet(_SetFactory<E>? setFactory, Set<E> set)
-      : super._(setFactory, set);
+  _BuiltSet.withSafeSet(super.setFactory, super.set) : super._();
 
   _BuiltSet.from(Iterable iterable) : super._(null, Set<E>.from(iterable)) {
     _maybeCheckForNull();
@@ -243,7 +244,7 @@ class _BuiltSet<E> extends BuiltSet<E> {
 
   void _maybeCheckForNull() {
     if (!_needsNullCheck) return;
-    for (var element in _set) {
+    for (final element in _set) {
       if (identical(element, null)) {
         throw ArgumentError('iterable contained invalid element: null');
       }

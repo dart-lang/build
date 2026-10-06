@@ -5,18 +5,18 @@
 
 import 'dart:convert';
 
-import 'package:built_collection/built_collection.dart';
 import 'package:_built_value_end_to_end_test/imported_values.dart';
 import 'package:_built_value_end_to_end_test/serializers.dart';
 import 'package:_built_value_end_to_end_test/values.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:test/test.dart';
 
 void main() {
   group('ImportedValue', () {
-    var data = ImportedValue((b) => b.simpleValue
+    final data = ImportedValue((b) => b.simpleValue
       ..anInt = 1
       ..aString = 'two');
-    var serialized = json.decode(json.encode([
+    final serialized = json.decode(json.encode([
       'ImportedValue',
       'simpleValue',
       [
@@ -39,12 +39,12 @@ void main() {
   });
 
   group('ImportedCustomValue', () {
-    var data = ImportedCustomValue((b) => b
+    final data = ImportedCustomValue((b) => b
       ..simpleValue = SimpleValue((b) => b
         ..anInt = 1
         ..aString = 'two')
       ..simpleValues = BuiltList.of([]));
-    var serialized = json.decode(json.encode([
+    final serialized = json.decode(json.encode([
       'ImportedCustomValue',
       'simpleValue',
       [
@@ -67,10 +67,10 @@ void main() {
   });
 
   group('ImportedCustomNestedValue', () {
-    var data = ImportedCustomNestedValue((b) => b.simpleValue
+    final data = ImportedCustomNestedValue((b) => b.simpleValue
       ..anInt = 1
       ..aString = 'two');
-    var serialized = json.decode(json.encode([
+    final serialized = json.decode(json.encode([
       'ImportedCustomNestedValue',
       'simpleValue',
       [

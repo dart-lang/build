@@ -22,9 +22,11 @@ import '../io/build_output_reader.dart';
 import '../io/create_merged_dir.dart';
 import '../logging/build_log.dart';
 import 'asset_content.dart';
+import 'br_outputs.dart';
 import 'build.dart';
 import 'build_result.dart';
 import 'build_state/asset_graph_json.dart';
+import 'part_directives.dart';
 
 /// A series of builds with the same configuration.
 ///
@@ -51,6 +53,13 @@ class BuildSeries {
 
   /// Deletes that are part of build output, so the resulting file watch events
   /// can be ignored.
+  ///
+  /// An id is removed when its delete is seen, and also when the file is
+  /// written again, because then it is no longer absent and there is no delete
+  /// left to ignore. Removing on write matters because the delete event may
+  /// never arrive: a file that is deleted and written again is reported as a
+  /// modification. A stale id would swallow the next delete of that file, which
+  /// is most likely the user deleting generated output to force a rebuild.
   final Set<AssetId> _expectedDeletes = {};
 
   /// Whether the next build is the first build.
@@ -93,21 +102,31 @@ class BuildSeries {
 
       // Ignore deletes and writes done by `build_runner`, for output strategies
       // that do deletes and writes.
+      //
+      // Watch events say that a path changed, not what happened to it:
+      // `package:watcher` guarantees only that applying its events eventually
+      // reproduces the state of the filesystem. Events are not one per
+      // operation, and a path that is deleted and written again is reported as
+      // a modification. So neither check below may assume that an event it
+      // expects will arrive; each decides from the state of the file.
       if (_outputStrategy == .overwrite || _outputStrategy == .keep) {
-        // Ignore deletes done by `build_runner`.
+        // Ignore deletes done by `build_runner`. The id is dropped from
+        // `_expectedDeletes` when the file is written again, so a delete that
+        // was never reported cannot suppress a later one.
         if (change.type == .REMOVE && _expectedDeletes.remove(id)) {
           continue;
         }
 
-        // Ignore writes done by `build_runner`. It's necessary to check content
-        // because `package:watcher` can coalesce two modify events into one.
-        // If the first is by `build_runner` and the second is an external
-        // change then just ignoring the event would be incorrect.
+        // Ignore writes done by `build_runner`. Read the content rather than
+        // trusting the event: one event can stand for a write by
+        // `build_runner` followed by an external change, and ignoring it would
+        // lose the external change.
         if ((change.type == .ADD || change.type == .MODIFY) &&
-            _buildPlan.buildStepPlan.isDeclaredOutput(id)) {
+            (_buildPlan.buildStepPlan.isDeclaredOutput(id) || id.isBrOutput)) {
           final expectedDigest = previousBuild.digestOf(id);
-          final inArtifactTree = _buildPlan.buildStepPlan
-              .isDeclaredOutputInArtifactTree(id);
+          final inArtifactTree = id.isBrOutput
+              ? false
+              : _buildPlan.buildStepPlan.isDeclaredOutputInArtifactTree(id);
 
           if (expectedDigest != null) {
             try {
@@ -139,8 +158,9 @@ class BuildSeries {
 
       final isKnownAsset = previousBuild.isKnownAsset(id);
       if (!isKnownAsset) {
-        // Ignore under `.dart_tool/build`.
-        if (id.path.startsWith(hiddenBuildDirectoryPath)) continue;
+        if (id.path.startsWith(hiddenBuildDirectoryPath)) {
+          continue;
+        }
 
         // Ignore modifications and deletes.
         if (change.type != .ADD) continue;
@@ -154,23 +174,29 @@ class BuildSeries {
 
       // Changes to files that are part of the build.
 
-      // If not copying to a merged output directory, ignore changes to sources
-      // with no outputs.
+      // If not copying to a merged output directory, ignore modifications to
+      // sources with no outputs.
       if (!_buildPlan.buildSpec.buildOptions.anyMergedOutputDirectory &&
+          !id.isBrOutput &&
           previousBuild.isSource(id) &&
           previousBuild.digestOf(id) == null) {
-        rejected.add(change);
+        // If its existence was tracked, removal invalidates the build.
+        if (change.type == .REMOVE && previousBuild.wasTrackedInput(id)) {
+          accepted.add(change);
+        } else {
+          rejected.add(change);
+        }
         continue;
       }
 
       // Handle modifications and creations of outputs.
-      if (_buildPlan.buildStepPlan.isDeclaredOutput(id) &&
+      if ((_buildPlan.buildStepPlan.isDeclaredOutput(id) || id.isBrOutput) &&
           change.type != .REMOVE &&
           _outputStrategy == .keep) {
         continue;
       }
 
-      // It's an add of a "missing source" or a deletion of an input.
+      // It's a deletion of an input or an update.
       accepted.add(change);
     }
 
@@ -259,12 +285,16 @@ class BuildSeries {
 
     buildDirs ??= _buildPlan.buildDirs;
     buildFilters ??= _buildPlan.buildFilters;
-    if (!firstBuild) buildLog.nextBuild();
+    final buildDirsOrFiltersChanged =
+        buildDirs != _buildPlan.buildDirs ||
+        buildFilters != _buildPlan.buildFilters;
     _buildPlan = _buildPlan.rebuild(
       (b) => b
         ..buildDirs.replace(buildDirs!)
         ..buildFilters.replace(buildFilters!),
     );
+
+    final previousResult = await _currentBuildResult;
 
     if (!firstBuild || updates.isNotEmpty) {
       final filesToCheck = <AssetFile>{
@@ -272,7 +302,29 @@ class BuildSeries {
         for (final id in updates) AssetFile.inArtifactTree(id),
       };
       _buildPlan = await _buildPlan.updateForFileChanges(filesToCheck);
+
+      // The scan found nothing that can affect any output, so there is no
+      // build to run. Keep the updated plan: it holds the content that was
+      // just read, so the next change is compared against it.
+      //
+      // Only a successful previous build can be reused. A failed build can
+      // leave work unfinished, and under `--only-check` it fails because disk
+      // disagrees with a plan that the scan still reports as unchanged.
+      //
+      // Nothing was written, so the result reports no outputs. Consumers use
+      // that to decide which assets to refresh.
+      if (!firstBuild &&
+          previousResult != null &&
+          previousResult.status == BuildStatus.success &&
+          !buildDirsOrFiltersChanged &&
+          _buildPlan.outputsAreUpToDate) {
+        return previousResult.outputs.isEmpty
+            ? previousResult
+            : previousResult.copyWith(outputs: BuiltList());
+      }
     }
+
+    if (!firstBuild) buildLog.nextBuild();
 
     final build = Build(
       buildPlan: _buildPlan,
@@ -280,7 +332,6 @@ class BuildSeries {
     );
     if (firstBuild) firstBuild = false;
 
-    final previousResult = await _currentBuildResult;
     final previousReader = previousResult?.buildOutputReader;
     _currentBuildResult = _runBuildAndWrite(
       build,
@@ -309,6 +360,20 @@ class BuildSeries {
     } else {
       await _writeBuildOutput(result);
     }
+    if (result.librariesMissingPartDirective.isNotEmpty) {
+      await PartDirectives.addMissing(
+        result.librariesMissingPartDirective,
+        _buildPlan.readerWriter,
+        onlyCheck: _outputStrategy == .verify,
+      );
+    }
+    if (result.librariesWithUnusedPartDirective.isNotEmpty) {
+      await PartDirectives.removeUnused(
+        result.librariesWithUnusedPartDirective,
+        _buildPlan.readerWriter,
+        onlyCheck: _outputStrategy == .verify,
+      );
+    }
     result = await _createMergedOutputDirectories(result);
 
     _buildPlan = build.buildPlan.withCompatiblePreviousBuild(
@@ -336,6 +401,10 @@ class BuildSeries {
     }
 
     for (final output in result.outputs) {
+      // The file exists again, so there is no delete of it left to ignore. The
+      // delete loop below runs after this one, so a build that both writes and
+      // deletes this path still records the delete.
+      _expectedDeletes.remove(output);
       final content = result.buildState!.contentOf(output)!;
       await _buildPlan.readerWriter.writeAsBytes(
         output,
@@ -386,7 +455,8 @@ class BuildSeries {
           : currentState.isInArtifactTree(file.id);
       final isMatchingActualOutput =
           (currentState.isActualOutput(file.id) ||
-              currentState.isActualPostOutput(file.id)) &&
+              currentState.isActualPostOutput(file.id) ||
+              currentState.hasSharedPart(file.id)) &&
           outputInArtifactTree == file.inArtifactTree;
       if (!isMatchingActualOutput) {
         deletes.add(file);
@@ -395,7 +465,8 @@ class BuildSeries {
     for (final id
         in _buildPlan.previousBuild.incompatibleBuildOutputsToDelete) {
       if (!currentState.isActualOutput(id) &&
-          !currentState.isActualPostOutput(id)) {
+          !currentState.isActualPostOutput(id) &&
+          !currentState.hasSharedPart(id)) {
         deletes.add(AssetFile.atPackagePath(id));
       }
     }
@@ -429,6 +500,11 @@ class BuildSeries {
               AssetFile(id, inArtifactTree: postProcessResult.inArtifactTree),
             );
           }
+        }
+      }
+      for (final libraryId in previousBuild.sharedPartLibraryIds) {
+        if (!currentState.hasSharedPart(libraryId)) {
+          deletes.add(AssetFile.atPackagePath(libraryId.sharedPartId!));
         }
       }
     }

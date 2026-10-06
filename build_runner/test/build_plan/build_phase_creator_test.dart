@@ -479,10 +479,31 @@ void main() {
       expect(
         () => BuilderDefinition(
           'a:builder',
+          outputsToArtifactTree: false,
           addsToLibrary: true,
           isOptional: true,
         ),
-        throwsArgumentError,
+        throwsA(
+          isArgumentError.having(
+            (e) => e.message,
+            'message',
+            contains('`is_optional: true`'),
+          ),
+        ),
+      );
+    });
+
+    test('throws ArgumentError if builder definition has addsToLibrary '
+        'and outputsToArtifactTree', () {
+      expect(
+        () => BuilderDefinition('a:builder', addsToLibrary: true),
+        throwsA(
+          isArgumentError.having(
+            (e) => e.message,
+            'message',
+            contains('`build_to: source`'),
+          ),
+        ),
       );
     });
   });

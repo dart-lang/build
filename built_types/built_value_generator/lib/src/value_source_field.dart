@@ -2,7 +2,7 @@
 // All rights reserved. Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-library built_value_generator.source_field;
+library;
 
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/ast/ast.dart';
@@ -11,13 +11,12 @@ import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
-import 'package:built_value_generator/src/dart_types.dart';
-import 'package:built_value_generator/src/field_mixin.dart';
-import 'package:built_value_generator/src/fields.dart' show collectFields;
-import 'package:built_value_generator/src/fixes.dart';
-import 'package:built_value_generator/src/metadata.dart'
-    show metadataToStringValue;
-import 'package:built_value_generator/src/parsed_library_results.dart';
+import 'dart_types.dart';
+import 'field_mixin.dart';
+import 'fields.dart' show collectFields;
+import 'fixes.dart';
+import 'metadata.dart' show metadataToStringValue;
+import 'parsed_library_results.dart';
 
 part 'value_source_field.g.dart';
 
@@ -77,7 +76,7 @@ abstract class ValueSourceField
     if (typeFromAst.endsWith('?')) {
       typeFromAst = typeFromAst.substring(0, typeFromAst.length - 1);
     }
-    var typeFromElement = type;
+    final typeFromElement = type;
 
     // If the type is a function, we can't use the element result; it is
     // formatted incorrectly.
@@ -125,13 +124,13 @@ abstract class ValueSourceField
 
   @memoized
   BuiltValueField get builtValueField {
-    var annotations = element.getter!.metadata.annotations
+    final annotations = element.getter!.metadata.annotations
         .map((annotation) => annotation.computeConstantValue())
         .where(
           (value) => DartTypes.tryGetName(value?.type) == 'BuiltValueField',
         );
     if (annotations.isEmpty) return const BuiltValueField();
-    var annotation = annotations.single!;
+    final annotation = annotations.single!;
     return BuiltValueField(
       compare: annotation.getField('compare')?.toBoolValue(),
       serialize: annotation.getField('serialize')?.toBoolValue(),
@@ -222,7 +221,7 @@ abstract class ValueSourceField
   String get builderElementTypeWithPrefix {
     // If it's a real field, it's a [VariableDeclaration] which is guaranteed
     // to have parent node [VariableDeclarationList] giving the type.
-    var fieldDeclaration = parsedLibrary.getFragmentDeclaration(
+    final fieldDeclaration = parsedLibrary.getFragmentDeclaration(
       builderElement!.firstFragment,
     );
     if (fieldDeclaration != null) {
@@ -284,9 +283,9 @@ abstract class ValueSourceField
     InterfaceElement classElement,
     ClassElement? builderClassElement,
   ) {
-    var result = ListBuilder<ValueSourceField>();
+    final result = ListBuilder<ValueSourceField>();
 
-    for (var field in collectFields(classElement)) {
+    for (final field in collectFields(classElement)) {
       if (!field.isStatic &&
           field.getter != null &&
           (field.getter!.isAbstract || !field.getter!.isOriginDeclaration)) {
@@ -325,7 +324,7 @@ abstract class ValueSourceField
   }
 
   Iterable<GeneratorError> computeErrors() {
-    var result = <GeneratorError>[];
+    final result = <GeneratorError>[];
 
     if (!isGetter) {
       result.add(
@@ -381,10 +380,10 @@ abstract class ValueSourceField
         element.type,
         type,
       );
-      if (builderElementTypeOrNull != type + '?' &&
+      if (builderElementTypeOrNull != '$type?' &&
           (builderType == null ||
               (builderElementTypeOrNull != builderType &&
-                  builderElementTypeOrNull != builderType + '?'))) {
+                  builderElementTypeOrNull != '$builderType?'))) {
         result.add(
           GeneratorError(
             (b) => b

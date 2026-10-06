@@ -41,13 +41,13 @@ class MapBuilder<K, V> {
     if (map is _BuiltMap<K, V> && map._mapFactory == _mapFactory) {
       _setOwner(map);
     } else if (map is BuiltMap) {
-      var replacement = _createMap();
+      final replacement = _createMap();
       map.forEach((dynamic key, dynamic value) {
         replacement[key as K] = value as V;
       });
       _setSafeMap(replacement);
     } else if (map is Map) {
-      var replacement = _createMap();
+      final replacement = _createMap();
       map.forEach((dynamic key, dynamic value) {
         replacement[key as K] = value as V;
       });
@@ -73,7 +73,7 @@ class MapBuilder<K, V> {
   /// instantiate and return a new object.
   ///
   /// Use [withDefaultBase] to reset `base` to the default value.
-  void withBase(_MapFactory<K, V> base) {
+  void withBase(Map<K, V> Function() base) {
     ArgumentError.checkNotNull(base, 'base');
     _mapFactory = base;
     _setSafeMap(_createMap()..addAll(_map));
@@ -89,11 +89,14 @@ class MapBuilder<K, V> {
   /// As [Map.fromIterable] but adds.
   ///
   /// [key] and [value] default to the identity function.
-  void addIterable<T>(Iterable<T> iterable,
-      {K Function(T)? key, V Function(T)? value}) {
+  void addIterable<T>(
+    Iterable<T> iterable, {
+    K Function(T)? key,
+    V Function(T)? value,
+  }) {
     key ??= (T x) => x as K;
     value ??= (T x) => x as V;
-    for (var element in iterable) {
+    for (final element in iterable) {
       this[key(element)] = value(element);
     }
   }
@@ -123,7 +126,7 @@ class MapBuilder<K, V> {
   V putIfAbsent(K key, V Function() ifAbsent) {
     _checkKey(key);
     return _safeMap.putIfAbsent(key, () {
-      var value = ifAbsent();
+      final value = ifAbsent();
       _checkValue(value);
       return value;
     });
@@ -168,13 +171,15 @@ class MapBuilder<K, V> {
   MapBuilder._uninitialized();
 
   MapBuilder._fromBuiltMap(_BuiltMap<K, V> map)
-      : _mapFactory = map._mapFactory,
-        _map = map._map,
-        _mapOwner = map;
+    : _mapFactory = map._mapFactory,
+      _map = map._map,
+      _mapOwner = map;
 
   void _setOwner(_BuiltMap<K, V> mapOwner) {
-    assert(mapOwner._mapFactory == _mapFactory,
-        "Can't reuse a built map that uses a different base");
+    assert(
+      mapOwner._mapFactory == _mapFactory,
+      "Can't reuse a built map that uses a different base",
+    );
     _mapOwner = mapOwner;
     _map = mapOwner._map;
   }
@@ -205,7 +210,7 @@ class MapBuilder<K, V> {
   void _checkKeys(Iterable<K> keys) {
     if (isSoundMode) return;
     if (null is K) return;
-    for (var key in keys) {
+    for (final key in keys) {
       _checkKey(key);
     }
   }
@@ -221,7 +226,7 @@ class MapBuilder<K, V> {
   void _checkValues(Iterable<V> values) {
     if (isSoundMode) return;
     if (null is V) return;
-    for (var value in values) {
+    for (final value in values) {
       _checkValue(value);
     }
   }

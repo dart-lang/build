@@ -6,6 +6,7 @@ import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:collection/collection.dart';
 
+import '../contracts.dart';
 import 'input_matcher.dart';
 
 /// A "phase" in the build graph, which represents running a one or more
@@ -40,6 +41,9 @@ abstract class BuildAction {
 }
 
 /// A [BuildPhase] that uses a single [Builder] to generate files.
+@Invariant('package.isNotEmpty')
+@Invariant('key.isNotEmpty')
+@Invariant('displayName.isNotEmpty')
 class InBuildPhase extends BuildPhase implements BuildAction {
   final Builder builder;
 
@@ -82,7 +86,19 @@ class InBuildPhase extends BuildPhase implements BuildAction {
     this.isOptional = false,
     this.outputsToArtifactTree = false,
     this.addsToLibrary = false,
-  });
+  }) {
+    if (addsToLibrary) {
+      final nonDartInputs = builder.buildExtensions.keys.where(
+        (input) => !input.endsWith('.dart'),
+      );
+      if (nonDartInputs.isNotEmpty) {
+        throw ArgumentError(
+          'A builder with `adds_to_library: true` can only have `.dart` '
+          "inputs, but has: ${nonDartInputs.map((i) => "'$i'").join(', ')}.",
+        );
+      }
+    }
+  }
 
   /// Creates an [BuildPhase] for a normal [Builder].
   ///

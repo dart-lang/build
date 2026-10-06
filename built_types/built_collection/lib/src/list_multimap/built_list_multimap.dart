@@ -42,8 +42,8 @@ abstract class BuiltListMultimap<K, V> {
 
   /// Creates a [ListMultimapBuilder], applies updates to it, and builds.
   factory BuiltListMultimap.build(
-          Function(ListMultimapBuilder<K, V>) updates) =>
-      (ListMultimapBuilder<K, V>()..update(updates)).build();
+    Function(ListMultimapBuilder<K, V>) updates,
+  ) => (ListMultimapBuilder<K, V>()..update(updates)).build();
 
   /// Converts to a [ListMultimapBuilder] for modification.
   ///
@@ -52,8 +52,8 @@ abstract class BuiltListMultimap<K, V> {
 
   /// Converts to a [ListMultimapBuilder], applies updates to it, and builds.
   BuiltListMultimap<K, V> rebuild(
-          Function(ListMultimapBuilder<K, V>) updates) =>
-      (toBuilder()..update(updates)).build();
+    Function(ListMultimapBuilder<K, V>) updates,
+  ) => (toBuilder()..update(updates)).build();
 
   /// Converts to a [Map].
   ///
@@ -72,10 +72,12 @@ abstract class BuiltListMultimap<K, V> {
   /// to be the same.
   @override
   int get hashCode {
-    _hashCode ??= hashObjects(_map.keys
-        .map((key) => hash2(key.hashCode, _map[key].hashCode))
-        .toList(growable: false)
-      ..sort());
+    _hashCode ??= hashObjects(
+      _map.keys
+          .map((key) => hash2(key.hashCode, _map[key].hashCode))
+          .toList(growable: false)
+        ..sort(),
+    );
     return _hashCode!;
   }
 
@@ -89,7 +91,7 @@ abstract class BuiltListMultimap<K, V> {
     if (other is! BuiltListMultimap) return false;
     if (other.length != length) return false;
     if (other.hashCode != hashCode) return false;
-    for (var key in keys) {
+    for (final key in keys) {
       if (other[key] != this[key]) return false;
     }
     return true;
@@ -100,15 +102,16 @@ abstract class BuiltListMultimap<K, V> {
 
   /// Returns as an immutable map.
   ///
-  /// Useful when producing or using APIs that need the [Map] interface. This
-  /// differs from [toMap] where mutations are explicitly disallowed.
+  /// Useful when producing or using APIs that need the [Map] interface.
+  /// Unlike [toMap], which returns a mutable copy, the returned map throws if
+  /// you try to modify it.
   Map<K, Iterable<V>> asMap() => Map<K, Iterable<V>>.unmodifiable(_map);
 
   // ListMultimap.
 
   /// As [ListMultimap], but results are [BuiltList]s and not mutable.
   BuiltList<V> operator [](Object? key) {
-    var result = _map[key];
+    final result = _map[key];
     return result ?? _emptyList;
   }
 
@@ -121,9 +124,9 @@ abstract class BuiltListMultimap<K, V> {
   /// As [ListMultimap.forEach].
   void forEach(void Function(K, V) f) {
     _map.forEach((key, values) {
-      values.forEach((value) {
+      for (final value in values) {
         f(key, value);
-      });
+      }
     });
   }
 
@@ -164,11 +167,11 @@ abstract class BuiltListMultimap<K, V> {
 
 /// Default implementation of the public [BuiltListMultimap] interface.
 class _BuiltListMultimap<K, V> extends BuiltListMultimap<K, V> {
-  _BuiltListMultimap.withSafeMap(Map<K, BuiltList<V>> map) : super._(map);
+  _BuiltListMultimap.withSafeMap(super.map) : super._();
 
   _BuiltListMultimap.copy(Iterable keys, Function lookup)
-      : super._(<K, BuiltList<V>>{}) {
-    for (var key in keys) {
+    : super._(<K, BuiltList<V>>{}) {
+    for (final key in keys) {
       if (key is K) {
         _map[key] = BuiltList<V>(lookup(key));
       } else {

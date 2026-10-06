@@ -9,7 +9,10 @@ import 'package:build_runner/src/build/build_series.dart';
 import 'package:build_runner/src/build/build_state/asset_graph_json.dart';
 import 'package:build_runner/src/build/build_state/build_state.dart';
 import 'package:build_runner/src/build/build_state/build_step_result.dart';
+import 'package:build_runner/src/build/build_state/glob_id.dart';
+import 'package:build_runner/src/build/build_state/glob_result.dart';
 import 'package:build_runner/src/build/library_cycle_graph/phased_asset_deps.dart';
+import 'package:build_runner/src/build_plan/asset_file.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
@@ -22,6 +25,7 @@ import 'package:build_runner/src/commands/watch/asset_change.dart';
 import 'package:build_runner/src/constants.dart';
 import 'package:build_runner/src/io/reader_writer.dart';
 import 'package:built_collection/built_collection.dart';
+import 'package:crypto/crypto.dart';
 import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
 
@@ -111,6 +115,60 @@ void main() {
         expect(filtered.accepted, isEmpty);
         expect(filtered.rejected, [change]);
       });
+
+      test(
+        'accepts removal of unread source whose existence was tracked',
+        () async {
+          final unreadSourceId = AssetId('a', 'lib/no_outputs.txt');
+          await readerWriter.writeAsString(unreadSourceId, '// no outputs');
+          final globId = GlobId(
+            package: 'a',
+            glob: 'lib/*.txt',
+            phaseNumber: 0,
+          );
+          final globResult = GlobResult(
+            (b) => b
+              ..inputs.add(unreadSourceId)
+              ..results.add(unreadSourceId)
+              ..digest = Digest([]),
+          );
+          final buildState = BuildState(
+            buildStepPlan: buildPlan.buildStepPlan,
+            sources: {assetId: null, unreadSourceId: null},
+          );
+          buildState.updateGlobResult(globId, globResult);
+          await writeBuildStateAndPlan(buildState, buildPlan);
+          final loadedPlan = await loadPlan();
+          final buildSeries = BuildSeries(loadedPlan);
+
+          final change = AssetChange(unreadSourceId, ChangeType.REMOVE);
+          final filtered = await buildSeries.filterChanges([change]);
+
+          expect(filtered.accepted, [change]);
+          expect(filtered.rejected, isEmpty);
+        },
+      );
+
+      test(
+        'rejects removal of unread source whose existence was not tracked',
+        () async {
+          final unreadSourceId = AssetId('a', 'lib/no_outputs.txt');
+          await readerWriter.writeAsString(unreadSourceId, '// no outputs');
+          final buildState = BuildState(
+            buildStepPlan: buildPlan.buildStepPlan,
+            sources: {assetId: null, unreadSourceId: null},
+          );
+          await writeBuildStateAndPlan(buildState, buildPlan);
+          final loadedPlan = await loadPlan();
+          final buildSeries = BuildSeries(loadedPlan);
+
+          final change = AssetChange(unreadSourceId, ChangeType.REMOVE);
+          final filtered = await buildSeries.filterChanges([change]);
+
+          expect(filtered.accepted, isEmpty);
+          expect(filtered.rejected, [change]);
+        },
+      );
 
       test('accepts change to read source', () async {
         final buildState = BuildState(
@@ -344,6 +402,99 @@ void main() {
 
         expect(secondResult.status, BuildStatus.success);
         expect(secondResult.outputs, contains(outputId));
+      });
+    });
+
+    group('run', () {
+      test(
+        'skips build when a source is written with unchanged content',
+        () async {
+          final series = BuildSeries(buildPlan);
+          final firstResult = await series.run({}, recentlyBootstrapped: true);
+          expect(firstResult.status, BuildStatus.success);
+          expect(firstResult.outputs, contains(outputId));
+
+          await readerWriter.writeAsString(assetId, '// a.dart');
+          final secondResult = await series.run({
+            assetId,
+          }, recentlyBootstrapped: false);
+
+          // No build ran, so the output of the previous build is reused and
+          // nothing is reported as written.
+          expect(
+            secondResult.buildOutputReader,
+            same(firstResult.buildOutputReader),
+          );
+          expect(secondResult.outputs, isEmpty);
+        },
+      );
+
+      test(
+        'runs build when a source is written with changed content',
+        () async {
+          final series = BuildSeries(buildPlan);
+          final firstResult = await series.run({}, recentlyBootstrapped: true);
+          expect(firstResult.status, BuildStatus.success);
+
+          await readerWriter.writeAsString(assetId, '// a.dart, changed');
+          final secondResult = await series.run({
+            assetId,
+          }, recentlyBootstrapped: false);
+
+          expect(secondResult, isNot(same(firstResult)));
+          expect(secondResult.status, BuildStatus.success);
+          expect(secondResult.outputs, contains(outputId));
+        },
+      );
+
+      test('runs build when a source is deleted', () async {
+        final series = BuildSeries(buildPlan);
+        final firstResult = await series.run({}, recentlyBootstrapped: true);
+        expect(firstResult.status, BuildStatus.success);
+
+        await readerWriter.delete(AssetFile.atPackagePath(assetId));
+        final secondResult = await series.run({
+          assetId,
+        }, recentlyBootstrapped: false);
+
+        expect(secondResult, isNot(same(firstResult)));
+        expect(secondResult.outputs, isNot(contains(outputId)));
+      });
+
+      test('accepts deletion of an output that was deleted by an earlier build '
+          'and then written again', () async {
+        final series = BuildSeries(buildPlan);
+        expect(
+          (await series.run({}, recentlyBootstrapped: true)).outputs,
+          contains(outputId),
+        );
+
+        // Deleting the source makes the build delete the output. The delete is
+        // recorded so that the resulting watcher event does not start another
+        // build.
+        await readerWriter.delete(AssetFile.atPackagePath(assetId));
+        expect(
+          (await series.run({assetId}, recentlyBootstrapped: false)).outputs,
+          isNot(contains(outputId)),
+        );
+
+        // The watcher never reports that delete. Watch events converge on the
+        // state of the filesystem, they do not describe each operation, so a
+        // file that is deleted and written again is reported as a
+        // modification. Restoring the source makes the next build write the
+        // output again.
+        await readerWriter.writeAsString(assetId, '// a.dart');
+        expect(
+          (await series.run({assetId}, recentlyBootstrapped: false)).outputs,
+          contains(outputId),
+        );
+
+        // The user deletes the generated file by hand to force regeneration.
+        await readerWriter.delete(AssetFile.atPackagePath(outputId));
+        final change = AssetChange(outputId, ChangeType.REMOVE);
+        final filtered = await series.filterChanges([change]);
+
+        expect(filtered.accepted, [change]);
       });
     });
 

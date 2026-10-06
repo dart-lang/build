@@ -4,18 +4,18 @@
 
 import 'dart:convert';
 
-import 'package:built_collection/built_collection.dart';
-import 'package:built_value/serializer.dart';
-import 'package:built_value/standard_json_plugin.dart';
 import 'package:_built_value_end_to_end_test/errors_matchers.dart';
 import 'package:_built_value_end_to_end_test/records.dart';
 import 'package:_built_value_end_to_end_test/serializers.dart';
+import 'package:built_collection/built_collection.dart';
+import 'package:built_value/serializer.dart';
+import 'package:built_value/standard_json_plugin.dart';
 import 'package:test/test.dart';
 
 void main() {
   group('$SerializableRecordValue with no record value', () {
-    var data = SerializableRecordValue((b) => b..value = 1);
-    var serialized = json.decode(
+    final data = SerializableRecordValue((b) => b..value = 1);
+    final serialized = json.decode(
       json.encode(['SerializableRecordValue', 'value', 1]),
     ) as Object;
 
@@ -29,12 +29,12 @@ void main() {
   });
 
   group('$SerializableRecordValue with a record value', () {
-    var data = SerializableRecordValue(
+    final data = SerializableRecordValue(
       (b) => b
         ..value = 1
         ..record = (1, 2),
     );
-    var serialized = json.decode(
+    final serialized = json.decode(
       json.encode([
         'SerializableRecordValue',
         'value',
@@ -43,7 +43,7 @@ void main() {
         [1, 2],
       ]),
     ) as Object;
-    var serializersWithCustomSerializer =
+    final serializersWithCustomSerializer =
         (serializers.toBuilder()..add(RecordOfIntIntSerializer())).build();
 
     test('gives advice about custom serializer on failure to serialize', () {
@@ -74,30 +74,30 @@ void main() {
   });
 
   group('$SerializableRecordValue with a record list value', () {
-    var data = SerializableRecordValue(
+    final data = SerializableRecordValue(
       (b) => b
         ..value = 1
         ..intOrList = (null, BuiltList(['value0', 'value1', 'value2'])),
     );
-    var serialized = json.decode(
+    final serialized = json.decode(
       json.encode({
         'value': 1,
         'intOrList': ['value0', 'value1', 'value2'],
       }),
     ) as Object;
-    var serializersWithCustomSerializer =
+    final serializersWithCustomSerializer =
         (serializers.toBuilder()
               ..addPlugin(
                 StandardJsonPlugin(typesToLeaveAsList: {RecordOfIntOrList}),
               )
-              ..add(RecordOfIntOrListSerializer()))
+              ..add(const RecordOfIntOrListSerializer()))
             .build();
 
     test('can be serialized with custom serializer', () {
       expect(
         serializersWithCustomSerializer.serialize(
           data,
-          specifiedType: FullType(SerializableRecordValue),
+          specifiedType: const FullType(SerializableRecordValue),
         ),
         serialized,
       );
@@ -107,7 +107,7 @@ void main() {
       expect(
         serializersWithCustomSerializer.deserialize(
           serialized,
-          specifiedType: FullType(SerializableRecordValue),
+          specifiedType: const FullType(SerializableRecordValue),
         ),
         data,
       );

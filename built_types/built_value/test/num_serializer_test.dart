@@ -6,12 +6,12 @@ import 'package:built_value/serializer.dart';
 import 'package:test/test.dart';
 
 void main() {
-  var serializers = Serializers();
+  final serializers = Serializers();
 
   group('num with known specifiedType', () {
-    var data = 42;
-    var serialized = 42;
-    var specifiedType = const FullType(num);
+    final data = 42;
+    final serialized = 42;
+    final specifiedType = const FullType(num);
 
     test('can be serialized', () {
       expect(serializers.serialize(data, specifiedType: specifiedType),
@@ -25,9 +25,9 @@ void main() {
   });
 
   group('num with NaN value', () {
-    var data = double.nan;
-    var serialized = 'NaN';
-    var specifiedType = const FullType(num);
+    final data = double.nan;
+    final serialized = 'NaN';
+    final specifiedType = const FullType(num);
 
     test('can be serialized', () {
       expect(serializers.serialize(data, specifiedType: specifiedType),
@@ -45,9 +45,9 @@ void main() {
   });
 
   group('num with -INF value', () {
-    var data = double.negativeInfinity;
-    var serialized = '-INF';
-    var specifiedType = const FullType(num);
+    final data = double.negativeInfinity;
+    final serialized = '-INF';
+    final specifiedType = const FullType(num);
 
     test('can be serialized', () {
       expect(serializers.serialize(data, specifiedType: specifiedType),
@@ -61,9 +61,9 @@ void main() {
   });
 
   group('num with INF value', () {
-    var data = double.infinity;
-    var serialized = 'INF';
-    var specifiedType = const FullType(num);
+    final data = double.infinity;
+    final serialized = 'INF';
+    final specifiedType = const FullType(num);
 
     test('can be serialized', () {
       expect(serializers.serialize(data, specifiedType: specifiedType),

@@ -8,6 +8,8 @@ import 'dart:math';
 
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
+import 'package:build/experiments.dart';
+import 'package:build_runner/src/build/br_outputs.dart';
 import 'package:build_runner/src/build/resolver/resolvers_impl.dart';
 import 'package:build_runner/src/constants.dart';
 import 'package:build_runner/src/logging/build_log.dart';
@@ -26,6 +28,9 @@ class InvalidationTester {
   final bool testIsRunning;
   final bool discardResolver;
 
+  /// Dart language experiments to enable for analysis.
+  final List<String> enabledExperiments;
+
   /// The source assets on disk before the first build.
   final Set<AssetId> _sourceAssets = {};
 
@@ -40,6 +45,12 @@ class InvalidationTester {
   /// If an asset has an entry here then sources and generated sources will
   /// start with the import statements specified.
   final Map<String, List<String>> _importGraph = {};
+
+  /// Part statements.
+  ///
+  /// If an asset has an entry here then sources and generated sources will
+  /// start with the part statements specified.
+  final Map<String, List<String>> _partGraph = {};
 
   /// The builders that will run.
   final List<TestBuilder> _builders = [];
@@ -79,7 +90,11 @@ class InvalidationTester {
   /// like independent "build" commands. Keeping the resolver makes the builds
   /// more like multiple builds by the same "watch" command. So, it's useful to
   /// test both.
-  InvalidationTester({this.testIsRunning = true, this.discardResolver = true});
+  InvalidationTester({
+    this.testIsRunning = true,
+    this.discardResolver = true,
+    this.enabledExperiments = const [],
+  });
 
   /// Starts logging test setup.
   ///
@@ -116,6 +131,13 @@ class InvalidationTester {
     if (_logSetup) _setupLog.add('tester.importGraph($importGraph)');
     _importGraph.clear();
     _importGraph.addAll(importGraph);
+  }
+
+  // Sets the part graph for source files and generated files.
+  void partGraph(Map<String, List<String>> partGraph) {
+    if (_logSetup) _setupLog.add('tester.partGraph($partGraph)');
+    _partGraph.clear();
+    _partGraph.addAll(partGraph);
   }
 
   /// Adds a builder to the test.
@@ -192,9 +214,19 @@ class InvalidationTester {
 
   String _imports(AssetId id) {
     final imports = _importGraph[_assetIdToName(id)];
-    return imports == null
-        ? ''
-        : imports.map((i) => "import '${i.pathForImport}';").join('\n');
+    final parts = _partGraph[_assetIdToName(id)];
+    final buffer = StringBuffer();
+    if (imports != null) {
+      for (final i in imports) {
+        buffer.writeln("import '${i.pathForImport}';");
+      }
+    }
+    if (parts != null) {
+      for (final p in parts) {
+        buffer.writeln("part '${p.pathForImport}';");
+      }
+    }
+    return buffer.toString();
   }
 
   /// Does a build.
@@ -260,17 +292,23 @@ class InvalidationTester {
     final startingAssets = assets.keys.toSet();
     _generatedOutputsWritten.clear();
     final log = StringBuffer();
-    final testBuildResult = await testBuilders(
-      onLog: (record) => log.writeln(record.display),
-      _builders,
-      assets.map((id, content) => MapEntry(id.toString(), content)),
-      rootPackage: 'pkg',
-      optionalBuilders: _builders.where((b) => b.isOptional).toSet(),
-      visibleOutputBuilders: _builders
-          .where((b) => b.outputAtPackagePath)
-          .toSet(),
-      testingBuilderConfig: false,
-      resolvers: discardResolver ? ResolversImpl.custom() : null,
+    final testBuildResult = await withEnabledExperiments(
+      () => testBuilders(
+        onLog: (record) => log.writeln(record.display),
+        _builders,
+        assets.map((id, content) => MapEntry(id.toString(), content)),
+        rootPackage: 'pkg',
+        optionalBuilders: _builders.where((b) => b.isOptional).toSet(),
+        visibleOutputBuilders: _builders
+            .where((b) => b.outputAtPackagePath)
+            .toSet(),
+        addsToLibraryBuilders: _builders
+            .where((b) => b.partWrite != null || b.partImports.isNotEmpty)
+            .toSet(),
+        testingBuilderConfig: false,
+        resolvers: discardResolver ? ResolversImpl.custom() : null,
+      ),
+      enabledExperiments,
     );
     final logString = log.toString();
     if (testIsRunning) {
@@ -409,6 +447,18 @@ class TestBuilderBuilder {
     if (_logSetup) _setupLog.add('builder.writes($extension)');
     _builder.writes.add('$extension.dart');
   }
+
+  void writesPart(String content) {
+    if (_logSetup) _setupLog.add('builder.writesPart($content)');
+    _builder.partWrite = content;
+  }
+
+  /// Test setup: the builder will add an import of [name] to the shared part
+  /// of its primary input.
+  void writesPartImport(String name) {
+    if (_logSetup) _setupLog.add('builder.writesPartImport($name)');
+    _builder.partImports.add(name);
+  }
 }
 
 /// A builder that does reads and writes according to test setup.
@@ -447,6 +497,12 @@ class TestBuilder implements Builder {
   /// The extensions are applied to the primary input asset ID with
   /// [AssetIdExtension.replaceExtensions].
   List<String> writes = [];
+
+  String? partWrite;
+
+  /// Names of assets that the builder will import from the shared part of its
+  /// primary input.
+  List<String> partImports = [];
 
   TestBuilder(
     this._tester,
@@ -566,6 +622,23 @@ class TestBuilder implements Builder {
       if (_tester._failureStrategies[writeId] == FailureStrategy.fail) {
         throw StateError('Failing as requested by test setup.');
       }
+    }
+
+    if (partWrite != null || partImports.isNotEmpty) {
+      final sink = await buildStep.librarySourceSink;
+      for (final partImport in partImports) {
+        sink?.addImport(
+          partImport.assetId.uri.toString(),
+          as: '${sink.importPrefix}$partImport',
+        );
+      }
+      if (partWrite != null) {
+        final actualContent = partWrite! == '_digest'
+            ? recordedInput.map((l) => '// $l\n').join('')
+            : partWrite!;
+        sink?.add(actualContent);
+      }
+      _tester._generatedOutputsWritten.add(buildStep.inputId.sharedPartId!);
     }
   }
 

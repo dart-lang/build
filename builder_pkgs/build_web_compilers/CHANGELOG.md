@@ -1,5 +1,18 @@
-## 4.8.11-wip
+## 4.8.12-wip
 
+- Start the persistent Frontend Server and its reaper process in the scratch
+  space instead of the package directory, so they do not block deleting it on
+  Windows.
+- Wait for the persistent Frontend Server to exit before deleting the scratch
+  space.
+- Call DDC with an AOT snapshot via `dart compile js-dev` instead of JIT
+  snapshot.
+- Fix `DdcFrontendServerBuilder` to support the same custom sdk build options
+  as `DevCompilerBuilder`.
+
+## 4.8.11
+
+- Allow Dart SDK 3.14.x and 3.15 prerelease.
 - Make `fes_manager` config directory and file user-private.
 - Use a token for socket authentication in `fes_manager`.
 - By default, prefer entrypoints from the `web` directory over
@@ -7,13 +20,19 @@
 - Prefer entrypoints closer to the root of a searched directory,
   and `main.dart` over other entrypoints alongside it.
 - Accept a list of directories for `web-assets-path`.
-- Fix `DdcFrontendServerBuilder` to support the same custom sdk build options as `DevCompilerBuilder`.
+- Fix `DdcFrontendServerBuilder` failing to compile generated entrypoints while
+  building dependency modules.
+- Fix `.web.entrypoint.json` being looked for in the package root rather than
+  where `WebEntrypointMarkerBuilder` writes it, which stopped the recorded
+  entrypoint from ever being restored on a later build.
+- Fix a crash when reading a `.web.entrypoint.json` that records no entrypoint.
 
 ## 4.8.10
 
 - Require Dart `3.13.0`.
 
 ## 4.8.9
+
 - Fix an issue where `DdcFrontendServerBuilder` accumulates changed files across builds.
 
 ## 4.8.8

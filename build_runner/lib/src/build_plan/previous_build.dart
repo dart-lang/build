@@ -10,6 +10,7 @@ import 'package:built_value/built_value.dart';
 
 import 'package:crypto/crypto.dart';
 
+import '../build/br_outputs.dart';
 import '../build/build_state/asset_graph_json.dart';
 import '../build/build_state/build_step_id.dart';
 import '../build/build_state/build_step_result.dart';
@@ -21,6 +22,7 @@ import '../build/build_state/post_process_build_step_id.dart';
 import '../build/build_state/post_process_build_step_result.dart';
 import '../build/library_cycle_graph/phased_asset_deps.dart';
 import '../constants.dart';
+import '../contracts.dart';
 
 import 'build_packages.dart';
 import 'build_spec.dart';
@@ -31,6 +33,24 @@ part 'previous_build.g.dart';
 
 /// Information about the previous build run and how it relates to the current
 /// configuration.
+@Invariant(
+  'incrementalState == null || incompatibleBuildOutputsToDelete.isEmpty',
+)
+@Invariant('incrementalState == null || buildStepPlan != null')
+@Invariant(
+  'buildStepPlan == null || '
+  'phaseOptionsChangedList.length == '
+  'buildStepPlan!.buildPhases.inBuildPhases.length',
+)
+@Invariant(
+  'buildStepPlan == null || '
+  'postBuildOptionsChangedList.length == '
+  'buildStepPlan!.buildPhases.postBuildPhase.builderActions.length',
+)
+@Invariant(
+  'incompatibleBuildOutputsToDelete.every('
+  '(id) => id.package.isNotEmpty && id.path.isNotEmpty)',
+)
 abstract class PreviousBuild
     implements Built<PreviousBuild, PreviousBuildBuilder> {
   /// The `IncrementalBuildState` of the previous build, or null if it was
@@ -61,8 +81,6 @@ abstract class PreviousBuild
       incrementalState?.sources ?? BuiltSet<AssetId>();
   BuiltMap<AssetId, Digest> get digests =>
       incrementalState?.digests ?? BuiltMap<AssetId, Digest>();
-  BuiltSet<AssetId> get missingSources =>
-      incrementalState?.missingSources ?? BuiltSet<AssetId>();
   BuiltMap<BuildStepId, BuildStepResult> get buildStepResults =>
       incrementalState?.buildStepResults ??
       BuiltMap<BuildStepId, BuildStepResult>();
@@ -84,8 +102,22 @@ abstract class PreviousBuild
     return builder.build();
   }
 
+  @memoized
+  BuiltSet<AssetId> get trackedInputs {
+    final builder = SetBuilder<AssetId>();
+    for (final result in buildStepResults.values) {
+      builder.addAll(result.inputs);
+    }
+    for (final result in globResults.values) {
+      builder.addAll(result.inputs);
+    }
+    return builder.build();
+  }
+
   bool isSource(AssetId id) => sources.contains(id);
-  bool isMissingSource(AssetId id) => missingSources.contains(id);
+
+  /// Whether [id] was tracked as an input to any build step or glob.
+  bool wasTrackedInput(AssetId id) => trackedInputs.contains(id);
 
   BuildStepResult? stepResultOrNull(BuildStepId step) => buildStepResults[step];
   BuildStepResult stepResult(BuildStepId step) => stepResultOrNull(step)!;
@@ -124,9 +156,23 @@ abstract class PreviousBuild
   bool isKnownAsset(AssetId id) =>
       isSource(id) ||
       (buildStepPlan?.isDeclaredOutput(id) ?? false) ||
-      isActualPostOutput(id);
+      isActualPostOutput(id) ||
+      id.isBrOutput;
 
   Digest? digestOf(AssetId id) => digests[id];
+
+  // -- Shared parts.
+
+  Iterable<AssetId> get sharedPartIds =>
+      digests.keys.where((id) => id.isBrSharedPart);
+
+  Iterable<AssetId> get sharedPartLibraryIds =>
+      sharedPartIds.map((id) => id.sharedPartLibraryId!);
+
+  bool hasSharedPart(AssetId id) {
+    final partId = id.isBrSharedPart ? id : id.sharedPartId;
+    return partId != null && digests.containsKey(partId);
+  }
 
   /// Deserializes information about the previous build and compares it to
   /// [buildSpec] to determine whether an incremental build is possible.
@@ -268,6 +314,13 @@ Iterable<AssetId> _outputsToDelete({
       for (final id in postProcessResult.outputs) {
         if (buildPackages.outputPackages.contains(id.package)) result.add(id);
       }
+    }
+  }
+  for (final partId in buildState.digests.keys.where(
+    (id) => id.isBrSharedPart,
+  )) {
+    if (buildPackages.outputPackages.contains(partId.package)) {
+      result.add(partId);
     }
   }
   return result;

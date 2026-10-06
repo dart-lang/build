@@ -3,11 +3,11 @@
 // license that can be found in the LICENSE file.
 // @dart=2.12
 
-import 'package:built_collection/src/internal/hash.dart';
-import 'package:built_value/built_value.dart';
 import 'package:_built_value_end_to_end_test/enums.dart';
 import 'package:_built_value_end_to_end_test/errors_matchers.dart';
 import 'package:_built_value_end_to_end_test/values.dart';
+import 'package:built_collection/src/internal/hash.dart';
+import 'package:built_value/built_value.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -378,7 +378,7 @@ void main() {
   group('ValueWithOnSet', () {
     test('notifies on sets', () {
       var notified = false;
-      var builder = ValueWithOnSet((b) => b..value = 2).toBuilder();
+      final builder = ValueWithOnSet((b) => b..value = 2).toBuilder();
       builder.onSet = () => notified = true;
       builder.value = 3;
       expect(notified, true);
@@ -399,9 +399,9 @@ void main() {
 
   group('OtherValue', () {
     test('compares correctly', () {
-      var value = OtherValue((b) => b..other = 1);
-      var equalValue = OtherValue((b) => b..other = 1);
-      var notEqualValue = OtherValue((b) => b..other = 2);
+      final value = OtherValue((b) => b..other = 1);
+      final equalValue = OtherValue((b) => b..other = 1);
+      final notEqualValue = OtherValue((b) => b..other = 2);
       expect(value, equalValue);
       expect(value, isNot(equals(notEqualValue)));
     });
@@ -409,7 +409,7 @@ void main() {
 
   group('ValueWithBuilderInitializer', () {
     test('has defaults', () {
-      var value = ValueWithBuilderInitializer((b) => b
+      final value = ValueWithBuilderInitializer((b) => b
         ..anInt = 1
         ..nestedValue.anInt = 2);
       expect(
@@ -428,15 +428,15 @@ void main() {
 
   group('DefaultsForFieldSettingsValue', () {
     test('compares correctly', () {
-      var value = DefaultsForFieldSettingsValue((b) => b
+      final value = DefaultsForFieldSettingsValue((b) => b
         ..ignored = 0
         ..compared = 0
         ..serialized = 0);
-      var equalValue = DefaultsForFieldSettingsValue((b) => b
+      final equalValue = DefaultsForFieldSettingsValue((b) => b
         ..ignored = 1
         ..compared = 0
         ..serialized = 0);
-      var differentValue = DefaultsForFieldSettingsValue((b) => b
+      final differentValue = DefaultsForFieldSettingsValue((b) => b
         ..ignored = 0
         ..compared = 1
         ..serialized = 0);
@@ -448,11 +448,11 @@ void main() {
   group('ValueWithGenericBuilderInitializer', () {
     test('works with generics', () {
       // Initializer only fires for ints, it sets the value to 42.
-      var valueThatTriggersInitializer =
+      final valueThatTriggersInitializer =
           ValueWithGenericBuilderInitializer<int>();
       expect(valueThatTriggersInitializer.value, 42);
 
-      var valueThatDoesNotTriggerInitializer =
+      final valueThatDoesNotTriggerInitializer =
           ValueWithGenericBuilderInitializer<String>();
       expect(valueThatDoesNotTriggerInitializer.value, null);
     });
@@ -460,10 +460,10 @@ void main() {
 
   group('MemoizedHashcodeValue', () {
     test('computes same hashCode as HashcodeValue', () {
-      var value = HashcodeValue((b) => b
+      final value = HashcodeValue((b) => b
         ..x = 42
         ..y = 43);
-      var valueWithMemoization = MemoizedHashcodeValue((b) => b
+      final valueWithMemoization = MemoizedHashcodeValue((b) => b
         ..x = 42
         ..y = 43);
 
@@ -473,27 +473,27 @@ void main() {
 
   group(ValueWithHooks, () {
     test('initialize hooks run', () {
-      var value = ValueWithHooks();
+      final value = ValueWithHooks();
       expect(value.hook1Count, 1);
     });
 
     test('initialize hooks run initially', () {
-      var value = ValueWithHooks((b) => b..hook1Count = 100);
+      final value = ValueWithHooks((b) => b..hook1Count = 100);
       expect(value.hook1Count, 100);
     });
 
     test('finalize hooks run', () {
-      var value = ValueWithHooks();
+      final value = ValueWithHooks();
       expect(value.hook2Count, 1);
     });
 
     test('finalize hooks run finally', () {
-      var value = ValueWithHooks((b) => b..hook1Count = 100);
+      final value = ValueWithHooks((b) => b..hook1Count = 100);
       expect(value.hook2Count, 1);
     });
 
     test('multiple hooks ordering', () {
-      var value = ValueWithHooks();
+      final value = ValueWithHooks();
       expect(value.hookOrdering, [
         'justInitialize',
         'both',

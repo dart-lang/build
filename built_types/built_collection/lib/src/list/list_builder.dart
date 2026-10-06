@@ -15,11 +15,6 @@ class ListBuilder<E> {
   late List<E> _list;
   _BuiltList<E>? _listOwner;
 
-  /// Instantiates with elements from an [Iterable<E>].
-  factory ListBuilder.of(Iterable<E> iterable) {
-    return ListBuilder<E>._uninitialized().._replaceOf(iterable);
-  }
-
   /// Instantiates with elements from an [Iterable].
   factory ListBuilder([Iterable iterable = const []]) {
     return ListBuilder<E>._uninitialized()..replace(iterable);
@@ -47,15 +42,6 @@ class ListBuilder<E> {
       _setOwner(iterable);
     } else {
       _setSafeList(List<E>.from(iterable));
-    }
-  }
-
-  /// Replaces all elements with elements from an [Iterable<E>].
-  void _replaceOf(Iterable<E> iterable) {
-    if (iterable is _BuiltList<E>) {
-      _setOwner(iterable);
-    } else {
-      _setSafeList(List<E>.of(iterable));
     }
   }
 
@@ -107,8 +93,8 @@ class ListBuilder<E> {
   void addAll(Iterable<E> iterable) {
     // Add directly to the underlying `List` then check elements there, for
     // performance. Roll back the changes if validation fails.
-    var safeList = _safeList;
-    var lengthBefore = safeList.length;
+    final safeList = _safeList;
+    final lengthBefore = safeList.length;
     safeList.addAll(iterable);
     if (!_needsNullCheck) return;
     try {
@@ -152,11 +138,11 @@ class ListBuilder<E> {
   void insertAll(int index, Iterable<E> iterable) {
     // Add directly to the underlying `List` then check elements there, for
     // performance. Roll back the changes if validation fails.
-    var safeList = _safeList;
-    var lengthBefore = safeList.length;
+    final safeList = _safeList;
+    final lengthBefore = safeList.length;
     safeList.insertAll(index, iterable);
     if (!_needsNullCheck) return;
-    var insertedLength = safeList.length - lengthBefore;
+    final insertedLength = safeList.length - lengthBefore;
     try {
       for (var i = index; i != index + insertedLength; ++i) {
         _checkElement(safeList[i]);
@@ -229,7 +215,7 @@ class ListBuilder<E> {
 
   /// As [Iterable.map], but updates the builder in place. Returns nothing.
   void map(E Function(E) f) {
-    var result = _list.map(f).toList(growable: true);
+    final result = _list.map(f).toList(growable: true);
     _maybeCheckElements(result);
     _setSafeList(result);
   }
@@ -241,7 +227,7 @@ class ListBuilder<E> {
 
   /// As [Iterable.expand], but updates the builder in place. Returns nothing.
   void expand(Iterable<E> Function(E) f) {
-    var result = _list.expand(f).toList(growable: true);
+    final result = _list.expand(f).toList(growable: true);
     _maybeCheckElements(result);
     _setSafeList(result);
   }
@@ -303,7 +289,7 @@ class ListBuilder<E> {
 
   void _maybeCheckElements(Iterable<E> elements) {
     if (!_needsNullCheck) return;
-    for (var element in elements) {
+    for (final element in elements) {
       _checkElement(element);
     }
   }

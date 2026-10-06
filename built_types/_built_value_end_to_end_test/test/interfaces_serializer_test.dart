@@ -5,20 +5,20 @@
 
 import 'dart:convert';
 
-import 'package:built_collection/built_collection.dart';
 import 'package:_built_value_end_to_end_test/interfaces.dart';
 import 'package:_built_value_end_to_end_test/serializers.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:test/test.dart';
 
 void main() {
   group('HasInt', () {
-    var data = BuiltList.of([
+    final data = BuiltList.of([
       ValueWithHasInt((b) => b.hasInt = ValueWithInt((b) => b
         ..anInt = 2
         ..note = 'two')),
       ValueWithHasInt((b) => b.hasInt = EnumWithInt.one),
     ]);
-    var serialized = json.decode(json.encode([
+    final serialized = json.decode(json.encode([
       'list',
       [
         'ValueWithHasInt',

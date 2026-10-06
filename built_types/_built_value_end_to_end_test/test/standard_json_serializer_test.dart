@@ -5,17 +5,17 @@
 
 import 'dart:convert';
 
-import 'package:built_value/json_object.dart';
-import 'package:built_value/serializer.dart';
-import 'package:built_value/standard_json_plugin.dart';
 import 'package:_built_value_end_to_end_test/polymorphism.dart';
 import 'package:_built_value_end_to_end_test/serializers.dart';
 import 'package:_built_value_end_to_end_test/standard_json.dart';
+import 'package:built_value/json_object.dart';
+import 'package:built_value/serializer.dart';
+import 'package:built_value/standard_json_plugin.dart';
 import 'package:test/test.dart';
 
 void main() {
   group('StandardJsonValue', () {
-    var data = StandardJsonValue((b) => b
+    final data = StandardJsonValue((b) => b
       ..number = 3
       ..text = 'some text'
       ..value.primitive = 4
@@ -43,10 +43,10 @@ void main() {
       ..objects.add(ComplexValue((b) => b
         ..primitive = 8
         ..value.anInt = 9)));
-    var specifiedType = FullType(StandardJsonValue);
-    var serializersWithPlugin =
+    final specifiedType = const FullType(StandardJsonValue);
+    final serializersWithPlugin =
         (serializers.toBuilder()..addPlugin(StandardJsonPlugin())).build();
-    var serialized = json.decode(json.encode({
+    final serialized = json.decode(json.encode({
       'number': 3,
       'text': 'some text',
       'value': {
@@ -108,7 +108,7 @@ void main() {
   });
 
   group('StandardJsonValue with extraneous nulls', () {
-    var data = StandardJsonValue((b) => b
+    final data = StandardJsonValue((b) => b
       ..number = 3
       ..text = 'some text'
       ..value.primitive = 4
@@ -118,10 +118,10 @@ void main() {
       ..keyValues['three'] = JsonObject(true)
       ..keyValues['four'] = JsonObject([1, 2, 3])
       ..keyValues['five'] = JsonObject({'one': 1, 'two': 2}));
-    var specifiedType = FullType(StandardJsonValue);
-    var serializersWithPlugin =
+    final specifiedType = const FullType(StandardJsonValue);
+    final serializersWithPlugin =
         (serializers.toBuilder()..addPlugin(StandardJsonPlugin())).build();
-    var serialized = json.decode(json.encode({
+    final serialized = json.decode(json.encode({
       'number': 3,
       'text': 'some text',
       'value': {
@@ -147,7 +147,7 @@ void main() {
   });
 
   group('StandardJsonValue with unknown specifiedType', () {
-    var data = StandardJsonValue((b) => b
+    final data = StandardJsonValue((b) => b
       ..number = 3
       ..text = 'some text'
       ..value.primitive = 4
@@ -172,9 +172,9 @@ void main() {
       ..objects.add(ComplexValue((b) => b
         ..primitive = 8
         ..value.anInt = 9)));
-    var serializersWithPlugin =
+    final serializersWithPlugin =
         (serializers.toBuilder()..addPlugin(StandardJsonPlugin())).build();
-    var serialized = {
+    final serialized = {
       r'$': 'StandardJsonValue',
       'number': 3,
       'text': 'some text',

@@ -10,11 +10,11 @@ import 'package:test/test.dart';
 
 void main() {
   group('BuiltMap with known specifiedType but missing builder', () {
-    var data = BuiltMap<int, String>({1: 'one', 2: 'two', 3: 'three'});
-    var specifiedType =
+    final data = BuiltMap<int, String>({1: 'one', 2: 'two', 3: 'three'});
+    final specifiedType =
         const FullType(BuiltMap, [FullType(int), FullType(String)]);
-    var serializers = Serializers();
-    var serialized =
+    final serializers = Serializers();
+    final serialized =
         json.decode(json.encode([1, 'one', 2, 'two', 3, 'three'])) as Object;
 
     test('cannot be serialized', () {
@@ -31,13 +31,13 @@ void main() {
   });
 
   group('BuiltMap with known specifiedType and correct builder', () {
-    var data = BuiltMap<int, String>({1: 'one', 2: 'two', 3: 'three'});
-    var specifiedType =
+    final data = BuiltMap<int, String>({1: 'one', 2: 'two', 3: 'three'});
+    final specifiedType =
         const FullType(BuiltMap, [FullType(int), FullType(String)]);
-    var serializers = (Serializers().toBuilder()
-          ..addBuilderFactory(specifiedType, () => MapBuilder<int, String>()))
+    final serializers = (Serializers().toBuilder()
+          ..addBuilderFactory(specifiedType, MapBuilder<int, String>.new))
         .build();
-    var serialized =
+    final serialized =
         json.decode(json.encode([1, 'one', 2, 'two', 3, 'three'])) as Object;
 
     test('can be serialized', () {
@@ -60,19 +60,19 @@ void main() {
   });
 
   group('BuiltMap nested left with known specifiedType', () {
-    var data = BuiltMap<BuiltMap<int, String>, String>({
+    final data = BuiltMap<BuiltMap<int, String>, String>({
       BuiltMap<int, String>({1: 'one'}): 'one!',
       BuiltMap<int, String>({2: 'two'}): 'two!'
     });
     const innerTypeLeft = FullType(BuiltMap, [FullType(int), FullType(String)]);
-    var specifiedType =
+    final specifiedType =
         const FullType(BuiltMap, [innerTypeLeft, FullType(String)]);
-    var serializers = (Serializers().toBuilder()
-          ..addBuilderFactory(innerTypeLeft, () => MapBuilder<int, String>())
+    final serializers = (Serializers().toBuilder()
+          ..addBuilderFactory(innerTypeLeft, MapBuilder<int, String>.new)
           ..addBuilderFactory(
-              specifiedType, () => MapBuilder<BuiltMap<int, String>, String>()))
+              specifiedType, MapBuilder<BuiltMap<int, String>, String>.new))
         .build();
-    var serialized = json.decode(json.encode([
+    final serialized = json.decode(json.encode([
       [1, 'one'],
       'one!',
       [2, 'two'],
@@ -91,21 +91,20 @@ void main() {
   });
 
   group('BuiltMap nested right with known specifiedType', () {
-    var data = BuiltMap<int, BuiltMap<String, String>>({
+    final data = BuiltMap<int, BuiltMap<String, String>>({
       1: BuiltMap<String, String>({'one': 'one!'}),
       2: BuiltMap<String, String>({'two': 'two!'})
     });
     const innerTypeRight =
         FullType(BuiltMap, [FullType(String), FullType(String)]);
-    var specifiedType =
+    final specifiedType =
         const FullType(BuiltMap, [FullType(int), innerTypeRight]);
-    var serializers = (Serializers().toBuilder()
+    final serializers = (Serializers().toBuilder()
+          ..addBuilderFactory(innerTypeRight, MapBuilder<String, String>.new)
           ..addBuilderFactory(
-              innerTypeRight, () => MapBuilder<String, String>())
-          ..addBuilderFactory(
-              specifiedType, () => MapBuilder<int, BuiltMap<String, String>>()))
+              specifiedType, MapBuilder<int, BuiltMap<String, String>>.new))
         .build();
-    var serialized = json.decode(json.encode([
+    final serialized = json.decode(json.encode([
       1,
       ['one', 'one!'],
       2,
@@ -124,7 +123,7 @@ void main() {
   });
 
   group('BuiltMap nested both with known specifiedType', () {
-    var data = BuiltMap<BuiltMap<int, int>, BuiltMap<String, String>>({
+    final data = BuiltMap<BuiltMap<int, int>, BuiltMap<String, String>>({
       BuiltMap<int, int>({1: 1}): BuiltMap<String, String>({'one': 'one!'}),
       BuiltMap<int, int>({2: 2}): BuiltMap<String, String>({'two': 'two!'})
     });
@@ -132,17 +131,17 @@ void main() {
         FullType(BuiltMap, [FullType(int), FullType(int)]);
     const builtMapOfStringStringGenericType =
         FullType(BuiltMap, [FullType(String), FullType(String)]);
-    var specifiedType = const FullType(BuiltMap,
+    final specifiedType = const FullType(BuiltMap,
         [builtMapOfIntIntGenericType, builtMapOfStringStringGenericType]);
-    var serializers = (Serializers().toBuilder()
+    final serializers = (Serializers().toBuilder()
           ..addBuilderFactory(
-              builtMapOfIntIntGenericType, () => MapBuilder<int, int>())
-          ..addBuilderFactory(builtMapOfStringStringGenericType,
-              () => MapBuilder<String, String>())
+              builtMapOfIntIntGenericType, MapBuilder<int, int>.new)
+          ..addBuilderFactory(
+              builtMapOfStringStringGenericType, MapBuilder<String, String>.new)
           ..addBuilderFactory(specifiedType,
-              () => MapBuilder<BuiltMap<int, int>, BuiltMap<String, String>>()))
+              MapBuilder<BuiltMap<int, int>, BuiltMap<String, String>>.new))
         .build();
-    var serialized = json.decode(json.encode([
+    final serialized = json.decode(json.encode([
       [1, 1],
       ['one', 'one!'],
       [2, 2],
@@ -161,14 +160,12 @@ void main() {
 
     test('keeps generic type on deserialization', () {
       final genericSerializer = (serializers.toBuilder()
+            ..addBuilderFactory(specifiedType,
+                MapBuilder<BuiltMap<int, int>, BuiltMap<String, String>>.new)
             ..addBuilderFactory(
-                specifiedType,
-                () =>
-                    MapBuilder<BuiltMap<int, int>, BuiltMap<String, String>>())
-            ..addBuilderFactory(
-                builtMapOfIntIntGenericType, () => MapBuilder<int, int>())
+                builtMapOfIntIntGenericType, MapBuilder<int, int>.new)
             ..addBuilderFactory(builtMapOfStringStringGenericType,
-                () => MapBuilder<String, String>()))
+                MapBuilder<String, String>.new))
           .build();
 
       expect(
@@ -180,13 +177,13 @@ void main() {
   });
 
   group('BuiltMap with Object values', () {
-    var data = BuiltMap<int, Object>({1: 'one', 2: 2, 3: 'three'});
-    var specifiedType =
+    final data = BuiltMap<int, Object>({1: 'one', 2: 2, 3: 'three'});
+    final specifiedType =
         const FullType(BuiltMap, [FullType(int), FullType.unspecified]);
-    var serializers = (Serializers().toBuilder()
-          ..addBuilderFactory(specifiedType, () => MapBuilder<int, Object>()))
+    final serializers = (Serializers().toBuilder()
+          ..addBuilderFactory(specifiedType, MapBuilder<int, Object>.new))
         .build();
-    var serialized = json.decode(json.encode([
+    final serialized = json.decode(json.encode([
       1,
       ['String', 'one'],
       2,
@@ -207,14 +204,13 @@ void main() {
   });
 
   group('BuiltMap with Object keys', () {
-    var data = BuiltMap<Object, String>({1: 'one', 'two': 'two', 3: 'three'});
-    var specifiedType =
+    final data = BuiltMap<Object, String>({1: 'one', 'two': 'two', 3: 'three'});
+    final specifiedType =
         const FullType(BuiltMap, [FullType.unspecified, FullType(String)]);
-    var serializers = (Serializers().toBuilder()
-          ..addBuilderFactory(
-              specifiedType, () => MapBuilder<Object, String>()))
+    final serializers = (Serializers().toBuilder()
+          ..addBuilderFactory(specifiedType, MapBuilder<Object, String>.new))
         .build();
-    var serialized = json.decode(json.encode([
+    final serialized = json.decode(json.encode([
       ['int', 1],
       'one',
       ['String', 'two'],
@@ -235,10 +231,10 @@ void main() {
   });
 
   group('BuiltMap with Object keys and values', () {
-    var data = BuiltMap<Object, Object>({1: 'one', 'two': 2, 3: 'three'});
-    var specifiedType = const FullType(BuiltMap);
-    var serializers = Serializers();
-    var serialized = json.decode(json.encode([
+    final data = BuiltMap<Object, Object>({1: 'one', 'two': 2, 3: 'three'});
+    final specifiedType = const FullType(BuiltMap);
+    final serializers = Serializers();
+    final serialized = json.decode(json.encode([
       ['int', 1],
       ['String', 'one'],
       ['String', 'two'],
@@ -259,10 +255,10 @@ void main() {
   });
 
   group('BuiltMap with unknown specifiedType', () {
-    var data = BuiltMap<Object, Object>({1: 'one', 'two': 2, 3: 'three'});
-    var specifiedType = FullType.unspecified;
-    var serializers = Serializers();
-    var serialized = json.decode(json.encode([
+    final data = BuiltMap<Object, Object>({1: 'one', 'two': 2, 3: 'three'});
+    final specifiedType = FullType.unspecified;
+    final serializers = Serializers();
+    final serialized = json.decode(json.encode([
       'map',
       ['int', 1],
       ['String', 'one'],

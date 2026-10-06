@@ -10,6 +10,7 @@ import 'package:build/build.dart';
 import 'package:pool/pool.dart';
 
 import '../../build_plan/build_inputs.dart';
+import '../../contracts.dart';
 import '../../logging/timed_activities.dart';
 import '../build_step_impl.dart';
 import '../builder_filesystem.dart';
@@ -40,6 +41,7 @@ class AnalysisDriverModel {
   /// Starts a build with [builderFilesystem].
   ///
   /// If another build has the lock, waits for it to finish.
+  @Ensures('_lock != null')
   Future<void> takeLockAndStartBuild({
     required BuilderFilesystem builderFilesystem,
     required BuildInputs buildInputs,
@@ -54,6 +56,7 @@ class AnalysisDriverModel {
   /// Clears build state and frees the lock taken by [takeLockAndStartBuild].
   ///
   /// If no lock was taken, just clears build state.
+  @Ensures('_lock == null')
   void endBuildAndUnlock() {
     _graphLoader.clear();
     _lock?.release();

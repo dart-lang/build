@@ -9,10 +9,12 @@ import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 
 import '../build/asset_content.dart';
+import '../build/br_outputs.dart';
 import '../build/build_file_index.dart';
 import '../build/build_state/finished_build_state.dart';
 import '../build_plan/build_packages.dart';
 import '../build_plan/build_step_plan.dart';
+import '../contracts.dart';
 import 'build_output_read_result.dart';
 import 'reader_writer.dart';
 
@@ -22,6 +24,17 @@ import 'reader_writer.dart';
 ///
 /// Build inputs that were not used in the build are not in memory and are
 /// returned directly from disk with no caching.
+@Invariant(
+  '_sourcesConsumedOutsideBuild.every((id) => buildState.isSource(id))',
+)
+@Invariant(
+  '_sourcesConsumedOutsideBuild.every('
+  '(id) => !buildStepPlan.isDeclaredOutput(id))',
+)
+@Invariant(
+  '_sourcesConsumedOutsideBuild.every('
+  '(id) => !buildState.isActualPostOutput(id))',
+)
 class BuildOutputReader {
   final BuildPackages buildPackages;
   final ReaderWriter readerWriter;
@@ -30,7 +43,9 @@ class BuildOutputReader {
   BuildStepPlan get buildStepPlan => buildState.buildStepPlan;
 
   late final BuildFileIndex _fileIndex = BuildFileIndex(
-    buildState.sources.followedBy(buildStepPlan.declaredOutputs),
+    buildState.sources
+        .followedBy(buildStepPlan.declaredOutputs)
+        .followedBy(buildState.sharedPartIds),
   );
 
   /// Sources that were read or digested but only outside the build, for example
@@ -55,6 +70,8 @@ class BuildOutputReader {
     required this.buildState,
   });
 
+  @Requires('id.package.isNotEmpty')
+  @Requires('id.path.isNotEmpty')
   String pathFor(AssetId id) {
     return readerWriter.assetPathProvider.pathFor(
       id,
@@ -64,6 +81,11 @@ class BuildOutputReader {
 
   /// Returns a reason why [id] is not readable, or null if it is readable.
   Future<UnreadableReason?> _unreadableReason(AssetId id) async {
+    if (id.isBrSharedPart) {
+      if (buildState.contentOf(id) != null) return null;
+      return UnreadableReason.notFound;
+    }
+
     if (buildState.assetsDeletedByPostProcess.contains(id)) {
       return UnreadableReason.deleted;
     }
@@ -102,6 +124,8 @@ class BuildOutputReader {
   }
 
   /// Reads [id] from the build output, returning a [BuildOutputReadResult].
+  @Requires('id.package.isNotEmpty')
+  @Requires('id.path.isNotEmpty')
   Future<BuildOutputReadResult> read(AssetId id) async {
     final reason = await _unreadableReason(id);
     if (reason != null) {
@@ -122,6 +146,8 @@ class BuildOutputReader {
     return BuildOutputReadResult.available(id, AssetContent.bytes(bytes));
   }
 
+  @Requires('id.package.isNotEmpty')
+  @Requires('id.path.isNotEmpty')
   Future<bool> canRead(AssetId id) async =>
       (await _unreadableReason(id)) == null;
 
@@ -157,11 +183,20 @@ class BuildOutputReader {
         result.add(id);
       }
     }
+    for (final id in buildState.sharedPartIds) {
+      if (!_shouldSkipId(id, rootDir)) {
+        result.add(id);
+      }
+    }
     return result;
   }
 
   bool _shouldSkipId(AssetId id, String? rootDir) {
-    if (buildState.assetsDeletedByPostProcess.contains(id)) return true;
+    if (id.isBrSharedPart) {
+      if (buildState.contentOf(id) == null) return true;
+    } else {
+      if (buildState.assetsDeletedByPostProcess.contains(id)) return true;
+    }
 
     // Exclude non-lib assets if they're outside of the root directory or not
     // an output package of the build.

@@ -2,19 +2,19 @@
 // All rights reserved. Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-library built_value_generator.enum_source_class;
+library;
 
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
-import 'package:built_value_generator/src/dart_types.dart';
-import 'package:built_value_generator/src/enum_source_field.dart';
-import 'package:built_value_generator/src/parsed_library_results.dart';
-import 'package:built_value_generator/src/strings.dart';
 import 'package:collection/collection.dart' show IterableExtension;
 
+import 'dart_types.dart';
+import 'enum_source_field.dart';
 import 'library_elements.dart';
+import 'parsed_library_results.dart';
+import 'strings.dart';
 
 part 'enum_source_class.g.dart';
 
@@ -54,13 +54,13 @@ abstract class EnumSourceClass
 
   @memoized
   BuiltValueEnum get settings {
-    var annotations = element.metadata.annotations
+    final annotations = element.metadata.annotations
         .map((annotation) => annotation.computeConstantValue())
         .where(
           (value) => DartTypes.tryGetName(value?.type) == 'BuiltValueEnum',
         );
     if (annotations.isEmpty) return const BuiltValueEnum();
-    var annotation = annotations.single!;
+    final annotation = annotations.single!;
     return BuiltValueEnum(
       wireName: annotation.getField('wireName')?.toStringValue(),
     );
@@ -88,13 +88,13 @@ abstract class EnumSourceClass
 
   @memoized
   String? get valuesIdentifier {
-    var getter = element.getGetter('values');
+    final getter = element.getGetter('values');
     if (getter == null) return null;
-    var source = parsedLibrary
+    final source = parsedLibrary
         .getFragmentDeclaration(getter.firstFragment)!
         .node
         .toSource();
-    var matches = RegExp(
+    final matches = RegExp(
       r'static BuiltSet<' +
           RegExp.escape(element.displayName) +
           r'> get values => (_\$[\w$]+)\;',
@@ -104,13 +104,13 @@ abstract class EnumSourceClass
 
   @memoized
   String? get valueOfIdentifier {
-    var getter = element.getMethod('valueOf');
+    final getter = element.getMethod('valueOf');
     if (getter == null) return null;
-    var source = parsedLibrary
+    final source = parsedLibrary
         .getFragmentDeclaration(getter.firstFragment)!
         .node
         .toSource();
-    var matches = RegExp(
+    final matches = RegExp(
       r'static ' +
           RegExp.escape(element.displayName) +
           r' valueOf\((?:final )?String name\) \=\> (\_\$[\w$]+)\(name\)\;',
@@ -120,9 +120,9 @@ abstract class EnumSourceClass
 
   @memoized
   bool get usesMixin =>
-      element.library.getClass(name + 'Mixin') != null ||
+      element.library.getClass('${name}Mixin') != null ||
       element.library.firstFragment.typeAliases.any(
-        (a) => a.name == name + 'Mixin',
+        (a) => a.name == '${name}Mixin',
       );
 
   @memoized
@@ -130,7 +130,7 @@ abstract class EnumSourceClass
     return [
       valuesIdentifier,
       valueOfIdentifier,
-      for (var field in fields) field.generatedIdentifier,
+      for (final field in fields) field.generatedIdentifier,
     ].nonNulls.toList();
   }
 
@@ -159,9 +159,9 @@ abstract class EnumSourceClass
   }
 
   Iterable<String> _checkFallbackFields() {
-    var result = <String>[];
+    final result = <String>[];
 
-    var fallbackFields =
+    final fallbackFields =
         fields.where((field) => field.settings.fallback).toList();
     if (fallbackFields.length > 1) {
       result.add(
@@ -175,13 +175,13 @@ abstract class EnumSourceClass
   }
 
   Iterable<String> _checkConstructor() {
-    var expectedCode = RegExp(
+    final expectedCode = RegExp(
       'const ${RegExp.escape(name)}._\\((?:final )?String name\\) : super\\(name\\);',
     );
-    var expectedCode217 = RegExp(
+    final expectedCode217 = RegExp(
       'const (?:${RegExp.escape(name)}\\.|new )_\\(super\\.name\\);',
     );
-    var expectedCodeNew = RegExp(
+    final expectedCodeNew = RegExp(
       'const new _\\((?:final )?String name\\) : super\\(name\\);',
     );
     return constructors.length == 1 &&
@@ -196,7 +196,7 @@ abstract class EnumSourceClass
   }
 
   Iterable<String> _checkValuesGetter() {
-    var result = <String>[];
+    final result = <String>[];
     if (valuesIdentifier == null) {
       result.add('Add getter: static BuiltSet<$name> get values => _\$values');
     }
@@ -204,7 +204,7 @@ abstract class EnumSourceClass
   }
 
   Iterable<String> _checkValueOf() {
-    var result = <String>[];
+    final result = <String>[];
     if (valueOfIdentifier == null) {
       result.add(
         'Add method: '
@@ -215,9 +215,9 @@ abstract class EnumSourceClass
   }
 
   String generateCode() {
-    var result = StringBuffer();
+    final result = StringBuffer();
 
-    for (var field in fields) {
+    for (final field in fields) {
       result.writeln(
         'const $name ${field.generatedIdentifier} = '
         'const $name._(\'${escapeString(field.name)}\');',
@@ -230,14 +230,15 @@ abstract class EnumSourceClass
       '$name $valueOfIdentifier(String name) {'
       'switch (name) {',
     );
-    for (var field in fields) {
+    for (final field in fields) {
       result.writeln(
         "case '${escapeString(field.name)}':"
         ' return ${field.generatedIdentifier};',
       );
     }
 
-    var fallback = fields.firstWhereOrNull((field) => field.settings.fallback);
+    final fallback =
+        fields.firstWhereOrNull((field) => field.settings.fallback);
     if (fallback == null) {
       result.writeln('default: throw ArgumentError(name);');
     } else {
@@ -251,7 +252,7 @@ abstract class EnumSourceClass
       'final BuiltSet<$name> $valuesIdentifier ='
       'BuiltSet<$name>(const <$name>[',
     );
-    for (var field in fields) {
+    for (final field in fields) {
       result.writeln('${field.generatedIdentifier},');
     }
     result.writeln(']);');
@@ -264,12 +265,12 @@ abstract class EnumSourceClass
   }
 
   String _generateMixin() {
-    var result = StringBuffer();
+    final result = StringBuffer();
 
     result
       ..writeln('class _\$${name}Meta {')
       ..writeln('const _\$${name}Meta();');
-    for (var field in fields) {
+    for (final field in fields) {
       result.writeln(
         '$name get ${field.name} => ${field.generatedIdentifier};',
       );

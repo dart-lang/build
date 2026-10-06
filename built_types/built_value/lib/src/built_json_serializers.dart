@@ -2,10 +2,15 @@
 // All rights reserved. Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// Deserialization catches `Error` so it can wrap any failure, including a type
+// error from malformed input, in a `DeserializationError` that names the type
+// being deserialized.
+// ignore_for_file: avoid_catching_errors
+
 import 'dart:convert';
 
 import 'package:built_collection/built_collection.dart';
-import 'package:built_value/serializer.dart';
+import '../serializer.dart';
 
 /// Default implementation of [Serializers].
 class BuiltJsonSerializers implements Serializers {
@@ -62,12 +67,12 @@ class BuiltJsonSerializers implements Serializers {
   Object? serialize(Object? object,
       {FullType specifiedType = FullType.unspecified}) {
     var transformedObject = object;
-    for (var plugin in serializerPlugins) {
+    for (final plugin in serializerPlugins) {
       transformedObject =
           plugin.beforeSerialize(transformedObject, specifiedType);
     }
     var result = _serialize(transformedObject, specifiedType);
-    for (var plugin in serializerPlugins) {
+    for (final plugin in serializerPlugins) {
       result = plugin.afterSerialize(result, specifiedType);
     }
     return result;
@@ -118,12 +123,12 @@ class BuiltJsonSerializers implements Serializers {
   Object? deserialize(Object? object,
       {FullType specifiedType = FullType.unspecified}) {
     var transformedObject = object;
-    for (var plugin in serializerPlugins) {
+    for (final plugin in serializerPlugins) {
       transformedObject =
           plugin.beforeDeserialize(transformedObject, specifiedType);
     }
     var result = _deserialize(object, transformedObject, specifiedType);
-    for (var plugin in serializerPlugins) {
+    for (final plugin in serializerPlugins) {
       result = plugin.afterDeserialize(result, specifiedType);
     }
     return result;
@@ -147,7 +152,7 @@ class BuiltJsonSerializers implements Serializers {
         }
       } else if (serializer is PrimitiveSerializer) {
         try {
-          var primitive = object[1];
+          final primitive = object[1];
           return primitive == null
               ? null
               : serializer.deserialize(this, primitive);
@@ -205,7 +210,7 @@ class BuiltJsonSerializers implements Serializers {
 
   @override
   Object newBuilder(FullType fullType) {
-    var builderFactory = builderFactories[fullType];
+    final builderFactory = builderFactories[fullType];
     if (builderFactory == null) _throwMissingBuilderFactory(fullType);
     return builderFactory();
   }
@@ -269,7 +274,7 @@ class BuiltJsonSerializersBuilder implements SerializersBuilder {
     }
 
     _wireNameToSerializer[serializer.wireName] = serializer;
-    for (var type in serializer.types) {
+    for (final type in serializer.types) {
       _typeToSerializer[type] = serializer;
       _typeNameToSerializer[_getRawName(type)] = serializer;
     }
@@ -297,7 +302,7 @@ class BuiltJsonSerializersBuilder implements SerializersBuilder {
 
   @override
   void mergeAll(Iterable<Serializers> serializersIterable) {
-    for (var serializers in serializersIterable) {
+    for (final serializers in serializersIterable) {
       merge(serializers);
     }
   }
@@ -319,8 +324,8 @@ class BuiltJsonSerializersBuilder implements SerializersBuilder {
 }
 
 String _getRawName(Type? type) {
-  var name = type.toString();
-  var genericsStart = name.indexOf('<');
+  final name = type.toString();
+  final genericsStart = name.indexOf('<');
   return genericsStart == -1 ? name : name.substring(0, genericsStart);
 }
 

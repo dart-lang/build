@@ -8,23 +8,23 @@ import 'package:built_value/serializer.dart';
 import 'package:test/test.dart';
 
 void main() {
-  var serializers = Serializers();
+  final serializers = Serializers();
 
   group('Duration with known specifiedType', () {
-    var data = Duration(
+    final data = const Duration(
         days: 1,
         hours: 2,
         minutes: 3,
         seconds: 4,
         milliseconds: 5,
         microseconds: 6);
-    var serialized = 1 * 1000 * 1000 * 60 * 60 * 24 +
+    final serialized = 1 * 1000 * 1000 * 60 * 60 * 24 +
         2 * 1000 * 1000 * 60 * 60 +
         3 * 1000 * 1000 * 60 +
         4 * 1000 * 1000 +
         5 * 1000 +
         6;
-    var specifiedType = const FullType(Duration);
+    final specifiedType = const FullType(Duration);
 
     test('can be serialized', () {
       expect(serializers.serialize(data, specifiedType: specifiedType),
@@ -38,14 +38,14 @@ void main() {
   });
 
   group('Duration with unknown specifiedType', () {
-    var data = Duration(
+    final data = const Duration(
         days: 1,
         hours: 2,
         minutes: 3,
         seconds: 4,
         milliseconds: 5,
         microseconds: 6);
-    var serialized = json.decode(json.encode([
+    final serialized = json.decode(json.encode([
       'Duration',
       1 * 1000 * 1000 * 60 * 60 * 24 +
           2 * 1000 * 1000 * 60 * 60 +
@@ -54,7 +54,7 @@ void main() {
           5 * 1000 +
           6,
     ])) as Object;
-    var specifiedType = FullType.unspecified;
+    final specifiedType = FullType.unspecified;
 
     test('can be serialized', () {
       expect(serializers.serialize(data, specifiedType: specifiedType),

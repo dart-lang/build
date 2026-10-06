@@ -8,6 +8,8 @@ import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
+import '../../contracts.dart';
+
 part 'phased_value.g.dart';
 
 /// A value that changes during the build, according to the `int` build phase.
@@ -43,6 +45,20 @@ part 'phased_value.g.dart';
 ///
 /// TODO(davidmorgan): it might be more efficient to represent the simpler
 /// cases, fixed or changing exactly once, as different implementation types.
+@Invariant('values.isNotEmpty')
+@Invariant(
+  'values.every((v) => v.expiresAfter == null || v.expiresAfter! >= 0)',
+)
+@Invariant(
+  'values.length <= 1 || '
+  'values.take(values.length - 1).every((v) => v.expiresAfter != null)',
+)
+@Invariant(
+  'values.length <= 1 || '
+  'Iterable<int>.generate(values.length - 1).every((i) => '
+  'values[i + 1].expiresAfter == null || '
+  'values[i].expiresAfter! < values[i + 1].expiresAfter!)',
+)
 abstract class PhasedValue<T>
     implements Built<PhasedValue<T>, PhasedValueBuilder<T>> {
   static Serializer<PhasedValue> get serializer => _$phasedValueSerializer;
@@ -89,11 +105,16 @@ abstract class PhasedValue<T>
   /// are possible.
   bool get isComplete => values.last.expiresAfter == null;
 
+  /// Whether this value is nothing but the "before" value of
+  /// [PhasedValue.unavailable]: nothing is known about it yet.
+  bool get isUnavailable => values.length == 1 && !isComplete;
+
   /// The phase after which the value expires, or `null` if it never expires.
   int? get expiresAfter => values.last.expiresAfter;
 
   /// Whether this value has expired at the specified [phase], meaning the
   /// actual value is not known.
+  @Requires('phase >= 0')
   bool isExpiredAt({required int phase}) {
     return expiresAfter != null && expiresAfter! < phase;
   }
@@ -102,6 +123,7 @@ abstract class PhasedValue<T>
   ///
   /// Throws `StateError` if the value has expired at [phase], meaning the value
   /// is not known.
+  @Requires('phase >= 0')
   ExpiringValue<T> expiringValueAt({required int phase}) {
     for (final value in values) {
       if (value.expiresAfter == null || value.expiresAfter! >= phase) {
@@ -115,6 +137,7 @@ abstract class PhasedValue<T>
   ///
   /// Throws `StateError` if the value has expired at [phase], meaning the value
   /// is not known.
+  @Requires('phase >= 0')
   T valueAt({required int phase}) => expiringValueAt(phase: phase).value;
 
   /// The value after all changes have happened.
@@ -123,6 +146,14 @@ abstract class PhasedValue<T>
   T get lastValue {
     if (!isComplete) throw StateError('Not complete, no last value.');
     return values.last.value;
+  }
+
+  /// This value with the last value made final, so [isComplete] is `true`.
+  PhasedValue<T> get completed {
+    if (isComplete) return this;
+    final completedValues = values.toList();
+    completedValues.last = ExpiringValue(completedValues.last.value);
+    return PhasedValue((b) => b.values.addAll(completedValues));
   }
 
   /// This value followed by [value].
@@ -153,6 +184,7 @@ abstract class PhasedValue<T>
 ///
 /// If [expiresAfter] is set, the value expires after that phase, taking a new
 /// value in the next phase.
+@Invariant('expiresAfter == null || expiresAfter! >= 0')
 abstract class ExpiringValue<T>
     implements Built<ExpiringValue<T>, ExpiringValueBuilder<T>> {
   static Serializer<ExpiringValue> get serializer => _$expiringValueSerializer;

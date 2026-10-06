@@ -8,7 +8,7 @@ import 'package:test/test.dart';
 void main() {
   group('CopyOnWriteList', () {
     test('has toString equal to List.toString', () {
-      var list = <int>[1, 2, 3];
+      final list = <int>[1, 2, 3];
       expect(CopyOnWriteList(list, false).toString(), list.toString());
     });
   });

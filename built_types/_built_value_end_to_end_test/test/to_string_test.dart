@@ -2,14 +2,13 @@
 // All rights reserved. Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-import 'package:built_value/built_value.dart';
 import 'package:_built_value_end_to_end_test/values.dart';
+import 'package:built_value/built_value.dart';
 import 'package:test/test.dart';
 
 void main() {
   tearDown(() {
-    newBuiltValueToStringHelper = (className) =>
-        IndentingBuiltValueToStringHelper(className);
+    newBuiltValueToStringHelper = IndentingBuiltValueToStringHelper.new;
   });
 
   group('toString', () {
@@ -24,8 +23,7 @@ void main() {
     });
 
     test('can be customized', () {
-      newBuiltValueToStringHelper = (className) =>
-          FlatBuiltValueToStringHelper(className);
+      newBuiltValueToStringHelper = FlatBuiltValueToStringHelper.new;
       final value = CompoundValue((b) => b..simpleValue.anInt = 1);
 
       expect(

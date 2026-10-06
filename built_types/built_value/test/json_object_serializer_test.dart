@@ -9,12 +9,12 @@ import 'package:built_value/serializer.dart';
 import 'package:test/test.dart';
 
 void main() {
-  var serializers = Serializers();
+  final serializers = Serializers();
 
   group('JsonObject with known specifiedType holding bool', () {
-    var data = JsonObject(true);
-    var serialized = true;
-    var specifiedType = const FullType(JsonObject);
+    final data = JsonObject(true);
+    final serialized = true;
+    final specifiedType = const FullType(JsonObject);
 
     test('can be serialized', () {
       expect(serializers.serialize(data, specifiedType: specifiedType),
@@ -28,9 +28,9 @@ void main() {
   });
 
   group('JsonObject with unknown specifiedType holding bool', () {
-    var data = JsonObject(true);
-    var serialized = json.decode(json.encode(['JsonObject', true])) as Object;
-    var specifiedType = FullType.unspecified;
+    final data = JsonObject(true);
+    final serialized = json.decode(json.encode(['JsonObject', true])) as Object;
+    final specifiedType = FullType.unspecified;
 
     test('can be serialized', () {
       expect(serializers.serialize(data, specifiedType: specifiedType),
@@ -44,9 +44,9 @@ void main() {
   });
 
   group('JsonObject with known specifiedType holding double', () {
-    var data = JsonObject(42.5);
-    var serialized = 42.5;
-    var specifiedType = const FullType(JsonObject);
+    final data = JsonObject(42.5);
+    final serialized = 42.5;
+    final specifiedType = const FullType(JsonObject);
 
     test('can be serialized', () {
       expect(serializers.serialize(data, specifiedType: specifiedType),
@@ -60,9 +60,9 @@ void main() {
   });
 
   group('JsonObject with unknown specifiedType holding double', () {
-    var data = JsonObject(42.5);
-    var serialized = json.decode(json.encode(['JsonObject', 42.5])) as Object;
-    var specifiedType = FullType.unspecified;
+    final data = JsonObject(42.5);
+    final serialized = json.decode(json.encode(['JsonObject', 42.5])) as Object;
+    final specifiedType = FullType.unspecified;
 
     test('can be serialized', () {
       expect(serializers.serialize(data, specifiedType: specifiedType),
@@ -76,9 +76,9 @@ void main() {
   });
 
   group('JsonObject with known specifiedType holding list', () {
-    var data = JsonObject([1, 2, 3]);
-    var serialized = json.decode(json.encode([1, 2, 3])) as Object;
-    var specifiedType = const FullType(JsonObject);
+    final data = JsonObject([1, 2, 3]);
+    final serialized = json.decode(json.encode([1, 2, 3])) as Object;
+    final specifiedType = const FullType(JsonObject);
 
     test('can be serialized', () {
       expect(serializers.serialize(data, specifiedType: specifiedType),
@@ -92,12 +92,12 @@ void main() {
   });
 
   group('JsonObject with unknown specifiedType holding list', () {
-    var data = JsonObject([1, 2, 3]);
-    var serialized = json.decode(json.encode([
+    final data = JsonObject([1, 2, 3]);
+    final serialized = json.decode(json.encode([
       'JsonObject',
       [1, 2, 3],
     ])) as Object;
-    var specifiedType = FullType.unspecified;
+    final specifiedType = FullType.unspecified;
 
     test('can be serialized', () {
       expect(serializers.serialize(data, specifiedType: specifiedType),
@@ -111,9 +111,9 @@ void main() {
   });
 
   group('JsonObject with known specifiedType holding map', () {
-    var data = JsonObject({'one': 1, 'two': 2, 'three': 3});
-    var serialized = {'one': 1, 'two': 2, 'three': 3};
-    var specifiedType = const FullType(JsonObject);
+    final data = JsonObject({'one': 1, 'two': 2, 'three': 3});
+    final serialized = {'one': 1, 'two': 2, 'three': 3};
+    final specifiedType = const FullType(JsonObject);
 
     test('can be serialized', () {
       expect(serializers.serialize(data, specifiedType: specifiedType),
@@ -127,12 +127,12 @@ void main() {
   });
 
   group('JsonObject with unknown specifiedType holding map', () {
-    var data = JsonObject({'one': 1, 'two': 2, 'three': 3});
-    var serialized = json.decode(json.encode([
+    final data = JsonObject({'one': 1, 'two': 2, 'three': 3});
+    final serialized = json.decode(json.encode([
       'JsonObject',
       {'one': 1, 'two': 2, 'three': 3},
     ])) as Object;
-    var specifiedType = FullType.unspecified;
+    final specifiedType = FullType.unspecified;
 
     test('can be serialized', () {
       expect(serializers.serialize(data, specifiedType: specifiedType),
@@ -146,9 +146,9 @@ void main() {
   });
 
   group('JsonObject with known specifiedType holding int', () {
-    var data = JsonObject(42);
-    var serialized = 42;
-    var specifiedType = const FullType(JsonObject);
+    final data = JsonObject(42);
+    final serialized = 42;
+    final specifiedType = const FullType(JsonObject);
 
     test('can be serialized', () {
       expect(serializers.serialize(data, specifiedType: specifiedType),
@@ -162,9 +162,9 @@ void main() {
   });
 
   group('JsonObject with unknown specifiedType holding int', () {
-    var data = JsonObject(42);
-    var serialized = json.decode(json.encode(['JsonObject', 42])) as Object;
-    var specifiedType = FullType.unspecified;
+    final data = JsonObject(42);
+    final serialized = json.decode(json.encode(['JsonObject', 42])) as Object;
+    final specifiedType = FullType.unspecified;
 
     test('can be serialized', () {
       expect(serializers.serialize(data, specifiedType: specifiedType),
@@ -178,9 +178,9 @@ void main() {
   });
 
   group('JsonObject with known specifiedType holding String', () {
-    var data = JsonObject('test');
-    var serialized = 'test';
-    var specifiedType = const FullType(JsonObject);
+    final data = JsonObject('test');
+    final serialized = 'test';
+    final specifiedType = const FullType(JsonObject);
 
     test('can be serialized', () {
       expect(serializers.serialize(data, specifiedType: specifiedType),
@@ -194,9 +194,10 @@ void main() {
   });
 
   group('JsonObject with unknown specifiedType holding String', () {
-    var data = JsonObject('test');
-    var serialized = json.decode(json.encode(['JsonObject', 'test'])) as Object;
-    var specifiedType = FullType.unspecified;
+    final data = JsonObject('test');
+    final serialized =
+        json.decode(json.encode(['JsonObject', 'test'])) as Object;
+    final specifiedType = FullType.unspecified;
 
     test('can be serialized', () {
       expect(serializers.serialize(data, specifiedType: specifiedType),

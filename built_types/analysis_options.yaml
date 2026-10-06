@@ -1,0 +1,19 @@
+include: ../analysis_options.yaml
+
+analyzer:
+  language:
+    strict-casts: false
+  errors:
+    # Legacy APIs in built_value and built_collection use Function instead of
+    # typed/void callbacks.
+    inference_failure_on_function_return_type: ignore
+    inference_failure_on_untyped_parameter: ignore
+    inference_failure_on_collection_literal: ignore
+    avoid_dynamic_calls: ignore
+    comment_references: ignore
+    lines_longer_than_80_chars: ignore
+    type_annotate_public_apis: ignore
+    strict_top_level_inference: ignore
+    # dart fix generates corrupted code when applying this rule to closures
+    # assigned to fields in tests.
+    prefer_function_declarations_over_variables: ignore

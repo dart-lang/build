@@ -3,8 +3,9 @@
 // license that can be found in the LICENSE file.
 
 import 'dart:collection' show SplayTreeSet;
-import 'package:built_collection/src/set.dart';
+
 import 'package:built_collection/src/internal/test_helpers.dart';
+import 'package:built_collection/src/set.dart';
 import 'package:test/test.dart';
 
 import '../performance.dart';
@@ -12,7 +13,7 @@ import '../performance.dart';
 void main() {
   group('BuiltSet', () {
     test('instantiates empty by default', () {
-      var set = BuiltSet<int>();
+      final set = BuiltSet<int>();
       expect(set.isEmpty, isTrue);
       expect(set.isNotEmpty, isFalse);
     });
@@ -30,14 +31,14 @@ void main() {
     });
 
     test('reports non-emptiness', () {
-      var set = BuiltSet<int>([1]);
+      final set = BuiltSet<int>([1]);
       expect(set.isEmpty, isFalse);
       expect(set.isNotEmpty, isTrue);
     });
 
     test('can be instantiated from Set then converted back to equal Set', () {
-      var mutableSet = [1];
-      var set = BuiltSet<int>(mutableSet);
+      final mutableSet = [1];
+      final set = BuiltSet<int>(mutableSet);
       expect(set.toSet(), mutableSet);
     });
 
@@ -46,49 +47,42 @@ void main() {
     });
 
     test('does not keep a mutable Set', () {
-      var mutableSet = [1];
-      var set = BuiltSet<int>(mutableSet);
+      final mutableSet = [1];
+      final set = BuiltSet<int>(mutableSet);
       mutableSet.clear();
       expect(set.toSet(), [1]);
     });
 
     test('copies from BuiltSet instances of different type', () {
-      var set1 = BuiltSet<Object>();
-      var set2 = BuiltSet<int>(set1);
+      final set1 = BuiltSet<Object>();
+      final set2 = BuiltSet<int>(set1);
       expect(set1, isNot(same(set2)));
     });
 
     test('can be converted to Set<E>', () {
-      expect(
-        BuiltSet<int>().toSet(),
-        const TypeMatcher<Set<int>>(),
-      );
-      expect(
-        BuiltSet<int>().toSet(),
-        isNot(const TypeMatcher<Set<String>>()),
-      );
+      expect(BuiltSet<int>().toSet(), const TypeMatcher<Set<int>>());
+      expect(BuiltSet<int>().toSet(), isNot(const TypeMatcher<Set<String>>()));
     });
 
     test('uses same base when converted with toSet', () {
-      var built = BuiltSet<int>.build((b) => b
-        ..withBase(() => SplayTreeSet<int>())
-        ..addAll([1, 3]));
-      var set = built.toSet()..addAll([2, 4]);
+      final built = BuiltSet<int>.build(
+        (b) => b
+          ..withBase(SplayTreeSet<int>.new)
+          ..addAll([1, 3]),
+      );
+      final set = built.toSet()..addAll([2, 4]);
       expect(set, [1, 2, 3, 4]);
     });
 
     test('can be converted to an UnmodifiableSetView', () {
-      var immutableSet = BuiltSet<int>().asSet();
+      final immutableSet = BuiltSet<int>().asSet();
       expect(immutableSet, const TypeMatcher<Set<int>>());
       expect(() => immutableSet.add(1), throwsUnsupportedError);
       expect(immutableSet, isEmpty);
     });
 
     test('can be converted to SetBuilder<E>', () {
-      expect(
-        BuiltSet<int>().toBuilder(),
-        const TypeMatcher<SetBuilder<int>>(),
-      );
+      expect(BuiltSet<int>().toBuilder(), const TypeMatcher<SetBuilder<int>>());
       expect(
         BuiltSet<int>().toBuilder(),
         isNot(const TypeMatcher<SetBuilder<String>>()),
@@ -107,10 +101,12 @@ void main() {
     });
 
     test('passes along its base when converted to SetBuilder', () {
-      var set = BuiltSet<int>.build((b) => b
-        ..withBase(() => SplayTreeSet<int>())
-        ..addAll([10, 15, 5]));
-      var builder = set.toBuilder()..addAll([2, 12]);
+      final set = BuiltSet<int>.build(
+        (b) => b
+          ..withBase(SplayTreeSet<int>.new)
+          ..addAll([10, 15, 5]),
+      );
+      final builder = set.toBuilder()..addAll([2, 12]);
       expect(builder.build(), orderedEquals([2, 5, 10, 12, 15]));
     });
 
@@ -119,29 +115,29 @@ void main() {
     });
 
     test('hashes to same value for same contents', () {
-      var set1 = BuiltSet<int>([1, 2, 3]);
-      var set2 = BuiltSet<int>([1, 2, 3]);
+      final set1 = BuiltSet<int>([1, 2, 3]);
+      final set2 = BuiltSet<int>([1, 2, 3]);
 
       expect(set1.hashCode, set2.hashCode);
     });
 
     test('hashes to same value for same contents in different order', () {
-      var set1 = BuiltSet<int>([1, 2, 3]);
-      var set2 = BuiltSet<int>([3, 2, 1]);
+      final set1 = BuiltSet<int>([1, 2, 3]);
+      final set2 = BuiltSet<int>([3, 2, 1]);
 
       expect(set1.hashCode, set2.hashCode);
     });
 
     test('hashes to different value for different contents', () {
-      var set1 = BuiltSet<int>([1, 2, 3]);
-      var set2 = BuiltSet<int>([1, 2, 4]);
+      final set1 = BuiltSet<int>([1, 2, 3]);
+      final set2 = BuiltSet<int>([1, 2, 4]);
 
       expect(set1.hashCode, isNot(set2.hashCode));
     });
 
     test('caches hash', () {
-      var hashCodeSpy = HashCodeSpy();
-      var set = BuiltSet<Object>([hashCodeSpy]);
+      final hashCodeSpy = HashCodeSpy();
+      final set = BuiltSet<Object>([hashCodeSpy]);
 
       hashCodeSpy.hashCodeSeen = 0;
       set.hashCode;
@@ -150,13 +146,13 @@ void main() {
     });
 
     test('compares equal to same instance', () {
-      var set1 = BuiltSet<int>([1, 2, 3]);
+      final set1 = BuiltSet<int>([1, 2, 3]);
       expect(set1 == set1, isTrue);
     });
 
     test('compares equal to same contents', () {
-      var set1 = BuiltSet<int>([1, 2, 3]);
-      var set2 = BuiltSet<int>([1, 2, 3]);
+      final set1 = BuiltSet<int>([1, 2, 3]);
+      final set2 = BuiltSet<int>([1, 2, 3]);
       expect(set1 == set2, isTrue);
     });
 
@@ -171,18 +167,18 @@ void main() {
 
     test('compares not equal to different hashcode BuiltSet', () {
       expect(
-          BuiltCollectionTestHelpers.overridenHashcodeBuiltSet([1, 2, 3], 0) ==
-              BuiltCollectionTestHelpers.overridenHashcodeBuiltSet(
-                  [1, 2, 3], 1),
-          isFalse);
+        BuiltCollectionTestHelpers.overridenHashcodeBuiltSet([1, 2, 3], 0) ==
+            BuiltCollectionTestHelpers.overridenHashcodeBuiltSet([1, 2, 3], 1),
+        isFalse,
+      );
     });
 
     test('compares not equal to different content BuiltSet', () {
       expect(
-          BuiltCollectionTestHelpers.overridenHashcodeBuiltSet([1, 2, 3], 0) ==
-              BuiltCollectionTestHelpers.overridenHashcodeBuiltSet(
-                  [1, 2, 4], 0),
-          isFalse);
+        BuiltCollectionTestHelpers.overridenHashcodeBuiltSet([1, 2, 3], 0) ==
+            BuiltCollectionTestHelpers.overridenHashcodeBuiltSet([1, 2, 4], 0),
+        isFalse,
+      );
     });
 
     test('provides toString() for debugging', () {
@@ -199,8 +195,14 @@ void main() {
     });
 
     test('has rebuild method', () {
-      expect(BuiltSet<int>([0, 1, 2]).rebuild((b) => b.addAll([3, 4, 5])),
-          [0, 1, 2, 3, 4, 5]);
+      expect(BuiltSet<int>([0, 1, 2]).rebuild((b) => b.addAll([3, 4, 5])), [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+      ]);
     });
 
     test('converts to BuiltList with toBuiltList', () {
@@ -208,68 +210,68 @@ void main() {
     });
 
     test('returns identical with toBuiltSet', () {
-      var set = BuiltSet<int>([0, 1, 2]);
+      final set = BuiltSet<int>([0, 1, 2]);
       expect(set.toBuiltSet(), same(set));
     });
 
     // Lazy copies.
 
     test('reuses BuiltSet instances of the same type', () {
-      var set1 = BuiltSet<int>();
-      var set2 = BuiltSet<int>(set1);
+      final set1 = BuiltSet<int>();
+      final set2 = BuiltSet<int>(set1);
       expect(set1, same(set2));
     });
 
     test('does not reuse BuiltSet instances with subtype element type', () {
-      var set1 = BuiltSet<_ExtendsA>();
-      var set2 = BuiltSet<_A>(set1);
+      final set1 = BuiltSet<_ExtendsA>();
+      final set2 = BuiltSet<_A>(set1);
       expect(set1, isNot(same(set2)));
     });
 
     test('can be reused via SetBuilder if there are no changes', () {
-      var set1 = BuiltSet<Object>();
-      var set2 = set1.toBuilder().build();
+      final set1 = BuiltSet<Object>();
+      final set2 = set1.toBuilder().build();
       expect(set1, same(set2));
     });
 
     test('converts to SetBuilder from correct type without copying', () {
-      var makeLongSet = () =>
+      final makeLongSet = () =>
           BuiltSet<int>(Set<int>.from(List<int>.generate(100000, (x) => x)));
-      var longSet = makeLongSet();
-      var longSetToSetBuilder = longSet.toBuilder;
+      final longSet = makeLongSet();
+      final longSetToSetBuilder = longSet.toBuilder;
 
       expectMuchFaster(longSetToSetBuilder, makeLongSet);
     });
 
     test('converts to SetBuilder from wrong type by copying', () {
-      var makeLongSet = () =>
+      final makeLongSet = () =>
           BuiltSet<Object>(Set<int>.from(List<int>.generate(100000, (x) => x)));
-      var longSet = makeLongSet();
-      var longSetToSetBuilder = () => SetBuilder<int>(longSet);
+      final longSet = makeLongSet();
+      final longSetToSetBuilder = () => SetBuilder<int>(longSet);
 
       expectNotMuchFaster(longSetToSetBuilder, makeLongSet);
     });
 
     test('has fast toSet', () {
-      var makeLongSet = () =>
+      final makeLongSet = () =>
           BuiltSet<Object>(Set<int>.from(List<int>.generate(100000, (x) => x)));
-      var longSet = makeLongSet();
-      var longSetToSet = () => longSet.toSet();
+      final longSet = makeLongSet();
+      final longSetToSet = longSet.toSet;
 
       expectMuchFaster(longSetToSet, makeLongSet);
     });
 
     test('checks for reference identity', () {
-      var makeLongSet = () =>
+      final makeLongSet = () =>
           BuiltSet<Object>(Set<int>.from(List<int>.generate(100000, (x) => x)));
-      var longSet = makeLongSet();
-      var otherLongSet = makeLongSet();
+      final longSet = makeLongSet();
+      final otherLongSet = makeLongSet();
 
       expectMuchFaster(() => longSet == longSet, () => longSet == otherLongSet);
     });
 
     test('is not mutated when Set from toSet is mutated', () {
-      var set = BuiltSet<int>();
+      final set = BuiltSet<int>();
       set.toSet().add(1);
       expect(set, []);
     });
@@ -313,14 +315,8 @@ void main() {
     });
 
     test('implements Iterable<E>', () {
-      expect(
-        BuiltSet<int>(),
-        const TypeMatcher<Iterable<int>>(),
-      );
-      expect(
-        BuiltSet<int>(),
-        isNot(const TypeMatcher<Iterable<String>>()),
-      );
+      expect(BuiltSet<int>(), const TypeMatcher<Iterable<int>>());
+      expect(BuiltSet<int>(), isNot(const TypeMatcher<Iterable<String>>()));
     });
 
     test('implements Iterable.map', () {
@@ -342,7 +338,9 @@ void main() {
 
     test('implements Iterable.forEach', () {
       var value = 1;
-      BuiltSet<int>([2]).forEach((x) => value = x);
+      for (final x in BuiltSet<int>([2])) {
+        value = x;
+      }
       expect(value, 2);
     });
 
@@ -352,13 +350,18 @@ void main() {
 
     test('implements Iterable.fold', () {
       expect(
-          BuiltSet<int>([1, 2]).fold('', (x, y) => x.toString() + y.toString()),
-          '12');
+        BuiltSet<int>([1, 2]).fold('', (x, y) => x.toString() + y.toString()),
+        '12',
+      );
     });
 
     test('implements Iterable.followedBy', () {
-      expect(BuiltSet<int>([1, 2]).followedBy(BuiltSet<int>([3, 4])),
-          [1, 2, 3, 4]);
+      expect(BuiltSet<int>([1, 2]).followedBy(BuiltSet<int>([3, 4])), [
+        1,
+        2,
+        3,
+        4,
+      ]);
     });
 
     test('implements Iterable.every', () {
@@ -416,28 +419,42 @@ void main() {
 
     test('implements Iterable.firstWhere', () {
       expect(BuiltSet<int>([1, 2]).firstWhere((x) => x == 2), 2);
-      expect(() => BuiltSet<int>([1, 2]).firstWhere((x) => x == 3),
-          throwsA(anything));
       expect(
-          BuiltSet<int>([1, 2]).firstWhere((x) => x == 3, orElse: () => 4), 4);
+        () => BuiltSet<int>([1, 2]).firstWhere((x) => x == 3),
+        throwsA(anything),
+      );
+      expect(
+        BuiltSet<int>([1, 2]).firstWhere((x) => x == 3, orElse: () => 4),
+        4,
+      );
     });
 
     test('implements Iterable.lastWhere', () {
       expect(BuiltSet<int>([1, 2]).lastWhere((x) => x == 2), 2);
-      expect(() => BuiltSet<int>([1, 2]).lastWhere((x) => x == 3),
-          throwsA(anything));
       expect(
-          BuiltSet<int>([1, 2]).lastWhere((x) => x == 3, orElse: () => 4), 4);
+        () => BuiltSet<int>([1, 2]).lastWhere((x) => x == 3),
+        throwsA(anything),
+      );
+      expect(
+        BuiltSet<int>([1, 2]).lastWhere((x) => x == 3, orElse: () => 4),
+        4,
+      );
     });
 
     test('implements Iterable.singleWhere', () {
       expect(BuiltSet<int>([1, 2]).singleWhere((x) => x == 2), 2);
-      expect(() => BuiltSet<int>([1, 2]).singleWhere((x) => x == 3),
-          throwsA(anything));
-      expect(() => BuiltSet<int>([1, 2]).singleWhere((x) => true),
-          throwsA(anything));
       expect(
-          BuiltSet<int>([1, 2]).singleWhere((x) => false, orElse: () => 7), 7);
+        () => BuiltSet<int>([1, 2]).singleWhere((x) => x == 3),
+        throwsA(anything),
+      );
+      expect(
+        () => BuiltSet<int>([1, 2]).singleWhere((x) => true),
+        throwsA(anything),
+      );
+      expect(
+        BuiltSet<int>([1, 2]).singleWhere((x) => false, orElse: () => 7),
+        7,
+      );
     });
 
     test('implements Iterable.elementAt', () {
@@ -445,8 +462,10 @@ void main() {
     });
 
     test('implements Iterable.cast', () {
-      expect(BuiltSet<int>([1, 2]).cast<Object>(),
-          const TypeMatcher<Iterable<Object>>());
+      expect(
+        BuiltSet<int>([1, 2]).cast<Object>(),
+        const TypeMatcher<Iterable<Object>>(),
+      );
       expect(BuiltSet<int>([1, 2]).cast<Object>(), [1, 2]);
     });
 
@@ -455,10 +474,7 @@ void main() {
     });
 
     test('can be created from`Set` using extension methods', () {
-      expect(
-        {1, 2, 3}.build(),
-        const TypeMatcher<BuiltSet<int>>(),
-      );
+      expect({1, 2, 3}.build(), const TypeMatcher<BuiltSet<int>>());
       expect({1, 2, 3}.build(), [1, 2, 3]);
     });
 

@@ -8,12 +8,12 @@ import 'package:built_value/serializer.dart';
 import 'package:test/test.dart';
 
 void main() {
-  var serializers = Serializers();
+  final serializers = Serializers();
 
   group('SimpleUri with known specifiedType', () {
-    var data = Uri.parse('https://github.com');
-    var serialized = 'https://github.com';
-    var specifiedType = const FullType(Uri);
+    final data = Uri.parse('https://github.com');
+    final serialized = 'https://github.com';
+    final specifiedType = const FullType(Uri);
 
     test('has expected type', () {
       expect(data.runtimeType.toString(), '_SimpleUri');
@@ -31,9 +31,9 @@ void main() {
   });
 
   group('Uri with known specifiedType', () {
-    var data = Uri.parse('https://github.com:0/google/built_value.dart');
-    var serialized = 'https://github.com:0/google/built_value.dart';
-    var specifiedType = const FullType(Uri);
+    final data = Uri.parse('https://github.com:0/google/built_value.dart');
+    final serialized = 'https://github.com:0/google/built_value.dart';
+    final specifiedType = const FullType(Uri);
 
     test('has expected type', () {
       expect(data.runtimeType.toString(), '_Uri');
@@ -51,11 +51,11 @@ void main() {
   });
 
   group('Uri with unknown specifiedType', () {
-    var data = Uri.parse('https://github.com/google/built_value.dart');
-    var serialized = json.decode(
+    final data = Uri.parse('https://github.com/google/built_value.dart');
+    final serialized = json.decode(
             json.encode(['Uri', 'https://github.com/google/built_value.dart']))
         as Object;
-    var specifiedType = FullType.unspecified;
+    final specifiedType = FullType.unspecified;
 
     test('can be serialized', () {
       expect(serializers.serialize(data, specifiedType: specifiedType),

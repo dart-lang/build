@@ -1470,7 +1470,7 @@ targets:
         resumeFrom: result,
       );
 
-      /// Should be deleted using the writer, and converted to missingSource.
+      /// Should be deleted using the writer.
       final newBuildState = AssetGraphJson.deserialize(
         result.readerWriter.testing.readBytes(
           makeAssetId('a|$assetGraphJsonPath'),

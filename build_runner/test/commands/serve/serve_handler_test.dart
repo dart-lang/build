@@ -354,6 +354,101 @@ void main() {
       expect(response.statusCode, HttpStatus.ok);
       expect(await response.readAsString(), 'content');
     });
+
+    test('serves requests with allowed host when not loopback', () async {
+      addSource('a|web/index.html', 'content');
+      final response =
+          await serveHandler.handlerFor(
+            'web',
+            allowedHost: 'my-host.example.com',
+          )(
+            Request(
+              'GET',
+              Uri.parse('http://localhost/index.html'),
+              headers: {'host': 'my-host.example.com'},
+            ),
+          );
+      expect(response.statusCode, HttpStatus.ok);
+      expect(await response.readAsString(), 'content');
+    });
+
+    test('serves requests with allowed host and port in host header', () async {
+      addSource('a|web/index.html', 'content');
+      final response =
+          await serveHandler.handlerFor(
+            'web',
+            allowedHost: 'my-host.example.com',
+          )(
+            Request(
+              'GET',
+              Uri.parse('http://localhost/index.html'),
+              headers: {'host': 'my-host.example.com:8080'},
+            ),
+          );
+      expect(response.statusCode, HttpStatus.ok);
+      expect(await response.readAsString(), 'content');
+    });
+
+    test(
+      'rejects requests with mismatched host when allowedHost set',
+      () async {
+        addSource('a|web/index.html', 'content');
+        final response =
+            await serveHandler.handlerFor(
+              'web',
+              allowedHost: 'my-host.example.com',
+            )(
+              Request(
+                'GET',
+                Uri.parse('http://localhost/index.html'),
+                headers: {'host': 'attacker.example.com'},
+              ),
+            );
+        expect(response.statusCode, HttpStatus.forbidden);
+      },
+    );
+
+    test(
+      'rejects requests with disallowed origin when allowedHost set',
+      () async {
+        addSource('a|web/index.html', 'content');
+        final response =
+            await serveHandler.handlerFor(
+              'web',
+              allowedHost: 'my-host.example.com',
+            )(
+              Request(
+                'GET',
+                Uri.parse('http://localhost/index.html'),
+                headers: {
+                  'host': 'my-host.example.com',
+                  'origin': 'http://attacker.example.com',
+                },
+              ),
+            );
+        expect(response.statusCode, HttpStatus.forbidden);
+      },
+    );
+
+    test('serves requests with matching origin when allowedHost set', () async {
+      addSource('a|web/index.html', 'content');
+      final response =
+          await serveHandler.handlerFor(
+            'web',
+            allowedHost: 'my-host.example.com',
+          )(
+            Request(
+              'GET',
+              Uri.parse('http://localhost/index.html'),
+              headers: {
+                'host': 'my-host.example.com',
+                'origin': 'http://my-host.example.com:8080',
+              },
+            ),
+          );
+      expect(response.statusCode, HttpStatus.ok);
+      expect(await response.readAsString(), 'content');
+    });
   });
 
   group('build failures', () {

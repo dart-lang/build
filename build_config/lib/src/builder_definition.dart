@@ -141,6 +141,22 @@ class BuilderDefinition {
         '`is_optional: true`.',
       );
     }
+    if (this.addsToLibrary) {
+      final nonDartInputs = buildExtensions.keys.where(
+        (input) => !input.endsWith('.dart'),
+      );
+      if (nonDartInputs.isNotEmpty) {
+        throw ArgumentError(
+          'A builder with `adds_to_library: true` can only have `.dart` '
+          "inputs, but has: ${nonDartInputs.map((i) => "'$i'").join(', ')}.",
+        );
+      }
+      if (this.buildTo != BuildTo.source) {
+        throw ArgumentError(
+          'A builder with `adds_to_library: true` must set `build_to: source`.',
+        );
+      }
+    }
   }
 
   factory BuilderDefinition.fromJson(Map json) {
