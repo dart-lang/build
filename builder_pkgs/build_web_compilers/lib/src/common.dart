@@ -151,6 +151,39 @@ String ddcModuleName(AssetId jsId) {
   return jsPath.substring(0, jsPath.length - jsModuleExtension.length);
 }
 
+/// The builder option that controls the compilers'
+/// `--[no-]deprecated-js-interop` flag.
+const deprecatedJsInteropOption = 'deprecated-js-interop';
+
+/// Returns the value of the [deprecatedJsInteropOption] in [options], or
+/// `null` if it is not configured.
+bool? readDeprecatedJsInteropOption(BuilderOptions options) =>
+    options.config[deprecatedJsInteropOption] as bool?;
+
+/// The compiler argument for [deprecatedJsInterop], or `null` if it is not
+/// configured and the compiler default should be used.
+///
+/// Only one of `--deprecated-js-interop` or `--no-deprecated-js-interop` may
+/// be passed to a compiler, so this is the only place that creates them.
+String? deprecatedJsInteropArg(bool? deprecatedJsInterop) =>
+    switch (deprecatedJsInterop) {
+      null => null,
+      true => '--deprecated-js-interop',
+      false => '--no-deprecated-js-interop',
+    };
+
+/// Parses a `--[no-]deprecated-js-interop` compiler argument to its boolean
+/// value, or returns `null` if [arg] is not a deprecated JS interop flag.
+bool? parseDeprecatedJsInteropArg(String arg) => switch (arg) {
+  '--deprecated-js-interop' => true,
+  '--no-deprecated-js-interop' => false,
+  _ => null,
+};
+
+/// Whether [arg] is a `--[no-]deprecated-js-interop` compiler argument.
+bool isDeprecatedJsInteropArg(String arg) =>
+    parseDeprecatedJsInteropArg(arg) != null;
+
 enum ModuleStrategy { fine, coarse }
 
 ModuleStrategy moduleStrategy(BuilderOptions options) {

@@ -138,6 +138,13 @@ final frontendServerProxyDriverResource = Resource<FrontendServerProxyDriver>(
 /// FES is externally managed (such as by webdev).
 Map<String, String> frontendServerEnvironment = const {};
 
+/// The `--[no-]deprecated-js-interop` setting for the Frontend Server, or
+/// `null` to use its default.
+///
+/// Like [frontendServerEnvironment], this must be set before the persistent
+/// FES process is started.
+bool? frontendServerDeprecatedJsInterop;
+
 PersistentFrontendServer? __persistentFrontendServer;
 
 /// Starts a single persistent instance of the Frontend Server targeting DDC.
@@ -152,6 +159,7 @@ Future<PersistentFrontendServer> startFrontendServerWorker() async {
     fileSystemRoot: fesRoot,
     packagesFile: fesRoot.resolve(packagesFilePath),
     environment: frontendServerEnvironment,
+    deprecatedJsInterop: frontendServerDeprecatedJsInterop,
   );
 
   _frontendServerProxyDriver.init(fes);

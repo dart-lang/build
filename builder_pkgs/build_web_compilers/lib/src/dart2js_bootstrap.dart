@@ -30,6 +30,7 @@ Future<void> bootstrapDart2Js(
   String entrypointExtension = jsEntrypointExtension,
   String? librariesPath,
   bool unsafeAllowUnsupportedModules = false,
+  bool? deprecatedJsInterop,
 }) => _resourcePool.withResource(
   () => _bootstrapDart2Js(
     buildStep,
@@ -39,6 +40,7 @@ Future<void> bootstrapDart2Js(
     entrypointExtension: entrypointExtension,
     librariesPath: librariesPath,
     unsafeAllowUnsupportedModules: unsafeAllowUnsupportedModules,
+    deprecatedJsInterop: deprecatedJsInterop,
   ),
 );
 
@@ -50,6 +52,7 @@ Future<void> _bootstrapDart2Js(
   required String entrypointExtension,
   String? librariesPath,
   bool unsafeAllowUnsupportedModules = false,
+  bool? deprecatedJsInterop,
 }) async {
   final dartEntrypointId = buildStep.inputId;
   final moduleId = dartEntrypointId.changeExtension(
@@ -97,20 +100,24 @@ Future<void> _bootstrapDart2Js(
         entrypointExtension;
     final librariesSpec =
         librariesPath ?? p.joinAll([sdkDir, 'lib', 'libraries.json']);
-    _validateUserArgs(dart2JsArgs);
-    args = dart2JsArgs.toList()
-      ..addAll([
-        '--libraries-spec=$librariesSpec',
-        '--packages=$multiRootScheme:///.dart_tool/package_config.json',
-        '--multi-root-scheme=$multiRootScheme',
-        '--multi-root=${scratchSpace.tempDir.uri.toFilePath()}',
-        for (final experiment in enabledExperiments)
-          '--enable-experiment=$experiment',
-        if (nativeNullAssertions != null)
-          '--${nativeNullAssertions ? '' : 'no-'}native-null-assertions',
-        '-o$jsOutputPath',
-        '$dartUri',
-      ]);
+    _validateUserArgs(dart2JsArgs, deprecatedJsInterop: deprecatedJsInterop);
+    args = [
+      ...withoutOverriddenDart2JsArgs(
+        dart2JsArgs,
+        deprecatedJsInterop: deprecatedJsInterop,
+      ),
+      '--libraries-spec=$librariesSpec',
+      '--packages=$multiRootScheme:///.dart_tool/package_config.json',
+      '--multi-root-scheme=$multiRootScheme',
+      '--multi-root=${scratchSpace.tempDir.uri.toFilePath()}',
+      for (final experiment in enabledExperiments)
+        '--enable-experiment=$experiment',
+      if (nativeNullAssertions != null)
+        '--${nativeNullAssertions ? '' : 'no-'}native-null-assertions',
+      ?deprecatedJsInteropArg(deprecatedJsInterop),
+      '-o$jsOutputPath',
+      '$dartUri',
+    ];
   }
 
   log.info('Running `dart compile js` with ${args.join(' ')}\n');
@@ -172,12 +179,39 @@ Future<void> _bootstrapDart2Js(
       buildStep,
     );
   } else {
-    log.severe(
-      'ExitCode:${result.exitCode}\nStdOut:\n${result.stdout}\n'
-      'StdErr:\n${result.stderr}',
-    );
+    log.severe(dart2JsFailureMessage(dartEntrypointId, result));
   }
 }
+
+/// The error reported when dart2js fails to compile [entrypoint].
+///
+/// dart2js prints its diagnostics to stdout, including the import paths that
+/// lead to disallowed libraries, so they come first. Empty output streams are
+/// omitted.
+String dart2JsFailureMessage(AssetId entrypoint, ProcessResult result) {
+  final output = [
+    for (final stream in [result.stdout, result.stderr])
+      if ('$stream'.trim() case final text when text.isNotEmpty) text,
+  ];
+  return [
+    'dart2js failed to compile $entrypoint (exit code ${result.exitCode}).',
+    ...output,
+  ].join('\n\n');
+}
+
+/// Returns [userArgs] without the arguments that are configured by builder
+/// options, which are added separately.
+///
+/// When [deprecatedJsInterop] is configured, any manual
+/// `--[no-]deprecated-js-interop` argument is removed, since dart2js rejects
+/// getting both forms.
+List<String> withoutOverriddenDart2JsArgs(
+  List<String> userArgs, {
+  required bool? deprecatedJsInterop,
+}) => [
+  for (final arg in userArgs)
+    if (deprecatedJsInterop == null || !isDeprecatedJsInteropArg(arg)) arg,
+];
 
 final _resourcePool = Pool(maxWorkersPerTask);
 
@@ -189,7 +223,10 @@ final _dart2jsVmArgs = () {
 
 /// Validates that user supplied dart2js args don't overlap with ones that we
 /// want you to configure in a different way.
-void _validateUserArgs(List<String> args) {
+void _validateUserArgs(
+  List<String> args, {
+  required bool? deprecatedJsInterop,
+}) {
   for (final arg in args) {
     if (arg.endsWith('native-null-assertions')) {
       log.warning(
@@ -204,6 +241,21 @@ void _validateUserArgs(List<String> args) {
         '`dart run build_runner --enable-experiment=<experiment> '
         '<command>`.',
       );
+    } else if (isDeprecatedJsInteropArg(arg)) {
+      _warnManualDeprecatedJsInteropArg(arg, deprecatedJsInterop);
     }
   }
+}
+
+void _warnManualDeprecatedJsInteropArg(String arg, bool? deprecatedJsInterop) {
+  final ignored = deprecatedJsInterop == null
+      ? ''
+      : ' It is ignored because the `$deprecatedJsInteropOption` option is '
+            'set to `$deprecatedJsInterop`.';
+  log.warning(
+    'Detected a manual deprecated JS interop dart2js argument `$arg`, '
+    'this should be configured using the `$deprecatedJsInteropOption` '
+    'option in the `global_options` of build.yaml instead, so that every '
+    'compiler uses the same value.$ignored',
+  );
 }

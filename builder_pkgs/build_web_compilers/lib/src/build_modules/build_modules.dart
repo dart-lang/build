@@ -27,6 +27,7 @@ export 'scratch_space.dart'
 export 'workers.dart'
     show
         dartdevkDriverResource,
+        frontendServerDeprecatedJsInterop,
         frontendServerEnvironment,
         frontendServerProxyDriverResource,
         maxWorkersPerTask,
