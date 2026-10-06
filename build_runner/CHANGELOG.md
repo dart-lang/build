@@ -1,5 +1,8 @@
 ## 2.16.2-wip
 
+- Allow `built_collection` 6.x.
+- Fix `build_runner run` with `built_collection` 6.x by passing
+  `Isolate.spawnUri` a plain list of arguments.
 - Add `SharedPartAccumulator` and `SharedPartAccumulatorCodec` for shared part
   outputs.
 - Support shared parts written using `BuildStep.librarySourceSink` when builders
