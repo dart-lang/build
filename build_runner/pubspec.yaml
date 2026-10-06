@@ -19,7 +19,7 @@ dependencies:
   build: ^4.1.0-wip
   build_config: ">=1.4.0-wip <1.5.0"
   build_daemon: ^4.0.0
-  built_collection: ^5.1.1
+  built_collection: '>=5.1.1 <7.0.0'
   built_value: ^8.10.1
   collection: ^1.15.0
   convert: ^3.0.0

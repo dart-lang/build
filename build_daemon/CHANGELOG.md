@@ -1,3 +1,7 @@
+## 4.1.7-wip
+
+- Allow `built_collection` 6.x.
+
 ## 4.1.6
 
 - Add doc comment to `DaemonBuilder.build`.

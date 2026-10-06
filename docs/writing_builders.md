@@ -192,6 +192,14 @@ If the `part` directive is missing, `build_runner` adds it after any other
 `part` directives and rebuilds; with `--only-check` it reports the directive to
 add instead.
 
+If every *Add to Library* builder that runs on a library succeeds without
+contributing, the shared part is not needed. Then, if nothing else in the build
+failed, `build_runner` removes the `part` directive and rebuilds; with
+`--only-check` it reports the directive to remove instead. So a builder that
+cannot handle its input, for example because of syntax errors, should fail
+rather than contribute nothing. `BuildStep.inputLibrary` already throws on
+syntax errors.
+
 ### Scoped imports
 
 When *Parts with Imports* is available, `LibrarySourceSink` provides a mechanism

@@ -218,6 +218,9 @@ class Build {
       }
     }
 
+    // A failed build might be why a shared part was not written, so unused
+    // `part` directives are only looked for if the build succeeded.
+    final buildFailed = result.status == BuildStatus.failure;
     final librariesMissingPartDirective = await PartDirectives.findMissing(
       buildState,
       _builderFilesystem,
@@ -227,6 +230,18 @@ class Build {
         status: BuildStatus.failure,
         librariesMissingPartDirective: librariesMissingPartDirective,
       );
+    }
+    if (!buildFailed) {
+      final librariesWithUnusedPartDirective = await PartDirectives.findUnused(
+        buildState,
+        _builderFilesystem,
+      );
+      if (librariesWithUnusedPartDirective.isNotEmpty) {
+        result = result.copyWith(
+          status: BuildStatus.failure,
+          librariesWithUnusedPartDirective: librariesWithUnusedPartDirective,
+        );
+      }
     }
 
     await resourceManager.disposeAll();

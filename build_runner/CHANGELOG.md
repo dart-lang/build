@@ -1,12 +1,17 @@
 ## 2.16.2-wip
 
+- Allow `built_collection` 6.x.
+- Fix `build_runner run` with `built_collection` 6.x by passing
+  `Isolate.spawnUri` a plain list of arguments.
 - Add `SharedPartAccumulator` and `SharedPartAccumulatorCodec` for shared part
   outputs.
 - Support shared parts written using `BuildStep.librarySourceSink` when builders
   opt in with `adds_to_library: true` and `build_to: source` in `build.yaml`. If
   a library is missing the `part` directive for its shared part, `build_runner`
-  adds it and rebuilds; with `--only-check` it reports the directive to add
-  instead.
+  adds it and rebuilds; if the directive is unused because builders ran and
+  contributed nothing, and nothing in the build failed, `build_runner` removes
+  it and rebuilds. With `--only-check` it reports the directives to add or
+  remove instead.
 - The `serve` command now rejects non-loopback `Host` and `Origin` headers when
   bound to a loopback interface, and validates them against `--hostname` when a
   specific host is given.

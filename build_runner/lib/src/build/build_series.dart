@@ -367,6 +367,13 @@ class BuildSeries {
         onlyCheck: _outputStrategy == .verify,
       );
     }
+    if (result.librariesWithUnusedPartDirective.isNotEmpty) {
+      await PartDirectives.removeUnused(
+        result.librariesWithUnusedPartDirective,
+        _buildPlan.readerWriter,
+        onlyCheck: _outputStrategy == .verify,
+      );
+    }
     result = await _createMergedOutputDirectories(result);
 
     _buildPlan = build.buildPlan.withCompatiblePreviousBuild(
