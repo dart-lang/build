@@ -1,4 +1,4 @@
-## 3.5.21-wip
+## 3.5.21
 
 - Allow `built_collection` 6.x.
 - Add `addsToLibraryBuilders` to `testBuilders` and
