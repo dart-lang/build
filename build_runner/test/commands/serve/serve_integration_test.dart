@@ -66,11 +66,11 @@ void main() {
     terminateController = StreamController<ProcessSignal>();
     final watchCommnd = WatchCommand(
       builderFactories: BuilderFactories({
-        '': [(_) => const UppercaseBuilder()],
+        'uppercase': [(_) => const UppercaseBuilder()],
       }),
       buildOptions: BuildOptions.forTests(verbose: true),
       testingOverrides: TestingOverrides(
-        builderDefinitions: [BuilderDefinition('')].build(),
+        builderDefinitions: [BuilderDefinition('uppercase')].build(),
         buildPackages: buildPackages,
         readerWriter: readerWriter,
         onLog: (record) => printOnFailure(

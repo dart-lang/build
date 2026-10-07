@@ -23,6 +23,7 @@ import 'post_process_build_step_result.dart';
 /// available.
 ///
 /// Used by post-build consumers and to prepare the next incremental build.
+@immutable
 @Invariant(
   'contents.keys.every((id) => '
   'isSource(id) || '

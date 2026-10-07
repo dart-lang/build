@@ -13,6 +13,7 @@ import '../contracts.dart';
 part 'build_inputs.g.dart';
 
 /// The state of the file system before a build begins.
+@ContractImport('package:build_runner/src/build/br_outputs.dart')
 @Invariant('!cleanBuild || retainedOutputContents.isEmpty')
 @Invariant('!cleanBuild || updatedSources.isEmpty')
 @Invariant('!cleanBuild || deletedSources.isEmpty')
