@@ -32,6 +32,11 @@ type for more clauses on that type, or with other types for other exceptions.
 Normal postconditions are **not** checked when a method throws, because there is
 no result to talk about.
 
+`@ThrowEnsures` only says what holds _if_ the method throws; it does not require
+a throw. The converse, such as "if the list is empty, it throws", is a normal
+postcondition about the state on entry. In Cofoja that is written with
+`old(...)`, which is not supported yet.
+
 `@Invariant` clauses are checked, as in Cofoja, on entry to and exit from public
 instance methods and setters, and on exit from generative constructors, but only
 for the outermost such call on the object. Inside a call the object may be
@@ -49,6 +54,11 @@ are shallow, so an invariant over a field of mutable type can break unreported.
 For a normal build and for published code, the annotations are inert. Like all
 Dart annotations, they add no runtime cost. For a contracts run, the tool weaves
 the clauses into a throwaway copy of the package and runs the tests against that.
+
+To see exactly what the weaver produces, read the examples in
+[`test/expect`](test/expect): each `.dart` file is an input, and the
+`.dart.expect` file beside it is its woven output. Run
+`UPDATE_EXPECTATIONS=1 dart test test/expect_test.dart` to update them.
 
 ## Deliberate non-goals
 

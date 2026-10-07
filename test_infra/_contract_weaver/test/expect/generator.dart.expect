@@ -1,0 +1,61 @@
+// Copyright (c) 2026, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
+import 'contracts.dart';
+
+@Invariant('limit >= 0')
+class Counter {
+  final int limit;
+
+  Counter(this.limit) {
+    this._enterInvariantScope(check: false);
+    this._exitInvariantScope();
+  }
+
+  // A generator is not an invariant scope: an abandoned iterator would never
+  // leave it.
+  @Requires('step > 0')
+  Iterable<int> count(int step) sync* {
+    if (!Contracts.checking) {
+      Contracts.checking = true;
+      try {
+        if (!(step > 0))
+          throw ContractViolation('Precondition failed: step > 0');
+      } finally {
+        Contracts.checking = false;
+      }
+    }
+
+    for (var i = 0; i < limit; i += step) {
+      yield i;
+    }
+  }
+}
+
+extension _ContractsOn$Counter on Counter {
+  void _enterInvariantScope({bool check = true}) {
+    final open = Contracts.openScopes[this] ?? 0;
+    if (check && open == 0) _checkInvariants();
+    Contracts.openScopes[this] = open + 1;
+  }
+
+  void _exitInvariantScope({Object? during}) {
+    final open = Contracts.openScopes[this]! - 1;
+    Contracts.openScopes[this] = open == 0 ? null : open;
+    if (open == 0) _checkInvariants(during: during);
+  }
+
+  void _checkInvariants({Object? during}) {
+    final inFlight = during == null ? '' : ', thrown while handling $during';
+    if (!Contracts.checking) {
+      Contracts.checking = true;
+      try {
+        if (!(limit >= 0))
+          throw ContractViolation('Invariant failed: limit >= 0$inFlight');
+      } finally {
+        Contracts.checking = false;
+      }
+    }
+  }
+}

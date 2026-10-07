@@ -1,0 +1,99 @@
+// Copyright (c) 2026, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
+import 'contracts.dart';
+
+@Invariant('width > 0')
+class Box {
+  final int width;
+
+  @Requires('width > 0')
+  Box(this.width) {
+    if (!Contracts.checking) {
+      Contracts.checking = true;
+      try {
+        if (!(width > 0))
+          throw ContractViolation('Precondition failed: width > 0');
+      } finally {
+        Contracts.checking = false;
+      }
+    }
+    this._enterInvariantScope(check: false);
+    this._exitInvariantScope();
+  }
+
+  @Requires('size > 0')
+  Box.square(int size) : width = size {
+    if (!Contracts.checking) {
+      Contracts.checking = true;
+      try {
+        if (!(size > 0))
+          throw ContractViolation('Precondition failed: size > 0');
+      } finally {
+        Contracts.checking = false;
+      }
+    }
+    this._enterInvariantScope(check: false);
+
+    print('square');
+
+    this._exitInvariantScope();
+  }
+
+  @Requires('width > 0')
+  @Ensures('result.width == width')
+  factory Box.cached(int width) {
+    if (!Contracts.checking) {
+      Contracts.checking = true;
+      try {
+        if (!(width > 0))
+          throw ContractViolation('Precondition failed: width > 0');
+      } finally {
+        Contracts.checking = false;
+      }
+    }
+
+    return ((Box result) {
+      if (!Contracts.checking) {
+        Contracts.checking = true;
+        try {
+          if (!(result.width == width))
+            throw ContractViolation(
+              'Postcondition failed: result.width == width',
+            );
+        } finally {
+          Contracts.checking = false;
+        }
+      }
+      return result;
+    })(Box(width));
+  }
+}
+
+extension _ContractsOn$Box on Box {
+  void _enterInvariantScope({bool check = true}) {
+    final open = Contracts.openScopes[this] ?? 0;
+    if (check && open == 0) _checkInvariants();
+    Contracts.openScopes[this] = open + 1;
+  }
+
+  void _exitInvariantScope({Object? during}) {
+    final open = Contracts.openScopes[this]! - 1;
+    Contracts.openScopes[this] = open == 0 ? null : open;
+    if (open == 0) _checkInvariants(during: during);
+  }
+
+  void _checkInvariants({Object? during}) {
+    final inFlight = during == null ? '' : ', thrown while handling $during';
+    if (!Contracts.checking) {
+      Contracts.checking = true;
+      try {
+        if (!(width > 0))
+          throw ContractViolation('Invariant failed: width > 0$inFlight');
+      } finally {
+        Contracts.checking = false;
+      }
+    }
+  }
+}
