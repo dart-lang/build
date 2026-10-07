@@ -1,4 +1,4 @@
-## 2.16.2-wip
+## 2.16.3-wip
 
 - Allow `built_collection` 6.x.
 - Fix `build_runner run` with `built_collection` 6.x by passing
@@ -24,7 +24,6 @@
 - Bug fix: preserve analyzer dependency information on unhandled build failures,
   preventing subsequent incremental builds from missing changes to transitively
   imported files.
-- Require `analyzer` 14.3.0.
 - Bug fix: complete the active building future in daemon mode when the build
   script is updated, preventing asset server requests from hanging.
 - Bug fix: write the SDK summary deps file atomically, so a concurrently
@@ -42,6 +41,10 @@
   deleted after a previous build deleted and then rewrote that same file.
   Previously the delete was mistaken for the build's own earlier delete and
   ignored, so deleting a generated file no longer forced it to be regenerated.
+
+## 2.16.2
+
+- Support `analyzer` 14.5.0. Require `analyzer` 14.3.0.
 
 ## 2.16.1
 
