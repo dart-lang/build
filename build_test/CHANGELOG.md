@@ -1,3 +1,7 @@
+## 3.5.21
+
+- Use `build_runner` 2.16.2.
+
 ## 3.5.20
 
 - Clarify terminology: refer to `.dart_tool/build/generated` as the "artifact

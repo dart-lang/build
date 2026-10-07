@@ -1,3 +1,7 @@
+## 2.16.2
+
+- Support `analyzer` 14.5.0. Require `analyzer` 14.3.0.
+
 ## 2.16.1
 
 - Clarify terminology: refer to `.dart_tool/build/generated` as the "artifact
