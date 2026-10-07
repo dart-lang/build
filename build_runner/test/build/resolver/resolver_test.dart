@@ -713,12 +713,7 @@ void main() {
         },
         (resolver) async {
           final entry = await resolver.libraryFor(AssetId('a', 'lib/a.dart'));
-          final element = entry.topLevelFunctions
-              .firstWhere((e) => e.name == 'main')
-              .metadata
-              .annotations
-              .single
-              .element!;
+          final element = entry.firstFragment.scope.lookup('SomeClass').getter!;
           await expectLater(
             () => resolver.assetIdForElement(element),
             throwsA(isA<UnresolvableAssetException>()),
