@@ -1,9 +1,13 @@
-## 3.5.21-wip
+## 3.5.22-wip
 
 - Allow `built_collection` 6.x.
 - Add `addsToLibraryBuilders` to `testBuilders` and
   `addsToLibraryBuilderFactories` to `testBuilderFactories` to support testing
   builders that use `BuildStep.librarySourceSink`.
+- Use `build_runner` 2.16.3.
+
+## 3.5.21
+
 - Use `build_runner` 2.16.2.
 
 ## 3.5.20
