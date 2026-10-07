@@ -7,6 +7,8 @@ import 'contracts.dart';
 class Queue {
   final List<int> _items = [];
 
+  // Each clause holds if `take` throws that type. They do not require it to
+  // throw: an empty queue that returned normally would not be reported.
   @ThrowEnsures(StateError, '_items.isEmpty')
   @ThrowEnsures(StateError, 'signal.message == "empty"')
   @ThrowEnsures(ArgumentError, 'index < 0 || index >= _items.length')
