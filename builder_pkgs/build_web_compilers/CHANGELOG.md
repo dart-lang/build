@@ -784,7 +784,7 @@ global_options:
 [analyzer]: https://pub.dev/packages/analyzer
 [front_end]: https://pub.dev/packages/front_end
 [issue tracker]: https://github.com/dart-lang/build/issues/new
-[TestOn]: https://pub.dev/documentation/test/latest/#restricting-tests-to-certain-platforms
+[TestOn]: https://pub.dev/packages/test#restricting-tests-to-certain-platforms
 
 ## 1.2.2
 
