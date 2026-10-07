@@ -112,7 +112,7 @@ class ContractCollector extends RecursiveAstVisitor<void> {
     final contract = _reader.read(node.metadata);
     if (contract.isEmpty) return;
     final returnType = node.returnType?.toSource();
-    final isVoid = returnType == 'void';
+    final isVoid = _returnsNothing(returnType, node.functionExpression.body);
     ReservedNameChecker.check(
       node.functionExpression.parameters,
       bindsResult: contract.postconditions.isNotEmpty && !isVoid,
@@ -145,7 +145,7 @@ class ContractCollector extends RecursiveAstVisitor<void> {
     }
 
     final returnType = node.returnType?.toSource();
-    final isVoid = node.isSetter || returnType == 'void';
+    final isVoid = node.isSetter || _returnsNothing(returnType, node.body);
     ReservedNameChecker.check(
       node.parameters,
       bindsResult: contract.postconditions.isNotEmpty && !isVoid,
@@ -165,6 +165,17 @@ class ContractCollector extends RecursiveAstVisitor<void> {
         throwClauses: contract.throwClauses,
       ),
     );
+  }
+
+  /// Whether a function declared to return [returnType] with [body] returns
+  /// no value: it is `void`, or it is `async` and returns `Future<void>`.
+  ///
+  /// Postconditions of such a function are also checked when it falls off the
+  /// end of its body, and do not bind `result`.
+  static bool _returnsNothing(String? returnType, FunctionBody body) {
+    if (returnType == 'void') return true;
+    if (!body.isAsynchronous || body.isGenerator) return false;
+    return returnType == 'Future<void>' || returnType == 'FutureOr<void>';
   }
 
   /// Whether calls to [node] check the invariant of a class that has one.

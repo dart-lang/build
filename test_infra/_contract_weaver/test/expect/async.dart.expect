@@ -35,3 +35,35 @@ class Loader {
     }));
   }
 }
+
+class Saver {
+  bool saved = false;
+
+  @Ensures('saved')
+  Future<void> save() async {
+    await Future<void>.delayed(Duration.zero);
+    saved = true;
+
+    if (!Contracts.checking) {
+      Contracts.checking = true;
+      try {
+        if (!(saved)) throw ContractViolation('Postcondition failed: saved');
+      } finally {
+        Contracts.checking = false;
+      }
+    }
+  }
+
+  @Ensures('saved')
+  Future<void> saveVia() async {
+    await save();
+    if (!Contracts.checking) {
+      Contracts.checking = true;
+      try {
+        if (!(saved)) throw ContractViolation('Postcondition failed: saved');
+      } finally {
+        Contracts.checking = false;
+      }
+    }
+  }
+}
