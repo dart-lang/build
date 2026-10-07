@@ -50,6 +50,11 @@ For a normal build and for published code, the annotations are inert. Like all
 Dart annotations, they add no runtime cost. For a contracts run, the tool weaves
 the clauses into a throwaway copy of the package and runs the tests against that.
 
+To see exactly what the weaver produces, read the examples in
+[`test/expect`](test/expect): each `.dart` file is an input, and the
+`.dart.expect` file beside it is its woven output. Run
+`UPDATE_EXPECTATIONS=1 dart test test/expect_test.dart` to update them.
+
 ## Deliberate non-goals
 
 The tool stays out of the way of the code it checks. In particular it does not:

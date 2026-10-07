@@ -1,0 +1,37 @@
+// Copyright (c) 2026, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
+import 'contracts.dart';
+
+class Loader {
+  @Requires('path.isNotEmpty')
+  @Ensures('result.isNotEmpty')
+  Future<String> load(String path) async {
+    if (!Contracts.checking) {
+      Contracts.checking = true;
+      try {
+        if (!(path.isNotEmpty))
+          throw ContractViolation('Precondition failed: path.isNotEmpty');
+      } finally {
+        Contracts.checking = false;
+      }
+    }
+
+    await Future<void>.delayed(Duration.zero);
+    return await (Future<String>.value('contents of $path').then((
+      String result,
+    ) {
+      if (!Contracts.checking) {
+        Contracts.checking = true;
+        try {
+          if (!(result.isNotEmpty))
+            throw ContractViolation('Postcondition failed: result.isNotEmpty');
+        } finally {
+          Contracts.checking = false;
+        }
+      }
+      return result;
+    }));
+  }
+}

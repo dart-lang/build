@@ -1,0 +1,50 @@
+// Copyright (c) 2026, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
+import 'contracts.dart';
+
+/// Stands in for `immutable` from `package:meta`, which is matched by name.
+const immutable = Object();
+
+/// Declared immutable, so the invariant is checked only on construction.
+@immutable
+@Invariant('low <= high')
+class Range {
+  final int low;
+  final int high;
+
+  Range(this.low, this.high) {
+    this._enterInvariantScope(check: false);
+    this._exitInvariantScope();
+  }
+
+  bool contains(int x) => low <= x && x <= high;
+}
+
+extension _ContractsOn$Range on Range {
+  void _enterInvariantScope({bool check = true}) {
+    final open = Contracts.openScopes[this] ?? 0;
+    if (check && open == 0) _checkInvariants();
+    Contracts.openScopes[this] = open + 1;
+  }
+
+  void _exitInvariantScope({Object? during}) {
+    final open = Contracts.openScopes[this]! - 1;
+    Contracts.openScopes[this] = open == 0 ? null : open;
+    if (open == 0) _checkInvariants(during: during);
+  }
+
+  void _checkInvariants({Object? during}) {
+    final inFlight = during == null ? '' : ', thrown while handling $during';
+    if (!Contracts.checking) {
+      Contracts.checking = true;
+      try {
+        if (!(low <= high))
+          throw ContractViolation('Invariant failed: low <= high$inFlight');
+      } finally {
+        Contracts.checking = false;
+      }
+    }
+  }
+}

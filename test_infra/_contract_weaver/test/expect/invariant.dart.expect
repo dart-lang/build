@@ -1,0 +1,91 @@
+// Copyright (c) 2026, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
+import 'contracts.dart';
+
+@Invariant('balance >= 0')
+class Account {
+  int balance;
+
+  Account(this.balance) {
+    this._enterInvariantScope(check: false);
+    this._exitInvariantScope();
+  }
+
+  void deposit(int amount) {
+    this._enterInvariantScope();
+    Object? $inFlight;
+    try {
+      balance += amount;
+    } catch ($thrown) {
+      $inFlight = $thrown;
+      rethrow;
+    } finally {
+      this._exitInvariantScope(during: $inFlight);
+    }
+  }
+
+  void close() {
+    this._enterInvariantScope();
+    Object? $inFlight;
+    try {
+      _reset();
+    } catch ($thrown) {
+      $inFlight = $thrown;
+      rethrow;
+    } finally {
+      this._exitInvariantScope(during: $inFlight);
+    }
+  }
+
+  set overdraft(int amount) {
+    this._enterInvariantScope();
+    Object? $inFlight;
+    try {
+      balance -= amount;
+    } catch ($thrown) {
+      $inFlight = $thrown;
+      rethrow;
+    } finally {
+      this._exitInvariantScope(during: $inFlight);
+    }
+  }
+
+  // Not checked: getters, private methods and toString.
+  bool get isEmpty => balance == 0;
+
+  void _reset() {
+    balance = 0;
+  }
+
+  @override
+  String toString() => 'Account($balance)';
+}
+
+extension _ContractsOn$Account on Account {
+  void _enterInvariantScope({bool check = true}) {
+    final open = Contracts.openScopes[this] ?? 0;
+    if (check && open == 0) _checkInvariants();
+    Contracts.openScopes[this] = open + 1;
+  }
+
+  void _exitInvariantScope({Object? during}) {
+    final open = Contracts.openScopes[this]! - 1;
+    Contracts.openScopes[this] = open == 0 ? null : open;
+    if (open == 0) _checkInvariants(during: during);
+  }
+
+  void _checkInvariants({Object? during}) {
+    final inFlight = during == null ? '' : ', thrown while handling $during';
+    if (!Contracts.checking) {
+      Contracts.checking = true;
+      try {
+        if (!(balance >= 0))
+          throw ContractViolation('Invariant failed: balance >= 0$inFlight');
+      } finally {
+        Contracts.checking = false;
+      }
+    }
+  }
+}
