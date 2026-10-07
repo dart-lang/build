@@ -122,9 +122,12 @@ Build Failed :(
     }
   }
 
-  factory BuildResult.buildScriptChanged() => BuildResult(
+  factory BuildResult.buildScriptChanged({
+    BuildOutputReader? buildOutputReader,
+  }) => BuildResult(
     status: BuildStatus.failure,
     failureType: FailureType.buildScriptChanged,
+    buildOutputReader: buildOutputReader,
   );
 }
 
