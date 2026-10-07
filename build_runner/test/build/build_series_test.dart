@@ -527,7 +527,7 @@ void main() {
         final planWithBuilderDefinitions = await loadPlan(
           TestingOverrides(
             builderDefinitions: [
-              BuilderDefinition('', outputsToArtifactTree: false),
+              BuilderDefinition('b1', outputsToArtifactTree: false),
               BuilderDefinition('extra:builder', outputsToArtifactTree: false),
             ].build(),
             buildPhases: buildPlan.buildSpec.buildPhases,
