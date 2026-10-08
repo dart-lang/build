@@ -3,6 +3,10 @@
 - Add boolean `adds_to_library` builder configuration that grants access to new
   builder feature `BuildStep.librarySourceSink`. It requires
   `build_to: source` and exactly one builder factory.
+- Report an error if two builder keys in a `build.yaml` refer to the same
+  builder, such as `foo` and `:foo`; previously all but one were silently
+  ignored. Also report an error if a builder and a post process builder have
+  the same key, or if a builder key contains a line break.
 
 ## 1.3.3
 
