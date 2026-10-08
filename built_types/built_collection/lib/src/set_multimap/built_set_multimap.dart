@@ -179,7 +179,13 @@ class _BuiltSetMultimap<K, V> extends BuiltSetMultimap<K, V> {
     : super._(<K, BuiltSet<V>>{}) {
     for (final key in keys) {
       if (key is K) {
-        _map[key] = BuiltSet<V>(lookup(key));
+        final values = BuiltSet<V>(lookup(key));
+        // A key with no values is absent: builders drop such keys in
+        // [SetMultimapBuilder.build], so the factory must do the same for
+        // consistent behaviour (dart-lang/build#5177).
+        if (values.isNotEmpty) {
+          _map[key] = values;
+        }
       } else {
         throw ArgumentError('map contained invalid key: $key');
       }
