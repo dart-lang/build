@@ -3,6 +3,11 @@
 ## 5.1.3-wip
 
 - Clarify the docs of `asList`, `asSet` and `asMap`.
+- Bug fix: `BuiltList.asList`, `BuiltMap.asMap`, `BuiltListMultimap.asMap` and
+  `BuiltSetMultimap.asMap` now return unmodifiable views instead of copies,
+  as `BuiltSet.asSet` already did.
+- Bug fix: `BuiltMap.asMap` now preserves the key equality of maps built with
+  `withBase`.
 
 ## 5.1.2
 

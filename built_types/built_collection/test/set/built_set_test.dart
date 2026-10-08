@@ -74,11 +74,32 @@ void main() {
       expect(set, [1, 2, 3, 4]);
     });
 
-    test('can be converted to an UnmodifiableSetView', () {
-      final immutableSet = BuiltSet<int>().asSet();
-      expect(immutableSet, const TypeMatcher<Set<int>>());
-      expect(() => immutableSet.add(1), throwsUnsupportedError);
-      expect(immutableSet, isEmpty);
+    group('can be converted to an UnmodifiableSetView', () {
+      test('is unmodifiable', () {
+        final immutableSet = BuiltSet<int>().asSet();
+        expect(immutableSet, const TypeMatcher<Set<int>>());
+        expect(() => immutableSet.add(1), throwsUnsupportedError);
+        expect(immutableSet, isEmpty);
+      });
+
+      test('preserves sorted contents across casts and builder changes', () {
+        final builder = SetBuilder<int>([1, 3])
+          ..withBase(SplayTreeSet<int>.new);
+
+        final view = builder.build().asSet();
+        expect(view, orderedEquals([1, 3]));
+
+        // Widening int to num must preserve the set's sorted iteration order.
+        final cast = view.cast<num>();
+        expect(cast, orderedEquals([1, 3]));
+
+        builder.add(2);
+
+        // Adding to the builder must leave both existing views unchanged.
+        expect(view, orderedEquals([1, 3]));
+        expect(cast, orderedEquals([1, 3]));
+        expect(builder.build().asSet(), orderedEquals([1, 2, 3]));
+      });
     });
 
     test('can be converted to SetBuilder<E>', () {

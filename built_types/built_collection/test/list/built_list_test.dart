@@ -65,11 +65,24 @@ void main() {
       );
     });
 
-    test('can be converted to an UnmodifiableListView', () {
-      final immutableList = BuiltList<int>().asList();
-      expect(immutableList, const TypeMatcher<List<int>>());
-      expect(() => immutableList.add(1), throwsUnsupportedError);
-      expect(immutableList, isEmpty);
+    group('can be converted to an UnmodifiableListView', () {
+      test('is unmodifiable', () {
+        final immutableList = BuiltList<int>().asList();
+        expect(immutableList, const TypeMatcher<List<int>>());
+        expect(() => immutableList.add(1), throwsUnsupportedError);
+        expect(immutableList, isEmpty);
+      });
+
+      test('does not change when the builder changes', () {
+        final builder = ListBuilder<int>([1]);
+        final view = builder.build().asList();
+        expect(view, [1]);
+
+        builder.add(2);
+
+        expect(view, [1]);
+        expect(builder.build().asList(), [1, 2]);
+      });
     });
 
     test('can be converted to ListBuilder<E>', () {
