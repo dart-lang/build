@@ -2,7 +2,7 @@
 
 - Add boolean `adds_to_library` builder configuration that grants access to new
   builder feature `BuildStep.librarySourceSink`. It requires
-  `build_to: source`.
+  `build_to: source` and exactly one builder factory.
 
 ## 1.3.3
 

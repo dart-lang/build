@@ -506,6 +506,41 @@ void main() {
         ),
       );
     });
+
+    test('throws ArgumentError if addsToLibrary builder has two '
+        'factories', () async {
+      final buildConfigs = await BuildConfigs.load(
+        buildPackages: buildPackages,
+        testingOverrides: TestingOverrides(
+          defaultRootPackageSources: ['**'].build(),
+        ),
+      );
+      expect(
+        () => BuildPhaseCreator(
+          builderFactories: BuilderFactories({
+            'a:builder': [CoolBuilder.new, CoolBuilder.new],
+          }),
+          buildPackages: buildPackages,
+          buildConfigs: buildConfigs,
+          builderDefinitions: [
+            BuilderDefinition(
+              'a:builder',
+              outputsToArtifactTree: false,
+              addsToLibrary: true,
+            ),
+          ],
+          builderConfigOverrides: BuiltMap(),
+          isReleaseBuild: false,
+        ).createBuildPhases(),
+        throwsA(
+          isArgumentError.having(
+            (e) => e.message,
+            'message',
+            contains('must have exactly one builder factory'),
+          ),
+        ),
+      );
+    });
   });
 }
 

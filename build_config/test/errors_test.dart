@@ -218,6 +218,26 @@ builders:
       ),
     );
   });
+
+  test('for builder with adds_to_library and two factories', () {
+    final buildYaml = r'''
+builders:
+  package_name:builder:
+    builder_factories: ["factory1", "factory2"]
+    import: package:package_name/builders.dart
+    build_extensions: {".dart": []}
+    build_to: source
+    adds_to_library: true
+''';
+
+    _expectThrows(
+      buildYaml,
+      contains(
+        'A builder with `adds_to_library: true` must have exactly one '
+        "builder factory, but has: 'factory1', 'factory2'.",
+      ),
+    );
+  });
 }
 
 void _expectThrows(String buildYaml, Object matcher) => expect(

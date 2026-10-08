@@ -108,10 +108,17 @@ class SharedPartAccumulator {
 
   /// Parses the raw content of a shared part file on disk into a
   /// [SharedPartAccumulator].
+  ///
+  /// See [SharedPartAccumulatorCodec.decode] for [phasesByBuilderKey].
   static SharedPartAccumulator parseContent(
     String content,
     AssetId libraryId,
-  ) => const SharedPartAccumulatorCodec().decode(content, libraryId);
+    Map<String, int> phasesByBuilderKey,
+  ) => const SharedPartAccumulatorCodec().decode(
+    content,
+    libraryId,
+    phasesByBuilderKey,
+  );
 
   BuiltMap<int, PartContribution> get contributions => _contributions.build();
 }

@@ -267,17 +267,17 @@ void main() {
 // dart format off
 part of '../a.dart';
 
-// === a:builder1/0 imports.
+// === a:builder1 imports.
 import 'package:a/b.dart' as $0b;
 
-// === a:builder2/1 imports.
+// === a:builder2 imports.
 import 'package:a/b.dart' as $1b;
 
-// === a:builder1/0 contribution.
+// === a:builder1 contribution.
 // builder saw: initial_b
 var content1 = 1;
 
-// === a:builder2/1 contribution.
+// === a:builder2 contribution.
 // builder saw: initial_c
 var content2 = 1;
 
@@ -300,17 +300,17 @@ var content2 = 1;
 // dart format off
 part of '../a.dart';
 
-// === a:builder1/0 imports.
+// === a:builder1 imports.
 import 'package:a/b.dart' as $0b;
 
-// === a:builder2/1 imports.
+// === a:builder2 imports.
 import 'package:a/b.dart' as $1b;
 
-// === a:builder1/0 contribution.
+// === a:builder1 contribution.
 // builder saw: modified_b
 var content1 = 1;
 
-// === a:builder2/1 contribution.
+// === a:builder2 contribution.
 // builder saw: initial_c
 var content2 = 1;
 
@@ -349,10 +349,10 @@ var content2 = 1;
 // dart format off
 part of '../a.dart';
 
-// === a:builder1/0 imports.
+// === a:builder1 imports.
 import 'package:a/b.dart' as $0b;
 
-// === a:builder1/0 contribution.
+// === a:builder1 contribution.
 // builder saw: initial_b
 var content1 = 1;
 
@@ -433,24 +433,24 @@ var content1 = 1;
 // dart format off
 part of '../a.dart';
 
-// === a:builder1/0 imports.
+// === a:builder1 imports.
 import 'package:a/b.dart' as $0b;
 
-// === a:builder2/1 imports.
+// === a:builder2 imports.
 import 'package:a/b.dart' as $1b;
 
-// === a:builder3/2 imports.
+// === a:builder3 imports.
 import 'package:a/b.dart' as $2b;
 
-// === a:builder1/0 contribution.
+// === a:builder1 contribution.
 // builder saw: b0
 var content1 = 1;
 
-// === a:builder2/1 contribution.
+// === a:builder2 contribution.
 // builder saw: c0
 var content2 = 1;
 
-// === a:builder3/2 contribution.
+// === a:builder3 contribution.
 // builder saw: d0
 var content3 = 1;
 
@@ -474,24 +474,24 @@ var content3 = 1;
 // dart format off
 part of '../a.dart';
 
-// === a:builder1/0 imports.
+// === a:builder1 imports.
 import 'package:a/b.dart' as $0b;
 
-// === a:builder2/1 imports.
+// === a:builder2 imports.
 import 'package:a/b.dart' as $1b;
 
-// === a:builder3/2 imports.
+// === a:builder3 imports.
 import 'package:a/b.dart' as $2b;
 
-// === a:builder1/0 contribution.
+// === a:builder1 contribution.
 // builder saw: b0
 var content1 = 1;
 
-// === a:builder2/1 contribution.
+// === a:builder2 contribution.
 // builder saw: c1_modified
 var content2 = 1;
 
-// === a:builder3/2 contribution.
+// === a:builder3 contribution.
 // builder saw: d0
 var content3 = 1;
 
@@ -516,24 +516,24 @@ var content3 = 1;
 // dart format off
 part of '../a.dart';
 
-// === a:builder1/0 imports.
+// === a:builder1 imports.
 import 'package:a/b.dart' as $0b;
 
-// === a:builder2/1 imports.
+// === a:builder2 imports.
 import 'package:a/b.dart' as $1b;
 
-// === a:builder3/2 imports.
+// === a:builder3 imports.
 import 'package:a/b.dart' as $2b;
 
-// === a:builder1/0 contribution.
+// === a:builder1 contribution.
 // builder saw: b2_modified
 var content1 = 1;
 
-// === a:builder2/1 contribution.
+// === a:builder2 contribution.
 // builder saw: c1_modified
 var content2 = 1;
 
-// === a:builder3/2 contribution.
+// === a:builder3 contribution.
 // builder saw: d2_modified
 var content3 = 1;
 
@@ -577,10 +577,10 @@ var content3 = 1;
 // dart format off
 part of '../a.dart';
 
-// === a:builder1/0 imports.
+// === a:builder1 imports.
 import 'package:a/b.dart' as $0b;
 
-// === a:builder1/0 contribution.
+// === a:builder1 contribution.
 // builder saw: b
 var content = 1;
 
@@ -739,18 +739,18 @@ var content = 1;
 // dart format off
 part of '../a.dart';
 
-// === a:builder1/0 imports.
+// === a:builder1 imports.
 import 'package:a/b.dart' as $0b;
 
-// === a:builder2/1 imports.
+// === a:builder2 imports.
 import 'package:a/b.dart' as $1b;
 
-// === a:builder1/0 contribution.
+// === a:builder1 contribution.
 // builder saw: initial_b
 // saw later contribution: false
 var content1 = 1;
 
-// === a:builder2/1 contribution.
+// === a:builder2 contribution.
 // builder saw: initial_c
 var content2 = 1;
 
@@ -771,18 +771,18 @@ var content2 = 1;
 // dart format off
 part of '../a.dart';
 
-// === a:builder1/0 imports.
+// === a:builder1 imports.
 import 'package:a/b.dart' as $0b;
 
-// === a:builder2/1 imports.
+// === a:builder2 imports.
 import 'package:a/b.dart' as $1b;
 
-// === a:builder1/0 contribution.
+// === a:builder1 contribution.
 // builder saw: modified_b
 // saw later contribution: false
 var content1 = 1;
 
-// === a:builder2/1 contribution.
+// === a:builder2 contribution.
 // builder saw: initial_c
 var content2 = 1;
 
@@ -835,17 +835,17 @@ var content2 = 1;
 // dart format off
 part of '../a.dart';
 
-// === a:builder1/0 imports.
+// === a:builder1 imports.
 import 'package:a/b.dart' as $0b;
 
-// === a:builder2/1 imports.
+// === a:builder2 imports.
 import 'package:a/b.dart' as $1b;
 
-// === a:builder1/0 contribution.
+// === a:builder1 contribution.
 // builder saw: initial_b
 var content1 = 1;
 
-// === a:builder2/1 contribution.
+// === a:builder2 contribution.
 // builder saw: initial_c
 var content2 = 1;
 
@@ -866,10 +866,10 @@ var content2 = 1;
 // dart format off
 part of '../a.dart';
 
-// === a:builder1/0 imports.
+// === a:builder1 imports.
 import 'package:a/b.dart' as $0b;
 
-// === a:builder1/0 contribution.
+// === a:builder1 contribution.
 // builder saw: initial_b
 var content1 = 1;
 
@@ -923,13 +923,13 @@ var content1 = 1;
 // dart format off
 part of '../a.dart';
 
-// === a:builder1/0 contribution.
+// === a:builder1 contribution.
 // builder saw: initial_b
 class Class1 {
   // sawClass2: false
 }
 
-// === a:builder2/1 contribution.
+// === a:builder2 contribution.
 // builder saw: initial_c
 class Class2 {}
 
@@ -950,13 +950,13 @@ class Class2 {}
 // dart format off
 part of '../a.dart';
 
-// === a:builder1/0 contribution.
+// === a:builder1 contribution.
 // builder saw: modified_b
 class Class1 {
   // sawClass2: false
 }
 
-// === a:builder2/1 contribution.
+// === a:builder2 contribution.
 // builder saw: initial_c
 class Class2 {}
 
@@ -1105,10 +1105,10 @@ class Class2 {}
 // dart format off
 part of '../a.dart';
 
-// === a:builder1/0 imports.
+// === a:builder1 imports.
 import 'package:a/b.dart' as $0b;
 
-// === a:builder1/0 contribution.
+// === a:builder1 contribution.
 // builder saw: b
 var content = 1;
 
@@ -1144,10 +1144,10 @@ var content = 1;
 // dart format off
 part of '../a.dart';
 
-// === a:builder1/0 imports.
+// === a:builder1 imports.
 import 'package:a/b.dart' as $0b;
 
-// === a:builder1/0 contribution.
+// === a:builder1 contribution.
 // builder saw: b
 var content = 1;
 
@@ -1206,17 +1206,17 @@ var content = 1;
 // dart format off
 part of '../a.dart';
 
-// === a:builder1/0 imports.
+// === a:builder1 imports.
 import 'package:a/b.dart' as $0b;
 
-// === a:builder2/1 imports.
+// === a:builder2 imports.
 import 'package:a/b.dart' as $1b;
 
-// === a:builder1/0 contribution.
+// === a:builder1 contribution.
 // builder saw: b
 var content1 = 1;
 
-// === a:builder2/1 contribution.
+// === a:builder2 contribution.
 // builder saw: c
 var content2 = 1;
 
@@ -1253,10 +1253,10 @@ var content2 = 1;
 // dart format off
 part of '../a.dart';
 
-// === a:builder1/0 imports.
+// === a:builder1 imports.
 import 'package:a/b.dart' as $0b;
 
-// === a:builder1/0 contribution.
+// === a:builder1 contribution.
 // builder saw: b
 var content1 = 1;
 
@@ -1295,10 +1295,10 @@ var content1 = 1;
 // dart format off
 part of '../a.dart';
 
-// === a:builder1/0 imports.
+// === a:builder1 imports.
 import 'package:a/b.dart' as $0b;
 
-// === a:builder1/0 contribution.
+// === a:builder1 contribution.
 // builder saw: b
 var content = 1;
 
@@ -1370,7 +1370,7 @@ var content = 1;
 // dart format off
 part of '../a.dart';
 
-// === a:builder2/1 contribution.
+// === a:builder2 contribution.
 // builder saw: b
 class Class1 {
   // sawClass2: false
