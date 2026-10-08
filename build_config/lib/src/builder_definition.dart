@@ -156,6 +156,13 @@ class BuilderDefinition {
           'A builder with `adds_to_library: true` must set `build_to: source`.',
         );
       }
+      if (builderFactories.length != 1) {
+        throw ArgumentError(
+          'A builder with `adds_to_library: true` must have exactly one '
+          'builder factory, but has: '
+          '${builderFactories.map((f) => "'$f'").join(', ')}.',
+        );
+      }
     }
   }
 

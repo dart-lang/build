@@ -425,9 +425,7 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
             final accumulator = SharedPartAccumulator.parseContent(
               newContent.stringValue(),
               libraryId,
-              buildSpec.buildPhases.addsToLibraryPhasesByBuilderKey(
-                libraryId.package,
-              ),
+              buildStepPlan.addsToLibraryPhasesByBuilderKey(libraryId),
             );
             buildInputs.sharedParts[libraryId] = accumulator
                 .toFinishedSharedPart();

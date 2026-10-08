@@ -71,23 +71,6 @@ class BuildPhases {
   int get length =>
       inBuildPhases.length + (postBuildPhase.builderActions.isEmpty ? 0 : 1);
 
-  /// The phase numbers of the builders that can add to libraries in
-  /// [package], by builder key.
-  ///
-  /// Each builder has at most one phase per package.
-  Map<String, int> addsToLibraryPhasesByBuilderKey(String package) =>
-      _addsToLibraryPhasesByPackage.putIfAbsent(package, () {
-        final result = <String, int>{};
-        for (var i = 0; i != inBuildPhases.length; ++i) {
-          final phase = inBuildPhases[i];
-          if (phase.addsToLibrary && phase.package == package) {
-            result[phase.key] = i;
-          }
-        }
-        return result;
-      });
-  final Map<String, Map<String, int>> _addsToLibraryPhasesByPackage = {};
-
   static int? _lastAddsToLibraryPhase(Iterable<InBuildPhase> phases) {
     int? result;
     var phaseNumber = 0;
