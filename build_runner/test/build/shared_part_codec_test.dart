@@ -43,17 +43,17 @@ void main() {
 // dart format off
 part of '../b.dart';
 
-// === built_value_generator:built_value/0 imports.
+// === built_value_generator:built_value imports.
 import 'package:foo/foo.dart';
 import 'package:bar/bar.dart';
 
-// === json_serializable:json_serializable/1 imports.
+// === json_serializable:json_serializable imports.
 import 'package:baz/baz.dart';
 
-// === built_value_generator:built_value/0 contribution.
+// === built_value_generator:built_value contribution.
 class User0 {}
 
-// === json_serializable:json_serializable/1 contribution.
+// === json_serializable:json_serializable contribution.
 class User1 {}
 
 ''');
@@ -111,13 +111,13 @@ class User1 {}
         );
 
         final phase0Only = codec.encode(part, upToPhase: 0);
-        expect(phase0Only, contains('// === b0/0 imports.'));
-        expect(phase0Only, contains('// === b0/0 contribution.'));
-        expect(phase0Only, isNot(contains('// === b1/1')));
+        expect(phase0Only, contains('// === b0 imports.'));
+        expect(phase0Only, contains('// === b0 contribution.'));
+        expect(phase0Only, isNot(contains('// === b1 ')));
 
         final bothPhases = codec.encode(part, upToPhase: 1);
-        expect(bothPhases, contains('// === b0/0'));
-        expect(bothPhases, contains('// === b1/1'));
+        expect(bothPhases, contains('// === b0 '));
+        expect(bothPhases, contains('// === b1 '));
       },
     );
 
@@ -131,7 +131,7 @@ class User1 {}
         PartContribution.of(
           builderKey: 'b0',
           contribution:
-              '// === built_value_generator:built_value/0 imports.\n'
+              '// === built_value_generator:built_value imports.\n'
               '// \\=== fake delimiter\n'
               '// \\\\ double backslash\n'
               '// normal comment\n'
@@ -143,13 +143,15 @@ class User1 {}
       // In encoded output, the delimiter line was escaped with backslash.
       expect(
         encoded,
-        contains('// \\=== built_value_generator:built_value/0 imports.'),
+        contains('// \\=== built_value_generator:built_value imports.'),
       );
       expect(encoded, contains('// \\\\=== fake delimiter'));
       expect(encoded, contains('// \\\\\\ double backslash'));
       expect(encoded, contains('// normal comment'));
 
-      final decoded = codec.decode(encoded, AssetId('a', 'lib/b.dart'));
+      final decoded = codec.decode(encoded, AssetId('a', 'lib/b.dart'), {
+        'b0': 0,
+      });
       expect(decoded.contributions[0], original.contributions[0]);
     });
 
@@ -179,10 +181,49 @@ class User1 {}
       );
 
       final encoded = codec.encode(original);
-      final decoded = codec.decode(encoded, AssetId('a', 'lib/b.dart'));
+      final decoded = codec.decode(encoded, AssetId('a', 'lib/b.dart'), {
+        'builder_a': 0,
+        'builder_b': 1,
+      });
 
       expect(decoded.languageVersion, original.languageVersion);
       expect(decoded.contributions, original.contributions);
+    });
+
+    test('decode takes phases from the current build', () {
+      final original = SharedPartAccumulator(AssetId('a', 'lib/b.dart'), null);
+      original.addContribution(
+        0,
+        PartContribution.of(builderKey: 'b0', contribution: '// c0'),
+      );
+      original.addContribution(
+        1,
+        PartContribution.of(builderKey: 'b1', contribution: '// c1'),
+      );
+
+      final decoded = codec.decode(
+        codec.encode(original),
+        AssetId('a', 'lib/b.dart'),
+        {'b0': 1092, 'b1': 1093},
+      );
+      expect(decoded.contributions.keys, [1092, 1093]);
+      expect(decoded.contributions[1092], original.contributions[0]);
+      expect(decoded.contributions[1093], original.contributions[1]);
+    });
+
+    test('decode throws for a builder not in the current build', () {
+      final original = SharedPartAccumulator(AssetId('a', 'lib/b.dart'), null);
+      original.addContribution(
+        0,
+        PartContribution.of(builderKey: 'b0', contribution: '// c0'),
+      );
+
+      expect(
+        () => codec.decode(codec.encode(original), AssetId('a', 'lib/b.dart'), {
+          'b1': 0,
+        }),
+        throwsFormatException,
+      );
     });
 
     test('ignores delimiter markers inside multiline strings', () {
@@ -197,8 +238,8 @@ class User1 {}
           imports: ["import 'package:foo/foo.dart';"],
           contribution:
               "const str = '''\n"
-              '// === b1/1 contribution.\n'
-              '// === b1/1 imports.\n'
+              '// === b1 contribution.\n'
+              '// === b1 imports.\n'
               "''';\n"
               'class A {}',
         ),
@@ -213,7 +254,10 @@ class User1 {}
       );
 
       final encoded = codec.encode(original);
-      final decoded = codec.decode(encoded, AssetId('a', 'lib/b.dart'));
+      final decoded = codec.decode(encoded, AssetId('a', 'lib/b.dart'), {
+        'b0': 0,
+        'b1': 1,
+      });
 
       expect(decoded.contributions.keys, [0, 1]);
       expect(
@@ -237,8 +281,8 @@ class User1 {}
           builderKey: 'b0',
           contribution:
               "const str = '''\n"
-              '// === b1/1 contribution.\n'
-              '// === b1/1 imports.\n'
+              '// === b1 contribution.\n'
+              '// === b1 imports.\n'
               '// \\ fake backslash\n'
               "''';\n"
               'class A {}',
@@ -246,8 +290,8 @@ class User1 {}
       );
 
       final encoded = codec.encode(original);
-      expect(encoded, contains('// === b1/1 contribution.'));
-      expect(encoded, contains('// === b1/1 imports.'));
+      expect(encoded, contains('// === b1 contribution.'));
+      expect(encoded, contains('// === b1 imports.'));
       expect(encoded, contains('// \\ fake backslash'));
       expect(encoded, isNot(contains('// \\===')));
       expect(encoded, isNot(contains('// \\\\')));
@@ -259,31 +303,34 @@ class User1 {}
 // dart format off
 part of '../b.dart';
 
-// === b0/0 imports.
+// === b0 imports.
 import 'package:foo/foo.dart';
 
-// === b0/0 contribution.
+// === b0 contribution.
 const str = \'\'\'
-// === b1/1 contribution.
-// === b1/1 imports.
+// === b1 contribution.
+// === b1 imports.
 \'\'\';
 class A {}
 
-// === b1/1 contribution.
+// === b1 contribution.
 class B {}
 ''';
 
-      final decoded = codec.decode(content, AssetId('a', 'lib/b.dart'));
+      final decoded = codec.decode(content, AssetId('a', 'lib/b.dart'), {
+        'b0': 0,
+        'b1': 1,
+      });
       expect(decoded.contributions.keys, [0, 1]);
       expect(
         decoded.contributions[0]!.contribution,
-        contains('// === b1/1 contribution.'),
+        contains('// === b1 contribution.'),
       );
       expect(decoded.contributions[1]!.contribution, 'class B {}');
     });
 
     test('decode on empty string returns empty accumulator', () {
-      final decoded = codec.decode('', AssetId('a', 'lib/b.dart'));
+      final decoded = codec.decode('', AssetId('a', 'lib/b.dart'), const {});
       expect(decoded.languageVersion, isNull);
       expect(decoded.contributions, isEmpty);
     });

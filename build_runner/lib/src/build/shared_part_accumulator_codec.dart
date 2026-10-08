@@ -38,7 +38,7 @@ class SharedPartAccumulatorCodec {
     for (final phase in validPhases) {
       final contribution = accumulator.contributions[phase]!;
       if (contribution.imports.isNotEmpty) {
-        buffer.writeln('// === ${contribution.builderKey}/$phase imports.');
+        buffer.writeln('// === ${contribution.builderKey} imports.');
         for (final import in contribution.imports) {
           buffer.writeln(_escapeContent(import));
         }
@@ -49,9 +49,7 @@ class SharedPartAccumulatorCodec {
     for (final phase in validPhases) {
       final contribution = accumulator.contributions[phase]!;
       if (contribution.contribution.isNotEmpty) {
-        buffer.writeln(
-          '// === ${contribution.builderKey}/$phase contribution.',
-        );
+        buffer.writeln('// === ${contribution.builderKey} contribution.');
         buffer.writeln(_escapeContent(contribution.contribution));
         buffer.writeln();
       }
@@ -62,7 +60,18 @@ class SharedPartAccumulatorCodec {
 
   /// Decodes shared part source [content] into a [SharedPartAccumulator] for
   /// [libraryId].
-  SharedPartAccumulator decode(String content, AssetId libraryId) {
+  ///
+  /// Markers name builders, not phases, because phase numbers depend on every
+  /// package in the build. [phasesByBuilderKey] gives the phase of each
+  /// builder that adds to [libraryId] in the current build.
+  ///
+  /// Throws [FormatException] if [content] names a builder that is not in
+  /// [phasesByBuilderKey].
+  SharedPartAccumulator decode(
+    String content,
+    AssetId libraryId,
+    Map<String, int> phasesByBuilderKey,
+  ) {
     if (content.isEmpty) {
       return SharedPartAccumulator(libraryId, null);
     }
@@ -70,9 +79,7 @@ class SharedPartAccumulatorCodec {
     final parsed = parseString(content: content, throwIfDiagnostics: false);
     final languageVersion = parsed.unit.languageVersionToken?.lexeme;
 
-    final delimiterPattern = RegExp(
-      r'^// === (.+)/(\d+) (imports|contribution)\.$',
-    );
+    final delimiterPattern = RegExp(r'^// === (\S+) (imports|contribution)\.$');
 
     final markers =
         <
@@ -84,10 +91,17 @@ class SharedPartAccumulatorCodec {
         final text = comment.lexeme.trim();
         final match = delimiterPattern.firstMatch(text);
         if (match != null) {
+          final builderKey = match.group(1)!;
+          final phase = phasesByBuilderKey[builderKey];
+          if (phase == null) {
+            throw FormatException(
+              'Builder $builderKey does not add to $libraryId.',
+            );
+          }
           markers.add((
-            builderKey: match.group(1)!,
-            phase: int.parse(match.group(2)!),
-            isImports: match.group(3)! == 'imports',
+            builderKey: builderKey,
+            phase: phase,
+            isImports: match.group(2)! == 'imports',
             offset: comment.offset,
             end: comment.end,
           ));

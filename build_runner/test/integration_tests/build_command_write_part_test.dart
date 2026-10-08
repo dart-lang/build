@@ -384,7 +384,7 @@ targets:
 // dart format off
 part of '../a.dart';
 
-// === write_part_pkg:write_part_builder/0 contribution.
+// === write_part_pkg:write_part_builder contribution.
 // part content
 
 ''');
@@ -598,10 +598,10 @@ targets:
 // dart format off
 part of '../a.dart';
 
-// === multi_part_pkg:builder2/0 contribution.
+// === multi_part_pkg:builder2 contribution.
 // contribution 2
 
-// === multi_part_pkg:builder1/1 contribution.
+// === multi_part_pkg:builder1 contribution.
 // contribution 1
 
 ''');
@@ -632,17 +632,17 @@ targets:
 // dart format off
 part of '../a.dart';
 
-// === phase_part_pkg:part_generator_1/0 contribution.
+// === phase_part_pkg:part_generator_1 contribution.
 class Class1 {
   // Gen1 checked hasClass1: false, hasClass2: false, hasClass3: false
 }
 
-// === phase_part_pkg:part_generator_2/1 contribution.
+// === phase_part_pkg:part_generator_2 contribution.
 class Class2 {
   // Gen2 checked hasClass1: true, hasClass2: false
 }
 
-// === phase_part_pkg:part_generator_3/2 contribution.
+// === phase_part_pkg:part_generator_3 contribution.
 class Class3 {
   // Gen3 checked hasClass1: true, hasClass2: true, hasClass3: false
 }
@@ -666,17 +666,17 @@ class A {
 // dart format off
 part of '../a.dart';
 
-// === phase_part_pkg:part_generator_1/0 contribution.
+// === phase_part_pkg:part_generator_1 contribution.
 class Class1 {
   // Gen1 checked hasClass1: false, hasClass2: false, hasClass3: false
 }
 
-// === phase_part_pkg:part_generator_2/1 contribution.
+// === phase_part_pkg:part_generator_2 contribution.
 class Class2 {
   // Gen2 checked hasClass1: true, hasClass2: false
 }
 
-// === phase_part_pkg:part_generator_3/2 contribution.
+// === phase_part_pkg:part_generator_3 contribution.
 class Class3 {
   // Gen3 checked hasClass1: true, hasClass2: true, hasClass3: false
 }
@@ -756,11 +756,11 @@ class Dep {}
 // dart format off
 part of '../a.dart';
 
-// === write_part_imports_pkg:write_part_builder/0 imports.
+// === write_part_imports_pkg:write_part_builder imports.
 import 'dart:async' as $0async;
 import 'package:root_pkg/dep.dart' as $0dep;
 
-// === write_part_imports_pkg:write_part_builder/0 contribution.
+// === write_part_imports_pkg:write_part_builder contribution.
 class Generated {
   $0async.Future<void>? future;
   $0dep.Dep? dep;
