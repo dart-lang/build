@@ -81,7 +81,7 @@ class BuildOutputReader {
 
   /// Returns a reason why [id] is not readable, or null if it is readable.
   Future<UnreadableReason?> _unreadableReason(AssetId id) async {
-    if (id.isBrSharedPart) {
+    if (id.isBrSharedPart && !buildState.isSource(id)) {
       if (buildState.contentOf(id) != null) return null;
       return UnreadableReason.notFound;
     }
@@ -192,7 +192,7 @@ class BuildOutputReader {
   }
 
   bool _shouldSkipId(AssetId id, String? rootDir) {
-    if (id.isBrSharedPart) {
+    if (id.isBrSharedPart && !buildState.isSource(id)) {
       if (buildState.contentOf(id) == null) return true;
     } else {
       if (buildState.assetsDeletedByPostProcess.contains(id)) return true;

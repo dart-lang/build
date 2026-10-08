@@ -78,7 +78,7 @@ class BuildState {
   final Set<AssetId> _librariesWithRebuiltPart = {};
 
   @Ensures('_sources.every((id) => !buildStepPlan.isDeclaredOutput(id))')
-  @Ensures('_sources.every((id) => !id.isBrOutput)')
+  @Ensures('_sources.every((id) => !id.isBrOutput || !hasSharedPart(id))')
   @Ensures(
     '_contents.keys.every((id) => '
     'isSource(id) || '
@@ -198,13 +198,15 @@ class BuildState {
   ///
   /// Returns `null` if it is an unread source or has not been generated.
   AssetContent? contentOf(AssetId id) {
-    if (id.isBrOutput) return sharedPartContent(id);
+    if (id.isBrOutput && !isSource(id)) return sharedPartContent(id);
     return _contents[id];
   }
 
   /// The digest of [id], or `null` if not known.
   Digest? digestOf(AssetId id) {
-    if (id.isBrOutput) return sharedPartContent(id)?.digest;
+    if (id.isBrOutput && !isSource(id)) {
+      return sharedPartContent(id)?.digest;
+    }
     return _contents[id]?.digest;
   }
 

@@ -27,7 +27,10 @@ part 'build_inputs.g.dart';
   'invalidOutputs.every((id) => !retainedOutputContents.containsKey(id))',
 )
 @Invariant('sources.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)')
-@Invariant('sources.every((id) => !id.isBrOutput)')
+@Invariant(
+  'sources.every((id) => '
+  '!id.isBrOutput || !sharedParts.containsKey(id.sharedPartLibraryId))',
+)
 @Invariant(
   'sharedParts.keys.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)',
 )

@@ -96,7 +96,12 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
       // that look like old generation outputs removed.
 
       final inputSources = diskFiles
-          .where((f) => f.atPackagePath && !f.id.isBrOutput)
+          .where(
+            (f) =>
+                f.atPackagePath &&
+                !(f.id.isBrOutput &&
+                    buildPackages.outputPackages.contains(f.id.package)),
+          )
           .map((f) => f.id)
           .toSet();
 
@@ -399,7 +404,8 @@ abstract class BuildPlan implements Built<BuildPlan, BuildPlanBuilder> {
         if (file.inArtifactTree) {
           newArtifactTreeFiles.add(id);
           conflictingOutputs.add(file);
-        } else if (id.isBrOutput) {
+        } else if (id.isBrOutput &&
+            buildSpec.buildPackages.outputPackages.contains(id.package)) {
           conflictingOutputs.add(file);
         } else {
           buildInputs.updatedSources.add(id);

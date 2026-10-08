@@ -33,7 +33,7 @@ import 'post_process_build_step_result.dart';
 )
 @Invariant('sources.every((id) => !buildStepPlan.isDeclaredOutput(id))')
 @Invariant('sources.every((id) => !isActualPostOutput(id))')
-@Invariant('sources.every((id) => !id.isBrOutput)')
+@Invariant('sources.every((id) => !id.isBrOutput || !hasSharedPart(id))')
 @Invariant('actualOutputs.every((id) => buildStepPlan.isDeclaredOutput(id))')
 @Invariant(
   'sharedParts.keys.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)',

@@ -1049,7 +1049,7 @@ class Build {
     required AssetId input,
     required int phaseNumber,
   }) async {
-    if (input.isBrSharedPart) {
+    if (input.isBrSharedPart && !buildState.isSource(input)) {
       if (phaseNumber == 0) return false;
       final libraryId = input.sharedPartLibraryId!;
       final accumulator = _previousPartAccumulator(libraryId);
