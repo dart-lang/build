@@ -79,7 +79,7 @@ class SharedPartAccumulatorCodec {
     final parsed = parseString(content: content, throwIfDiagnostics: false);
     final languageVersion = parsed.unit.languageVersionToken?.lexeme;
 
-    final delimiterPattern = RegExp(r'^// === (\S+) (imports|contribution)\.$');
+    final delimiterPattern = RegExp(r'^// === (.+) (imports|contribution)\.$');
 
     final markers =
         <

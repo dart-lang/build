@@ -190,6 +190,25 @@ class User1 {}
       expect(decoded.contributions, original.contributions);
     });
 
+    test('round trip preserves builder keys containing spaces', () {
+      final original = SharedPartAccumulator(AssetId('a', 'lib/b.dart'), null);
+      original.addContribution(
+        0,
+        PartContribution.of(
+          builderKey: 'a:my builder',
+          imports: ["import 'package:foo/foo.dart';"],
+          contribution: '// c0',
+        ),
+      );
+
+      final decoded = codec.decode(
+        codec.encode(original),
+        AssetId('a', 'lib/b.dart'),
+        {'a:my builder': 0},
+      );
+      expect(decoded.contributions, original.contributions);
+    });
+
     test('decode takes phases from the current build', () {
       final original = SharedPartAccumulator(AssetId('a', 'lib/b.dart'), null);
       original.addContribution(
