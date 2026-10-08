@@ -61,9 +61,9 @@ abstract class CollectionGenericValue<T>
 
   BuiltList<T> get values;
 
-  factory CollectionGenericValue(
-          [Function(CollectionGenericValueBuilder<T>) updates]) =
-      _$CollectionGenericValue<T>;
+  factory CollectionGenericValue([
+    Function(CollectionGenericValueBuilder<T>) updates,
+  ]) = _$CollectionGenericValue<T>;
   CollectionGenericValue._();
 }
 

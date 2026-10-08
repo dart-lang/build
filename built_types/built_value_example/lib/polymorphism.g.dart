@@ -16,8 +16,11 @@ class _$CatSerializer implements StructuredSerializer<Cat> {
   final String wireName = 'Cat';
 
   @override
-  Iterable<Object?> serialize(Serializers serializers, Cat object,
-      {FullType specifiedType = FullType.unspecified}) {
+  Iterable<Object?> serialize(
+    Serializers serializers,
+    Cat object, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
     final result = <Object?>[
       'tail',
       serializers.serialize(object.tail, specifiedType: const FullType(bool)),
@@ -29,8 +32,11 @@ class _$CatSerializer implements StructuredSerializer<Cat> {
   }
 
   @override
-  Cat deserialize(Serializers serializers, Iterable<Object?> serialized,
-      {FullType specifiedType = FullType.unspecified}) {
+  Cat deserialize(
+    Serializers serializers,
+    Iterable<Object?> serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
     final result = CatBuilder();
 
     final iterator = serialized.iterator;
@@ -40,12 +46,20 @@ class _$CatSerializer implements StructuredSerializer<Cat> {
       final Object? value = iterator.current;
       switch (key) {
         case 'tail':
-          result.tail = serializers.deserialize(value,
-              specifiedType: const FullType(bool))! as bool;
+          result.tail =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(bool),
+                  )!
+                  as bool;
           break;
         case 'legs':
-          result.legs = serializers.deserialize(value,
-              specifiedType: const FullType(int))! as int;
+          result.legs =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(int),
+                  )!
+                  as int;
           break;
       }
     }
@@ -61,8 +75,11 @@ class _$FishSerializer implements StructuredSerializer<Fish> {
   final String wireName = 'Fish';
 
   @override
-  Iterable<Object?> serialize(Serializers serializers, Fish object,
-      {FullType specifiedType = FullType.unspecified}) {
+  Iterable<Object?> serialize(
+    Serializers serializers,
+    Fish object, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
     final result = <Object?>[
       'fins',
       serializers.serialize(object.fins, specifiedType: const FullType(int)),
@@ -74,8 +91,11 @@ class _$FishSerializer implements StructuredSerializer<Fish> {
   }
 
   @override
-  Fish deserialize(Serializers serializers, Iterable<Object?> serialized,
-      {FullType specifiedType = FullType.unspecified}) {
+  Fish deserialize(
+    Serializers serializers,
+    Iterable<Object?> serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
     final result = FishBuilder();
 
     final iterator = serialized.iterator;
@@ -85,12 +105,20 @@ class _$FishSerializer implements StructuredSerializer<Fish> {
       final Object? value = iterator.current;
       switch (key) {
         case 'fins':
-          result.fins = serializers.deserialize(value,
-              specifiedType: const FullType(int))! as int;
+          result.fins =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(int),
+                  )!
+                  as int;
           break;
         case 'legs':
-          result.legs = serializers.deserialize(value,
-              specifiedType: const FullType(int))! as int;
+          result.legs =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(int),
+                  )!
+                  as int;
           break;
       }
     }
@@ -184,7 +212,8 @@ class CatBuilder implements Builder<Cat, CatBuilder>, AnimalBuilder {
   Cat build() => _build();
 
   _$Cat _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$Cat._(
           tail: BuiltValueNullFieldError.checkNotNull(tail, r'Cat', 'tail'),
           legs: BuiltValueNullFieldError.checkNotNull(legs, r'Cat', 'legs'),
@@ -272,7 +301,8 @@ class FishBuilder implements Builder<Fish, FishBuilder>, AnimalBuilder {
   Fish build() => _build();
 
   _$Fish _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$Fish._(
           fins: BuiltValueNullFieldError.checkNotNull(fins, r'Fish', 'fins'),
           legs: BuiltValueNullFieldError.checkNotNull(legs, r'Fish', 'legs'),
