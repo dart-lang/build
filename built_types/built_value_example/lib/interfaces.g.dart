@@ -23,12 +23,9 @@ EnumWithInt _$valueOf(String name) {
   }
 }
 
-final BuiltSet<EnumWithInt> _$values =
-    BuiltSet<EnumWithInt>(const <EnumWithInt>[
-  _$one,
-  _$two,
-  _$three,
-]);
+final BuiltSet<EnumWithInt> _$values = BuiltSet<EnumWithInt>(
+  const <EnumWithInt>[_$one, _$two, _$three],
+);
 
 Serializer<ValueWithInt> _$valueWithIntSerializer = _$ValueWithIntSerializer();
 Serializer<EnumWithInt> _$enumWithIntSerializer = _$EnumWithIntSerializer();
@@ -40,8 +37,11 @@ class _$ValueWithIntSerializer implements StructuredSerializer<ValueWithInt> {
   final String wireName = 'ValueWithInt';
 
   @override
-  Iterable<Object?> serialize(Serializers serializers, ValueWithInt object,
-      {FullType specifiedType = FullType.unspecified}) {
+  Iterable<Object?> serialize(
+    Serializers serializers,
+    ValueWithInt object, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
     final result = <Object?>[
       'anInt',
       serializers.serialize(object.anInt, specifiedType: const FullType(int)),
@@ -54,8 +54,10 @@ class _$ValueWithIntSerializer implements StructuredSerializer<ValueWithInt> {
 
   @override
   ValueWithInt deserialize(
-      Serializers serializers, Iterable<Object?> serialized,
-      {FullType specifiedType = FullType.unspecified}) {
+    Serializers serializers,
+    Iterable<Object?> serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
     final result = ValueWithIntBuilder();
 
     final iterator = serialized.iterator;
@@ -65,12 +67,20 @@ class _$ValueWithIntSerializer implements StructuredSerializer<ValueWithInt> {
       final Object? value = iterator.current;
       switch (key) {
         case 'anInt':
-          result.anInt = serializers.deserialize(value,
-              specifiedType: const FullType(int))! as int;
+          result.anInt =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(int),
+                  )!
+                  as int;
           break;
         case 'note':
-          result.note = serializers.deserialize(value,
-              specifiedType: const FullType(String))! as String;
+          result.note =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )!
+                  as String;
           break;
       }
     }
@@ -86,14 +96,18 @@ class _$EnumWithIntSerializer implements PrimitiveSerializer<EnumWithInt> {
   final String wireName = 'EnumWithInt';
 
   @override
-  Object serialize(Serializers serializers, EnumWithInt object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      object.name;
+  Object serialize(
+    Serializers serializers,
+    EnumWithInt object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => object.name;
 
   @override
-  EnumWithInt deserialize(Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      EnumWithInt.valueOf(serialized as String);
+  EnumWithInt deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => EnumWithInt.valueOf(serialized as String);
 }
 
 class _$ValueWithInt extends ValueWithInt {
@@ -190,12 +204,19 @@ class _$ValueWithIntBuilder extends ValueWithIntBuilder {
   ValueWithInt build() => _build();
 
   _$ValueWithInt _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$ValueWithInt._(
           anInt: BuiltValueNullFieldError.checkNotNull(
-              anInt, r'ValueWithInt', 'anInt'),
+            anInt,
+            r'ValueWithInt',
+            'anInt',
+          ),
           note: BuiltValueNullFieldError.checkNotNull(
-              note, r'ValueWithInt', 'note'),
+            note,
+            r'ValueWithInt',
+            'note',
+          ),
         );
     replace(_$result);
     return _$result;

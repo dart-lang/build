@@ -24,8 +24,11 @@ class _$SimpleValueSerializer implements StructuredSerializer<SimpleValue> {
   final String wireName = 'SimpleValue';
 
   @override
-  Iterable<Object?> serialize(Serializers serializers, SimpleValue object,
-      {FullType specifiedType = FullType.unspecified}) {
+  Iterable<Object?> serialize(
+    Serializers serializers,
+    SimpleValue object, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
     final result = <Object?>[
       'anInt',
       serializers.serialize(object.anInt, specifiedType: const FullType(int)),
@@ -35,15 +38,19 @@ class _$SimpleValueSerializer implements StructuredSerializer<SimpleValue> {
     if (value != null) {
       result
         ..add('aString')
-        ..add(serializers.serialize(value,
-            specifiedType: const FullType(String)));
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(String)),
+        );
     }
     return result;
   }
 
   @override
-  SimpleValue deserialize(Serializers serializers, Iterable<Object?> serialized,
-      {FullType specifiedType = FullType.unspecified}) {
+  SimpleValue deserialize(
+    Serializers serializers,
+    Iterable<Object?> serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
     final result = SimpleValueBuilder();
 
     final iterator = serialized.iterator;
@@ -53,12 +60,20 @@ class _$SimpleValueSerializer implements StructuredSerializer<SimpleValue> {
       final Object? value = iterator.current;
       switch (key) {
         case 'anInt':
-          result.anInt = serializers.deserialize(value,
-              specifiedType: const FullType(int))! as int;
+          result.anInt =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(int),
+                  )!
+                  as int;
           break;
         case 'aString':
-          result.aString = serializers.deserialize(value,
-              specifiedType: const FullType(String)) as String?;
+          result.aString =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )
+                  as String?;
           break;
       }
     }
@@ -75,8 +90,11 @@ class _$VerySimpleValueSerializer
   final String wireName = 'VerySimpleValue';
 
   @override
-  Iterable<Object?> serialize(Serializers serializers, VerySimpleValue object,
-      {FullType specifiedType = FullType.unspecified}) {
+  Iterable<Object?> serialize(
+    Serializers serializers,
+    VerySimpleValue object, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
     final result = <Object?>[
       'value',
       serializers.serialize(object.value, specifiedType: const FullType(int)),
@@ -87,8 +105,10 @@ class _$VerySimpleValueSerializer
 
   @override
   VerySimpleValue deserialize(
-      Serializers serializers, Iterable<Object?> serialized,
-      {FullType specifiedType = FullType.unspecified}) {
+    Serializers serializers,
+    Iterable<Object?> serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
     final result = VerySimpleValueBuilder();
 
     final iterator = serialized.iterator;
@@ -98,8 +118,12 @@ class _$VerySimpleValueSerializer
       final Object? value = iterator.current;
       switch (key) {
         case 'value':
-          result.value = serializers.deserialize(value,
-              specifiedType: const FullType(int))! as int;
+          result.value =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(int),
+                  )!
+                  as int;
           break;
       }
     }
@@ -115,28 +139,39 @@ class _$CompoundValueSerializer implements StructuredSerializer<CompoundValue> {
   final String wireName = 'CompoundValue';
 
   @override
-  Iterable<Object?> serialize(Serializers serializers, CompoundValue object,
-      {FullType specifiedType = FullType.unspecified}) {
+  Iterable<Object?> serialize(
+    Serializers serializers,
+    CompoundValue object, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
     final result = <Object?>[
       'simpleValue',
-      serializers.serialize(object.simpleValue,
-          specifiedType: const FullType(SimpleValue)),
+      serializers.serialize(
+        object.simpleValue,
+        specifiedType: const FullType(SimpleValue),
+      ),
     ];
     Object? value;
     value = object.validatedValue;
     if (value != null) {
       result
         ..add('validatedValue')
-        ..add(serializers.serialize(value,
-            specifiedType: const FullType(ValidatedValue)));
+        ..add(
+          serializers.serialize(
+            value,
+            specifiedType: const FullType(ValidatedValue),
+          ),
+        );
     }
     return result;
   }
 
   @override
   CompoundValue deserialize(
-      Serializers serializers, Iterable<Object?> serialized,
-      {FullType specifiedType = FullType.unspecified}) {
+    Serializers serializers,
+    Iterable<Object?> serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
     final result = CompoundValueBuilder();
 
     final iterator = serialized.iterator;
@@ -146,13 +181,22 @@ class _$CompoundValueSerializer implements StructuredSerializer<CompoundValue> {
       final Object? value = iterator.current;
       switch (key) {
         case 'simpleValue':
-          result.simpleValue.replace(serializers.deserialize(value,
-              specifiedType: const FullType(SimpleValue))! as SimpleValue);
+          result.simpleValue.replace(
+            serializers.deserialize(
+                  value,
+                  specifiedType: const FullType(SimpleValue),
+                )!
+                as SimpleValue,
+          );
           break;
         case 'validatedValue':
-          result.validatedValue.replace(serializers.deserialize(value,
-                  specifiedType: const FullType(ValidatedValue))!
-              as ValidatedValue);
+          result.validatedValue.replace(
+            serializers.deserialize(
+                  value,
+                  specifiedType: const FullType(ValidatedValue),
+                )!
+                as ValidatedValue,
+          );
           break;
       }
     }
@@ -169,8 +213,11 @@ class _$ValidatedValueSerializer
   final String wireName = 'ValidatedValue';
 
   @override
-  Iterable<Object?> serialize(Serializers serializers, ValidatedValue object,
-      {FullType specifiedType = FullType.unspecified}) {
+  Iterable<Object?> serialize(
+    Serializers serializers,
+    ValidatedValue object, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
     final result = <Object?>[
       'anInt',
       serializers.serialize(object.anInt, specifiedType: const FullType(int)),
@@ -180,16 +227,19 @@ class _$ValidatedValueSerializer
     if (value != null) {
       result
         ..add('aString')
-        ..add(serializers.serialize(value,
-            specifiedType: const FullType(String)));
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(String)),
+        );
     }
     return result;
   }
 
   @override
   ValidatedValue deserialize(
-      Serializers serializers, Iterable<Object?> serialized,
-      {FullType specifiedType = FullType.unspecified}) {
+    Serializers serializers,
+    Iterable<Object?> serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
     final result = ValidatedValueBuilder();
 
     final iterator = serialized.iterator;
@@ -199,12 +249,20 @@ class _$ValidatedValueSerializer
       final Object? value = iterator.current;
       switch (key) {
         case 'anInt':
-          result.anInt = serializers.deserialize(value,
-              specifiedType: const FullType(int))! as int;
+          result.anInt =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(int),
+                  )!
+                  as int;
           break;
         case 'aString':
-          result.aString = serializers.deserialize(value,
-              specifiedType: const FullType(String)) as String?;
+          result.aString =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )
+                  as String?;
           break;
       }
     }
@@ -220,25 +278,35 @@ class _$AccountSerializer implements StructuredSerializer<Account> {
   final String wireName = 'Account';
 
   @override
-  Iterable<Object?> serialize(Serializers serializers, Account object,
-      {FullType specifiedType = FullType.unspecified}) {
+  Iterable<Object?> serialize(
+    Serializers serializers,
+    Account object, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
     final result = <Object?>[
       'id',
       serializers.serialize(object.id, specifiedType: const FullType(int)),
       'name',
       serializers.serialize(object.name, specifiedType: const FullType(String)),
       'keyValues',
-      serializers.serialize(object.keyValues,
-          specifiedType: const FullType(BuiltMap,
-              const [const FullType(String), const FullType(JsonObject)])),
+      serializers.serialize(
+        object.keyValues,
+        specifiedType: const FullType(BuiltMap, const [
+          const FullType(String),
+          const FullType(JsonObject),
+        ]),
+      ),
     ];
 
     return result;
   }
 
   @override
-  Account deserialize(Serializers serializers, Iterable<Object?> serialized,
-      {FullType specifiedType = FullType.unspecified}) {
+  Account deserialize(
+    Serializers serializers,
+    Iterable<Object?> serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
     final result = AccountBuilder();
 
     final iterator = serialized.iterator;
@@ -248,19 +316,31 @@ class _$AccountSerializer implements StructuredSerializer<Account> {
       final Object? value = iterator.current;
       switch (key) {
         case 'id':
-          result.id = serializers.deserialize(value,
-              specifiedType: const FullType(int))! as int;
+          result.id =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(int),
+                  )!
+                  as int;
           break;
         case 'name':
-          result.name = serializers.deserialize(value,
-              specifiedType: const FullType(String))! as String;
+          result.name =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )!
+                  as String;
           break;
         case 'keyValues':
-          result.keyValues.replace(serializers.deserialize(value,
+          result.keyValues.replace(
+            serializers.deserialize(
+              value,
               specifiedType: const FullType(BuiltMap, const [
                 const FullType(String),
-                const FullType(JsonObject)
-              ]))!);
+                const FullType(JsonObject),
+              ]),
+            )!,
+          );
           break;
       }
     }
@@ -276,8 +356,11 @@ class _$WireNameValueSerializer implements StructuredSerializer<WireNameValue> {
   final String wireName = 'V';
 
   @override
-  Iterable<Object?> serialize(Serializers serializers, WireNameValue object,
-      {FullType specifiedType = FullType.unspecified}) {
+  Iterable<Object?> serialize(
+    Serializers serializers,
+    WireNameValue object, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
     final result = <Object?>[
       'v',
       serializers.serialize(object.value, specifiedType: const FullType(int)),
@@ -288,8 +371,10 @@ class _$WireNameValueSerializer implements StructuredSerializer<WireNameValue> {
 
   @override
   WireNameValue deserialize(
-      Serializers serializers, Iterable<Object?> serialized,
-      {FullType specifiedType = FullType.unspecified}) {
+    Serializers serializers,
+    Iterable<Object?> serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
     final result = WireNameValueBuilder();
 
     final iterator = serialized.iterator;
@@ -299,8 +384,12 @@ class _$WireNameValueSerializer implements StructuredSerializer<WireNameValue> {
       final Object? value = iterator.current;
       switch (key) {
         case 'v':
-          result.value = serializers.deserialize(value,
-              specifiedType: const FullType(int))! as int;
+          result.value =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(int),
+                  )!
+                  as int;
           break;
       }
     }
@@ -389,10 +478,14 @@ class SimpleValueBuilder implements Builder<SimpleValue, SimpleValueBuilder> {
   SimpleValue build() => _build();
 
   _$SimpleValue _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$SimpleValue._(
           anInt: BuiltValueNullFieldError.checkNotNull(
-              anInt, r'SimpleValue', 'anInt'),
+            anInt,
+            r'SimpleValue',
+            'anInt',
+          ),
           aString: aString,
         );
     replace(_$result);
@@ -431,9 +524,9 @@ class _$VerySimpleValue extends VerySimpleValue {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper(r'VerySimpleValue')
-          ..add('value', value))
-        .toString();
+    return (newBuiltValueToStringHelper(
+      r'VerySimpleValue',
+    )..add('value', value)).toString();
   }
 }
 
@@ -470,10 +563,14 @@ class VerySimpleValueBuilder
   VerySimpleValue build() => _build();
 
   _$VerySimpleValue _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$VerySimpleValue._(
           value: BuiltValueNullFieldError.checkNotNull(
-              value, r'VerySimpleValue', 'value'),
+            value,
+            r'VerySimpleValue',
+            'value',
+          ),
         );
     replace(_$result);
     return _$result;
@@ -490,7 +587,7 @@ class _$CompoundValue extends CompoundValue {
       (CompoundValueBuilder()..update(updates))._build();
 
   _$CompoundValue._({required this.simpleValue, this.validatedValue})
-      : super._();
+    : super._();
   @override
   CompoundValue rebuild(void Function(CompoundValueBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -568,7 +665,8 @@ class CompoundValueBuilder
   _$CompoundValue _build() {
     _$CompoundValue _$result;
     try {
-      _$result = _$v ??
+      _$result =
+          _$v ??
           _$CompoundValue._(
             simpleValue: simpleValue.build(),
             validatedValue: _validatedValue?.build(),
@@ -582,7 +680,10 @@ class CompoundValueBuilder
         _validatedValue?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'CompoundValue', _$failedField, e.toString());
+          r'CompoundValue',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }
@@ -672,10 +773,14 @@ class ValidatedValueBuilder
   ValidatedValue build() => _build();
 
   _$ValidatedValue _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$ValidatedValue._(
           anInt: BuiltValueNullFieldError.checkNotNull(
-              anInt, r'ValidatedValue', 'anInt'),
+            anInt,
+            r'ValidatedValue',
+            'anInt',
+          ),
           aString: aString,
         );
     replace(_$result);
@@ -764,10 +869,14 @@ class ValueWithCodeBuilder
   ValueWithCode build() => _build();
 
   _$ValueWithCode _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$ValueWithCode._(
           anInt: BuiltValueNullFieldError.checkNotNull(
-              anInt, r'ValueWithCode', 'anInt'),
+            anInt,
+            r'ValueWithCode',
+            'anInt',
+          ),
           aString: aString,
         );
     replace(_$result);
@@ -781,8 +890,9 @@ class _$ValueWithDefaults extends ValueWithDefaults {
   @override
   final String? aString;
 
-  factory _$ValueWithDefaults(
-          [void Function(ValueWithDefaultsBuilder)? updates]) =>
+  factory _$ValueWithDefaults([
+    void Function(ValueWithDefaultsBuilder)? updates,
+  ]) =>
       (ValueWithDefaultsBuilder()..update(updates)).build()
           as _$ValueWithDefaults;
 
@@ -874,10 +984,14 @@ class _$ValueWithDefaultsBuilder extends ValueWithDefaultsBuilder {
   ValueWithDefaults build() => _build();
 
   _$ValueWithDefaults _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$ValueWithDefaults._(
           anInt: BuiltValueNullFieldError.checkNotNull(
-              anInt, r'ValueWithDefaults', 'anInt'),
+            anInt,
+            r'ValueWithDefaults',
+            'anInt',
+          ),
           aString: aString,
         );
     replace(_$result);
@@ -924,8 +1038,9 @@ class _$DerivedValue extends DerivedValue {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper(r'DerivedValue')..add('anInt', anInt))
-        .toString();
+    return (newBuiltValueToStringHelper(
+      r'DerivedValue',
+    )..add('anInt', anInt)).toString();
   }
 }
 
@@ -962,10 +1077,14 @@ class DerivedValueBuilder
   DerivedValue build() => _build();
 
   _$DerivedValue _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$DerivedValue._(
           anInt: BuiltValueNullFieldError.checkNotNull(
-              anInt, r'DerivedValue', 'anInt'),
+            anInt,
+            r'DerivedValue',
+            'anInt',
+          ),
         );
     replace(_$result);
     return _$result;
@@ -984,7 +1103,7 @@ class _$Account extends Account {
       (AccountBuilder()..update(updates))._build();
 
   _$Account._({required this.id, required this.name, required this.keyValues})
-      : super._();
+    : super._();
   @override
   Account rebuild(void Function(AccountBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -1067,11 +1186,15 @@ class AccountBuilder implements Builder<Account, AccountBuilder> {
   _$Account _build() {
     _$Account _$result;
     try {
-      _$result = _$v ??
+      _$result =
+          _$v ??
           _$Account._(
             id: BuiltValueNullFieldError.checkNotNull(id, r'Account', 'id'),
-            name:
-                BuiltValueNullFieldError.checkNotNull(name, r'Account', 'name'),
+            name: BuiltValueNullFieldError.checkNotNull(
+              name,
+              r'Account',
+              'name',
+            ),
             keyValues: keyValues.build(),
           );
     } catch (_) {
@@ -1081,7 +1204,10 @@ class AccountBuilder implements Builder<Account, AccountBuilder> {
         keyValues.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'Account', _$failedField, e.toString());
+          r'Account',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }
@@ -1121,8 +1247,9 @@ class _$WireNameValue extends WireNameValue {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper(r'WireNameValue')..add('value', value))
-        .toString();
+    return (newBuiltValueToStringHelper(
+      r'WireNameValue',
+    )..add('value', value)).toString();
   }
 }
 
@@ -1159,10 +1286,14 @@ class WireNameValueBuilder
   WireNameValue build() => _build();
 
   _$WireNameValue _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$WireNameValue._(
           value: BuiltValueNullFieldError.checkNotNull(
-              value, r'WireNameValue', 'value'),
+            value,
+            r'WireNameValue',
+            'value',
+          ),
         );
     replace(_$result);
     return _$result;
