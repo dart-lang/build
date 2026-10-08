@@ -37,6 +37,7 @@ class BodyWeaver {
         result: _expressionResult(
           edits.textAt(body.expression.offset, body.expression.end),
           isVoid: isVoid,
+          isAsync: body.isAsynchronous,
           postconditions: postconditions,
           exitRewriter: exitRewriter,
         ),
@@ -80,13 +81,16 @@ class BodyWeaver {
   String _expressionResult(
     String exprSource, {
     required bool isVoid,
+    required bool isAsync,
     required Iterable<String> postconditions,
     required ExitRewriter exitRewriter,
   }) {
     final checks = postconditions.isEmpty
         ? ''
         : ClauseEmitter.postconditions(postconditions);
-    if (isVoid) return '$exprSource;\n$checks';
+    // In an `async` function, `=> e` waits for `e` if it is a future, so the
+    // checks must wait too.
+    if (isVoid) return '${isAsync ? 'await ' : ''}$exprSource;\n$checks';
     if (postconditions.isEmpty) return 'return $exprSource;\n';
     return '${exitRewriter.returnValue(exprSource, checks)}\n';
   }

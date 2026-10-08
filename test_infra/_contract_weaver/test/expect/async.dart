@@ -12,3 +12,16 @@ class Loader {
     return 'contents of $path';
   }
 }
+
+class Saver {
+  bool saved = false;
+
+  @Ensures('saved')
+  Future<void> save() async {
+    await Future<void>.delayed(Duration.zero);
+    saved = true;
+  }
+
+  @Ensures('saved')
+  Future<void> saveVia() async => save();
+}
