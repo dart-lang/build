@@ -132,8 +132,18 @@ class BodyWeaver {
     final closing = StringBuffer();
     final fallsOffEnd =
         block.statements.isEmpty || block.statements.last is! ReturnStatement;
-    if (isVoid && fallsOffEnd && postconditions.isNotEmpty) {
-      closing.write(ClauseEmitter.postconditions(postconditions));
+    if (fallsOffEnd && postconditions.isNotEmpty) {
+      if (isVoid) {
+        closing.write(ClauseEmitter.postconditions(postconditions));
+      } else if (exitRewriter.mayFallOffEnd) {
+        // Falling off the end returns `null`; check it like `return null;`.
+        closing.writeln(
+          exitRewriter.returnValue(
+            'null',
+            ClauseEmitter.postconditions(postconditions),
+          ),
+        );
+      }
     }
     closing.write(ClauseEmitter.guardClose(guard));
     if (closing.isNotEmpty) {
