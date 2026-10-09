@@ -16,6 +16,7 @@ import 'package:source_gen/source_gen.dart';
 
 import 'dart_types.dart';
 import 'fixes.dart';
+import 'generation_mode.dart';
 import 'library_elements.dart';
 import 'memoized_getter.dart';
 import 'metadata.dart';
@@ -258,7 +259,7 @@ abstract class ValueSourceClass
   @memoized
   bool get hasPartStatement {
     final expectedCode = partStatement;
-    return source.contains(expectedCode);
+    return isLibrarySourceSinkMode || source.contains(expectedCode);
   }
 
   @memoized

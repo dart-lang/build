@@ -8,7 +8,7 @@ import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
-part 'generics.g.dart';
+part '_br_/generics.part.dart';
 
 /// Example of how to use built_value.
 ///

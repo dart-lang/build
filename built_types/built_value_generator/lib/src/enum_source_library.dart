@@ -11,6 +11,7 @@ import 'package:built_value/built_value.dart';
 import 'package:source_gen/source_gen.dart';
 
 import 'enum_source_class.dart';
+import 'generation_mode.dart';
 import 'parsed_library_results.dart';
 
 part 'enum_source_library.g.dart';
@@ -76,7 +77,8 @@ abstract class EnumSourceLibrary
   Iterable<String> _checkPart() {
     final expectedCode = "part '$fileName.g.dart';";
     final alternativeExpectedCode = 'part "$fileName.g.dart";';
-    return source.contains(expectedCode) ||
+    return isLibrarySourceSinkMode ||
+            source.contains(expectedCode) ||
             source.contains(alternativeExpectedCode)
         ? <String>[]
         : <String>['Import generated part: $expectedCode'];

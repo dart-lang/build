@@ -1,11 +1,7 @@
-// GENERATED CODE - DO NOT MODIFY BY HAND
+// dart format off
+part of '../generics.dart';
 
-part of 'generics.dart';
-
-// **************************************************************************
-// BuiltValueGenerator
-// **************************************************************************
-
+// === built_value_generator:br_part contribution.
 Serializer<GenericValue<Object?>> _$genericValueSerializer =
     _$GenericValueSerializer();
 Serializer<BoundGenericValue<num>> _$boundGenericValueSerializer =
@@ -715,3 +711,4 @@ class GenericContainerBuilder
 }
 
 // ignore_for_file: deprecated_member_use_from_same_package,type=lint
+

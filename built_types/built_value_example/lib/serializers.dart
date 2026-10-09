@@ -11,7 +11,7 @@ import 'generics.dart';
 import 'polymorphism.dart';
 import 'values.dart';
 
-part 'serializers.g.dart';
+part '_br_/serializers.part.dart';
 
 /// Example of how to use built_value serialization.
 ///

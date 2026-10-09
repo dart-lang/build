@@ -1,11 +1,7 @@
-// GENERATED CODE - DO NOT MODIFY BY HAND
+// dart format off
+part of '../serializers.dart';
 
-part of 'serializers.dart';
-
-// **************************************************************************
-// BuiltValueGenerator
-// **************************************************************************
-
+// === built_value_generator:br_part contribution.
 Serializers _$serializers =
     (Serializers().toBuilder()
           ..add(Account.serializer)
@@ -26,3 +22,4 @@ Serializers _$serializers =
         .build();
 
 // ignore_for_file: deprecated_member_use_from_same_package,type=lint
+
