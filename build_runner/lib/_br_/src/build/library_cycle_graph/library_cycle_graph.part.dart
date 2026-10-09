@@ -1,11 +1,7 @@
-// GENERATED CODE - DO NOT MODIFY BY HAND
+// dart format off
+part of '../../../../src/build/library_cycle_graph/library_cycle_graph.dart';
 
-part of 'library_cycle_graph.dart';
-
-// **************************************************************************
-// BuiltValueGenerator
-// **************************************************************************
-
+// === built_value_generator:br_part contribution.
 Serializer<LibraryCycleGraph> _$libraryCycleGraphSerializer =
     _$LibraryCycleGraphSerializer();
 
@@ -194,3 +190,4 @@ class LibraryCycleGraphBuilder
 }
 
 // ignore_for_file: deprecated_member_use_from_same_package,type=lint
+

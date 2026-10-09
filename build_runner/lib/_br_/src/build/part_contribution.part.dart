@@ -1,11 +1,7 @@
-// GENERATED CODE - DO NOT MODIFY BY HAND
+// dart format off
+part of '../../../src/build/part_contribution.dart';
 
-part of 'part_contribution.dart';
-
-// **************************************************************************
-// BuiltValueGenerator
-// **************************************************************************
-
+// === built_value_generator:br_part contribution.
 class _$PartContribution extends PartContribution {
   @override
   final String builderKey;
@@ -140,3 +136,4 @@ class PartContributionBuilder
 }
 
 // ignore_for_file: deprecated_member_use_from_same_package,type=lint
+

@@ -1,11 +1,7 @@
-// GENERATED CODE - DO NOT MODIFY BY HAND
+// dart format off
+part of '../../../../src/build/library_cycle_graph/asset_deps.dart';
 
-part of 'asset_deps.dart';
-
-// **************************************************************************
-// BuiltValueGenerator
-// **************************************************************************
-
+// === built_value_generator:br_part contribution.
 Serializer<AssetDeps> _$assetDepsSerializer = _$AssetDepsSerializer();
 
 class _$AssetDepsSerializer implements StructuredSerializer<AssetDeps> {
@@ -157,3 +153,4 @@ class AssetDepsBuilder implements Builder<AssetDeps, AssetDepsBuilder> {
 }
 
 // ignore_for_file: deprecated_member_use_from_same_package,type=lint
+

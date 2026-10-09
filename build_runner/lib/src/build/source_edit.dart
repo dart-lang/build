@@ -4,7 +4,7 @@
 
 import 'package:built_value/built_value.dart';
 
-part 'source_edit.g.dart';
+part '../../_br_/src/build/source_edit.part.dart';
 
 /// A replacement of [length] characters at [offset] in a source file.
 abstract class SourceEdit implements Built<SourceEdit, SourceEditBuilder> {

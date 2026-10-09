@@ -22,7 +22,7 @@ import 'incremental_build_state.dart';
 import 'post_process_build_step_id.dart';
 import 'post_process_build_step_result.dart';
 
-part 'serializers.g.dart';
+part '../../../_br_/src/build/build_state/serializers.part.dart';
 
 final assetIdSerializer = AssetIdSerializer();
 final identityAssetIdSerializer = IdentitySerializer<AssetId>(

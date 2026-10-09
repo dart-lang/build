@@ -1,11 +1,7 @@
-// GENERATED CODE - DO NOT MODIFY BY HAND
+// dart format off
+part of '../../../../src/build/library_cycle_graph/phased_value.dart';
 
-part of 'phased_value.dart';
-
-// **************************************************************************
-// BuiltValueGenerator
-// **************************************************************************
-
+// === built_value_generator:br_part contribution.
 Serializer<PhasedValue<Object?>> _$phasedValueSerializer =
     _$PhasedValueSerializer();
 Serializer<ExpiringValue<Object?>> _$expiringValueSerializer =
@@ -150,9 +146,10 @@ class _$ExpiringValueSerializer
           );
           break;
         case 'expiresAfter':
-          result.expiresAfter =
-              serializers.deserialize(value, specifiedType: const FullType(int))
-                  as int?;
+          result.expiresAfter = serializers.deserialize(
+            value,
+            specifiedType: const FullType(int),
+          ) as int?;
           break;
       }
     }
@@ -352,3 +349,4 @@ class ExpiringValueBuilder<T>
 }
 
 // ignore_for_file: deprecated_member_use_from_same_package,type=lint
+

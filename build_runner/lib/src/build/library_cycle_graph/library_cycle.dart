@@ -8,7 +8,7 @@ import 'package:built_value/built_value.dart';
 
 import '../../contracts.dart';
 
-part 'library_cycle.g.dart';
+part '../../../_br_/src/build/library_cycle_graph/library_cycle.part.dart';
 
 /// A set of Dart source assets that mutually depend on each other.
 ///

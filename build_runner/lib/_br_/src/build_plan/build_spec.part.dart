@@ -1,11 +1,7 @@
-// GENERATED CODE - DO NOT MODIFY BY HAND
+// dart format off
+part of '../../../src/build_plan/build_spec.dart';
 
-part of 'build_spec.dart';
-
-// **************************************************************************
-// BuiltValueGenerator
-// **************************************************************************
-
+// === built_value_generator:br_part contribution.
 class _$BuildSpec extends BuildSpec {
   @override
   final BuildSpecDigest buildPlanDigest;
@@ -260,3 +256,4 @@ class BuildSpecBuilder implements Builder<BuildSpec, BuildSpecBuilder> {
 }
 
 // ignore_for_file: deprecated_member_use_from_same_package,type=lint
+
