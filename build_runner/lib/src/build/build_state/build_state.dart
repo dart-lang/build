@@ -78,7 +78,14 @@ class BuildState {
   final Set<AssetId> _librariesWithRebuiltPart = {};
 
   @Ensures('_sources.every((id) => !buildStepPlan.isDeclaredOutput(id))')
-  @Ensures('_sources.every((id) => !id.isBrOutput || !hasSharedPart(id))')
+  @Ensures(
+    '_sources.every((id) => '
+    '!id.isBrOutput || '
+    'id.sharedPartLibraryId == null || '
+    'buildStepPlan'
+    '.addsToLibraryPhasesByBuilderKey(id.sharedPartLibraryId!)'
+    '.isEmpty)',
+  )
   @Ensures(
     '_contents.keys.every((id) => '
     'isSource(id) || '
