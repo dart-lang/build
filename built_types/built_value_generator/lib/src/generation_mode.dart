@@ -20,9 +20,11 @@ Future<T> runInLibrarySourceSinkMode<T>(Future<T> Function() function) =>
 /// Whether [source], the source of the library in file [fileName], has a
 /// `part` directive for its `.g.dart` part.
 ///
-/// Matches only a directive at the start of a line, so a commented-out
-/// directive does not count.
+/// Matches only a directive at the start of a line, so a directive commented
+/// out with `//` does not count.
 bool hasGDartPartStatement(String source, String fileName) {
+  // TODO(davidmorgan): AST parse would be more correct, but build_runner does
+  // not currently cache that, so it's not worth doing here.
   final partName = RegExp.escape(
     '${fileName.substring(0, fileName.length - 5)}.g.dart',
   );
