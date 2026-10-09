@@ -9,7 +9,7 @@ import 'package:built_value/serializer.dart';
 
 import '../../contracts.dart';
 
-part 'asset_deps.g.dart';
+part '../../../_br_/src/build/library_cycle_graph/asset_deps.part.dart';
 
 /// Dependencies of a Dart source asset.
 ///

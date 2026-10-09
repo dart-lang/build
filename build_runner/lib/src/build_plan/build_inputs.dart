@@ -10,7 +10,7 @@ import '../build/asset_content.dart';
 import '../build/finished_shared_part.dart';
 import '../contracts.dart';
 
-part 'build_inputs.g.dart';
+part '../../_br_/src/build_plan/build_inputs.part.dart';
 
 /// The state of the file system before a build begins.
 @ContractImport('package:build_runner/src/build/br_outputs.dart')

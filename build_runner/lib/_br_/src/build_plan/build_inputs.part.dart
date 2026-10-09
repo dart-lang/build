@@ -1,11 +1,7 @@
-// GENERATED CODE - DO NOT MODIFY BY HAND
+// dart format off
+part of '../../../src/build_plan/build_inputs.dart';
 
-part of 'build_inputs.dart';
-
-// **************************************************************************
-// BuiltValueGenerator
-// **************************************************************************
-
+// === built_value_generator:br_part contribution.
 class _$BuildInputs extends BuildInputs {
   @override
   final bool cleanBuild;
@@ -218,3 +214,4 @@ class BuildInputsBuilder implements Builder<BuildInputs, BuildInputsBuilder> {
 }
 
 // ignore_for_file: deprecated_member_use_from_same_package,type=lint
+

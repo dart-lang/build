@@ -5,7 +5,7 @@
 import 'package:build/build.dart' hide Builder;
 import 'package:built_value/built_value.dart';
 
-part 'asset_file.g.dart';
+part '../../_br_/src/build_plan/asset_file.part.dart';
 
 /// An asset with its physical location on disk: either at its package path or
 /// in the artifact tree.

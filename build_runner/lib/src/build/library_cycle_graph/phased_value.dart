@@ -10,7 +10,7 @@ import 'package:built_value/serializer.dart';
 
 import '../../contracts.dart';
 
-part 'phased_value.g.dart';
+part '../../../_br_/src/build/library_cycle_graph/phased_value.part.dart';
 
 /// A value that changes during the build, according to the `int` build phase.
 ///

@@ -12,7 +12,7 @@ import '../contracts.dart';
 import 'build_phases.dart';
 import 'phase.dart';
 
-part 'build_step_plan.g.dart';
+part '../../_br_/src/build_plan/build_step_plan.part.dart';
 
 /// Planned build steps for one build and their declared outputs.
 @Invariant('buildStepsByPhase.length == buildPhases.inBuildPhases.length')

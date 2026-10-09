@@ -8,7 +8,7 @@ import 'package:built_value/built_value.dart';
 
 import 'part_contribution.dart';
 
-part 'finished_shared_part.g.dart';
+part '../../_br_/src/build/finished_shared_part.part.dart';
 
 /// A shared part output by a finished build.
 abstract class FinishedSharedPart

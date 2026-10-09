@@ -7,7 +7,7 @@ import 'package:logging/logging.dart';
 
 import '../bootstrap/build_process_state.dart';
 
-part 'build_log_configuration.g.dart';
+part '../../_br_/src/logging/build_log_configuration.part.dart';
 
 abstract class BuildLogConfiguration
     implements Built<BuildLogConfiguration, BuildLogConfigurationBuilder> {

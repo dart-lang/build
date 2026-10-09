@@ -13,7 +13,7 @@ import 'build_configs.dart';
 import 'build_packages.dart';
 import 'build_phases.dart';
 
-part 'build_spec_digest.g.dart';
+part '../../_br_/src/build_plan/build_spec_digest.part.dart';
 
 /// The configuration and digests of configuration used to determine whether the
 /// current build is compatible with the previous build.

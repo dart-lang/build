@@ -10,7 +10,7 @@ import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:crypto/crypto.dart';
 
-part 'build_triggers.g.dart';
+part '../../_br_/src/build_plan/build_triggers.part.dart';
 
 /// Triggers per builder.
 ///

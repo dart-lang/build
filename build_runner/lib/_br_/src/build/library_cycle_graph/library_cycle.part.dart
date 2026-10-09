@@ -1,11 +1,7 @@
-// GENERATED CODE - DO NOT MODIFY BY HAND
+// dart format off
+part of '../../../../src/build/library_cycle_graph/library_cycle.dart';
 
-part of 'library_cycle.dart';
-
-// **************************************************************************
-// BuiltValueGenerator
-// **************************************************************************
-
+// === built_value_generator:br_part contribution.
 class _$LibraryCycle extends LibraryCycle {
   @override
   final BuiltSet<AssetId> ids;
@@ -99,3 +95,4 @@ class LibraryCycleBuilder
 }
 
 // ignore_for_file: deprecated_member_use_from_same_package,type=lint
+

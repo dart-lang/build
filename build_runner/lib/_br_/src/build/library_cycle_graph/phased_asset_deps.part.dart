@@ -1,11 +1,7 @@
-// GENERATED CODE - DO NOT MODIFY BY HAND
+// dart format off
+part of '../../../../src/build/library_cycle_graph/phased_asset_deps.dart';
 
-part of 'phased_asset_deps.dart';
-
-// **************************************************************************
-// BuiltValueGenerator
-// **************************************************************************
-
+// === built_value_generator:br_part contribution.
 Serializer<PhasedAssetDeps> _$phasedAssetDepsSerializer =
     _$PhasedAssetDepsSerializer();
 
@@ -163,3 +159,4 @@ class PhasedAssetDepsBuilder
 }
 
 // ignore_for_file: deprecated_member_use_from_same_package,type=lint
+

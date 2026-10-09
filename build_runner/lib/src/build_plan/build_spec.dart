@@ -19,7 +19,7 @@ import 'builder_definition.dart';
 import 'builder_factories.dart';
 import 'testing_overrides.dart';
 
-part 'build_spec.g.dart';
+part '../../_br_/src/build_plan/build_spec.part.dart';
 
 /// The build options, configuration and setup that stay the same across a
 /// series of incremental builds.
