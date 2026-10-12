@@ -68,26 +68,15 @@ class WovenPackageRunner {
 
   /// Runs the tests of the woven package with [args], returning the exit code.
   ///
-  /// Contract checks slow tests down, so the default timeout is raised and
-  /// concurrency is limited unless [args] say otherwise.
+  /// Contract checks slow tests down, so the default timeout is raised to
+  /// `--timeout=4x` unless [args] say otherwise.
   Future<int> test(Iterable<String> args) async {
     final hasTimeout = args.any(
       (a) => a == '--timeout' || a.startsWith('--timeout='),
     );
-    final hasConcurrency = args.any(
-      (a) =>
-          a.startsWith('-j') ||
-          a == '--concurrency' ||
-          a.startsWith('--concurrency='),
-    );
     final process = await Process.start(
       Platform.resolvedExecutable,
-      [
-        'test',
-        if (!hasTimeout) '--timeout=4x',
-        if (!hasConcurrency) '-j4',
-        ...args,
-      ],
+      ['test', if (!hasTimeout) '--timeout=4x', ...args],
       workingDirectory: stagedPackage.path,
       mode: ProcessStartMode.inheritStdio,
     );

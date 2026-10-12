@@ -321,7 +321,7 @@ class Requires {
       final output = ContractWeaver().weave(input);
       expect(output, contains('class Contracts {'));
       expect(output, contains('static bool checking = false;'));
-      expect(output, contains('class ContractViolation implements Exception'));
+      expect(output, contains('class ContractViolation extends Error'));
     });
 
     test('executes transformed contract checks dynamically', () async {
@@ -1453,6 +1453,122 @@ class A {
           contains('Postcondition failed: done'),
         );
       });
+    });
+
+    group('empty block bodies', () {
+      for (final (kind, declaration) in [
+        ('method', 'void m() {}'),
+        ('setter', 'set y(int v) {}'),
+        ('async method', 'Future<void> m() async {}'),
+      ]) {
+        test('weave an invariant scope into an empty $kind', () {
+          final input =
+              '''
+@Invariant('x >= 0')
+class A {
+  int x = 0;
+  $declaration
+}
+''';
+          final woven = ContractWeaver().weave(input);
+          final enter = woven.indexOf('this._enterInvariantScope();');
+          final exit = woven.indexOf('this._exitInvariantScope(');
+          expect(enter, isNot(-1), reason: woven);
+          expect(exit, greaterThan(enter), reason: woven);
+        });
+      }
+
+      test('enter the scope before exiting it in an empty constructor', () {
+        const input = '''
+@Invariant('x >= 0')
+class A {
+  int x = 0;
+  A() {}
+}
+''';
+        final woven = ContractWeaver().weave(input);
+        final enter = woven.indexOf('this._enterInvariantScope(check: false);');
+        final exit = woven.indexOf('this._exitInvariantScope();');
+        expect(enter, isNot(-1), reason: woven);
+        expect(exit, greaterThan(enter), reason: woven);
+      });
+
+      test('weave @ThrowEnsures into an empty function', () {
+        const input = '''
+@ThrowEnsures(StateError, 'true')
+void m() {}
+''';
+        expect(
+          ContractWeaver().weave(input),
+          contains('on StateError catch (signal)'),
+        );
+      });
+    });
+
+    group('clauses that are not expressions', () {
+      for (final (kind, annotation) in [
+        ('empty', "@Requires('')"),
+        ('blank', "@Requires('  ')"),
+        ('unbalanced', "@Requires('x > (0')"),
+        ('line break in a string', "@Requires('\"a\\nb\".isEmpty')"),
+        ('empty @ThrowEnsures', "@ThrowEnsures(StateError, '')"),
+      ]) {
+        test('throw FormatException for an $kind clause', () {
+          final input =
+              '''
+$annotation
+void f(int x) {}
+''';
+          expect(() => ContractWeaver().weave(input), throwsFormatException);
+        });
+      }
+
+      test('allow an escaped line break in a string', () {
+        const input = r'''
+@Requires('"a\\nb".isNotEmpty')
+void f(int x) {}
+''';
+        expect(ContractWeaver().weave(input), contains('Precondition failed'));
+      });
+    });
+
+    test('throws FormatException for contracts on a local function', () {
+      const input = '''
+void outer() {
+  @Requires('x > 0')
+  void inner(int x) {}
+  inner(1);
+}
+''';
+      expect(() => ContractWeaver().weave(input), throwsFormatException);
+    });
+
+    test('skips local functions with no contracts', () {
+      const input = '''
+void outer() {
+  void inner(int x) {}
+  inner(1);
+}
+''';
+      expect(ContractWeaver().weave(input), input);
+    });
+
+    test('throws FormatException for a prefixed contract annotation', () {
+      const input = '''
+import 'contracts.dart' as c;
+@c.Requires('x > 0')
+void f(int x) {}
+''';
+      expect(() => ContractWeaver().weave(input), throwsFormatException);
+    });
+
+    test('ignores other prefixed annotations', () {
+      const input = '''
+import 'package:meta/meta.dart' as meta;
+@meta.visibleForTesting
+void f(int x) {}
+''';
+      expect(ContractWeaver().weave(input), input);
     });
   });
 }
