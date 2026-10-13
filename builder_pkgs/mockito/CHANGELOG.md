@@ -5,6 +5,7 @@
 * Avoid generating fake classes for dummy values of ProtobufEnum subclasses or
   GeneratedMessage subclasses from the protobuf package.
 * Add dummies for more platform value types. 
+* Provide dummy values for `Int32` and `Int64` from `package:fixnum`.
 
 ## 5.8.1
 
