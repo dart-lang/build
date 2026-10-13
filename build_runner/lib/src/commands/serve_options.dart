@@ -23,6 +23,20 @@ class ServeOptions {
     required this.serveTargets,
   });
 
+  /// The single host that requests must be addressed to, or `null` if the
+  /// server listens on all interfaces so there is no such host.
+  ///
+  /// `HttpMultiServer.bind` takes `any` as an alias for the wildcard address.
+  String? get allowedHost {
+    if (hostname == 'any') return null;
+    final address = InternetAddress.tryParse(hostname);
+    if (address == InternetAddress.anyIPv4 ||
+        address == InternetAddress.anyIPv6) {
+      return null;
+    }
+    return hostname;
+  }
+
   static ServeOptions parse(BuildRunnerCommandLine commandLine) {
     final serveTargets = <ServeTarget>[];
     var nextDefaultPort = 8080;

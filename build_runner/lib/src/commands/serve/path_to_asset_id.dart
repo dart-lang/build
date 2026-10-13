@@ -16,14 +16,28 @@ List<AssetId> pathToAssetIds(
   String rootDir,
   List<String> pathSegments,
 ) {
-  final result = <AssetId>[
-    AssetId(outputRootPackage, p.joinAll([rootDir, ...pathSegments])),
-  ];
+  final firstId = AssetId(
+    outputRootPackage,
+    p.joinAll([rootDir, ...pathSegments]),
+  );
+  // AssetId normalizes path, check it didn't normalize upwards.
+  if (rootDir.isNotEmpty &&
+      firstId.path != rootDir &&
+      !firstId.path.startsWith('$rootDir/')) {
+    throw ArgumentError('Path must be within $rootDir.');
+  }
+
+  final result = <AssetId>[firstId];
   final packagesIndex = pathSegments.indexOf('packages');
   if (packagesIndex >= 0 && pathSegments.length - packagesIndex > 2) {
     final package = pathSegments[packagesIndex + 1];
     final path = p.joinAll(pathSegments.sublist(packagesIndex + 2));
-    result.add(AssetId(package, p.join('lib', path)));
+    final secondId = AssetId(package, p.join('lib', path));
+    // AssetId normalizes path, check it didn't normalize upwards.
+    if (secondId.path != 'lib' && !secondId.path.startsWith('lib/')) {
+      throw ArgumentError('Path must be within lib/.');
+    }
+    result.add(secondId);
   }
   return result;
 }

@@ -93,5 +93,10 @@ String _normalizeUsage(String name, String packageName) {
 String _normalizeDefinition(String name, String packageName) {
   if (name.startsWith(':')) return '$packageName$name';
   if (!name.contains(':')) return '$packageName:$name';
+  if (!name.startsWith('$packageName:')) {
+    throw ArgumentError(
+      'Builder key "$name" does not belong to package "$packageName".',
+    );
+  }
   return name;
 }

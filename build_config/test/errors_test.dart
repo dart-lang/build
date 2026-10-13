@@ -141,6 +141,162 @@ targets:
       ),
     );
   });
+
+  test('for builder keys outside package namespace', () {
+    final buildYaml = r'''
+builders:
+  other_package:builder:
+    builder_factories: ["someFactory"]
+    import: package:package_name/builders.dart
+    build_extensions: {".dart": [".json"]}
+''';
+
+    _expectThrows(buildYaml, r'''
+line 1, column 1 of build.yaml: Builder key "other_package:builder" does not belong to package "package_name".
+  ╷
+1 │ ┌ builders:
+2 │ │   other_package:builder:
+3 │ │     builder_factories: ["someFactory"]
+4 │ │     import: package:package_name/builders.dart
+5 │ └     build_extensions: {".dart": [".json"]}
+  ╵''');
+  });
+
+  test('for builder with adds_to_library and is_optional', () {
+    final buildYaml = r'''
+builders:
+  package_name:builder:
+    builder_factories: ["someFactory"]
+    import: package:package_name/builders.dart
+    build_extensions: {".dart": []}
+    adds_to_library: true
+    is_optional: true
+''';
+
+    _expectThrows(
+      buildYaml,
+      contains(
+        'A builder cannot set both `adds_to_library: true` and '
+        '`is_optional: true`.',
+      ),
+    );
+  });
+
+  test('for builder with adds_to_library and a non-Dart input', () {
+    final buildYaml = r'''
+builders:
+  package_name:builder:
+    builder_factories: ["someFactory"]
+    import: package:package_name/builders.dart
+    build_extensions: {".txt": [".json"]}
+    adds_to_library: true
+''';
+
+    _expectThrows(
+      buildYaml,
+      contains(
+        'A builder with `adds_to_library: true` can only have `.dart` '
+        "inputs, but has: '.txt'.",
+      ),
+    );
+  });
+
+  test('for builder with adds_to_library and build_to cache', () {
+    final buildYaml = r'''
+builders:
+  package_name:builder:
+    builder_factories: ["someFactory"]
+    import: package:package_name/builders.dart
+    build_extensions: {".dart": []}
+    adds_to_library: true
+''';
+
+    _expectThrows(
+      buildYaml,
+      contains(
+        'A builder with `adds_to_library: true` must set `build_to: source`.',
+      ),
+    );
+  });
+
+  test('for builder with adds_to_library and two factories', () {
+    final buildYaml = r'''
+builders:
+  package_name:builder:
+    builder_factories: ["factory1", "factory2"]
+    import: package:package_name/builders.dart
+    build_extensions: {".dart": []}
+    build_to: source
+    adds_to_library: true
+''';
+
+    _expectThrows(
+      buildYaml,
+      contains(
+        'A builder with `adds_to_library: true` must have exactly one '
+        "builder factory, but has: 'factory1', 'factory2'.",
+      ),
+    );
+  });
+
+  test('for builder keys that refer to the same builder', () {
+    final buildYaml = r'''
+builders:
+  builder:
+    builder_factories: ["someFactory"]
+    import: package:package_name/builders.dart
+    build_extensions: {".dart": [".a.dart"]}
+  ":builder":
+    builder_factories: ["otherFactory"]
+    import: package:package_name/builders.dart
+    build_extensions: {".dart": [".b.dart"]}
+''';
+
+    _expectThrows(
+      buildYaml,
+      contains(
+        'Builder keys "builder" and ":builder" both refer to builder '
+        '"package_name:builder".',
+      ),
+    );
+  });
+
+  test('for builder and post process builder with the same key', () {
+    final buildYaml = r'''
+builders:
+  builder:
+    builder_factories: ["someFactory"]
+    import: package:package_name/builders.dart
+    build_extensions: {".dart": [".a.dart"]}
+post_process_builders:
+  builder:
+    builder_factory: "postFactory"
+    import: package:package_name/builders.dart
+''';
+
+    _expectThrows(
+      buildYaml,
+      contains(
+        'Builder "package_name:builder" is defined in both `builders` and '
+        '`post_process_builders`.',
+      ),
+    );
+  });
+
+  test('for builder key with a line break', () {
+    final buildYaml = r'''
+builders:
+  "my\nbuilder":
+    builder_factories: ["someFactory"]
+    import: package:package_name/builders.dart
+    build_extensions: {".dart": [".a.dart"]}
+''';
+
+    _expectThrows(
+      buildYaml,
+      contains(r'Builder key "my\nbuilder" contains a line break'),
+    );
+  });
 }
 
 void _expectThrows(String buildYaml, Object matcher) => expect(

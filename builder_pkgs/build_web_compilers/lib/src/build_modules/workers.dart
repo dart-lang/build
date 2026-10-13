@@ -11,7 +11,6 @@ import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
 
 import '../build_frontend_server/frontend_server_driver.dart';
-import '../build_frontend_server/frontend_server_resources.dart';
 import '../common.dart';
 import 'scratch_space.dart';
 
@@ -55,10 +54,7 @@ BazelWorkerDriver get _dartdevkDriver {
   return __dartdevkDriver ??= BazelWorkerDriver(
     () => Process.start(
       p.join(sdkDir, 'bin', 'dart'),
-      [
-        p.join(sdkDir, 'bin', 'snapshots', 'dartdevc.dart.snapshot'),
-        '--persistent_worker',
-      ],
+      ['--suppress-analytics', 'compile', 'js-dev', '--persistent_worker'],
       mode: _processMode,
       workingDirectory: scratchSpace.tempDir.path,
     ),
@@ -126,10 +122,13 @@ FrontendServerProxyDriver? __frontendServerProxyDriver;
 final frontendServerProxyDriverResource = Resource<FrontendServerProxyDriver>(
   () async => _frontendServerProxyDriver,
   beforeExit: () async {
-    _frontendServerProxyWorkersAreDoneCompleter?.complete();
-    await __frontendServerProxyDriver?.terminate();
-    _frontendServerProxyWorkersAreDoneCompleter = null;
-    __frontendServerProxyDriver = null;
+    try {
+      await __frontendServerProxyDriver?.terminate();
+    } finally {
+      _frontendServerProxyWorkersAreDoneCompleter?.complete();
+      _frontendServerProxyWorkersAreDoneCompleter = null;
+      __frontendServerProxyDriver = null;
+    }
   },
 );
 
@@ -141,22 +140,14 @@ Map<String, String> frontendServerEnvironment = const {};
 
 PersistentFrontendServer? __persistentFrontendServer;
 
-/// Returns the running instance of the PersistentFrontendServer, if any.
-PersistentFrontendServer? get persistentFrontendServer =>
-    __persistentFrontendServer;
-
 /// Starts a single persistent instance of the Frontend Server targeting DDC.
 Future<PersistentFrontendServer> startFrontendServerWorker() async {
   if (__persistentFrontendServer != null) return __persistentFrontendServer!;
 
   // We bind the Frontend Server worker's filesystem root to that of the scratch
-  // space. If a scratch space is provided by the build options (instead of
-  // being created dynamically), use that.
-  final customPath = frontendServerState.customScratchSpacePath;
-  final fesRoot = customPath != null
-      ? Directory(customPath).uri
-      : scratchSpace.tempDir.uri;
-  final fes = await PersistentFrontendServer.start(
+  // space.
+  final fesRoot = scratchSpace.tempDir.uri;
+  final fes = PersistentFrontendServer(
     sdkRoot: sdkDir,
     fileSystemRoot: fesRoot,
     packagesFile: fesRoot.resolve(packagesFilePath),

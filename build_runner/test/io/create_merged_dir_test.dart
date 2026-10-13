@@ -25,7 +25,6 @@ import 'package:build_runner/src/build_plan/testing_overrides.dart';
 import 'package:build_runner/src/io/build_output_reader.dart';
 import 'package:build_runner/src/io/create_merged_dir.dart';
 import 'package:built_collection/built_collection.dart';
-import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
@@ -51,7 +50,7 @@ void main() {
         ),
         key: 'TestBuilder',
         package: 'b',
-        hideOutput: true,
+        outputsToArtifactTree: true,
       ),
     ]);
     final sources = {
@@ -91,7 +90,7 @@ void main() {
     setUp(() async {
       readerWriter = InternalTestReaderWriter(outputRootPackage: 'a');
       for (final source in sources.entries) {
-        readerWriter.testing.writeString(source.key, source.value);
+        await readerWriter.writeAsString(source.key, source.value);
       }
       buildPlan = await BuildPlan.load(
         await BuildSpec.load(
@@ -108,38 +107,52 @@ void main() {
           ),
         ),
       );
-      buildState = BuildState(buildPlan.buildInputs.sourceContents.toMap());
-      buildOutputReader = BuildOutputReader(
-        buildPlan: buildPlan,
-        buildState: buildState,
+      buildState = BuildState(
+        buildStepPlan: buildPlan.buildStepPlan,
+        sources: buildPlan.buildInputs.sourceContents.toMap(),
       );
 
       for (final id in [
         ...buildPlan.buildStepPlan.declaredOutputs,
         ...buildState.actualPostOutputs,
       ]) {
+        final content =
+            sources[buildPlan.buildStepPlan
+                .stepForDeclaredOutput(id)
+                .primaryInput]!;
+        final step = buildPlan.buildStepPlan.stepForDeclaredOutput(id);
         final stepResult = BuildStepResult((b) {
           b.result = true;
-          b.isHidden = false;
-          b.outputs[id] = AssetContent.digest(Digest([]));
+          b.inArtifactTree = false;
+          b.outputs.add(id);
         });
-        buildState.updateBuildStepResult(
-          buildPlan.buildStepPlan.stepForDeclaredOutput(id),
-          stepResult,
+        buildState.addBuildStepResult(
+          step: step,
+          result: stepResult,
+          contents: {id: AssetContent.string(content)},
         );
-        readerWriter.testing.writeString(
+        await readerWriter.writeAsString(
           id,
-          sources[buildPlan.buildStepPlan
-              .stepForDeclaredOutput(id)
-              .primaryInput]!,
+          content,
+          inArtifactTree: buildState.isInArtifactTree(id),
         );
       }
+      buildOutputReader = BuildOutputReader(
+        buildPackages: buildPlan.buildSpec.buildPackages,
+        readerWriter: buildPlan.readerWriter,
+        buildState: buildState.toFinishedBuildState(),
+      );
       tmpDir = await Directory.systemTemp.createTemp('build_tests');
       anotherTmpDir = await Directory.systemTemp.createTemp('build_tests');
     });
 
     tearDown(() async {
-      await tmpDir.delete(recursive: true);
+      if (tmpDir.existsSync()) {
+        await tmpDir.delete(recursive: true);
+      }
+      if (anotherTmpDir.existsSync()) {
+        await anotherTmpDir.delete(recursive: true);
+      }
     });
 
     test('creates a valid merged output directory', () async {
@@ -148,7 +161,6 @@ void main() {
           BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
         }.build(),
         buildPackages: buildPackages,
-        readerWriter: readerWriter,
         buildOutputReader: buildOutputReader,
         outputSymlinksOnly: false,
       );
@@ -160,8 +172,16 @@ void main() {
     test('doesnt write deleted files', () async {
       final targetId = AssetId('b', 'lib/c.txt.copy');
       buildState.addPostProcessBuildStepResult(
-        PostProcessBuildStepId(input: targetId, actionNumber: 1),
-        PostProcessBuildStepResult(hidden: true, deletedPrimaryInput: true),
+        step: PostProcessBuildStepId(input: targetId, actionNumber: 1),
+        result: PostProcessBuildStepResult(
+          inArtifactTree: true,
+          deletedPrimaryInput: true,
+        ),
+      );
+      buildOutputReader = BuildOutputReader(
+        buildPackages: buildPlan.buildSpec.buildPackages,
+        readerWriter: buildPlan.readerWriter,
+        buildState: buildState.toFinishedBuildState(),
       );
 
       final success = await createMergedOutputDirectories(
@@ -169,7 +189,6 @@ void main() {
           BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
         }.build(),
         buildPackages: buildPackages,
-        readerWriter: readerWriter,
         buildOutputReader: buildOutputReader,
         outputSymlinksOnly: false,
       );
@@ -196,7 +215,6 @@ void main() {
           ),
         }.build(),
         buildPackages: buildPackages,
-        readerWriter: readerWriter,
         buildOutputReader: buildOutputReader,
         outputSymlinksOnly: false,
       );
@@ -213,7 +231,23 @@ void main() {
           BuildDirectory('foo', outputLocation: OutputLocation(tmpDir.path)),
         }.build(),
         buildPackages: buildPackages,
-        readerWriter: readerWriter,
+        buildOutputReader: buildOutputReader,
+        outputSymlinksOnly: false,
+      );
+      expect(success, isFalse);
+      expect(Directory(tmpDir.path).listSync(), isEmpty);
+    });
+
+    test('errors if conflicting directories are spelled differently', () async {
+      final success = await createMergedOutputDirectories(
+        buildDirs: {
+          BuildDirectory('web', outputLocation: OutputLocation(tmpDir.path)),
+          BuildDirectory(
+            'foo',
+            outputLocation: OutputLocation('${tmpDir.path}${p.separator}'),
+          ),
+        }.build(),
+        buildPackages: buildPackages,
         buildOutputReader: buildOutputReader,
         outputSymlinksOnly: false,
       );
@@ -225,7 +259,6 @@ void main() {
       final success = await createMergedOutputDirectories(
         buildDirs: {BuildDirectory('web'), BuildDirectory('foo')}.build(),
         buildPackages: buildPackages,
-        readerWriter: readerWriter,
         buildOutputReader: buildOutputReader,
         outputSymlinksOnly: false,
       );
@@ -238,7 +271,6 @@ void main() {
           BuildDirectory('web', outputLocation: OutputLocation(tmpDir.path)),
         }.build(),
         buildPackages: buildPackages,
-        readerWriter: readerWriter,
         buildOutputReader: buildOutputReader,
         outputSymlinksOnly: false,
       );
@@ -258,7 +290,6 @@ void main() {
           ),
         }.build(),
         buildPackages: buildPackages,
-        readerWriter: readerWriter,
         buildOutputReader: buildOutputReader,
         outputSymlinksOnly: false,
       );
@@ -272,7 +303,6 @@ void main() {
           BuildDirectory('web', outputLocation: OutputLocation(tmpDir.path)),
         }.build(),
         buildPackages: buildPackages,
-        readerWriter: readerWriter,
         buildOutputReader: buildOutputReader,
         outputSymlinksOnly: false,
       );
@@ -291,7 +321,6 @@ void main() {
           ),
         }.build(),
         buildPackages: buildPackages,
-        readerWriter: readerWriter,
         buildOutputReader: buildOutputReader,
         outputSymlinksOnly: false,
       );
@@ -318,7 +347,6 @@ void main() {
           BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
         }.build(),
         buildPackages: buildPackages,
-        readerWriter: readerWriter,
         buildOutputReader: buildOutputReader,
         outputSymlinksOnly: false,
       );
@@ -336,7 +364,6 @@ void main() {
           ),
         }.build(),
         buildPackages: buildPackages,
-        readerWriter: readerWriter,
         buildOutputReader: buildOutputReader,
         outputSymlinksOnly: false,
       );
@@ -357,13 +384,22 @@ void main() {
     });
 
     test('doesnt write files that werent output', () async {
+      buildState = BuildState(
+        buildStepPlan: buildPlan.buildStepPlan,
+        sources: buildPlan.buildInputs.sourceContents.toMap(),
+      );
       final targetId = AssetId('b', 'lib/c.txt.copy');
       final stepResult = BuildStepResult((b) {
-        b.isHidden = false;
+        b.inArtifactTree = false;
       });
-      buildState.updateBuildStepResult(
-        buildPlan.buildStepPlan.stepForDeclaredOutput(targetId),
-        stepResult,
+      buildState.addBuildStepResult(
+        step: buildPlan.buildStepPlan.stepForDeclaredOutput(targetId),
+        result: stepResult,
+      );
+      buildOutputReader = BuildOutputReader(
+        buildPackages: buildPlan.buildSpec.buildPackages,
+        readerWriter: buildPlan.readerWriter,
+        buildState: buildState.toFinishedBuildState(),
       );
 
       final success = await createMergedOutputDirectories(
@@ -371,7 +407,6 @@ void main() {
           BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
         }.build(),
         buildPackages: buildPackages,
-        readerWriter: readerWriter,
         buildOutputReader: buildOutputReader,
         outputSymlinksOnly: false,
       );
@@ -383,28 +418,25 @@ void main() {
 
     test('doesnt always write files not matching outputDirs', () async {
       buildOutputReader = BuildOutputReader(
-        buildPlan: buildPlan.rebuild(
-          (b) => b.buildDirs.replace({BuildDirectory('foo')}),
-        ),
-        buildState: buildState,
+        buildPackages: buildPlan.buildSpec.buildPackages,
+        readerWriter: buildPlan.readerWriter,
+        buildState: buildState.toFinishedBuildState(),
       );
       final success = await createMergedOutputDirectories(
         buildDirs: {
-          BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
+          BuildDirectory('foo', outputLocation: OutputLocation(tmpDir.path)),
         }.build(),
         buildPackages: buildPackages,
-        readerWriter: readerWriter,
         buildOutputReader: buildOutputReader,
         outputSymlinksOnly: false,
       );
       expect(success, isTrue);
 
       final expectedFiles = <String, dynamic>{
-        'foo/d.txt': 'd',
-        'foo/d.txt.copy': 'd',
+        'd.txt': 'd',
+        'd.txt.copy': 'd',
         'packages/a/a.txt': 'a',
         'packages/b/c.txt': 'c',
-        'web/b.txt': 'b',
         '.dart_tool/package_config.json': _expectedPackageConfig('a', [
           'a',
           'b',
@@ -427,7 +459,6 @@ void main() {
             BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
           }.build(),
           buildPackages: buildPackages,
-          readerWriter: readerWriter,
           buildOutputReader: buildOutputReader,
           outputSymlinksOnly: false,
         );
@@ -453,7 +484,6 @@ void main() {
             BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
           }.build(),
           buildPackages: buildPackages,
-          readerWriter: readerWriter,
           buildOutputReader: buildOutputReader,
           outputSymlinksOnly: false,
         );
@@ -462,27 +492,89 @@ void main() {
         for (final remove in removes) {
           final removeId = makeAssetId(remove);
           buildState.addPostProcessBuildStepResult(
-            PostProcessBuildStepId(input: removeId, actionNumber: 1),
-            PostProcessBuildStepResult(hidden: true, deletedPrimaryInput: true),
+            step: PostProcessBuildStepId(input: removeId, actionNumber: 1),
+            result: PostProcessBuildStepResult(
+              inArtifactTree: true,
+              deletedPrimaryInput: true,
+            ),
           );
         }
         // Recreate buildOutputReader so it notices the delete.
         buildOutputReader = BuildOutputReader(
-          buildPlan: buildPlan,
-          buildState: buildState,
+          buildPackages: buildPlan.buildSpec.buildPackages,
+          readerWriter: buildPlan.readerWriter,
+          buildState: buildState.toFinishedBuildState(),
         );
         success = await createMergedOutputDirectories(
           buildDirs: {
             BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
           }.build(),
           buildPackages: buildPackages,
-          readerWriter: readerWriter,
           buildOutputReader: buildOutputReader,
           outputSymlinksOnly: false,
         );
         expect(success, isTrue);
         final packageADir = p.join(tmpDir.path, 'packages', 'a');
         expect(Directory(packageADir).existsSync(), isFalse);
+      });
+    });
+
+    group('Cleanup bounds checking', () {
+      late Directory unrelatedDir;
+
+      setUp(() async {
+        unrelatedDir = await Directory.systemTemp.createTemp('unrelated');
+      });
+
+      tearDown(() async {
+        if (unrelatedDir.existsSync()) {
+          await unrelatedDir.delete(recursive: true);
+        }
+      });
+
+      test('does not delete files outside the output directory', () async {
+        final unrelatedFile = File(
+          p.join(unrelatedDir.path, 'unrelated_file.txt'),
+        )..createSync();
+
+        final traversalPath = p.relative(unrelatedFile.path, from: tmpDir.path);
+        final manifestFile = File(p.join(tmpDir.path, '.build.manifest'));
+        manifestFile.writeAsStringSync(traversalPath);
+
+        await createMergedOutputDirectories(
+          buildDirs: {
+            BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
+          }.build(),
+          buildPackages: buildPackages,
+          buildOutputReader: buildOutputReader,
+          outputSymlinksOnly: false,
+        );
+
+        expect(unrelatedFile.existsSync(), isTrue);
+      });
+
+      test('does not traverse symlinks to delete external files', () async {
+        final unrelatedFile = File(
+          p.join(unrelatedDir.path, 'unrelated_file.txt'),
+        )..createSync();
+
+        final linkPath = p.join(tmpDir.path, 'link');
+        Link(linkPath).createSync(unrelatedDir.path);
+
+        final manifestFile = File(p.join(tmpDir.path, '.build.manifest'));
+        final manifestPath = 'link/unrelated_file.txt';
+        manifestFile.writeAsStringSync(manifestPath);
+
+        await createMergedOutputDirectories(
+          buildDirs: {
+            BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
+          }.build(),
+          buildPackages: buildPackages,
+          buildOutputReader: buildOutputReader,
+          outputSymlinksOnly: false,
+        );
+
+        expect(unrelatedFile.existsSync(), isTrue);
       });
     });
   });

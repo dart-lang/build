@@ -10,7 +10,6 @@ import 'package:built_value/serializer.dart';
 import 'package:crypto/crypto.dart';
 
 import '../../build_plan/build_spec_digest.dart';
-import '../asset_content.dart';
 import '../library_cycle_graph/asset_deps.dart';
 import '../library_cycle_graph/phased_asset_deps.dart';
 import '../library_cycle_graph/phased_value.dart';
@@ -19,15 +18,11 @@ import 'build_step_result.dart';
 import 'glob_id.dart';
 import 'glob_result.dart';
 import 'identity_serializer.dart';
+import 'incremental_build_state.dart';
 import 'post_process_build_step_id.dart';
 import 'post_process_build_step_result.dart';
 
 part 'serializers.g.dart';
-
-final postProcessBuildStepResultsFullType = const FullType(BuiltMap, [
-  FullType(PostProcessBuildStepId),
-  FullType(PostProcessBuildStepResult),
-]);
 
 final assetIdSerializer = AssetIdSerializer();
 final identityAssetIdSerializer = IdentitySerializer<AssetId>(
@@ -41,6 +36,7 @@ final identityAssetIdSerializer = IdentitySerializer<AssetId>(
   BuildStepResult,
   GlobId,
   GlobResult,
+  IncrementalBuildState,
   PhasedAssetDeps,
   PostProcessBuildStepId,
   PostProcessBuildStepResult,
@@ -48,11 +44,14 @@ final identityAssetIdSerializer = IdentitySerializer<AssetId>(
 final Serializers serializers =
     (_$serializers.toBuilder()
           ..add(identityAssetIdSerializer)
-          ..add(AssetContentSerializer())
           ..add(DigestSerializer())
           ..addBuilderFactory(
             const FullType(BuiltSet, [FullType(AssetId)]),
             SetBuilder<AssetId>.new,
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltSet, [FullType(GlobId)]),
+            SetBuilder<GlobId>.new,
           )
           ..addBuilderFactory(
             const FullType(BuiltList, [FullType(String)]),
@@ -88,19 +87,15 @@ final Serializers serializers =
             () => <AssetId>{},
           )
           ..addBuilderFactory(
-            postProcessBuildStepResultsFullType,
-            MapBuilder<PostProcessBuildStepId, PostProcessBuildStepResult>.new,
+            const FullType(BuiltMap, [FullType(AssetId), FullType(Digest)]),
+            MapBuilder<AssetId, Digest>.new,
           )
           ..addBuilderFactory(
             const FullType(BuiltMap, [
               FullType(AssetId),
-              FullType(AssetContent),
+              FullType(PhasedValue, [FullType(AssetDeps)]),
             ]),
-            MapBuilder<AssetId, AssetContent>.new,
-          )
-          ..addBuilderFactory(
-            const FullType(BuiltList, [FullType(AssetContent)]),
-            ListBuilder<AssetContent>.new,
+            MapBuilder<AssetId, PhasedValue<AssetDeps>>.new,
           )
           ..addBuilderFactory(
             const FullType(PhasedValue, [FullType(AssetDeps)]),

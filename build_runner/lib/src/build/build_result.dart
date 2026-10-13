@@ -4,13 +4,26 @@
 
 import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
+import 'package:crypto/crypto.dart';
 
+import '../contracts.dart';
 import '../io/build_output_reader.dart';
-import 'build_state/build_state.dart';
+import 'build_state/finished_build_state.dart';
 import 'library_cycle_graph/phased_asset_deps.dart';
 
 /// The result of an individual build, this may be an incremental build or
 /// a full build.
+@Invariant(
+  'status == BuildStatus.failure ? failureType != null : failureType == null',
+)
+@Invariant('status != BuildStatus.success || buildOutputReader != null')
+@Invariant(
+  'buildState == null || '
+  'outputs.every((id) => '
+  'buildState!.isActualOutput(id) || '
+  'buildState!.isActualPostOutput(id) || '
+  'buildState!.hasSharedPart(id))',
+)
 class BuildResult {
   /// The status of this build.
   final BuildStatus status;
@@ -27,26 +40,47 @@ class BuildResult {
   /// The imports graph for resolved sources.
   final PhasedAssetDeps phasedAssetDeps;
 
-  // The build output.
-  final BuildOutputReader buildOutputReader;
-
   // The build state.
-  final BuildState? buildState;
+  //
+  // `null` if the build failed with no output.
+  final FinishedBuildState? buildState;
+
+  /// The build output.
+  ///
+  /// `null` if the build failed with no output.
+  final BuildOutputReader? buildOutputReader;
+
+  /// Libraries with generated code but no `part` directive including it.
+  ///
+  /// Values are the md5 digests of the library content that was checked.
+  final BuiltMap<AssetId, Digest> librariesMissingPartDirective;
+
+  /// Libraries with a `part` directive for generated code that no builder
+  /// contributed to.
+  ///
+  /// Values are the md5 digests of the library content that was checked.
+  final BuiltMap<AssetId, Digest> librariesWithUnusedPartDirective;
 
   BuildResult({
     required this.status,
     BuiltList<String>? errors,
     BuiltList<AssetId>? outputs,
     PhasedAssetDeps? phasedAssetDeps,
-    required this.buildOutputReader,
+    this.buildOutputReader,
     this.buildState,
     FailureType? failureType,
+    BuiltMap<AssetId, Digest>? librariesMissingPartDirective,
+    BuiltMap<AssetId, Digest>? librariesWithUnusedPartDirective,
   }) : failureType = failureType == null && status == BuildStatus.failure
            ? FailureType.general
            : failureType,
        errors = errors ?? BuiltList(),
        outputs = outputs ?? BuiltList(),
-       phasedAssetDeps = phasedAssetDeps ?? PhasedAssetDeps();
+       phasedAssetDeps = phasedAssetDeps ?? PhasedAssetDeps(),
+       librariesMissingPartDirective =
+           librariesMissingPartDirective ?? BuiltMap(),
+       librariesWithUnusedPartDirective =
+           librariesWithUnusedPartDirective ?? BuiltMap();
 
   BuildResult copyWith({
     BuildStatus? status,
@@ -55,7 +89,9 @@ class BuildResult {
     BuiltList<AssetId>? outputs,
     PhasedAssetDeps? phasedAssetDeps,
     BuildOutputReader? buildOutputReader,
-    BuildState? buildState,
+    FinishedBuildState? buildState,
+    BuiltMap<AssetId, Digest>? librariesMissingPartDirective,
+    BuiltMap<AssetId, Digest>? librariesWithUnusedPartDirective,
   }) => BuildResult(
     status: status ?? this.status,
     failureType: failureType ?? this.failureType,
@@ -64,6 +100,11 @@ class BuildResult {
     phasedAssetDeps: phasedAssetDeps ?? this.phasedAssetDeps,
     buildOutputReader: buildOutputReader ?? this.buildOutputReader,
     buildState: buildState ?? this.buildState,
+    librariesMissingPartDirective:
+        librariesMissingPartDirective ?? this.librariesMissingPartDirective,
+    librariesWithUnusedPartDirective:
+        librariesWithUnusedPartDirective ??
+        this.librariesWithUnusedPartDirective,
   );
 
   @override
@@ -81,10 +122,12 @@ Build Failed :(
     }
   }
 
-  factory BuildResult.buildScriptChanged() => BuildResult(
+  factory BuildResult.buildScriptChanged({
+    BuildOutputReader? buildOutputReader,
+  }) => BuildResult(
     status: BuildStatus.failure,
     failureType: FailureType.buildScriptChanged,
-    buildOutputReader: BuildOutputReader.empty(),
+    buildOutputReader: buildOutputReader,
   );
 }
 

@@ -22,7 +22,7 @@ void main() async {
         packageName: 'cache_builder_pkg',
         buildToCache: true,
         applyToAllPackages: true,
-        outputExtension: '.hidden',
+        outputExtension: '.artifact',
       ),
     );
     tester.writePackage(
@@ -39,6 +39,12 @@ ${tester.read('pubspec.yaml')}
 dependencies:
   builder_pkg:
     path: builder_pkg
+  # Make p1 an explicit dependency so it changes between being part of the
+  # build with --workspace and a dep of the build without. This verifies that
+  # the "without" build doesn't try to delete outputs in p1 from the previous
+  # build.
+  p1:
+    path: p1
 ''');
     tester.write('lib/w.txt', '1');
 
@@ -83,5 +89,30 @@ dependencies:
       tester.read('p1/lib/p1.txt.copy'),
       '3',
     ); // No build of nested package.
+
+    tester.write('p1/build.yaml', r'''
+global_options:
+  builder_pkg:test_builder:
+    options:
+      extra_content: "(p1 local)"
+''');
+    tester.write('build.yaml', r'''
+global_options:
+  builder_pkg:test_builder:
+    options:
+      extra_content: "(workspace global)"
+''');
+
+    // Workspace build uses root `build.yaml` for options.
+    await tester.run('', 'dart run build_runner build --force-jit --workspace');
+    expect(tester.read('p1/lib/p1.txt.copy'), '4(workspace global)');
+
+    // Package build in `p1` uses `p1/build.yaml`.
+    await tester.run('p1', 'dart run build_runner build --force-jit');
+    expect(tester.read('p1/lib/p1.txt.copy'), '4(p1 local)');
+
+    // Workspace build uses root `build.yaml` again.
+    await tester.run('', 'dart run build_runner build --force-jit --workspace');
+    expect(tester.read('p1/lib/p1.txt.copy'), '4(workspace global)');
   });
 }

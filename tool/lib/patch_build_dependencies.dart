@@ -8,15 +8,16 @@ import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 import 'package:yaml_edit/yaml_edit.dart';
 
-const _buildPackages = [
-  'build',
-  'build_config',
-  'build_daemon',
-  'build_runner',
-  'build_test',
-  'build_web_compilers',
-  'scratch_space',
-];
+/// Build packages by name, with their paths in the `build` repository.
+const _buildPackages = {
+  'build': 'build',
+  'build_config': 'build_config',
+  'build_daemon': 'build_daemon',
+  'build_runner': 'build_runner',
+  'build_test': 'build_test',
+  'build_web_compilers': 'builder_pkgs/build_web_compilers',
+  'scratch_space': 'builder_pkgs/scratch_space',
+};
 
 /// Adds `dependency_overrides` for to a pubspec.yaml file in [packageDir]
 /// build packages, assuming that the current working directory is the root of
@@ -42,9 +43,11 @@ Future<void> patchBuildDependencies(String packageDir) async {
 
   final buildCheckout = Directory.current.path;
 
-  for (final buildPackage in _buildPackages) {
-    final path = p.join(buildCheckout, buildPackage);
-    editor.update([...targetSection, buildPackage], {'path': path});
+  for (final MapEntry(key: name, value: path) in _buildPackages.entries) {
+    editor.update(
+      [...targetSection, name],
+      {'path': p.join(buildCheckout, path)},
+    );
   }
 
   await pubspec.writeAsString(editor.toString());

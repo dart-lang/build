@@ -30,17 +30,52 @@ void main() {
         p.join(Directory.current.path, fesManagerConfigPath),
       );
       if (configFile.existsSync()) configFile.deleteSync();
-      server = await PersistentFrontendServer.start(
+      server = PersistentFrontendServer(
         sdkRoot: sdkDir,
         fileSystemRoot: tempDir.uri,
         packagesFile: packageConfig,
       );
+      await server.ensureStarted();
     });
 
     tearDown(() async {
       await server.shutdown();
       await tempDir.delete(recursive: true);
     });
+
+    test(
+      'throws ArgumentError if ensureStarted is called with different options',
+      () async {
+        final localTempDir = await Directory.systemTemp.createTemp(
+          'fes-test-local',
+        );
+        final packageConfig = localTempDir.uri.resolve(
+          '.dart_tool/package_config.json',
+        );
+        File(packageConfig.toFilePath())
+          ..createSync(recursive: true)
+          ..writeAsStringSync(
+            jsonEncode({'configVersion': 2, 'packages': <String>[]}),
+          );
+        final localServer = PersistentFrontendServer(
+          sdkRoot: sdkDir,
+          fileSystemRoot: localTempDir.uri,
+          packagesFile: packageConfig,
+        );
+        try {
+          await localServer.ensureStarted(librariesPath: 'foo');
+          expect(
+            () => localServer.ensureStarted(librariesPath: 'bar'),
+            throwsArgumentError,
+          );
+          // Calling with the same options is fine
+          await localServer.ensureStarted(librariesPath: 'foo');
+        } finally {
+          await localServer.shutdown();
+          await localTempDir.delete(recursive: true);
+        }
+      },
+    );
 
     test('can compile a simple dart file', () async {
       final entrypoint = tempDir.uri.resolve('entry.dart');
@@ -72,9 +107,8 @@ void main() {
     test('can reject and recompile with an invalidated file', () async {
       final entrypoint = tempDir.uri.resolve('entrypoint.dart');
       final dep = tempDir.uri.resolve('dep.dart');
-      File(
-        entrypoint.toFilePath(),
-      ).writeAsStringSync("import 'dep.dart'; void main() {}");
+      File(entrypoint.toFilePath())
+          .writeAsStringSync("import 'dep.dart'; void main() {}");
       File(dep.toFilePath()).writeAsStringSync('// empty');
 
       var output = await server.compile(entrypoint.toString());
@@ -116,11 +150,12 @@ void main() {
         p.join(Directory.current.path, fesManagerConfigPath),
       );
       if (configFile.existsSync()) configFile.deleteSync();
-      server = await PersistentFrontendServer.start(
+      server = PersistentFrontendServer(
         sdkRoot: sdkDir,
         fileSystemRoot: tempDir.uri,
         packagesFile: packageConfig,
       );
+      await server.ensureStarted();
       driver = FrontendServerProxyDriver();
       driver.init(server);
     });
@@ -145,12 +180,10 @@ void main() {
       expect(results[1], isNotNull);
       expect(results[1]!.errorCount, 0);
 
-      File(
-        file1.toFilePath(),
-      ).writeAsStringSync("void main() { print('edit!'); }");
-      File(
-        file2.toFilePath(),
-      ).writeAsStringSync("void main() { print('edit!'); }");
+      File(file1.toFilePath())
+          .writeAsStringSync("void main() { print('edit!'); }");
+      File(file2.toFilePath())
+          .writeAsStringSync("void main() { print('edit!'); }");
 
       future1 = driver.recompile(file1.toString(), [file1]);
       future2 = driver.recompile(file2.toString(), [file2]);
@@ -186,12 +219,13 @@ void main() {
       final packageConfig = tempDir.uri.resolve(
         '.dart_tool/package_config.json',
       );
-      final envServer = await PersistentFrontendServer.start(
+      final envServer = PersistentFrontendServer(
         sdkRoot: sdkDir,
         fileSystemRoot: tempDir.uri,
         packagesFile: packageConfig,
-        environment: {'MY_DEFINE': 'hello_world'},
+        environment: const {'MY_DEFINE': 'hello_world'},
       );
+      await envServer.ensureStarted();
       addTearDown(envServer.shutdown);
 
       final envDriver = FrontendServerProxyDriver()..init(envServer);

@@ -19,6 +19,10 @@ abstract class DaemonBuilder {
 
   Stream<ServerLog> get logs;
 
+  /// Builds [targets] for the given file [changes].
+  ///
+  /// In auto build mode, an empty changes list indicates an explicit build
+  /// request as distinct from a file watch based request.
   Future<void> build(Set<BuildTarget> targets, Iterable<WatchEvent> changes);
 
   Future<void> stop();

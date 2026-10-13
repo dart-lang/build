@@ -54,14 +54,14 @@ E An error.'''),
       expect(
         render(),
         padLinesRight('''
-0s compiling builders/jit'''),
+compiling builders/jit'''),
       );
       buildLog.logCompile(compileType: CompileType.aot, function: () async {});
       expect(
         render(),
         padLinesRight('''
-0s compiling builders/jit
-0s compiling builders/aot'''),
+compiling builders/jit
+compiling builders/aot'''),
       );
     });
 
@@ -423,4 +423,4 @@ BuildPackages _testBuildPackages(String packageName) =>
     ]);
 
 Uri _packageFileUri(BuildPackages buildPackages, AssetId assetId) =>
-    Uri.file(buildPackages.pathFor(assetId, hide: false));
+    Uri.file(buildPackages.pathFor(assetId, inArtifactTree: false));

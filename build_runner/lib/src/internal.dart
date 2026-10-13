@@ -9,6 +9,7 @@ export 'build/build_series.dart';
 export 'build/input_tracker.dart';
 export 'build/resolver/analysis_driver_model.dart';
 export 'build/resolver/resolvers_impl.dart';
+export 'build_plan/asset_file.dart';
 export 'build_plan/build_configs.dart';
 export 'build_plan/build_directory.dart';
 export 'build_plan/build_filter.dart';
@@ -25,7 +26,7 @@ export 'constants.dart';
 export 'io/asset_finder.dart';
 export 'io/asset_path_provider.dart';
 export 'io/filesystem.dart';
-export 'io/generated_asset_hider.dart';
+
 export 'io/reader_writer.dart';
 export 'logging/build_log.dart';
 export 'logging/build_log_logger.dart';

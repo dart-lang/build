@@ -1,6 +1,9 @@
 Want to contribute? Great! First, read this page (including the small print at
 the end).
 
+For notes on working in this repo, such as how to regenerate generated code,
+see [docs/contributing.md](docs/contributing.md).
+
 ### Before you contribute
 Before we can use your code, you must sign the
 [Google Individual Contributor License Agreement](https://cla.developers.google.com/about/google-individual)

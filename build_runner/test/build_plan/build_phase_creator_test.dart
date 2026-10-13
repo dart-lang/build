@@ -188,7 +188,7 @@ void main() {
       );
     });
 
-    test('skips non-hidden builders on non-root packages', () async {
+    test('skips package path builders on non-root packages', () async {
       final buildPackages = BuildPackages.singlePackageBuild('a', [
         BuildPackage.forTesting(
           name: 'a',
@@ -214,7 +214,7 @@ void main() {
           BuilderDefinition(
             'c:cool_builder',
             autoApply: AutoApply.dependents,
-            hideOutput: false,
+            outputsToArtifactTree: false,
           ),
         ],
         builderConfigOverrides: BuiltMap(),
@@ -234,7 +234,7 @@ void main() {
     });
 
     test(
-      'skips builders which apply non-hidden builders on non-root packages',
+      'skips builders which apply package path builders on non-root packages',
       () async {
         final buildPackages = BuildPackages.singlePackageBuild('a', [
           BuildPackage.forTesting(
@@ -260,7 +260,7 @@ void main() {
           BuilderDefinition(
             'c:not_by_default',
             autoApply: AutoApply.none,
-            hideOutput: false,
+            outputsToArtifactTree: false,
           ),
         ];
         final phases = await BuildPhaseCreator(
@@ -473,6 +473,74 @@ void main() {
         );
       },
     );
+
+    test('throws ArgumentError if builder definition has both addsToLibrary '
+        'and isOptional', () {
+      expect(
+        () => BuilderDefinition(
+          'a:builder',
+          outputsToArtifactTree: false,
+          addsToLibrary: true,
+          isOptional: true,
+        ),
+        throwsA(
+          isArgumentError.having(
+            (e) => e.message,
+            'message',
+            contains('`is_optional: true`'),
+          ),
+        ),
+      );
+    });
+
+    test('throws ArgumentError if builder definition has addsToLibrary '
+        'and outputsToArtifactTree', () {
+      expect(
+        () => BuilderDefinition('a:builder', addsToLibrary: true),
+        throwsA(
+          isArgumentError.having(
+            (e) => e.message,
+            'message',
+            contains('`build_to: source`'),
+          ),
+        ),
+      );
+    });
+
+    test('throws ArgumentError if addsToLibrary builder has two '
+        'factories', () async {
+      final buildConfigs = await BuildConfigs.load(
+        buildPackages: buildPackages,
+        testingOverrides: TestingOverrides(
+          defaultRootPackageSources: ['**'].build(),
+        ),
+      );
+      expect(
+        () => BuildPhaseCreator(
+          builderFactories: BuilderFactories({
+            'a:builder': [CoolBuilder.new, CoolBuilder.new],
+          }),
+          buildPackages: buildPackages,
+          buildConfigs: buildConfigs,
+          builderDefinitions: [
+            BuilderDefinition(
+              'a:builder',
+              outputsToArtifactTree: false,
+              addsToLibrary: true,
+            ),
+          ],
+          builderConfigOverrides: BuiltMap(),
+          isReleaseBuild: false,
+        ).createBuildPhases(),
+        throwsA(
+          isArgumentError.having(
+            (e) => e.message,
+            'message',
+            contains('must have exactly one builder factory'),
+          ),
+        ),
+      );
+    });
   });
 }
 

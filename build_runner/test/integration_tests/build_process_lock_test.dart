@@ -115,10 +115,13 @@ Future<void> main() async {
     await lock4.expect('lock requested');
 
     // Watch mode exits if requested during a build.
+    //
+    // While `gate` does not exist, builds block at the start of each build
+    // step, so the stop request is certain to arrive during the build.
     tester.writeFixturePackage(
       FixturePackages.copyBuilder(
         packageName: 'builder_pkg',
-        delayAtBuildStart: true,
+        waitForFileAtBuildStart: p.join(tester.tempDirectory.path, 'gate'),
         applyToAllPackages: true,
       ),
     );
@@ -133,9 +136,12 @@ Future<void> main() async {
       'dart run build_runner watch --force-jit',
     );
     await watch.expect('builder_pkg:test_builder on 1 input');
-    await tester.run('p1', 'dart run build_runner stop');
+    final stop = await tester.start('p1', 'dart run build_runner stop');
+    await stop.expect('Waiting for already-running build_runner.');
+    tester.write('gate', '');
     await watch.expect('Exiting as requested by another build_runner process.');
     await watch.exitCode;
+    expect(await stop.exitCode, 0);
 
     // Watch mode exits if requested while idle.
     watch = await tester.start('p1', 'dart run build_runner watch --force-jit');

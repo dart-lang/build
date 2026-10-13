@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
+import 'package:build/experiments.dart';
 // ignore: implementation_imports
 import 'package:build_runner/src/internal.dart';
 import 'package:build_test/build_test.dart';
@@ -25,6 +26,13 @@ void _printOnFailure(LogRecord record) {
   );
 }
 
+/// Resolvers for [testPhases], one per set of enabled experiments.
+///
+/// A [ResolversImpl] fixes the enabled experiments when first used, so builds
+/// with different experiments can't share one. Builds with the same
+/// experiments share one, like the builds of a `build_runner` process.
+final _resolversByExperiments = <String, ResolversImpl>{};
+
 /// Runs [builders] in a test environment.
 ///
 /// The test environment supplies in-memory build [inputs] to the builders under
@@ -40,9 +48,9 @@ void _printOnFailure(LogRecord record) {
 /// is the path to a file relative to the package. `PATH_WITHIN_PACKAGE` must
 /// include `lib`, `web`, `bin` or `test`. Example: "myapp|lib/utils.dart".
 ///
-/// When an output is expected in the build cache start the package with `$$`.
+/// When an output is expected in the artifact tree start the package with `$$`.
 /// For example `$$myapp|lib/utils.copy.dart` will check that the generated
-/// output was written to the build cache.
+/// output was written to the artifact tree.
 ///
 /// [resumeFrom] reuses the `readerWriter` from a previous [BuildResult].
 ///
@@ -84,18 +92,13 @@ Future<TestBuildersResult> testPhases(
   bool verbose = false,
   Set<BuildDirectory> buildDirs = const {},
   Set<BuildFilter> buildFilters = const {},
-  void Function(AssetId id)? onDelete,
 }) async {
   buildPackages ??= BuildPackages.singlePackageBuild('a', [
     BuildPackage.forTesting(name: 'a', isOutput: true),
   ]);
-  var readerWriter = resumeFrom == null
+  final readerWriter = resumeFrom == null
       ? InternalTestReaderWriter(outputRootPackage: buildPackages.outputRoot)
       : resumeFrom.readerWriter;
-
-  if (onDelete != null) {
-    readerWriter = readerWriter.copyWith(onDelete: onDelete);
-  }
 
   final pkgConfigId = AssetId(
     buildPackages.outputRoot,
@@ -144,13 +147,16 @@ Future<TestBuildersResult> testPhases(
         builderDefinitions: builders.build(),
         buildPackages: buildPackages,
         readerWriter: readerWriter,
+        resolvers: _resolversByExperiments.putIfAbsent(
+          enabledExperiments.join(','),
+          ResolversImpl.custom,
+        ),
       ),
     ),
   );
 
-  BuildResult result;
   final buildSeries = BuildSeries(buildPlan);
-  result = await buildSeries.run({}, recentlyBootstrapped: true);
+  final result = await buildSeries.run({}, recentlyBootstrapped: true);
   await buildSeries.close();
 
   if (checkBuildStatus) {
@@ -159,7 +165,7 @@ Future<TestBuildersResult> testPhases(
       outputs: outputs,
       readerWriter: readerWriter,
       status: status,
-      buildCachePackage: buildPackages.outputRoot,
+      outputRootPackage: buildPackages.outputRoot,
     );
   }
 
@@ -170,42 +176,42 @@ Future<TestBuildersResult> testPhases(
   );
 }
 
-/// Translates expected outptus which start with `$$` to the build cache and
+/// Translates expected outputs which start with `$$` to the artifact tree and
 /// validates the success and outputs of the build.
 void checkBuild(
   BuildResult result, {
   Map<String, Object>? outputs,
   required TestReaderWriter readerWriter,
   BuildStatus status = BuildStatus.success,
-  String buildCachePackage = 'a',
+  String outputRootPackage = 'a',
 }) {
   expect(result.status, status, reason: '$result');
 
-  final unhiddenOutputs = <String, Object>{};
-  final unhiddenAssets = <AssetId>{};
+  final normalizedOutputs = <String, Object>{};
+  final artifactTreeAssets = <AssetId>{};
   for (final id in outputs?.keys ?? const <String>[]) {
     if (id.startsWith(r'$$')) {
-      final unhidden = id.substring(2);
-      unhiddenAssets.add(makeAssetId(unhidden));
-      unhiddenOutputs[unhidden] = outputs![id]!;
+      final stripped = id.substring(2);
+      artifactTreeAssets.add(makeAssetId(stripped));
+      normalizedOutputs[stripped] = outputs![id]!;
     } else {
-      unhiddenOutputs[id] = outputs![id]!;
+      normalizedOutputs[id] = outputs![id]!;
     }
   }
 
-  AssetId mapHidden(AssetId id) => unhiddenAssets.contains(id)
+  AssetId mapArtifactTree(AssetId id) => artifactTreeAssets.contains(id)
       ? AssetId(
-          buildCachePackage,
+          outputRootPackage,
           '.dart_tool/build/generated/${id.package}/${id.path}',
         )
       : id;
 
   if (status == BuildStatus.success) {
     checkOutputs(
-      unhiddenOutputs,
+      normalizedOutputs,
       result.outputs,
       readerWriter,
-      mapAssetIds: mapHidden,
+      mapAssetIds: mapArtifactTree,
     );
   }
 }

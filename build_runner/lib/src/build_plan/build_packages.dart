@@ -2,8 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:io';
-
 import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:graphs/graphs.dart';
@@ -11,7 +9,9 @@ import 'package:meta/meta.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 
+import '../build/resolver/asset_ids.dart';
 import '../constants.dart';
+import '../contracts.dart';
 import '../io/asset_path_provider.dart';
 import 'build_package.dart';
 import 'build_packages_loader.dart';
@@ -23,6 +23,12 @@ import 'placeholders.dart';
 final _sdkPackage = BuildPackage(name: r'$sdk', path: sdkPath);
 
 /// The [BuildPackage]s in the build.
+@Invariant('currentPackage.isNotEmpty')
+@Invariant('outputRoot.isNotEmpty')
+@Invariant('packages.isNotEmpty')
+@Invariant('packages.containsKey(currentPackage)')
+@Invariant('outputPackages.isNotEmpty')
+@Invariant('outputPackages.every((p) => packages.containsKey(p))')
 class BuildPackages implements AssetPathProvider {
   /// All packages by package name.
   final BuiltMap<String, BuildPackage> packages;
@@ -68,6 +74,10 @@ class BuildPackages implements AssetPathProvider {
   /// A [PackageConfig] representation of this `BuildPackages`.
   final PackageConfig asPackageConfig;
 
+  /// Whether an alternate root's asset graph is newer than ours, which means
+  /// that the current build `asset_graph.json` is stale.
+  final bool hasNewerAlternateRootBuild;
+
   /// Transitive dependencies by package name.
   final BuiltSetMultimap<String, String> _transitiveDependencies;
 
@@ -84,13 +94,25 @@ class BuildPackages implements AssetPathProvider {
     required this.asPackageConfig,
     required BuiltSetMultimap<String, String> transitiveDependencies,
     required BuiltSetMultimap<String, String> buildPackages,
+    this.hasNewerAlternateRootBuild = false,
   }) : _transitiveDependencies = transitiveDependencies,
        _peerPackages = buildPackages;
 
+  @Requires('currentPackage.isNotEmpty')
+  @Requires('outputRoot.isNotEmpty')
+  @Requires('packages.containsKey(currentPackage)')
+  @Requires(
+    'singlePackageToBuild == null || '
+    'packages.containsKey(singlePackageToBuild)',
+  )
+  @Requires(
+    'singlePackageToBuild == null || packages[singlePackageToBuild]!.isOutput',
+  )
   factory BuildPackages.compute({
     required String currentPackage,
     String? singlePackageToBuild,
     required String outputRoot,
+    bool hasNewerAlternateRootBuild = false,
     required BuiltMap<String, BuildPackage> packages,
   }) {
     for (final package in packages.values) {
@@ -138,12 +160,14 @@ class BuildPackages implements AssetPathProvider {
       asPackageConfig: asPackageConfig,
       transitiveDependencies: transitiveDependencies,
       buildPackages: buildPackages,
+      hasNewerAlternateRootBuild: hasNewerAlternateRootBuild,
     );
   }
 
   /// Creates [BuildPackages] from [BuildPackage]s for a single package build
   /// of [package].
   @visibleForTesting
+  @Requires('packages.any((p) => p.name == package && p.isOutput)')
   factory BuildPackages.singlePackageBuild(
     String package,
     Iterable<BuildPackage> packages,
@@ -207,46 +231,48 @@ class BuildPackages implements AssetPathProvider {
   @override
   String pathFor(
     AssetId id, {
-    required bool hide,
-    bool checkDeleteAllowed = false,
+    required bool inArtifactTree,
+    bool checkWriteAllowed = false,
   }) {
-    if (checkDeleteAllowed) {
-      // Delete is allowed if it's a hidden output in `outputRoot` or if it's a
-      // package in the build.
-      final isUnderCacheDirectory = id.path.startsWith('$cacheDirectoryPath/');
-      final deleteIsAllowed =
-          hide ||
-          (isUnderCacheDirectory && id.package == outputRoot) ||
-          outputPackages.contains(id.package);
-      if (!deleteIsAllowed) {
-        if (isUnderCacheDirectory) {
-          throw InvalidOutputException(
-            id,
-            'Tried to delete from $cacheDirectoryPath in wrong package, should '
-            'be $outputRoot.',
-          );
-        } else {
-          throw InvalidOutputException(
-            id,
-            'Tried to delete from package not in the build. Packages in the '
-            'build are: ${outputPackages.join(', ')}',
-          );
-        }
-      }
-    }
-
-    if (hide) {
-      id = AssetPathProvider.hide(id, outputRoot);
-    }
-    final package = packages[id.package];
-    if (package == null) {
+    if (!packages.containsKey(id.package)) {
       throw PackageNotFoundException(id.package);
     }
-    var path = id.path;
-    if (Platform.pathSeparator != '/') {
-      path = path.replaceAll('/', Platform.pathSeparator);
+    if (inArtifactTree) {
+      id = AssetPathProvider.inArtifactTree(id, outputRoot);
     }
-    return p.join(package.path, path);
+    if (checkWriteAllowed) throwIfReadonly(id);
+    final package = packages[id.package]!;
+    return p.join(package.path, id.platformPath);
+  }
+
+  /// Throws if [id] is not allowed to be written or deleted.
+  ///
+  /// Write or delete is allowed if [id] is in a package that is a build output
+  /// or is in the hidden build directory for `outputRoot`. The hidden build
+  /// directory contains the artifact tree and internal files such as
+  /// `asset_graph.json`.
+  void throwIfReadonly(AssetId id) {
+    final isUnderHiddenBuildDirectory = id.path.startsWith(
+      '$hiddenBuildDirectoryPath/',
+    );
+    final writeIsAllowed =
+        (isUnderHiddenBuildDirectory && id.package == outputRoot) ||
+        outputPackages.contains(id.package);
+    if (!writeIsAllowed) {
+      if (isUnderHiddenBuildDirectory) {
+        throw InvalidOutputException(
+          id,
+          'Tried to write or delete from $hiddenBuildDirectoryPath in wrong '
+          'package, should be $outputRoot.',
+        );
+      } else {
+        throw InvalidOutputException(
+          id,
+          'Tried to write or delete in a package not in the build. Packages '
+          'in the build are: ${outputPackages.join(', ')}',
+        );
+      }
+    }
   }
 
   /// Gets transitive deps of [packageName].

@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:http_multi_server/http_multi_server.dart';
+import 'package:meta/meta.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 
@@ -23,12 +24,11 @@ class AssetServer {
 
   Future<void> stop() => _server.close(force: true);
 
-  static Future<AssetServer> run(
-    DaemonOptions options,
+  @visibleForTesting
+  static Handler createHandler(
     BuildRunnerDaemonBuilder builder,
     String outputRootPackage,
-  ) async {
-    final server = await HttpMultiServer.loopback(0);
+  ) {
     final cascade = Cascade()
         .add((_) async {
           await builder.building;
@@ -42,6 +42,18 @@ class AssetServer {
           ).handle,
         );
 
+    return const Pipeline()
+        .addMiddleware(_loopbackOnly)
+        .addHandler(cascade.handler);
+  }
+
+  static Future<AssetServer> run(
+    DaemonOptions options,
+    BuildRunnerDaemonBuilder builder,
+    String outputRootPackage,
+  ) async {
+    final server = await HttpMultiServer.loopback(0);
+
     var pipeline = const Pipeline();
     if (options.logRequests) {
       pipeline = pipeline.addMiddleware(
@@ -49,7 +61,36 @@ class AssetServer {
       );
     }
 
-    shelf_io.serveRequests(server, pipeline.addHandler(cascade.handler));
+    shelf_io.serveRequests(
+      server,
+      pipeline.addHandler(createHandler(builder, outputRootPackage)),
+    );
     return AssetServer._(server);
   }
 }
+
+bool _isLoopback(String host) =>
+    host == 'localhost' ||
+    (InternetAddress.tryParse(host)?.isLoopback ?? false);
+
+/// Rejects requests that lack a loopback Host header or specify a non-loopback
+/// Origin header.
+Handler _loopbackOnly(Handler inner) => (request) {
+  final hostHeader = request.headers['host'];
+  if (hostHeader == null) return Response.forbidden(null);
+
+  final host = Uri.tryParse('http://$hostHeader')?.host ?? '';
+  if (!_isLoopback(host)) {
+    return Response.forbidden(null);
+  }
+
+  final origin = request.headers['origin'];
+  if (origin != null) {
+    final parsed = Uri.tryParse(origin);
+    if (parsed == null || !_isLoopback(parsed.host)) {
+      return Response.forbidden(null);
+    }
+  }
+
+  return inner(request);
+};

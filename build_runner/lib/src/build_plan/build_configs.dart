@@ -8,6 +8,7 @@ import 'package:build/build.dart';
 import 'package:build_config/build_config.dart' hide BuildTarget;
 import 'package:built_collection/built_collection.dart';
 import 'package:glob/glob.dart';
+import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
 import '../exceptions.dart';
@@ -53,6 +54,17 @@ class BuildConfigs {
     this.buildTriggers,
     this._publicAssetsByPackage,
   );
+
+  @visibleForTesting
+  BuildConfigs.empty()
+    : buildTargets = BuiltMap(),
+      buildTargetsByPackage = BuiltListMultimap(),
+      buildConfigByPackage = BuiltMap(),
+      buildTriggers = BuildTriggers(
+        triggers: BuiltMap(),
+        warningsByPackage: BuiltMap(),
+      ),
+      _publicAssetsByPackage = BuiltMap();
 
   /// Loads [BuildConfigs] for [buildPackages].
   ///
@@ -234,7 +246,8 @@ class BuildConfigs {
   /// choose to include `include/**` as a public asset.
   ///
   /// Public assets are added as default sources to the default target. They are
-  /// also not considered optional outputs for hidden build phases.
+  /// also not considered optional outputs for build phases that output to the
+  /// artifact tree.
   bool isPublicAsset(AssetId id) {
     final filter =
         _publicAssetsByPackage[id.package] ?? _defaultMatcherForDependency;

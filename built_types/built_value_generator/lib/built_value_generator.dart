@@ -1,0 +1,106 @@
+// Copyright (c) 2015, Google Inc. Please see the AUTHORS file for details.
+// All rights reserved. Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+import 'package:analyzer/dart/element/element.dart';
+import 'package:build/build.dart';
+import 'package:source_gen/source_gen.dart';
+
+import 'src/enum_source_library.dart';
+import 'src/parsed_library_results.dart';
+import 'src/serializer_source_library.dart';
+import 'src/value_source_class.dart';
+
+/// Generator for Enum Class and Built Values.
+///
+/// See https://github.com/dart-lang/build/tree/master/built_types/built_value_example
+class BuiltValueGenerator extends Generator {
+  // Allow creating via `const` as well as enforces immutability here.
+  const BuiltValueGenerator();
+
+  @override
+  Future<String?> generate(LibraryReader library, BuildStep buildStep) async {
+    final parsedLibraryResults = ParsedLibraryResults();
+
+    // Workaround for https://github.com/google/built_value.dart/issues/941.
+    LibraryElement libraryElement;
+    var attempts = 0;
+    while (true) {
+      try {
+        libraryElement = await buildStep.resolver.libraryFor(
+          await buildStep.resolver.assetIdForElement(library.element),
+        );
+        parsedLibraryResults.parsedLibraryResultOrThrowingMock(libraryElement);
+        break;
+      } catch (_) {
+        ++attempts;
+        if (attempts == 10) {
+          log.severe('Analysis session did not stabilize after ten tries!');
+          return null;
+        }
+      }
+    }
+
+    final result = StringBuffer();
+    try {
+      final enumCode = EnumSourceLibrary(
+        parsedLibraryResults,
+        libraryElement,
+      ).generateCode();
+      if (enumCode != null) result.writeln(enumCode);
+      final serializerSourceLibrary = SerializerSourceLibrary(
+        parsedLibraryResults,
+        libraryElement,
+      );
+      if (serializerSourceLibrary.needsBuiltJson ||
+          serializerSourceLibrary.hasSerializers) {
+        result.writeln(serializerSourceLibrary.generateCode());
+      }
+    } on InvalidGenerationSourceError catch (e, st) {
+      result.writeln(_error(e.message));
+      log.severe(
+        'Error in BuiltValueGenerator for '
+        '${libraryElement.firstFragment.source.fullName}.',
+        e,
+        st,
+      );
+    } catch (e, st) {
+      result.writeln(_error(e.toString()));
+      log.severe(
+        'Unknown error in BuiltValueGenerator for '
+        '${libraryElement.firstFragment.source.fullName}.',
+        e,
+        st,
+      );
+    }
+
+    for (final element in libraryElement.classes) {
+      if (ValueSourceClass.needsBuiltValue(element)) {
+        try {
+          result.writeln(
+            ValueSourceClass(parsedLibraryResults, element).generateCode(),
+          );
+        } catch (e, st) {
+          result.writeln(_error(e));
+          log.severe('Error in BuiltValueGenerator for $element.', e, st);
+        }
+      }
+    }
+
+    if (result.isNotEmpty) {
+      return '$result'
+          '\n'
+          '// ignore_for_file: '
+          'deprecated_member_use_from_same_package,'
+          'type=lint';
+    } else {
+      return null;
+    }
+  }
+}
+
+String _error(Object error) {
+  final lines = '$error'.split('\n');
+  final indented = lines.skip(1).map((l) => '//        $l'.trim()).join('\n');
+  return '// Error: ${lines.first}\n$indented';
+}

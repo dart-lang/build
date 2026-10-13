@@ -17,10 +17,10 @@ import 'package:pool/pool.dart';
 import 'package:uuid/uuid.dart';
 
 import '../common.dart';
+import 'fes_server_info.dart';
 import 'package_config.dart';
 
 final _log = Logger('FrontendServerProxy');
-final dartaotruntimePath = p.join(sdkDir, 'bin', 'dartaotruntime');
 final frontendServerSnapshotPath = p.join(
   sdkDir,
   'bin',
@@ -267,40 +267,91 @@ class _CompileExpressionToJsRequest extends _CompilationRequest {
 /// A single instance of the Frontend Server that persists across
 /// compile/recompile requests.
 class PersistentFrontendServer {
-  final FrontendServerClient _client;
+  final String sdkRoot;
+  final Uri fileSystemRoot;
+  final List<Uri>? fileSystemRoots;
+  final Uri packagesFile;
+  final Map<String, String> environment;
   final Uri outputDillUri;
   final WebMemoryFilesystem _fileSystem;
 
-  PersistentFrontendServer._({
-    required this._client,
-    required this.outputDillUri,
-    required this._fileSystem,
-  });
+  FrontendServerClient? _client;
+  Future<void>? _startFuture;
+  String? _librariesPath;
+  String? _platformSdk;
+  String? _sdkKernelPath;
 
-  FrontendServerClient get client => _client;
+  PersistentFrontendServer({
+    required this.sdkRoot,
+    required this.fileSystemRoot,
+    this.fileSystemRoots,
+    required this.packagesFile,
+    this.environment = const {},
+  }) : outputDillUri = fileSystemRoot.resolve('output.dill'),
+       _fileSystem = WebMemoryFilesystem(fileSystemRoot, getRootPackageName());
+
+  FrontendServerClient get client {
+    if (_client == null) {
+      throw StateError(
+        'Frontend server must be started before accessing client. '
+        'See ensureStarted().',
+      );
+    }
+    return _client!;
+  }
+
   WebMemoryFilesystem get fileSystem => _fileSystem;
 
-  static Future<PersistentFrontendServer> start({
-    required String sdkRoot,
-    required Uri fileSystemRoot,
-    List<Uri>? fileSystemRoots,
-    required Uri packagesFile,
-    Map<String, String> environment = const {},
+  /// Starts the persistent Frontend Server process if not already started.
+  ///
+  /// Must be called before accessing the server's [client].
+  ///
+  /// If the server has already been started or is in the process of starting,
+  /// this method returns immediately. If the provided options differ from those
+  /// used in a previous call to [ensureStarted], an [ArgumentError] is thrown.
+  Future<void> ensureStarted({
+    String? librariesPath,
+    String? platformSdk,
+    String? sdkKernelPath,
+  }) async {
+    if (_client != null || _startFuture != null) {
+      if (librariesPath != _librariesPath ||
+          platformSdk != _platformSdk ||
+          sdkKernelPath != _sdkKernelPath) {
+        throw ArgumentError(
+          'PersistentFrontendServer was already started or is starting with '
+          'different options.\n'
+          'Expected: librariesPath=$_librariesPath, platformSdk=$_platformSdk, '
+          'sdkKernelPath=$_sdkKernelPath\n'
+          'Actual: librariesPath=$librariesPath, platformSdk=$platformSdk, '
+          'sdkKernelPath=$sdkKernelPath',
+        );
+      }
+      return _startFuture;
+    }
+    _librariesPath = librariesPath;
+    _platformSdk = platformSdk;
+    _sdkKernelPath = sdkKernelPath;
+    return _startFuture ??= _doStart(
+      librariesPath: librariesPath,
+      platformSdk: platformSdk,
+      sdkKernelPath: sdkKernelPath,
+    );
+  }
+
+  Future<void> _doStart({
     String? librariesPath,
     String? platformSdk,
     String? sdkKernelPath,
   }) async {
     final rootPackage = getRootPackageName();
-    final socketConnection = await _tryConnectToFESManager(fileSystemRoot);
+    final socketConnection = await _tryConnectToFESManager();
     if (socketConnection != null) {
-      return PersistentFrontendServer._(
-        client: SocketFrontendServerClient(
-          socketConnection.socket,
-          socketConnection.socketLines,
-        ),
-        outputDillUri: fileSystemRoot.resolve('output.dill'),
-        fileSystem: WebMemoryFilesystem(fileSystemRoot, rootPackage),
+      _client = SocketFrontendServerClient(
+        socketConnection.socket,
+        socketConnection.socketLines,
       );
+      return;
     }
 
     // ScratchSpace's generated 'package_config.json' uses absolute file URIs
@@ -315,15 +366,18 @@ class PersistentFrontendServer {
     }
     PackageConfig.rewriteToMultiRoot(file, multiRootScheme, rootPackage);
 
-    final outputDillUri = fileSystemRoot.resolve('output.dill');
     // [platformDill] must be passed to the Frontend Server with a 'file:'
     // prefix to pass schema checks for Windows drive letters.
     final platformDill = Uri.file(
-      p.join(sdkDir, 'lib', '_internal', 'ddc_outline.dill'),
+      p.join(
+        platformSdk ?? sdkRoot,
+        sdkKernelPath ?? 'lib/_internal/ddc_outline.dill',
+      ),
     );
+    final roots = fileSystemRoots;
     final args = [
       frontendServerSnapshotPath,
-      '--sdk-root=$sdkRoot',
+      '--sdk-root=${platformSdk ?? sdkRoot}',
       '--incremental',
       '--target=dartdevc',
       '--dartdevc-module-format=ddc',
@@ -333,12 +387,9 @@ class PersistentFrontendServer {
       '--experimental-emit-debug-metadata',
       '--filesystem-scheme=$multiRootScheme',
       '--filesystem-root=${fileSystemRoot.toFilePath()}',
-      if (fileSystemRoots != null)
-        for (final root in fileSystemRoots)
-          '--filesystem-root=${root.toFilePath()}',
+      if (roots != null)
+        for (final root in roots) '--filesystem-root=${root.toFilePath()}',
       if (librariesPath != null) '--libraries-spec=$librariesPath',
-      if (platformSdk != null) '--platform-sdk=$platformSdk',
-      if (sdkKernelPath != null) '--sdk-kernel-path=$sdkKernelPath',
       '--platform=$platformDill',
       '--output-dill=${outputDillUri.toFilePath()}',
       '--output-incremental-dill=${outputDillUri.toFilePath()}',
@@ -347,8 +398,12 @@ class PersistentFrontendServer {
       for (final experiment in enabledExperiments)
         '--enable-experiment=$experiment',
     ];
-    final process = await _startWithReaper(dartaotruntimePath, args);
-    final fileSystem = WebMemoryFilesystem(fileSystemRoot, rootPackage);
+    final dartaotruntime = p.join(sdkRoot, 'bin', 'dartaotruntime');
+    final process = await _startWithReaper(
+      dartaotruntime,
+      args,
+      workingDirectory: fileSystemRoot.toFilePath(),
+    );
     final stdoutHandler = StdoutHandler(logger: _log);
     process.stdout
         .transform(utf8.decoder)
@@ -356,15 +411,11 @@ class PersistentFrontendServer {
         .listen(stdoutHandler.handler);
     process.stderr.transform(utf8.decoder).listen(_log.warning);
 
-    return PersistentFrontendServer._(
-      client: StdioFrontendServerClient(
-        process,
-        stdoutHandler,
-        fileSystem,
-        outputDillUri,
-      ),
-      outputDillUri: outputDillUri,
-      fileSystem: fileSystem,
+    _client = StdioFrontendServerClient(
+      process,
+      stdoutHandler,
+      _fileSystem,
+      outputDillUri,
     );
   }
 
@@ -374,8 +425,7 @@ class PersistentFrontendServer {
   /// port and attempts to connect.
   ///
   /// If a connection can't be made, returns `null` and deletes the config file.
-  static Future<_FesSocketConnection?> _tryConnectToFESManager(
-    Uri fileSystemRoot, {
+  Future<_FesSocketConnection?> _tryConnectToFESManager({
     int retries = 10,
   }) async {
     final configFile = File(
@@ -383,45 +433,71 @@ class PersistentFrontendServer {
     );
     if (!configFile.existsSync()) return null;
 
-    int? port;
+    FesServerInfo? serverInfo;
     for (var i = 0; i < retries; i++) {
-      try {
-        final content = await configFile.readAsString();
-        final json = jsonDecode(content) as Map<String, dynamic>;
-        port = json['port'] as int?;
-        if (port != null) break;
-      } catch (_) {}
+      serverInfo = FesServerInfo.fromFile(configFile);
+      if (serverInfo != null) break;
       await Future<void>.delayed(const Duration(milliseconds: 25));
     }
 
-    if (port == null) {
+    if (serverInfo == null) {
       throw StateError(
         'FES config file found at ${configFile.path} '
-        'but port could not be read.',
+        'but server info could not be read.',
       );
     }
 
     try {
-      final socket = await Socket.connect(InternetAddress.loopbackIPv4, port);
+      final socket = await Socket.connect(
+        InternetAddress.loopbackIPv4,
+        serverInfo.port,
+      );
       final socketLines = socket
           .cast<List<int>>()
           .transform(utf8.decoder)
           .transform(const LineSplitter())
           .asBroadcastStream();
+      final authResponseFuture = socketLines.first;
+      socket.writeln(jsonEncode({'token': serverInfo.token}));
+      await socket.flush();
+      final authResponseLine = await authResponseFuture;
+      final authResponse = jsonDecode(authResponseLine) as Map<String, dynamic>;
+      if (authResponse['status'] != 'AUTHENTICATED') {
+        throw StateError(
+          'Failed to authenticate with Frontend Server Manager at port '
+          '${serverInfo.port} (Unauthorized). Please ensure '
+          'build_web_compilers is upgraded to >=4.8.11 and restart.',
+        );
+      }
       return _FesSocketConnection(socket, socketLines);
     } catch (e) {
-      throw StateError('Failed to connect to FES manager at port $port: $e');
+      if (e is StateError) rethrow;
+      throw StateError(
+        'Failed to connect to FES manager at port ${serverInfo.port}: $e',
+      );
     }
   }
 
   /// `Process.start` plus a reaper script so that the child process is killed
   /// if the parent process is killed.
+  ///
+  /// Both processes run in [workingDirectory]. On Windows a process's current
+  /// directory can't be deleted, so it should not be in the package directory.
   static Future<Process> _startWithReaper(
     String command,
-    List<String> arguments,
-  ) async {
-    final result = await Process.start(command, arguments);
-    final reaper = await _startReaper(parentPid: pid, childPid: result.pid);
+    List<String> arguments, {
+    required String workingDirectory,
+  }) async {
+    final result = await Process.start(
+      command,
+      arguments,
+      workingDirectory: workingDirectory,
+    );
+    final reaper = await _startReaper(
+      parentPid: pid,
+      childPid: result.pid,
+      workingDirectory: workingDirectory,
+    );
     if (reaper != null) {
       result.exitCode.then<void>((_) {
         reaper.kill();
@@ -438,6 +514,7 @@ class PersistentFrontendServer {
   static Future<Process?> _startReaper({
     required int parentPid,
     required int childPid,
+    required String workingDirectory,
   }) async {
     try {
       if (Platform.isWindows) {
@@ -446,12 +523,17 @@ class PersistentFrontendServer {
           'Bypass',
           '-Command',
           'Wait-Process -Id $parentPid; Stop-Process -Id $childPid -Force',
-        ]);
+        ], workingDirectory: workingDirectory);
       } else {
-        return await Process.start('bash', [
-          '-c',
-          'while kill -0 $parentPid; do sleep 1; done; kill -9 $childPid',
-        ], mode: ProcessStartMode.detachedWithStdio);
+        return await Process.start(
+          'bash',
+          [
+            '-c',
+            'while kill -0 $parentPid; do sleep 1; done; kill -9 $childPid',
+          ],
+          mode: ProcessStartMode.detachedWithStdio,
+          workingDirectory: workingDirectory,
+        );
       }
     } on ProcessException catch (_) {
       return null;
@@ -459,17 +541,17 @@ class PersistentFrontendServer {
   }
 
   Future<CompilerOutput?> compile(String entrypoint) =>
-      _client.compile(entrypoint);
+      client.compile(entrypoint);
 
   Future<CompilerOutput?> recompile(
     String entrypoint,
     List<Uri> invalidatedFiles,
-  ) => _client.recompile(entrypoint, invalidatedFiles);
+  ) => client.recompile(entrypoint, invalidatedFiles);
 
   Future<CompilerOutput?> recompileRestart(
     String entrypoint,
     List<Uri> invalidatedFiles,
-  ) => _client.recompileRestart(entrypoint, invalidatedFiles);
+  ) => client.recompileRestart(entrypoint, invalidatedFiles);
 
   Future<CompilerOutput?> compileExpressionToJs({
     required String libraryUri,
@@ -480,7 +562,7 @@ class PersistentFrontendServer {
     required Map<String, String> jsFrameValues,
     required String moduleName,
     required String expression,
-  }) => _client.compileExpressionToJs(
+  }) => client.compileExpressionToJs(
     libraryUri: libraryUri,
     scriptUri: scriptUri,
     line: line,
@@ -491,10 +573,10 @@ class PersistentFrontendServer {
     expression: expression,
   );
 
-  Future<void> accept() => _client.accept();
-  Future<String> readOutputFile(String path) => _client.readOutputFile(path);
-  Future<CompilerOutput?> reject() => _client.reject();
-  Future<void> reset() => _client.reset();
+  Future<void> accept() => client.accept();
+  Future<String> readOutputFile(String path) => client.readOutputFile(path);
+  Future<CompilerOutput?> reject() => client.reject();
+  Future<void> reset() => client.reset();
 
   /// Records all modified files into the in-memory filesystem.
   void recordFiles() {
@@ -514,7 +596,14 @@ class PersistentFrontendServer {
     _fileSystem.writeFileToDisk(_fileSystem.jsRootUri, fileName);
   }
 
-  Future<void> shutdown() => _client.shutdown();
+  Future<void> shutdown() async {
+    await _client?.shutdown();
+    _client = null;
+    _startFuture = null;
+    _librariesPath = null;
+    _platformSdk = null;
+    _sdkKernelPath = null;
+  }
 }
 
 class CompilerOutput {
@@ -961,6 +1050,7 @@ class SocketFrontendServerClient implements FrontendServerClient {
               .map(Uri.parse)
               .toList() ??
           [],
+      errorMessage: compileResult['errorMessage'] as String?,
     );
   }
 
@@ -1199,19 +1289,20 @@ class StdioFrontendServerClient implements FrontendServerClient {
     String? content;
     final scratchSpacePrefix = testScratchSpacePathPrefix;
     final index = path.indexOf(scratchSpacePrefix);
-    if (index != -1) {
-      final relativeKey = fesToAssetPath(
-        path.substring(index + scratchSpacePrefix.length),
-        rootPackage: _fileSystem.rootPackageName,
-      );
+    final strippedPath = index != -1
+        ? path.substring(index + scratchSpacePrefix.length)
+        : path;
+    final relativeKey = fesToAssetPath(
+      strippedPath,
+      rootPackage: _fileSystem.rootPackageName,
+    );
 
-      final memoryData =
-          _fileSystem.files[relativeKey] ??
-          _fileSystem.sourcemaps[relativeKey] ??
-          _fileSystem.metadata[relativeKey];
-      if (memoryData != null) {
-        content = utf8.decode(memoryData);
-      }
+    final memoryData =
+        _fileSystem.files[relativeKey] ??
+        _fileSystem.sourcemaps[relativeKey] ??
+        _fileSystem.metadata[relativeKey];
+    if (memoryData != null) {
+      content = utf8.decode(memoryData);
     }
 
     if (content == null) {

@@ -15,6 +15,8 @@ import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
 import 'package:build_runner/src/build_plan/build_step_plan.dart';
+import 'package:build_runner/src/build_plan/phase.dart';
+import 'package:build_test/build_test.dart';
 import 'package:build_test/src/internal_test_reader_writer.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:test/test.dart';
@@ -27,7 +29,7 @@ void main() {
   late BuilderFilesystem builderFilesystem;
 
   BuilderFilesystem createBuilderFilesystem({
-    Map<AssetId, AssetContent> sources = const {},
+    Map<AssetId, AssetContent?> sources = const {},
     Map<AssetId, int> generatedPhases = const {},
   }) {
     final buildStepPlan = BuildStepPlan((b) {
@@ -48,13 +50,15 @@ void main() {
 
         b.declaredOutputsByStep.add(stepId, entry.key);
       }
-      b.buildPhases = BuildPhases([]);
+      b.buildPhases = BuildPhases([
+        for (var i = 0; i < b.buildStepsByPhase.length; i++)
+          InBuildPhase(builder: TestBuilder(), key: 'b$i', package: 'a'),
+      ]);
     });
     return BuilderFilesystem(
       buildPackages: buildPackages,
       buildConfigs: buildConfigs,
-      buildState: BuildState(sources),
-      buildStepPlan: buildStepPlan,
+      buildState: BuildState(buildStepPlan: buildStepPlan, sources: sources),
       readerWriter: readerWriter,
       assetBuilder: (_) async {},
       globEvaluator: (_) async {},
@@ -122,6 +126,7 @@ void main() {
         buildInputs: BuildInputs(
           (b) => b
             ..cleanBuild = false
+            ..sources.add(sourceB)
             ..deletedSources.add(sourceA)
             ..updatedSources.add(sourceB),
         ),
@@ -134,6 +139,25 @@ void main() {
         filesystem.changedPaths,
         unorderedEquals(['/a/lib/a.dart', '/a/lib/b.dart']),
       );
+    });
+
+    test('startBuild cold incremental populates sources with content', () {
+      final sourceA = AssetId('a', 'lib/a.dart');
+      final sourceB = AssetId('a', 'lib/b.dart');
+
+      builderFilesystem = createBuilderFilesystem(
+        sources: {sourceA: AssetContent.string('A1'), sourceB: null},
+      );
+
+      filesystem.startBuild(
+        builderFilesystem: builderFilesystem,
+        buildInputs: BuildInputs((b) => b..cleanBuild = false),
+      );
+
+      expect(filesystem.exists('/a/lib/a.dart'), isTrue);
+      expect(filesystem.read('/a/lib/a.dart'), 'A1');
+      expect(filesystem.exists('/a/lib/b.dart'), isFalse);
+      expect(filesystem.changedPaths, {'/a/lib/a.dart'});
     });
 
     test('mid-build output generation updates cache and changedPaths', () {
@@ -151,18 +175,17 @@ void main() {
       expect(filesystem.exists('/a/lib/out.g.dart'), isFalse);
 
       // Mid-build, the builder generates the output.
-      builderFilesystem.buildState.updateBuildStepResult(
-        builderFilesystem.buildStepPlan.stepForDeclaredOutputOrNull(outputId)!,
-        BuildStepResult(
+      builderFilesystem.addBuildStepResult(
+        step: builderFilesystem.buildStepPlan.stepForDeclaredOutputOrNull(
+          outputId,
+        )!,
+        result: BuildStepResult(
           (b) => b
             ..result = true
-            ..isHidden = false
-            ..outputs[outputId] = AssetContent.string('generated'),
+            ..inArtifactTree = false
+            ..outputs.add(outputId),
         ),
-      );
-      builderFilesystem.updateContent(
-        id: outputId,
-        content: AssetContent.string('generated'),
+        contents: {outputId: AssetContent.string('generated')},
       );
 
       // Advance phase to make it visible.
@@ -186,32 +209,30 @@ void main() {
         buildInputs: BuildInputs((b) => b..cleanBuild = true),
       );
 
-      builderFilesystem.buildState.updateBuildStepResult(
-        builderFilesystem.buildStepPlan.stepForDeclaredOutputOrNull(output1)!,
-        BuildStepResult(
+      builderFilesystem.addBuildStepResult(
+        step: builderFilesystem.buildStepPlan.stepForDeclaredOutputOrNull(
+          output1,
+        )!,
+        result: BuildStepResult(
           (b) => b
             ..result = true
-            ..isHidden = false
-            ..outputs[output1] = AssetContent.string('g1'),
+            ..inArtifactTree = false
+            ..outputs.add(output1),
         ),
-      );
-      builderFilesystem.updateContent(
-        id: output1,
-        content: AssetContent.string('g1'),
+        contents: {output1: AssetContent.string('g1')},
       );
 
-      builderFilesystem.buildState.updateBuildStepResult(
-        builderFilesystem.buildStepPlan.stepForDeclaredOutputOrNull(output2)!,
-        BuildStepResult(
+      builderFilesystem.addBuildStepResult(
+        step: builderFilesystem.buildStepPlan.stepForDeclaredOutputOrNull(
+          output2,
+        )!,
+        result: BuildStepResult(
           (b) => b
             ..result = true
-            ..isHidden = false
-            ..outputs[output2] = AssetContent.string('g2'),
+            ..inArtifactTree = false
+            ..outputs.add(output2),
         ),
-      );
-      builderFilesystem.updateContent(
-        id: output2,
-        content: AssetContent.string('g2'),
+        contents: {output2: AssetContent.string('g2')},
       );
       filesystem.clearChangedPaths();
 

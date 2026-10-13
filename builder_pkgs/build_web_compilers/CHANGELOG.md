@@ -1,3 +1,57 @@
+## 4.8.12
+
+- Start the persistent Frontend Server and its reaper process in the scratch
+  space instead of the package directory, so they do not block deleting it on
+  Windows.
+- Wait for the persistent Frontend Server to exit before deleting the scratch
+  space.
+- Call DDC with an AOT snapshot via `dart compile js-dev` instead of JIT
+  snapshot.
+- Fix `DdcFrontendServerBuilder` to support the same custom sdk build options
+  as `DevCompilerBuilder`.
+
+## 4.8.11
+
+- Allow Dart SDK 3.14.x and 3.15 prerelease.
+- Make `fes_manager` config directory and file user-private.
+- Use a token for socket authentication in `fes_manager`.
+- By default, prefer entrypoints from the `web` directory over
+  entrypoints in other directories such as `test` or `example`.
+- Prefer entrypoints closer to the root of a searched directory,
+  and `main.dart` over other entrypoints alongside it.
+- Accept a list of directories for `web-assets-path`.
+- Fix `DdcFrontendServerBuilder` failing to compile generated entrypoints while
+  building dependency modules.
+- Fix `.web.entrypoint.json` being looked for in the package root rather than
+  where `WebEntrypointMarkerBuilder` writes it, which stopped the recorded
+  entrypoint from ever being restored on a later build.
+- Fix a crash when reading a `.web.entrypoint.json` that records no entrypoint.
+
+## 4.8.10
+
+- Require Dart `3.13.0`.
+
+## 4.8.9
+
+- Fix an issue where `DdcFrontendServerBuilder` accumulates changed files across builds.
+
+## 4.8.8
+
+- Allow all DDC builders to use the scratch space specified by `scratch-space-dir`.
+
+## 4.8.7
+
+- Fix `DdcFrontendServerBuilder` retaining old compile requests.
+
+## 4.8.6
+
+- Allow `analyzer` 14.x, require 13.3.0.
+- Require Dart 3.11.0.
+
+## 4.8.5
+
+- Allow Dart SDK 3.13.x and 3.14 prerelease.
+
 ## 4.8.4
 - Fix deferred rebuilds sometimes crashing `DdcFrontendServerBuilder`.
 
@@ -730,7 +784,7 @@ global_options:
 [analyzer]: https://pub.dev/packages/analyzer
 [front_end]: https://pub.dev/packages/front_end
 [issue tracker]: https://github.com/dart-lang/build/issues/new
-[TestOn]: https://pub.dev/documentation/test/latest/#restricting-tests-to-certain-platforms
+[TestOn]: https://pub.dev/packages/test#restricting-tests-to-certain-platforms
 
 ## 1.2.2
 

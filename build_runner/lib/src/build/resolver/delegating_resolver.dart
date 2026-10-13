@@ -9,6 +9,8 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:async/async.dart';
 import 'package:build/build.dart';
 
+import 'asset_ids.dart';
+
 /// [Resolver] implementation that delegates to a `Future<Resolver>`.
 class DelegatingResolver implements Resolver {
   final Future<Resolver> _delegate;
@@ -17,7 +19,7 @@ class DelegatingResolver implements Resolver {
 
   @override
   Future<bool> isLibrary(AssetId assetId) async =>
-      (await _delegate).isLibrary(assetId);
+      (await _delegate).isLibrary(assetId.normalize());
 
   @override
   Stream<LibraryElement> get libraries {
@@ -37,7 +39,7 @@ class DelegatingResolver implements Resolver {
     AssetId assetId, {
     bool allowSyntaxErrors = false,
   }) async => (await _delegate).compilationUnitFor(
-    assetId,
+    assetId.normalize(),
     allowSyntaxErrors: allowSyntaxErrors,
   );
 
@@ -46,7 +48,7 @@ class DelegatingResolver implements Resolver {
     AssetId assetId, {
     bool allowSyntaxErrors = false,
   }) async => (await _delegate).libraryFor(
-    assetId,
+    assetId.normalize(),
     allowSyntaxErrors: allowSyntaxErrors,
   );
 

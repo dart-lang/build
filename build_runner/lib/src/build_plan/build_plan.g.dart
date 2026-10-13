@@ -14,9 +14,7 @@ class _$BuildPlan extends BuildPlan {
   @override
   final BuildStepPlan buildStepPlan;
   @override
-  final ReaderWriter readerWriter;
-  @override
-  final BuiltList<AssetId> conflictingOutputs;
+  final BuiltList<AssetFile> conflictingOutputs;
   @override
   final BuildInputs buildInputs;
   @override
@@ -31,7 +29,6 @@ class _$BuildPlan extends BuildPlan {
     required this.buildSpec,
     required this.previousBuild,
     required this.buildStepPlan,
-    required this.readerWriter,
     required this.conflictingOutputs,
     required this.buildInputs,
     required this.buildDirs,
@@ -51,7 +48,6 @@ class _$BuildPlan extends BuildPlan {
         buildSpec == other.buildSpec &&
         previousBuild == other.previousBuild &&
         buildStepPlan == other.buildStepPlan &&
-        readerWriter == other.readerWriter &&
         conflictingOutputs == other.conflictingOutputs &&
         buildInputs == other.buildInputs &&
         buildDirs == other.buildDirs &&
@@ -64,7 +60,6 @@ class _$BuildPlan extends BuildPlan {
     _$hash = $jc(_$hash, buildSpec.hashCode);
     _$hash = $jc(_$hash, previousBuild.hashCode);
     _$hash = $jc(_$hash, buildStepPlan.hashCode);
-    _$hash = $jc(_$hash, readerWriter.hashCode);
     _$hash = $jc(_$hash, conflictingOutputs.hashCode);
     _$hash = $jc(_$hash, buildInputs.hashCode);
     _$hash = $jc(_$hash, buildDirs.hashCode);
@@ -79,7 +74,6 @@ class _$BuildPlan extends BuildPlan {
           ..add('buildSpec', buildSpec)
           ..add('previousBuild', previousBuild)
           ..add('buildStepPlan', buildStepPlan)
-          ..add('readerWriter', readerWriter)
           ..add('conflictingOutputs', conflictingOutputs)
           ..add('buildInputs', buildInputs)
           ..add('buildDirs', buildDirs)
@@ -107,15 +101,10 @@ class BuildPlanBuilder implements Builder<BuildPlan, BuildPlanBuilder> {
   set buildStepPlan(BuildStepPlanBuilder? buildStepPlan) =>
       _$this._buildStepPlan = buildStepPlan;
 
-  ReaderWriter? _readerWriter;
-  ReaderWriter? get readerWriter => _$this._readerWriter;
-  set readerWriter(ReaderWriter? readerWriter) =>
-      _$this._readerWriter = readerWriter;
-
-  ListBuilder<AssetId>? _conflictingOutputs;
-  ListBuilder<AssetId> get conflictingOutputs =>
-      _$this._conflictingOutputs ??= ListBuilder<AssetId>();
-  set conflictingOutputs(ListBuilder<AssetId>? conflictingOutputs) =>
+  ListBuilder<AssetFile>? _conflictingOutputs;
+  ListBuilder<AssetFile> get conflictingOutputs =>
+      _$this._conflictingOutputs ??= ListBuilder<AssetFile>();
+  set conflictingOutputs(ListBuilder<AssetFile>? conflictingOutputs) =>
       _$this._conflictingOutputs = conflictingOutputs;
 
   BuildInputsBuilder? _buildInputs;
@@ -144,7 +133,6 @@ class BuildPlanBuilder implements Builder<BuildPlan, BuildPlanBuilder> {
       _buildSpec = $v.buildSpec.toBuilder();
       _previousBuild = $v.previousBuild.toBuilder();
       _buildStepPlan = $v.buildStepPlan.toBuilder();
-      _readerWriter = $v.readerWriter;
       _conflictingOutputs = $v.conflictingOutputs.toBuilder();
       _buildInputs = $v.buildInputs.toBuilder();
       _buildDirs = $v.buildDirs.toBuilder();
@@ -176,11 +164,6 @@ class BuildPlanBuilder implements Builder<BuildPlan, BuildPlanBuilder> {
             buildSpec: buildSpec.build(),
             previousBuild: previousBuild.build(),
             buildStepPlan: buildStepPlan.build(),
-            readerWriter: BuiltValueNullFieldError.checkNotNull(
-              readerWriter,
-              r'BuildPlan',
-              'readerWriter',
-            ),
             conflictingOutputs: conflictingOutputs.build(),
             buildInputs: buildInputs.build(),
             buildDirs: buildDirs.build(),
@@ -195,7 +178,6 @@ class BuildPlanBuilder implements Builder<BuildPlan, BuildPlanBuilder> {
         previousBuild.build();
         _$failedField = 'buildStepPlan';
         buildStepPlan.build();
-
         _$failedField = 'conflictingOutputs';
         conflictingOutputs.build();
         _$failedField = 'buildInputs';

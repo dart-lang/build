@@ -26,8 +26,11 @@ class _$PostProcessBuildStepResultSerializer
     FullType specifiedType = FullType.unspecified,
   }) {
     final result = <Object?>[
-      'hidden',
-      serializers.serialize(object.hidden, specifiedType: const FullType(bool)),
+      'inArtifactTree',
+      serializers.serialize(
+        object.inArtifactTree,
+        specifiedType: const FullType(bool),
+      ),
       'deletedPrimaryInput',
       serializers.serialize(
         object.deletedPrimaryInput,
@@ -36,9 +39,8 @@ class _$PostProcessBuildStepResultSerializer
       'outputs',
       serializers.serialize(
         object.outputs,
-        specifiedType: const FullType(BuiltMap, const [
+        specifiedType: const FullType(BuiltSet, const [
           const FullType(AssetId),
-          const FullType(AssetContent),
         ]),
       ),
       'errors',
@@ -67,8 +69,8 @@ class _$PostProcessBuildStepResultSerializer
       iterator.moveNext();
       final Object? value = iterator.current;
       switch (key) {
-        case 'hidden':
-          result.hidden =
+        case 'inArtifactTree':
+          result.inArtifactTree =
               serializers.deserialize(
                     value,
                     specifiedType: const FullType(bool),
@@ -86,12 +88,12 @@ class _$PostProcessBuildStepResultSerializer
         case 'outputs':
           result.outputs.replace(
             serializers.deserialize(
-              value,
-              specifiedType: const FullType(BuiltMap, const [
-                const FullType(AssetId),
-                const FullType(AssetContent),
-              ]),
-            )!,
+                  value,
+                  specifiedType: const FullType(BuiltSet, const [
+                    const FullType(AssetId),
+                  ]),
+                )!
+                as BuiltSet<Object?>,
           );
           break;
         case 'errors':
@@ -114,11 +116,11 @@ class _$PostProcessBuildStepResultSerializer
 
 class _$PostProcessBuildStepResult extends PostProcessBuildStepResult {
   @override
-  final bool hidden;
+  final bool inArtifactTree;
   @override
   final bool deletedPrimaryInput;
   @override
-  final BuiltMap<AssetId, AssetContent> outputs;
+  final BuiltSet<AssetId> outputs;
   @override
   final BuiltList<String> errors;
 
@@ -127,7 +129,7 @@ class _$PostProcessBuildStepResult extends PostProcessBuildStepResult {
   ]) => (PostProcessBuildStepResultBuilder()..update(updates))._build();
 
   _$PostProcessBuildStepResult._({
-    required this.hidden,
+    required this.inArtifactTree,
     required this.deletedPrimaryInput,
     required this.outputs,
     required this.errors,
@@ -145,7 +147,7 @@ class _$PostProcessBuildStepResult extends PostProcessBuildStepResult {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is PostProcessBuildStepResult &&
-        hidden == other.hidden &&
+        inArtifactTree == other.inArtifactTree &&
         deletedPrimaryInput == other.deletedPrimaryInput &&
         outputs == other.outputs &&
         errors == other.errors;
@@ -154,7 +156,7 @@ class _$PostProcessBuildStepResult extends PostProcessBuildStepResult {
   @override
   int get hashCode {
     var _$hash = 0;
-    _$hash = $jc(_$hash, hidden.hashCode);
+    _$hash = $jc(_$hash, inArtifactTree.hashCode);
     _$hash = $jc(_$hash, deletedPrimaryInput.hashCode);
     _$hash = $jc(_$hash, outputs.hashCode);
     _$hash = $jc(_$hash, errors.hashCode);
@@ -165,7 +167,7 @@ class _$PostProcessBuildStepResult extends PostProcessBuildStepResult {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'PostProcessBuildStepResult')
-          ..add('hidden', hidden)
+          ..add('inArtifactTree', inArtifactTree)
           ..add('deletedPrimaryInput', deletedPrimaryInput)
           ..add('outputs', outputs)
           ..add('errors', errors))
@@ -178,20 +180,19 @@ class PostProcessBuildStepResultBuilder
         Builder<PostProcessBuildStepResult, PostProcessBuildStepResultBuilder> {
   _$PostProcessBuildStepResult? _$v;
 
-  bool? _hidden;
-  bool? get hidden => _$this._hidden;
-  set hidden(bool? hidden) => _$this._hidden = hidden;
+  bool? _inArtifactTree;
+  bool? get inArtifactTree => _$this._inArtifactTree;
+  set inArtifactTree(bool? inArtifactTree) =>
+      _$this._inArtifactTree = inArtifactTree;
 
   bool? _deletedPrimaryInput;
   bool? get deletedPrimaryInput => _$this._deletedPrimaryInput;
   set deletedPrimaryInput(bool? deletedPrimaryInput) =>
       _$this._deletedPrimaryInput = deletedPrimaryInput;
 
-  MapBuilder<AssetId, AssetContent>? _outputs;
-  MapBuilder<AssetId, AssetContent> get outputs =>
-      _$this._outputs ??= MapBuilder<AssetId, AssetContent>();
-  set outputs(MapBuilder<AssetId, AssetContent>? outputs) =>
-      _$this._outputs = outputs;
+  SetBuilder<AssetId>? _outputs;
+  SetBuilder<AssetId> get outputs => _$this._outputs ??= SetBuilder<AssetId>();
+  set outputs(SetBuilder<AssetId>? outputs) => _$this._outputs = outputs;
 
   ListBuilder<String>? _errors;
   ListBuilder<String> get errors => _$this._errors ??= ListBuilder<String>();
@@ -202,7 +203,7 @@ class PostProcessBuildStepResultBuilder
   PostProcessBuildStepResultBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
-      _hidden = $v.hidden;
+      _inArtifactTree = $v.inArtifactTree;
       _deletedPrimaryInput = $v.deletedPrimaryInput;
       _outputs = $v.outputs.toBuilder();
       _errors = $v.errors.toBuilder();
@@ -230,10 +231,10 @@ class PostProcessBuildStepResultBuilder
       _$result =
           _$v ??
           _$PostProcessBuildStepResult._(
-            hidden: BuiltValueNullFieldError.checkNotNull(
-              hidden,
+            inArtifactTree: BuiltValueNullFieldError.checkNotNull(
+              inArtifactTree,
               r'PostProcessBuildStepResult',
-              'hidden',
+              'inArtifactTree',
             ),
             deletedPrimaryInput: BuiltValueNullFieldError.checkNotNull(
               deletedPrimaryInput,

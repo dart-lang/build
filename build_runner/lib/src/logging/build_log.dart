@@ -306,10 +306,11 @@ class BuildLog {
       }
     }
 
-    if (_shouldShowProgressNow || lastTick) {
+    if (_shouldShowProgressNow || firstTick || lastTick) {
       if (_display.displayingBlocks) {
         _display.block(render());
       } else {
+        if (!firstTick && !lastTick) return;
         _display.message(
           Severity.info,
           _renderCompiling(compileType: compileType).toString(),
@@ -346,11 +347,7 @@ class BuildLog {
     _pushPhase(phaseName);
     // Always log if it's the first step in the phase, otherwise throttle.
     if (progress.isStarting || _shouldShowProgressNow) {
-      if (_display.displayingBlocks) {
-        _display.block(render());
-      } else {
-        _display.message(Severity.info, _renderPhase(phaseName).toString());
-      }
+      _displayProgress(phaseName);
     }
   }
 
@@ -362,16 +359,7 @@ class BuildLog {
     final phaseName = phase.name(lazy: lazy);
     _tick();
 
-    // Usually the next step will immediately run and update with more useful
-    // information, so only display if this is the last for the builder.
-    if (progress.isFinished) {
-      if (_display.displayingBlocks) {
-        _display.block(render());
-      } else {
-        _display.message(Severity.info, _renderPhase(phaseName).toString());
-      }
-    }
-
+    _displayProgressIfFinished(progress, phaseName);
     _popPhase();
   }
 
@@ -383,16 +371,7 @@ class BuildLog {
     final phaseName = phase.name(lazy: lazy);
     _tick();
 
-    // Usually the next step will immediately run and update with more useful
-    // information, so only display if this is the last for the builder.
-    if (progress.isFinished) {
-      if (_display.displayingBlocks) {
-        _display.block(render());
-      } else {
-        _display.message(Severity.info, _renderPhase(phaseName).toString());
-      }
-    }
-
+    _displayProgressIfFinished(progress, phaseName);
     _popPhase();
   }
 
@@ -402,12 +381,15 @@ class BuildLog {
     required bool lazy,
     required bool anyOutputs,
     required bool anyChangedOutputs,
+    bool anyFixedOutputs = false,
   }) {
     final phaseName = phase.name(lazy: lazy);
     final progress = _getProgress(phase: phase, lazy: lazy);
     progress.nextInput = null;
     if (anyChangedOutputs) {
       progress.builtNew++;
+    } else if (anyFixedOutputs) {
+      progress.builtFixed++;
     } else if (anyOutputs) {
       progress.builtSame++;
     } else {
@@ -416,17 +398,24 @@ class BuildLog {
 
     _tick();
 
-    // Usually the next step will immediately run and update with more useful
-    // information, so only display if this is the last for the builder.
-    if (progress.isFinished) {
-      if (_display.displayingBlocks) {
-        _display.block(render());
-      } else {
-        _display.message(Severity.info, _renderPhase(phaseName).toString());
-      }
-    }
-
+    _displayProgressIfFinished(progress, phaseName);
     _popPhase();
+  }
+
+  /// Displays the current progress for [phaseName].
+  void _displayProgress(String phaseName) {
+    if (_display.displayingBlocks) {
+      _display.block(render());
+    } else {
+      _display.message(Severity.info, _renderPhase(phaseName).toString());
+    }
+  }
+
+  /// Displays progress if [progress] for [phaseName] has finished.
+  void _displayProgressIfFinished(_PhaseProgress progress, String phaseName) {
+    if (progress.isFinished) {
+      _displayProgress(phaseName);
+    }
   }
 
   /// For `watch` and `serve` modes, logs that a new build (not the initial
@@ -533,7 +522,7 @@ class BuildLog {
   Uri? _targetUriForAssetId(AssetId id, {bool? windows}) {
     String? path;
     try {
-      path = buildPackages?.pathFor(id, hide: false);
+      path = buildPackages?.pathFor(id, inArtifactTree: false);
     } on PackageNotFoundException {
       return null;
     }
@@ -646,8 +635,8 @@ class BuildLog {
         ? _aotCompileProgress!
         : _jitCompileProgress!;
     return AnsiBufferLine([
-      renderDuration(progress.duration),
-      ' ',
+      if (progress.duration != Duration.zero)
+        '${renderDuration(progress.duration)} ',
       AnsiBuffer.bold,
       'compiling builders',
       AnsiBuffer.reset,
@@ -683,6 +672,8 @@ class BuildLog {
       if (progress.notTriggered != 0)
         '${separator()}${progress.notTriggered} not triggered',
       if (progress.builtNew != 0) '${separator()}${progress.builtNew} output',
+      if (progress.builtFixed != 0)
+        '${separator()}${progress.builtFixed} fixed',
       if (progress.builtSame != 0) '${separator()}${progress.builtSame} same',
       if (progress.builtNothing != 0)
         '${separator()}${progress.builtNothing} no-op',
@@ -761,6 +752,10 @@ class _PhaseProgress {
   /// Build steps that ran and output new or different output.
   int builtNew = 0;
 
+  /// Build steps that ran and fixed an output that was modified outside the
+  /// build.
+  int builtFixed = 0;
+
   /// Build steps that ran but output the same output as they did previously.
   int builtSame = 0;
 
@@ -774,7 +769,7 @@ class _PhaseProgress {
 
   /// The number of build steps that have run in this phase.
   int get runCount =>
-      skipped + notTriggered + builtNew + builtSame + builtNothing;
+      skipped + notTriggered + builtNew + builtSame + builtFixed + builtNothing;
 
   /// Whether this progress in displayed.
   ///

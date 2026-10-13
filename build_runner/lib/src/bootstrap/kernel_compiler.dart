@@ -45,6 +45,7 @@ class KernelCompiler implements Compiler {
 
   @override
   Future<CompileResult> compile({Iterable<String>? experiments}) async {
+    await _outputDepfile.updateStamp();
     final dart = Platform.resolvedExecutable;
     final result = await ParentProcess.run(dart, [
       'compile',

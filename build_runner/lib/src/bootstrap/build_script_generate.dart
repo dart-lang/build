@@ -162,7 +162,7 @@ class BuilderFactoriesExpressions {
       final factories = entry.value
           .map((f) => f.render(importPrefixes))
           .join(', ');
-      result.writeln("'${entry.key}': [$factories],");
+      result.writeln("'${_checkKey(entry.key)}': [$factories],");
     }
     return result.toString();
   }
@@ -170,9 +170,19 @@ class BuilderFactoriesExpressions {
   String get renderPostProcessBuilderFactories {
     final result = StringBuffer();
     for (final entry in postProcessBuilderFactories.entries) {
-      result.writeln("'${entry.key}': ${entry.value.render(importPrefixes)},");
+      result.writeln(
+        "'${_checkKey(entry.key)}': ${entry.value.render(importPrefixes)},",
+      );
     }
     return result.toString();
+  }
+
+  /// Throws if [key] is not a valid builder key.
+  String _checkKey(String key) {
+    if (!_validBuilderKeyPattern.hasMatch(key)) {
+      throw ArgumentError('Invalid builder key $key.');
+    }
+    return key;
   }
 }
 
@@ -181,7 +191,7 @@ List<FactoryExpression> _builderFactories(BuilderDefinition definition) {
   final import = _buildScriptImport(definition.import);
   return [
     for (final f in definition.builderFactories)
-      FactoryExpression(import: import, name: f),
+      FactoryExpression(builderKey: definition.key, import: import, name: f),
   ];
 }
 
@@ -190,7 +200,11 @@ FactoryExpression _postProcessBuilderFactory(
   PostProcessBuilderDefinition definition,
 ) {
   final import = _buildScriptImport(definition.import);
-  return FactoryExpression(import: import, name: definition.builderFactory);
+  return FactoryExpression(
+    builderKey: definition.key,
+    import: import,
+    name: definition.builderFactory,
+  );
 }
 
 /// Returns the actual import to put in the generated script based on an import
@@ -209,8 +223,30 @@ class FactoryExpression {
   final String import;
   final String name;
 
-  FactoryExpression({required this.name, required this.import});
+  FactoryExpression({
+    required String builderKey,
+    required this.name,
+    required this.import,
+  }) {
+    if (!_factoryNamePattern.hasMatch(name)) {
+      throw ArgumentError('Invalid factory name for $builderKey.');
+    }
+    if (_invalidInStringLiteral.hasMatch(import)) {
+      throw ArgumentError('Invalid import for $builderKey.');
+    }
+  }
 
   String render(Map<String, String> importPrefixes) =>
       '${importPrefixes[import]}.$name';
 }
+
+/// A top-level function or static method.
+final _factoryNamePattern = RegExp(
+  r'^[a-zA-Z_$][a-zA-Z0-9_$]*(\.[a-zA-Z_$][a-zA-Z0-9_$]*)?$',
+);
+
+/// A builder key.
+final _validBuilderKeyPattern = RegExp(r'^[a-zA-Z0-9_\-:]+$');
+
+/// Characters that are not allowed in a single quoted string literal.
+final _invalidInStringLiteral = RegExp(r"['\\\r\n$]");

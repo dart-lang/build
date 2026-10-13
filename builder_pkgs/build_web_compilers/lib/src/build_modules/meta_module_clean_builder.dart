@@ -43,12 +43,10 @@ class MetaModuleCleanBuilder implements Builder {
 
   @override
   Future build(BuildStep buildStep) async {
-    final assetToModule = (await buildStep.fetchResource(
-      _assetToModule,
-    )).putIfAbsent(_platform, () => {});
-    final assetToPrimary = (await buildStep.fetchResource(
-      _assetToPrimary,
-    )).putIfAbsent(_platform, () => {});
+    final assetToModule = (await buildStep.fetchResource(_assetToModule))
+        .putIfAbsent(_platform, () => {});
+    final assetToPrimary = (await buildStep.fetchResource(_assetToPrimary))
+        .putIfAbsent(_platform, () => {});
     final modules = await _transitiveModules(
       buildStep,
       buildStep.inputId,
