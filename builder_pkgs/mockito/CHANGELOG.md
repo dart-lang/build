@@ -4,6 +4,7 @@
   [#4597](https://github.com/dart-lang/build/issues/4597)
 * Avoid generating fake classes for dummy values of ProtobufEnum subclasses or
   GeneratedMessage subclasses from the protobuf package.
+* Add dummies for more platform value types. 
 
 ## 5.8.1
 
