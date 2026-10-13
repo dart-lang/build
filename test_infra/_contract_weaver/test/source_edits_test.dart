@@ -62,8 +62,19 @@ void main() {
       expect((SourceEdits('ab')..insert(2, 'c')).apply(), 'abc');
     });
 
-    test('returns source text by offsets', () {
-      expect(SourceEdits('abcdef').textAt(1, 4), 'bcd');
+    test('turns line breaks in an edit into spaces', () {
+      expect((SourceEdits('a\nb')..insert(1, 'x\ny')).apply(), 'ax y\nb');
+    });
+
+    test('ends a replacement with the line breaks it replaced', () {
+      expect(
+        (SourceEdits('a\nb\nc')..replace(1, 3, '{\n}')).apply(),
+        'a{ }\n\nc',
+      );
+    });
+
+    test('keeps line breaks in an insert at the end', () {
+      expect((SourceEdits('a')..insert(1, '\nb\n')).apply(), 'a\nb\n');
     });
   });
 }

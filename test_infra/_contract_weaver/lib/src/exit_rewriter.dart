@@ -21,29 +21,51 @@ class ExitRewriter {
   /// A statement that evaluates [expression], runs [checks] with the value
   /// bound to `result`, then returns the value.
   String returnValue(String expression, String checks) {
+    final (:before, :after) = wrapReturn(checks);
+    return '$before$expression$after';
+  }
+
+  /// The code to put before and after an expression to make the statement
+  /// that [returnValue] makes.
+  ///
+  /// Wrapping the expression where it is, rather than copying it, keeps each
+  /// of its lines where it was.
+  ({String before, String after}) wrapReturn(String checks) {
     if (isAsync) {
       final valueType = _futureTypeArgument(returnType);
       final constructor = valueType == null
           ? 'Future.value'
           : 'Future<$valueType>.value';
-      return 'return await ($constructor($expression)'
-          '.then((${_parameterType(valueType)}result) {\n'
-          '$checks'
-          'return result;\n'
-          '}));';
+      return (
+        before: 'return await ($constructor(',
+        after:
+            ')'
+            '.then((${_parameterType(valueType)}result) {\n'
+            '$checks'
+            'return result;\n'
+            '}));',
+      );
     }
     if (_isFutureType(returnType)) {
       final valueType = _futureTypeArgument(returnType);
-      return 'return ($expression)'
-          '.then((${_parameterType(valueType)}result) {\n'
+      return (
+        before: 'return (',
+        after:
+            ')'
+            '.then((${_parameterType(valueType)}result) {\n'
+            '$checks'
+            'return result;\n'
+            '});',
+      );
+    }
+    return (
+      before:
+          'return ((${_parameterType(_syncValueType)}result) {\n'
           '$checks'
           'return result;\n'
-          '});';
-    }
-    return 'return ((${_parameterType(_syncValueType)}result) {\n'
-        '$checks'
-        'return result;\n'
-        '})($expression);';
+          '})(',
+      after: ');',
+    );
   }
 
   /// Whether the function may complete by falling off the end of its body,

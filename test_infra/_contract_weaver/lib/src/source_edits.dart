@@ -21,14 +21,16 @@ class SourceEdits {
   /// Inserts [text] at [offset].
   void insert(int offset, String text) => replace(offset, 0, text);
 
-  /// The source text from [offset] to [end].
-  String textAt(int offset, int end) => source.substring(offset, end);
-
   /// [source] with all edits applied.
   ///
   /// Inserts at the same offset keep the order they were added in, and come
   /// before a replacement at that offset. Throws a [StateError] if two
   /// replacements overlap.
+  ///
+  /// Every line of [source] keeps its line number, so that stack traces
+  /// through the result point at the original: line breaks in an edit become
+  /// spaces, and the edit ends with as many line breaks as it replaced. An
+  /// insert at the very end of [source] is kept as it is.
   String apply() {
     final order = List.generate(_edits.length, (i) => i)
       ..sort((a, b) {
@@ -47,10 +49,17 @@ class SourceEdits {
       }
       result
         ..write(source.substring(position, edit.offset))
-        ..write(edit.text);
+        ..write(_keepingLines(edit));
       position = edit.offset + edit.length;
     }
     result.write(source.substring(position));
     return result.toString();
+  }
+
+  String _keepingLines(SourceEdit edit) {
+    if (edit.offset == source.length) return edit.text;
+    final replaced = source.substring(edit.offset, edit.offset + edit.length);
+    final lineBreaks = '\n'.allMatches(replaced).length;
+    return '${edit.text.replaceAll('\n', ' ')}${'\n' * lineBreaks}';
   }
 }

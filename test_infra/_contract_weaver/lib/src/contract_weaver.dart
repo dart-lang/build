@@ -4,7 +4,6 @@
 
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
-import 'package:dart_style/dart_style.dart';
 
 import 'clause_reader.dart';
 import 'contract_collector.dart';
@@ -29,7 +28,7 @@ class ContractWeaver {
     unit.accept(ContractCollector(edits));
     if (edits.isEmpty) return source;
     _addContractImports(unit, edits);
-    return _format(edits.apply());
+    return _checkParses(edits.apply());
   }
 
   /// Adds an import for each `@ContractImport` on the library directive or a
@@ -74,16 +73,20 @@ class ContractWeaver {
     return library == null ? 0 : library.end;
   }
 
-  String _format(String woven) {
-    try {
-      return DartFormatter(
-        languageVersion: DartFormatter.latestLanguageVersion,
-      ).format(woven);
-    } catch (e) {
-      throw FormatException(
-        'Failed to format woven code: $e\n'
-        'Woven code was:\n$woven',
-      );
-    }
+  /// [woven], after checking that it parses.
+  ///
+  /// The woven code is not formatted, so that its line numbers match the
+  /// original.
+  String _checkParses(String woven) {
+    final errors = parseString(
+      content: woven,
+      throwIfDiagnostics: false,
+    ).errors;
+    if (errors.isEmpty) return woven;
+    throw FormatException(
+      'Woven code has parse errors:\n'
+      '${errors.map((e) => e.message).join('\n')}\n'
+      'Woven code was:\n$woven',
+    );
   }
 }

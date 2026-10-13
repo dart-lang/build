@@ -17,7 +17,6 @@ class Loader {
         Contracts.checking = false;
       }
     }
-
     await Future<void>.delayed(Duration.zero);
     return await (Future<String>.value('contents of $path').then((
       String result,
@@ -43,7 +42,6 @@ class Saver {
   Future<void> save() async {
     await Future<void>.delayed(Duration.zero);
     saved = true;
-
     if (!Contracts.checking) {
       Contracts.checking = true;
       try {
