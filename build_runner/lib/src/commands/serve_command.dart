@@ -69,12 +69,11 @@ class ServeCommand implements BuildRunnerCommand {
         return ExitCode.osError.code;
       }
 
-      final watcher =
-          await WatchCommand(
-            builderFactories: builderFactories,
-            buildOptions: buildOptions,
-            testingOverrides: testingOverrides,
-          ).watch();
+      final watcher = await WatchCommand(
+        builderFactories: builderFactories,
+        buildOptions: buildOptions,
+        testingOverrides: testingOverrides,
+      ).watch();
       if (watcher == null) {
         return ChildProcess.recompileBuildersExitCode;
       }
@@ -87,6 +86,8 @@ class ServeCommand implements BuildRunnerCommand {
             target.dir,
             logRequests: serveOptions.logRequests,
             liveReload: serveOptions.liveReload,
+            restrictToLoopback: server.address.isLoopback,
+            allowedHost: serveOptions.allowedHost,
           ),
         );
       });

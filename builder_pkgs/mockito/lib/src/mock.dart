@@ -66,17 +66,6 @@ final List<dynamic> _capturedArgs = [];
 final List<ArgMatcher> _storedArgs = <ArgMatcher>[];
 final Map<String, ArgMatcher> _storedNamedArgs = <String, ArgMatcher>{};
 
-@Deprecated(
-  'This function is not a supported function, and may be deleted as early as '
-  'Mockito 5.0.0',
-)
-void setDefaultResponse(
-  Mock mock,
-  CallPair<dynamic> Function() defaultResponse,
-) {
-  mock._defaultResponse = defaultResponse;
-}
-
 /// Opt-into [Mock] throwing [NoSuchMethodError] for unimplemented methods.
 ///
 /// The default behavior when not using this is to always return `null`.
@@ -1050,8 +1039,6 @@ class VerificationResult {
   /// The number of calls matched in this verification.
   int callCount;
 
-  bool _testApiMismatchHasBeenChecked = false;
-
   VerificationResult._(this.callCount, this._captured);
 
   /// Assert that the number of calls matches [matcher].
@@ -1064,11 +1051,6 @@ class VerificationResult {
   ///
   /// To assert that a method was called zero times, use [verifyNever].
   void called(dynamic matcher) {
-    if (!_testApiMismatchHasBeenChecked) {
-      // Only execute the check below once. `Invoker.current` may look like a
-      // cheap getter, but it involves Zones and casting.
-      _testApiMismatchHasBeenChecked = true;
-    }
     expect(
       callCount,
       wrapMatcher(matcher),

@@ -43,10 +43,9 @@ List<String> fixSourceMapSources(List<String> uris) {
     final uri = Uri.parse(source);
     // We only want to rewrite multi-root scheme uris.
     if (uri.scheme.isEmpty) return source;
-    final newSegments =
-        uri.pathSegments.first == 'packages'
-            ? uri.pathSegments
-            : uri.pathSegments.skip(1);
+    final newSegments = uri.pathSegments.first == 'packages'
+        ? uri.pathSegments
+        : uri.pathSegments.skip(1);
     return Uri(path: p.url.joinAll(['/', ...newSegments])).toString();
   }).toList();
 }
@@ -105,10 +104,9 @@ class LazyMapping extends Mapping {
         parsedMap['sources'] = fixSourceMapSources(
           (parsedMap['sources'] as List).cast(),
         );
-        final mapping =
-            parse(jsonEncode(parsedMap)) as SingleMapping
-              ..targetUrl = uri
-              ..sourceRoot = '${p.dirname(uri)}/';
+        final mapping = parse(jsonEncode(parsedMap)) as SingleMapping
+          ..targetUrl = uri
+          ..sourceRoot = '${p.dirname(uri)}/';
         _bundle.addMapping(mapping);
       }
     }

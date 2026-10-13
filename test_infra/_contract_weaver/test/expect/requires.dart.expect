@@ -1,0 +1,36 @@
+// Copyright (c) 2026, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
+import 'contracts.dart';
+
+class Calculator {
+  @Requires('x > 0')
+  @Requires('y > 0')
+  int add(int x, int y) {
+    if (!Contracts.checking) {
+      Contracts.checking = true;
+      try {
+        if (!(x > 0)) throw ContractViolation('Precondition failed: x > 0');
+        if (!(y > 0)) throw ContractViolation('Precondition failed: y > 0');
+      } finally {
+        Contracts.checking = false;
+      }
+    }
+
+    return x + y;
+  }
+
+  @Requires('x >= 0')
+  int half(int x) {
+    if (!Contracts.checking) {
+      Contracts.checking = true;
+      try {
+        if (!(x >= 0)) throw ContractViolation('Precondition failed: x >= 0');
+      } finally {
+        Contracts.checking = false;
+      }
+    }
+    return x ~/ 2;
+  }
+}

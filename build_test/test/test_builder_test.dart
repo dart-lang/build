@@ -141,10 +141,9 @@ Future<void> main() async {
           final input = step.inputId;
           await step.writeAsString(input.changeExtension('.temp'), 'out');
 
-          final outputFromOther =
-              input.path.contains('foo')
-                  ? AssetId('a', 'bar.temp')
-                  : AssetId('a', 'foo.temp');
+          final outputFromOther = input.path.contains('foo')
+              ? AssetId('a', 'bar.temp')
+              : AssetId('a', 'foo.temp');
 
           expect(await step.canRead(outputFromOther), isFalse);
         },
@@ -518,6 +517,24 @@ import 'package:glob/glob.dart';
       contains(AssetId('a', 'a.txt.copy')),
     );
   });
+
+  test(
+    'output is flattened with `flattenOutput` and passed `readerWriter`',
+    () async {
+      final readerWriter = TestReaderWriter(rootPackage: 'a');
+      final result = await testBuilder(
+        TestBuilder(),
+        {'a|a.txt': ''},
+        outputs: {'a|a.txt.copy': ''},
+        flattenOutput: true,
+        readerWriter: readerWriter,
+      );
+      expect(
+        result.readerWriter.testing.assets,
+        contains(AssetId('a', 'a.txt.copy')),
+      );
+    },
+  );
 }
 
 /// Concatenates the contents of multiple text files into a single output.

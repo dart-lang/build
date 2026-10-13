@@ -5,16 +5,20 @@
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:build_runner/src/build/asset_content.dart';
 import 'package:build_runner/src/build/build_state/build_state.dart';
 import 'package:build_runner/src/build/build_state/build_step_id.dart';
 import 'package:build_runner/src/build/build_state/build_step_result.dart';
 import 'package:build_runner/src/build/build_state/post_process_build_step_id.dart';
 import 'package:build_runner/src/build/build_state/post_process_build_step_result.dart';
+import 'package:build_runner/src/build_plan/build_package.dart';
+import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
 import 'package:build_runner/src/build_plan/build_step_plan.dart';
 import 'package:build_runner/src/build_plan/phase.dart';
 import 'package:build_runner/src/commands/serve/server.dart';
 import 'package:build_runner/src/io/build_output_reader.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 
@@ -22,35 +26,49 @@ import '../../common/common.dart';
 
 void main() {
   late AssetHandler handler;
-  late BuildOutputReader reader;
   late InternalTestReaderWriter readerWriter;
   late BuildState buildState;
   late BuildStepPlan buildStepPlan;
+  late BuildPackages buildPackages;
 
   setUp(() async {
-    buildState = BuildState.create(sources: <AssetId>{});
     readerWriter = InternalTestReaderWriter();
     buildStepPlan = BuildStepPlan(
       (BuildStepPlanBuilder b) =>
           b..buildPhases = BuildPhases(const <InBuildPhase>[]),
     );
-    reader = BuildOutputReader.buildStateOnly(
-      readerWriter: readerWriter,
-      buildState: buildState,
-      buildStepPlan: buildStepPlan,
+    buildState = BuildState(buildStepPlan: buildStepPlan, sources: const {});
+    buildPackages = BuildPackages.singlePackageBuild('a', [
+      BuildPackage.forTesting(name: 'a', isOutput: true),
+    ]);
+    handler = AssetHandler(
+      () async => BuildOutputReader(
+        buildPackages: buildPackages,
+        readerWriter: readerWriter,
+        buildState: buildState.toFinishedBuildState(),
+      ),
+      'a',
     );
-    handler = AssetHandler(() async => reader, 'a');
   });
 
   void addAsset(String id, String content, {bool deleted = false}) {
     final parsedId = AssetId.parse(id);
     if (deleted) {
       buildState.addPostProcessBuildStepResult(
-        PostProcessBuildStepId(input: parsedId, actionNumber: 1),
-        PostProcessBuildStepResult(hidden: true, deletedPrimaryInput: true),
+        step: PostProcessBuildStepId(input: parsedId, actionNumber: 1),
+        result: PostProcessBuildStepResult(
+          inArtifactTree: true,
+          deletedPrimaryInput: true,
+        ),
       );
     }
-    buildState.addSourceForTest(parsedId, digest: computeDigest(parsedId, 'a'));
+    buildState.addSourceForTest(
+      parsedId,
+      content: AssetContent.string(
+        content,
+        digest: computeDigest(parsedId, content),
+      ),
+    );
     readerWriter.testing.writeString(parsedId, content);
   }
 
@@ -132,20 +150,30 @@ void main() {
     final outputId = AssetId('a', 'web/main.ddc.js');
     final buildStepId = BuildStepId(primaryInput: primaryId, phaseNumber: 0);
     final buildStepPlan = BuildStepPlan((BuildStepPlanBuilder b) {
-      b.buildPhases = BuildPhases(const <InBuildPhase>[]);
+      b.buildPhases = BuildPhases([
+        InBuildPhase(builder: TestBuilder(), key: 'b1', package: 'a'),
+      ]);
+      b.buildStepsByPhase.add(BuiltList<BuildStepId>([buildStepId]));
       b.buildStepsByDeclaredOutput.addAll({outputId: buildStepId});
+      b.declaredOutputsByStep.add(buildStepId, outputId);
     });
-    reader = BuildOutputReader.buildStateOnly(
-      readerWriter: readerWriter,
-      buildState: buildState,
+    final buildState = BuildState(
       buildStepPlan: buildStepPlan,
+      sources: const {},
     );
-    handler = AssetHandler(() async => reader, 'a');
     final stepResult = BuildStepResult((b) {
       b.result = false;
-      b.isHidden = false;
+      b.inArtifactTree = false;
     });
-    buildState.updateBuildStepResult(buildStepId, stepResult);
+    buildState.addBuildStepResult(step: buildStepId, result: stepResult);
+    handler = AssetHandler(
+      () async => BuildOutputReader(
+        buildPackages: buildPackages,
+        readerWriter: readerWriter,
+        buildState: buildState.toFinishedBuildState(),
+      ),
+      'a',
+    );
 
     final response = await handler.handle(
       Request('GET', Uri.parse('http://server.com/main.ddc.js')),

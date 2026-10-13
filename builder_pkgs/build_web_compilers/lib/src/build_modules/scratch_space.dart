@@ -19,7 +19,14 @@ final _logger = Logger('BuildModules');
 
 /// A shared [ScratchSpace] for ddc and analyzer workers that persists
 /// throughout builds.
-final scratchSpace = ScratchSpace();
+ScratchSpace? _scratchSpace;
+ScratchSpace get scratchSpace => _scratchSpace ??= ScratchSpace();
+
+void configureScratchSpace(String? path) {
+  if (path != null) {
+    _scratchSpace = ScratchSpace.existing(Directory(path));
+  }
+}
 
 /// A shared [Resource] for a [ScratchSpace], which cleans up the contents of
 /// the [ScratchSpace] in dispose, but doesn't delete it entirely.
@@ -104,8 +111,8 @@ String _scratchSpacePackageConfig(String rootConfig, Uri packageConfigUri) {
       'version 2 is supported.',
     );
   }
-  final packages =
-      (parsedRootConfig['packages'] as List).cast<Map<String, dynamic>>();
+  final packages = (parsedRootConfig['packages'] as List)
+      .cast<Map<String, dynamic>>();
   var foundRoot = false;
   for (final package in packages) {
     var rootUri = packageConfigUri.resolve(package['rootUri'] as String);

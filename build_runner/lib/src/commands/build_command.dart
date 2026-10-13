@@ -10,6 +10,7 @@ import '../build/build_result.dart';
 import '../build/build_series.dart';
 import '../build_plan/build_options.dart';
 import '../build_plan/build_plan.dart';
+import '../build_plan/build_spec.dart';
 import '../build_plan/builder_factories.dart';
 import '../build_plan/testing_overrides.dart';
 import '../logging/build_log.dart';
@@ -47,18 +48,33 @@ class BuildCommand implements BuildRunnerCommand {
       b.onLog = testingOverrides.onLog;
     });
 
-    final buildPlan = await BuildPlan.load(
+    final buildSpec = await BuildSpec.load(
       builderFactories: builderFactories,
       buildOptions: buildOptions,
       testingOverrides: testingOverrides,
     );
-    await buildPlan.deleteFilesAndFolders();
-    if (buildPlan.restartIsNeeded) {
+    final buildPlan = await BuildPlan.load(buildSpec);
+    if (buildSpec.restartIsNeeded) {
       return BuildResult.buildScriptChanged();
     }
 
     final buildSeries = BuildSeries(buildPlan);
-    final result = await buildSeries.run({}, recentlyBootstrapped: true);
+    var result = await buildSeries.run({}, recentlyBootstrapped: true);
+
+    // Build once more, now with `part` directives added or removed. Once is
+    // enough because the first build edits every library it finds. If the
+    // rerun still finds a library to edit, for example because it changed
+    // during the first build, it edits it and fails; the next build succeeds.
+    final editedLibraries = {
+      ...result.librariesMissingPartDirective.keys,
+      ...result.librariesWithUnusedPartDirective.keys,
+    };
+    if (editedLibraries.isNotEmpty && buildOptions.outputStrategy != .verify) {
+      result = await buildSeries.run(
+        editedLibraries,
+        recentlyBootstrapped: false,
+      );
+    }
     await buildSeries.close();
     return result;
   }

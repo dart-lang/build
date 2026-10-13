@@ -45,14 +45,12 @@ class Config {
       (e) => e.packageName == argResults['generator'],
     ),
     rootDirectory: Directory(argResults['root-directory'] as String),
-    sizes:
-        argResults['size'] == null
-            ? [1, 100, 250, 500, 750, 1000]
-            : [int.parse(argResults['size'] as String)],
-    shapes:
-        argResults['shape'] == null
-            ? Shape.values
-            : [Shape.values.singleWhere((e) => e.name == argResults['shape'])],
+    sizes: argResults['size'] == null
+        ? [1, 100, 250, 500, 750, 1000]
+        : [int.parse(argResults['size'] as String)],
+    shapes: argResults['shape'] == null
+        ? Shape.values
+        : [Shape.values.singleWhere((e) => e.name == argResults['shape'])],
     mostlyNoCodegen: argResults['mostly-no-codegen'] as bool,
     web: argResults['web'] as bool,
   );

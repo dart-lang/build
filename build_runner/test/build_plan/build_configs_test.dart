@@ -12,6 +12,7 @@ import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/placeholders.dart';
 import 'package:build_runner/src/build_plan/testing_overrides.dart';
+import 'package:build_runner/src/logging/build_log.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
@@ -22,8 +23,14 @@ void main() {
   group('BuildConfigs.load', () {
     test('warns if required sources are missing', () {
       final logs = <LogRecord>[];
-      final listener = Logger.root.onRecord.listen(logs.add);
-      addTearDown(listener.cancel);
+      buildLog.configuration = buildLog.configuration.rebuild(
+        (b) => b.onLog = logs.add,
+      );
+      addTearDown(() {
+        buildLog.configuration = buildLog.configuration.rebuild(
+          (b) => b.onLog = null,
+        );
+      });
 
       final packageB = BuildPackage(
         name: 'b',
@@ -48,27 +55,26 @@ void main() {
         buildPackages: buildPackages,
         testingOverrides: TestingOverrides(
           defaultRootPackageSources: ['**'].build(),
-          buildConfig:
+          buildConfig: {
+            'a': BuildConfig.fromMap(
+              'a',
+              ['b'],
               {
-                'a': BuildConfig.fromMap(
-                  'a',
-                  ['b'],
-                  {
-                    'targets': {
-                      r'$default': {
-                        'sources': ['lib/**'],
-                      },
-                    },
+                'targets': {
+                  r'$default': {
+                    'sources': ['lib/**'],
                   },
-                ),
-                'b': BuildConfig.fromMap('b', [], {
-                  'targets': {
-                    r'$default': {
-                      'sources': ['web/**'],
-                    },
-                  },
-                }),
-              }.build(),
+                },
+              },
+            ),
+            'b': BuildConfig.fromMap('b', [], {
+              'targets': {
+                r'$default': {
+                  'sources': ['web/**'],
+                },
+              },
+            }),
+          }.build(),
         ),
       );
 
@@ -174,14 +180,13 @@ void main() {
         buildPackages: buildPackages,
         testingOverrides: TestingOverrides(
           defaultRootPackageSources: ['**'].build(),
-          buildConfig:
-              {
-                'b': BuildConfig.parse(
-                  'b',
-                  [],
-                  'additional_public_assets: ["test/**"]',
-                ),
-              }.build(),
+          buildConfig: {
+            'b': BuildConfig.parse(
+              'b',
+              [],
+              'additional_public_assets: ["test/**"]',
+            ),
+          }.build(),
         ),
       );
 
@@ -207,19 +212,18 @@ void main() {
       final buildConfigs = await BuildConfigs.load(
         buildPackages: buildPackages,
         testingOverrides: TestingOverrides(
-          buildConfig:
-              {
-                'a': BuildConfig.fromMap('a', [], {
-                  'targets': {
-                    'another': <String, dynamic>{},
-                    '\$default': {
-                      'sources': {
-                        'exclude': ['lib/src/**'],
-                      },
-                    },
+          buildConfig: {
+            'a': BuildConfig.fromMap('a', [], {
+              'targets': {
+                'another': <String, dynamic>{},
+                '\$default': {
+                  'sources': {
+                    'exclude': ['lib/src/**'],
                   },
-                }),
-              }.build(),
+                },
+              },
+            }),
+          }.build(),
         ),
       );
 
@@ -234,19 +238,18 @@ void main() {
       final buildConfigs = await BuildConfigs.load(
         buildPackages: buildPackages,
         testingOverrides: TestingOverrides(
-          buildConfig:
-              {
-                'a': BuildConfig.fromMap('a', [], {
-                  'targets': {
-                    'another': <String, dynamic>{},
-                    '\$default': {
-                      'sources': {
-                        'exclude': ['lib/src/**'],
-                      },
-                    },
+          buildConfig: {
+            'a': BuildConfig.fromMap('a', [], {
+              'targets': {
+                'another': <String, dynamic>{},
+                '\$default': {
+                  'sources': {
+                    'exclude': ['lib/src/**'],
                   },
-                }),
-              }.build(),
+                },
+              },
+            }),
+          }.build(),
         ),
       );
       expect(

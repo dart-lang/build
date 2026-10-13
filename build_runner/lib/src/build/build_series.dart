@@ -6,20 +6,27 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
+import 'package:crypto/crypto.dart';
 import 'package:watcher/watcher.dart';
 
+import '../build_plan/asset_file.dart';
 import '../build_plan/build_directory.dart';
 import '../build_plan/build_filter.dart';
 import '../build_plan/build_plan.dart';
+import '../build_plan/output_strategy.dart';
 import '../commands/watch/asset_change.dart';
+import '../commands/watch/filtered_changes.dart';
 import '../constants.dart';
 import '../io/asset_tracker.dart';
-import '../io/generated_asset_hider.dart';
-import '../io/reader_writer.dart';
+import '../io/build_output_reader.dart';
+import '../io/create_merged_dir.dart';
 import '../logging/build_log.dart';
+import 'asset_content.dart';
+import 'br_outputs.dart';
 import 'build.dart';
 import 'build_result.dart';
-import 'build_state/build_state.dart';
+import 'build_state/asset_graph_json.dart';
+import 'part_directives.dart';
 
 /// A series of builds with the same configuration.
 ///
@@ -29,56 +36,39 @@ import 'build_state/build_state.dart';
 /// This happens either across multiple invocations of `build_runner build` or
 /// within one long-running `build_runner watch` or `build_runner serve`.
 ///
-/// In both cases, the `BuildState` is serialized after the build, to give the
-/// starting state for the next `build_runner build`. For `watch` and `serve`
-/// this serialized state is not actually used: the `BuildState` instance
-/// already in memory is used directly.
+/// In both cases, `FinishedBuildState` is output by the build to give the
+/// starting state for the next build. For `build_runner build` this state is
+/// partly serialized to disk as `IncrementalBuildState`. The next build can
+/// turn it back into `FinishedBuildState` by reconstructing its
+/// `BuildStepPlan`. For `watch` and `serve` the `FinishedBuildState` is kept in
+/// memory.
 class BuildSeries {
   final ResourceManager _resourceManager = ResourceManager();
-  final ReaderWriter _readerWriter;
-
   BuildPlan _buildPlan;
-  BuildState _buildState;
-
-  /// For the first build only, assets that were updated since the previous
-  /// serialized build state.
-  ///
-  /// Null after the first build, or if there was no serialized build state, or
-  /// if the serialized build state was discarded.
-  BuiltSet<AssetId>? _updatesFromLoad;
 
   final StreamController<BuildResult> _buildResultsController =
       StreamController.broadcast();
 
   final Completer<void> _closingCompleter = Completer();
 
+  /// Deletes that are part of build output, so the resulting file watch events
+  /// can be ignored.
+  ///
+  /// An id is removed when its delete is seen, and also when the file is
+  /// written again, because then it is no longer absent and there is no delete
+  /// left to ignore. Removing on write matters because the delete event may
+  /// never arrive: a file that is deleted and written again is reported as a
+  /// modification. A stale id would swallow the next delete of that file, which
+  /// is most likely the user deleting generated output to force a rebuild.
+  final Set<AssetId> _expectedDeletes = {};
+
   /// Whether the next build is the first build.
   bool firstBuild = true;
 
-  BuildSeries._({
-    required BuildPlan buildPlan,
-    required BuildState buildState,
-    required ReaderWriter readerWriter,
-    required BuiltSet<AssetId>? updatesFromLoad,
-  }) : _buildPlan = buildPlan,
-       _buildState = buildState,
-       _readerWriter = readerWriter,
-       _updatesFromLoad = updatesFromLoad;
+  BuildSeries._({required BuildPlan buildPlan}) : _buildPlan = buildPlan;
 
   factory BuildSeries(BuildPlan buildPlan) {
-    final buildState = buildPlan.takeBuildState();
-    final readerWriter = buildPlan.readerWriter.copyWith(
-      generatedAssetHider:
-          buildPlan.testingOverrides.flattenOutput
-              ? const NoopGeneratedAssetHider()
-              : buildPlan.buildStepPlan,
-    );
-    return BuildSeries._(
-      buildPlan: buildPlan,
-      buildState: buildState,
-      readerWriter: readerWriter,
-      updatesFromLoad: buildPlan.updates,
-    );
+    return BuildSeries._(buildPlan: buildPlan);
   }
 
   /// Broadcast stream of build results.
@@ -90,101 +80,147 @@ class BuildSeries {
   /// Then, no further builds are allowed.
   Future<void> get closing => _closingCompleter.future;
 
-  /// Filters [changes] to only changes that might trigger a build.
-  ///
-  /// Pass expected deletes in [expectedDeletes]. Expected deletes do not
-  /// trigger a build. A delete that matches is removed from the set.
-  Future<List<AssetChange>> filterChanges(
-    List<AssetChange> changes,
-    Set<AssetId> expectedDeletes,
-  ) async {
-    final result = <AssetChange>[];
+  OutputStrategy get _outputStrategy =>
+      _buildPlan.buildSpec.buildOptions.outputStrategy;
+
+  /// Filters [changes], separating them into [FilteredChanges.accepted] which
+  /// trigger a build and [FilteredChanges.rejected] which do not.
+  Future<FilteredChanges> filterChanges(List<AssetChange> changes) async {
+    final previousBuild = _buildPlan.previousBuild;
+    final accepted = <AssetChange>[];
+    final rejected = <AssetChange>[];
     for (final change in changes) {
       final id = change.id;
 
       // Changes to the entrypoint are handled via depfiles.
-      if (_buildPlan.bootstrapper.isCompileDependency(
-        _buildPlan.buildPackages.pathFor(id, hide: false),
+      if (_buildPlan.buildSpec.bootstrapper.isCompileDependency(
+        _buildPlan.buildSpec.buildPackages.pathFor(id, inArtifactTree: false),
       )) {
-        result.add(change);
+        accepted.add(change);
         continue;
       }
+
+      // Ignore deletes and writes done by `build_runner`, for output strategies
+      // that do deletes and writes.
+      //
+      // Watch events say that a path changed, not what happened to it:
+      // `package:watcher` guarantees only that applying its events eventually
+      // reproduces the state of the filesystem. Events are not one per
+      // operation, and a path that is deleted and written again is reported as
+      // a modification. So neither check below may assume that an event it
+      // expects will arrive; each decides from the state of the file.
+      if (_outputStrategy == .overwrite || _outputStrategy == .keep) {
+        // Ignore deletes done by `build_runner`. The id is dropped from
+        // `_expectedDeletes` when the file is written again, so a delete that
+        // was never reported cannot suppress a later one.
+        if (change.type == .REMOVE && _expectedDeletes.remove(id)) {
+          continue;
+        }
+
+        // Ignore writes done by `build_runner`. Read the content rather than
+        // trusting the event: one event can stand for a write by
+        // `build_runner` followed by an external change, and ignoring it would
+        // lose the external change.
+        if ((change.type == .ADD || change.type == .MODIFY) &&
+            (_buildPlan.buildStepPlan.isDeclaredOutput(id) || id.isBrOutput)) {
+          final expectedDigest = previousBuild.digestOf(id);
+          final inArtifactTree = id.isBrOutput
+              ? false
+              : _buildPlan.buildStepPlan.isDeclaredOutputInArtifactTree(id);
+
+          if (expectedDigest != null) {
+            try {
+              final bytes = await _buildPlan.readerWriter.readAsBytes(
+                id,
+                inArtifactTree: inArtifactTree,
+              );
+              // TODO(davidmorgan): alternative is to track location in events.
+              final conflictingExists = await _buildPlan.readerWriter.canRead(
+                id,
+                inArtifactTree: !inArtifactTree,
+              );
+              if (!conflictingExists && md5.convert(bytes) == expectedDigest) {
+                continue;
+              }
+            } catch (_) {}
+          }
+        }
+      }
+
       if (id.path.startsWith(entrypointDirectoryPath)) {
         continue;
       }
 
-      // Ignore any expected delete once.
-      if (change.type == ChangeType.REMOVE && expectedDeletes.remove(id)) {
-        continue;
-      }
-
       if (_isBuildConfiguration(id)) {
-        result.add(change);
+        accepted.add(change);
         continue;
       }
 
-      final isFile = _buildState.isFile(
-        buildStepPlan: _buildPlan.buildStepPlan,
-        id: id,
-      );
-      if (!isFile) {
-        // Ignore under `.dart_tool/build`.
-        if (id.path.startsWith(cacheDirectoryPath)) continue;
+      final isKnownAsset = previousBuild.isKnownAsset(id);
+      if (!isKnownAsset) {
+        if (id.path.startsWith(hiddenBuildDirectoryPath)) {
+          continue;
+        }
 
         // Ignore modifications and deletes.
-        if (change.type != ChangeType.ADD) continue;
+        if (change.type != .ADD) continue;
 
         // It's an add: handle if it's a new input.
-        if (_buildPlan.buildConfigs.anyMatchesAsset(id)) {
-          result.add(change);
+        if (_buildPlan.buildSpec.buildConfigs.anyMatchesAsset(id)) {
+          accepted.add(change);
         }
         continue;
       }
 
       // Changes to files that are part of the build.
 
-      // If not copying to a merged output directory, ignore changes to files
-      // with no outputs.
-      if (!_buildPlan.buildOptions.anyMergedOutputDirectory &&
-          !_buildState.isMissingSource(id) &&
-          _buildState.digestOf(
-                id: id,
-                buildStepPlan: _buildPlan.buildStepPlan,
-              ) ==
-              null) {
+      // If not copying to a merged output directory, ignore modifications to
+      // sources with no outputs.
+      if (!_buildPlan.buildSpec.buildOptions.anyMergedOutputDirectory &&
+          !id.isBrOutput &&
+          previousBuild.isSource(id) &&
+          previousBuild.digestOf(id) == null) {
+        // If its existence was tracked, removal invalidates the build.
+        if (change.type == .REMOVE && previousBuild.wasTrackedInput(id)) {
+          accepted.add(change);
+        } else {
+          rejected.add(change);
+        }
         continue;
       }
 
-      // Ignore creation or modification of outputs.
-      if (_buildPlan.buildStepPlan.isDeclaredOutput(id) &&
-          change.type != ChangeType.REMOVE) {
+      // Handle modifications and creations of outputs.
+      if ((_buildPlan.buildStepPlan.isDeclaredOutput(id) || id.isBrOutput) &&
+          change.type != .REMOVE &&
+          _outputStrategy == .keep) {
         continue;
       }
 
-      // It's an add of a "missing source" or a deletion of an input.
-      result.add(change);
+      // It's a deletion of an input or an update.
+      accepted.add(change);
     }
 
-    return result;
+    return FilteredChanges(accepted: accepted, rejected: rejected);
   }
 
   bool _isBuildConfiguration(AssetId id) =>
       id.path == 'build.yaml' ||
       id.path.endsWith('.build.yaml') ||
-      (id.package == _buildPlan.buildPackages.outputRoot &&
-          id.path == 'build.${_buildPlan.buildOptions.configKey}.yaml');
+      (id.package == _buildPlan.buildSpec.buildPackages.outputRoot &&
+          id.path ==
+              'build.${_buildPlan.buildSpec.buildOptions.configKey}.yaml');
 
   Future<List<WatchEvent>> checkForChanges() async {
     final updates = await AssetTracker(
       _buildPlan.readerWriter,
-      _buildPlan.buildPackages,
-      _buildPlan.buildConfigs,
-    ).collectChanges(
-      buildStepPlan: _buildPlan.buildStepPlan,
-      buildState: _buildState,
-    );
+      _buildPlan.buildSpec.buildPackages,
+      _buildPlan.buildSpec.buildConfigs,
+    ).collectChanges(previousBuild: _buildPlan.previousBuild);
+
     return List.of(
-      updates.entries.map((entry) => WatchEvent(entry.value, '${entry.key}')),
+      updates.entries.map(
+        (entry) => WatchEvent(entry.value, '${entry.key.id}'),
+      ),
     );
   }
 
@@ -196,6 +232,21 @@ class BuildSeries {
   /// If a build has run, the most recent build result.
   Future<BuildResult> get currentBuildResult =>
       _currentBuildResult ?? buildResults.first;
+
+  /// Closes the series because the build script must restart.
+  ///
+  /// The result keeps the previous build's outputs, so until shutdown an asset
+  /// request is served from them instead of failing.
+  Future<BuildResult> _exitForRestart() async {
+    final previousResult = await _currentBuildResult;
+    final result = BuildResult.buildScriptChanged(
+      buildOutputReader: previousResult?.buildOutputReader,
+    );
+    _currentBuildResult = Future.value(result);
+    _buildResultsController.add(result);
+    await close();
+    return result;
+  }
 
   /// Runs a single build.
   ///
@@ -223,61 +274,328 @@ class BuildSeries {
         throw StateError('`recentlyBootstrapped` but updates not empty.');
       }
     } else {
-      final kernelFreshness = await _buildPlan.bootstrapper
+      final kernelFreshness = await _buildPlan.buildSpec.bootstrapper
           .checkCompileFreshness(digestsAreFresh: false);
       if (!kernelFreshness.outputIsFresh) {
-        final result = BuildResult.buildScriptChanged();
-        _buildResultsController.add(result);
-        await close();
-        return result;
+        return _exitForRestart();
       }
     }
 
     if (updates.any(_isBuildConfiguration)) {
       _buildPlan = await _buildPlan.reload();
-      await _buildPlan.deleteFilesAndFolders();
       // A config change might have caused new builders to be needed, which
       // needs a restart to change the build script.
-      if (_buildPlan.restartIsNeeded) {
-        final result = BuildResult.buildScriptChanged();
-        _buildResultsController.add(result);
-        await close();
-        return result;
+      if (_buildPlan.buildSpec.restartIsNeeded) {
+        return _exitForRestart();
       }
-      _buildState = _buildPlan.takeBuildState();
     }
 
-    buildDirs ??= _buildPlan.buildOptions.buildDirs;
-    buildFilters ??= _buildPlan.buildOptions.buildFilters;
-    if (firstBuild) {
-      if (_updatesFromLoad != null) {
-        updates = _updatesFromLoad!.toSet()..addAll(updates);
-        _updatesFromLoad = null;
-      }
-    } else {
-      if (_updatesFromLoad != null) {
-        throw StateError('Only first build can have updates from load.');
+    buildDirs ??= _buildPlan.buildDirs;
+    buildFilters ??= _buildPlan.buildFilters;
+    final buildDirsOrFiltersChanged =
+        buildDirs != _buildPlan.buildDirs ||
+        buildFilters != _buildPlan.buildFilters;
+    _buildPlan = _buildPlan.rebuild(
+      (b) => b
+        ..buildDirs.replace(buildDirs!)
+        ..buildFilters.replace(buildFilters!),
+    );
+
+    final previousResult = await _currentBuildResult;
+
+    if (!firstBuild || updates.isNotEmpty) {
+      final filesToCheck = <AssetFile>{
+        for (final id in updates) AssetFile.atPackagePath(id),
+        for (final id in updates) AssetFile.inArtifactTree(id),
+      };
+      _buildPlan = await _buildPlan.updateForFileChanges(filesToCheck);
+
+      // The scan found nothing that can affect any output, so there is no
+      // build to run. Keep the updated plan: it holds the content that was
+      // just read, so the next change is compared against it.
+      //
+      // Only a successful previous build can be reused. A failed build can
+      // leave work unfinished, and under `--only-check` it fails because disk
+      // disagrees with a plan that the scan still reports as unchanged.
+      //
+      // Nothing was written, so the result reports no outputs. Consumers use
+      // that to decide which assets to refresh.
+      if (!firstBuild &&
+          previousResult != null &&
+          previousResult.status == BuildStatus.success &&
+          !buildDirsOrFiltersChanged &&
+          _buildPlan.outputsAreUpToDate) {
+        return previousResult.outputs.isEmpty
+            ? previousResult
+            : previousResult.copyWith(outputs: BuiltList());
       }
     }
 
     if (!firstBuild) buildLog.nextBuild();
+
     final build = Build(
-      buildPlan: _buildPlan.copyWith(
-        buildDirs: buildDirs,
-        buildFilters: buildFilters,
-      ),
-      buildState: _buildState,
-      readerWriter: _readerWriter,
+      buildPlan: _buildPlan,
       resourceManager: _resourceManager,
     );
     if (firstBuild) firstBuild = false;
 
-    _currentBuildResult = build.run(updates);
-    final result = await _currentBuildResult!;
-    _buildPlan = build.buildPlan.updateForResult(
-      previousPhasedAssetDeps: result.phasedAssetDeps,
+    final previousReader = previousResult?.buildOutputReader;
+    _currentBuildResult = _runBuildAndWrite(
+      build,
+      previousReader: previousReader,
     );
+    final result = await _currentBuildResult!;
     _buildResultsController.add(result);
+    return result;
+  }
+
+  Future<BuildResult> _runBuildAndWrite(
+    Build build, {
+    BuildOutputReader? previousReader,
+  }) async {
+    var result = await build.run();
+    if (previousReader != null && result.buildOutputReader != null) {
+      result.buildOutputReader!.sourcesConsumedOutsideBuild.addAll(
+        previousReader.sourcesConsumedOutsideBuild,
+      );
+    }
+
+    if (_outputStrategy == .verify) {
+      if (result.status == .success) {
+        result = await _verifyBuildOutput(result);
+      }
+    } else {
+      await _writeBuildOutput(result);
+    }
+    if (result.librariesMissingPartDirective.isNotEmpty) {
+      await PartDirectives.addMissing(
+        result.librariesMissingPartDirective,
+        _buildPlan.readerWriter,
+        onlyCheck: _outputStrategy == .verify,
+      );
+    }
+    if (result.librariesWithUnusedPartDirective.isNotEmpty) {
+      await PartDirectives.removeUnused(
+        result.librariesWithUnusedPartDirective,
+        _buildPlan.readerWriter,
+        onlyCheck: _outputStrategy == .verify,
+      );
+    }
+    result = await _createMergedOutputDirectories(result);
+
+    _buildPlan = build.buildPlan.withCompatiblePreviousBuild(
+      previousPhasedAssetDeps: result.phasedAssetDeps,
+      previousBuildState: result.buildState!,
+    );
+    return result.copyWith(
+      errors: buildLog.finishBuild(
+        result: result.status == .success,
+        outputs: result.outputs.length,
+      ),
+    );
+  }
+
+  /// Deletes old build output, writes new build output.
+  ///
+  /// Serializes and writes the updated `asset_graph.json`.
+  Future<void> _writeBuildOutput(BuildResult result) async {
+    if (_buildPlan.buildInputs.cleanBuild) {
+      final artifactTreeDirectoryId = AssetId(
+        _buildPlan.buildSpec.buildPackages.outputRoot,
+        artifactTreePath,
+      );
+      await _buildPlan.readerWriter.deleteDirectory(artifactTreeDirectoryId);
+    }
+
+    for (final output in result.outputs) {
+      // The file exists again, so there is no delete of it left to ignore. The
+      // delete loop below runs after this one, so a build that both writes and
+      // deletes this path still records the delete.
+      _expectedDeletes.remove(output);
+      final content = result.buildState!.contentOf(output)!;
+      await _buildPlan.readerWriter.writeAsBytes(
+        output,
+        content.bytes,
+        inArtifactTree: result.buildState!.isInArtifactTree(output),
+      );
+    }
+    final forceToPackagePathsForTesting =
+        _buildPlan.buildSpec.testingOverrides.forceToPackagePathsForTesting;
+    for (final toDelete in _computeDeletes(result)) {
+      if (toDelete.atPackagePath || forceToPackagePathsForTesting) {
+        _expectedDeletes.add(toDelete.id);
+      }
+      await _buildPlan.readerWriter.delete(toDelete);
+    }
+
+    final assetGraphId = AssetId(
+      _buildPlan.buildSpec.buildPackages.outputRoot,
+      assetGraphJsonPath,
+    );
+    final assetGraphContent = AssetContent.bytes(
+      AssetGraphJson.serialize(
+        buildPlanDigest: _buildPlan.buildSpec.buildPlanDigest,
+        buildState: result.buildState!.incremental,
+        phasedAssetDeps: result.phasedAssetDeps,
+      ),
+    );
+    await _buildPlan.readerWriter.writeAsBytes(
+      assetGraphId,
+      assetGraphContent.bytes,
+    );
+  }
+
+  /// Files that should be deleted: outputs of the previous build that are no
+  /// longer declared outputs, plus files on disk that match declared outputs
+  /// that were not actually output.
+  Set<AssetFile> _computeDeletes(BuildResult result) {
+    final deletes = <AssetFile>{};
+    final currentState = result.buildState!;
+
+    // If set, artifact tree outputs are forced to package paths for simpler
+    // test assertions.
+    final forceToPackagePathsForTesting =
+        _buildPlan.buildSpec.testingOverrides.forceToPackagePathsForTesting;
+    for (final file in _buildPlan.conflictingOutputs) {
+      final outputInArtifactTree = forceToPackagePathsForTesting
+          ? false
+          : currentState.isInArtifactTree(file.id);
+      final isMatchingActualOutput =
+          (currentState.isActualOutput(file.id) ||
+              currentState.isActualPostOutput(file.id) ||
+              currentState.hasSharedPart(file.id)) &&
+          outputInArtifactTree == file.inArtifactTree;
+      if (!isMatchingActualOutput) {
+        deletes.add(file);
+      }
+    }
+    for (final id
+        in _buildPlan.previousBuild.incompatibleBuildOutputsToDelete) {
+      if (!currentState.isActualOutput(id) &&
+          !currentState.isActualPostOutput(id) &&
+          !currentState.hasSharedPart(id)) {
+        deletes.add(AssetFile.atPackagePath(id));
+      }
+    }
+
+    final previousBuild = _buildPlan.previousBuild;
+    if (previousBuild.incrementalState != null) {
+      for (final stepResult in previousBuild.actualStepResults) {
+        for (final id in stepResult.outputs) {
+          final stepId = _buildPlan.buildStepPlan.stepForDeclaredOutputOrNull(
+            id,
+          );
+          if (stepId == null) {
+            deletes.add(
+              AssetFile(id, inArtifactTree: stepResult.inArtifactTree),
+            );
+          } else {
+            final stepResultOrNull = currentState.stepResultOrNull(stepId);
+            if (stepResultOrNull != null &&
+                !stepResultOrNull.outputs.contains(id)) {
+              deletes.add(
+                AssetFile(id, inArtifactTree: stepResult.inArtifactTree),
+              );
+            }
+          }
+        }
+      }
+      for (final postProcessResult in previousBuild.actualPostProcessResults) {
+        for (final id in postProcessResult.outputs) {
+          if (!currentState.isActualPostOutput(id)) {
+            deletes.add(
+              AssetFile(id, inArtifactTree: postProcessResult.inArtifactTree),
+            );
+          }
+        }
+      }
+      for (final libraryId in previousBuild.sharedPartLibraryIds) {
+        if (!currentState.hasSharedPart(libraryId)) {
+          deletes.add(AssetFile.atPackagePath(libraryId.sharedPartId!));
+        }
+      }
+    }
+    return deletes;
+  }
+
+  /// Verifies outputs on disk match [result].
+  ///
+  /// If there are unexpected, missing, or incorrect outputs on disk, logs them
+  /// and returns a failed result.
+  ///
+  /// Only outputs and deletes in package paths are checked; outputs and
+  /// deletes in the artifact tree are skipped. This supports the presubmit use
+  /// case where package path generated files are checked in but `.dart_tool`
+  /// generated files are not.
+  Future<BuildResult> _verifyBuildOutput(BuildResult result) async {
+    final unexpected = <AssetId>[];
+    final missing = <AssetId>[];
+    final incorrect = <AssetId>[];
+
+    for (final output in result.outputs) {
+      if (result.buildState!.isInArtifactTree(output)) continue;
+
+      final expectedContent = result.buildState!.contentOf(output)!;
+      final exists = await _buildPlan.readerWriter.canRead(output);
+      if (!exists) {
+        missing.add(output);
+      } else {
+        final existingBytes = await _buildPlan.readerWriter.readAsBytes(output);
+        final existingDigest = AssetContent.bytes(existingBytes).digest;
+        if (existingDigest != expectedContent.digest) {
+          incorrect.add(output);
+        }
+      }
+    }
+
+    for (final toDelete in _computeDeletes(result)) {
+      if (toDelete.inArtifactTree) continue;
+      final exists = await _buildPlan.readerWriter.canRead(toDelete.id);
+      if (exists) {
+        unexpected.add(toDelete.id);
+      }
+    }
+
+    if (unexpected.isNotEmpty || missing.isNotEmpty || incorrect.isNotEmpty) {
+      final lines = <String>[
+        for (final id in unexpected) 'U ${buildLog.renderId(id)}',
+        for (final id in missing) 'M ${buildLog.renderId(id)}',
+        for (final id in incorrect) 'I ${buildLog.renderId(id)}',
+      ]..sort();
+
+      final message = StringBuffer(
+        'Verify failed due to Incorrect|Missing|Unexpected:\n\n',
+      );
+      message.write(lines.join('\n'));
+      buildLog.error(message.toString());
+
+      return result.copyWith(status: BuildStatus.failure);
+    }
+    return result;
+  }
+
+  /// Creates merged output directories if they are configured.
+  ///
+  /// Returns `result` with `status` modified to `failure` if any creation
+  /// failed.
+  Future<BuildResult> _createMergedOutputDirectories(BuildResult result) async {
+    if (_buildPlan.buildDirs.any(
+          (target) => target.outputLocation?.path.isNotEmpty ?? false,
+        ) &&
+        result.status == BuildStatus.success) {
+      if (!await createMergedOutputDirectories(
+        buildPackages: _buildPlan.buildSpec.buildPackages,
+        outputSymlinksOnly:
+            _buildPlan.buildSpec.buildOptions.outputSymlinksOnly,
+        buildDirs: _buildPlan.buildDirs,
+        buildOutputReader: result.buildOutputReader!,
+      )) {
+        return result.copyWith(
+          status: BuildStatus.failure,
+          failureType: FailureType.cantCreate,
+        );
+      }
+    }
     return result;
   }
 

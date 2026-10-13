@@ -76,6 +76,18 @@ syntax error
     );
     expect(output, contains("Expected to find ';'"));
 
+    // Fail on invalid utf8.
+    tester.writeBytes('root_pkg/lib/a.dart', [0xff]);
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+      expectExitCode: 1,
+    );
+    expect(
+      output,
+      contains('Dart source root_pkg|lib/a.dart is not valid utf8.'),
+    );
+
     // Unreadable inputs are allowed.
     tester.write('root_pkg/lib/a.dart', '''
 import 'missing_import.dart';
@@ -91,6 +103,24 @@ import 'missing_import.dart';
       'root_pkg',
       'dart run build_runner build --force-jit',
     );
+
+    // Skipped generated outputs are resolved.
+    tester.writeFixturePackage(
+      FixturePackages.copyBuilder(
+        packageName: 'copy_builder_pkg',
+        outputExtension: '.dart',
+      ),
+    );
+    tester.writePackage(
+      name: 'root_pkg',
+      dependencies: ['build_runner'],
+      pathDependencies: ['builder_pkg', 'copy_builder_pkg'],
+      files: {'lib/a.dart': "import 'b.txt.dart';", 'lib/b.txt': '// b.txt'},
+    );
+    await tester.run('root_pkg', 'dart run build_runner build --force-jit');
+    expect(tester.read('root_pkg/lib/b.txt.dart'), '// b.txt');
+    tester.write('root_pkg/lib/a.txt', "import 'b.txt.dart'; // modified");
+    await tester.run('root_pkg', 'dart run build_runner build --force-jit');
 
     // Check that it's possible for a builder to resolve source in strings using
     // `build_test`.

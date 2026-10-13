@@ -14,27 +14,28 @@ import 'package:analyzer/src/dart/analysis/file_content_cache.dart';
 import 'package:build/build.dart' hide Resource;
 import 'package:path/path.dart' as p;
 
+import '../../build_plan/build_inputs.dart';
+import '../../contracts.dart';
+import '../asset_content.dart';
+import '../br_outputs.dart';
+import '../builder_filesystem.dart';
+import 'asset_ids.dart';
+
 /// The in-memory filesystem that is the analyzer's view of the build.
 ///
-/// Pass an `Iterable<AssetNode>` of generated file nodes to [startBuild] at the
-/// start of a build. This tells the filesystem at what phase each generated
-/// file becomes visible.
+/// Call [startBuild] first to pass a [BuilderFilesystem]. Its callbacks for new
+/// content are used to keep the filesystem in sync with the build state.
 ///
 /// During the build, set [phase] to change the phase that the files are viewed
 /// at.
-///
-/// Source files are added as they're needed during a build. [startBuild]
-/// manages how source and generated files are invalidated between builds.
+@Invariant('_phase >= 0')
 class AnalysisDriverFilesystem
     implements UriResolver, ResourceProvider, FileContentCache {
-  final Map<String, FileContent> _data = {};
+  late BuilderFilesystem _builderFilesystem;
+
+  final Map<String, BuildRunnerFileContent> _data = {};
   final Set<String> _changedPaths = {};
   final Set<String> _changedPathsThisBuild = {};
-
-  // Path and phase information derived from the `Iterable<AssetNode>` for fast
-  // lookup.
-  Map<String, int> _phaseByPath = {};
-  Map<int, List<String>> _pathByPhase = {};
 
   int _phase = 0;
 
@@ -48,99 +49,171 @@ class AnalysisDriverFilesystem
   /// A generated file is only visible if it was generated at an earlier phase.
   ///
   /// Records changes due to the phase change in [changedPaths].
+  @Requires('phase >= 0')
+  @Requires(
+    'phase <= _builderFilesystem.buildStepPlan.buildStepsByPhase.length',
+  )
+  @Ensures('_phase == phase')
   set phase(int phase) {
     if (phase == _phase) return;
     final previousPhase = _phase;
     _phase = phase;
 
-    for (final entry in _pathByPhase.entries) {
-      final previouslyWasVisible = previousPhase > entry.key;
-      final isVisible = phase > entry.key;
-
-      if (previouslyWasVisible != isVisible) {
-        _changedPaths.addAll(entry.value);
+    final plan = _builderFilesystem.buildStepPlan;
+    final minPhase = previousPhase < phase ? previousPhase : phase;
+    final maxPhase = previousPhase > phase ? previousPhase : phase;
+    for (var phase = minPhase; phase != maxPhase; ++phase) {
+      for (final step in plan.buildStepsByPhase[phase]) {
+        for (final output in plan.declaredOutputsByStep[step]) {
+          _changedPaths.add(output.asPath);
+        }
       }
+    }
+    for (final libraryId
+        in _builderFilesystem.buildState.sharedPartLibraryIds) {
+      _updateSharedPartContent(libraryId.sharedPartId!);
     }
   }
 
-  /// Initializes a new filesystem that will have files added due to the
-  /// build described by [generatedPhases].
-  ///
-  /// If [invalidatedSources] is `null`, this is an initial build and all
-  /// cached contents are cleared. Otherwise, only source files matching
-  /// [invalidatedSources] are removed.
-  void startBuild(
-    Map<AssetId, int> generatedPhases, {
-    required Set<AssetId>? invalidatedSources,
-  }) {
-    final previousPhaseByPath = _phaseByPath;
-    _phaseByPath = <String, int>{};
-    _pathByPhase = <int, List<String>>{};
-    for (final entry in generatedPhases.entries) {
-      final phase = entry.value;
-      final idAsPath = entry.key.asPath;
-      _phaseByPath[idAsPath] = phase;
-      _pathByPhase.putIfAbsent(phase, () => []).add(idAsPath);
-    }
+  bool _hasStartedBuild = false;
 
+  /// Initializes for a build.
+  ///
+  /// For a clean build, all content will be removed from the filesystem.
+  ///
+  /// For an incremental build, deleted sources and outputs will be removed
+  /// from the filesystem, and updated sources will be evicted or updated.
+  void startBuild({
+    required BuilderFilesystem builderFilesystem,
+    required BuildInputs buildInputs,
+  }) {
+    _builderFilesystem = builderFilesystem;
+    builderFilesystem.listenToContentUpdates(_updateContent);
     _changedPathsThisBuild.clear();
 
-    if (invalidatedSources == null) {
+    final needsInitialization = !_hasStartedBuild;
+    _hasStartedBuild = true;
+
+    if (buildInputs.cleanBuild || needsInitialization) {
+      _phase = 0;
       _changedPaths.addAll(_data.keys);
       _data.clear();
+      for (final id in builderFilesystem.buildState.sources) {
+        final content = builderFilesystem.buildState.contentOf(id);
+        if (content != null) {
+          _updateContent(id, content);
+        }
+      }
+      _changedPathsThisBuild.clear();
       return;
     }
 
-    for (final id in invalidatedSources) {
+    for (final id in buildInputs.deletedSources.followedBy(
+      buildInputs.invalidOutputs,
+    )) {
       final path = id.asPath;
       if (_data.remove(path) != null) {
         _changedPaths.add(path);
       }
     }
+    for (final id in buildInputs.updatedSources) {
+      if (!id.isDart) continue;
+      _updateContent(id, builderFilesystem.buildState.contentOf(id));
+    }
+    _changedPathsThisBuild.clear();
 
-    for (final entry in previousPhaseByPath.entries) {
-      final path = entry.key;
-      final previousPhase = entry.value;
-      final nextPhase = _phaseByPath[path];
-      if (nextPhase == null) {
-        if (_data.remove(path) != null && _phase > previousPhase) {
-          _changedPaths.add(path);
-        }
-        continue;
-      }
-      if (nextPhase == previousPhase || !_data.containsKey(path)) {
-        continue;
-      }
-      final previouslyWasVisible = _phase > previousPhase;
-      final isVisible = _phase > nextPhase;
-      if (previouslyWasVisible != isVisible) {
+    // Shared parts written by this build are added back as phases run. Shared
+    // parts in dependencies are sources, so they stay.
+    final sharedPartPaths = _data.keys.where((path) {
+      final id = tryParseAssetPath(path);
+      return id != null &&
+          id.isBrSharedPart &&
+          !builderFilesystem.buildState.isSource(id);
+    }).toList();
+    for (final path in sharedPartPaths) {
+      if (_data.remove(path) != null) {
         _changedPaths.add(path);
       }
     }
   }
 
-  /// Returns the phase of the generated file at [path] or `-1` if it's not a
-  /// generated file or not known.
-  int _phaseOf(String path) => _phaseByPath[path] ?? -1;
+  void _updateContent(AssetId id, AssetContent? content) {
+    if (!id.isDart) return;
+    if (content == null) {
+      // The update is that the file no longer exists.
+      final path = id.asPath;
+      if (_data.remove(path) != null) {
+        _changedPaths.add(path);
+      }
+      return;
+    }
+    if (id.isBrSharedPart && !_builderFilesystem.buildState.isSource(id)) {
+      _updateSharedPartContent(id);
+      return;
+    }
+    final phase =
+        _builderFilesystem.buildStepPlan
+            .stepForDeclaredOutputOrNull(id)
+            ?.phaseNumber ??
+        -1;
+    _writeContent(
+      BuildRunnerFileContent(
+        path: id.asPath,
+        exists: true,
+        content: content.dartStringValueOrEmptyFail(id: id),
+        contentHash: content.digest.toString(),
+        phase: phase,
+      ),
+    );
+  }
+
+  void _updateSharedPartContent(AssetId id) {
+    final libraryId = id.sharedPartLibraryId!;
+    final partContent = _builderFilesystem.buildState.sharedPartContent(
+      libraryId,
+      upToPhase: _phase - 1,
+    );
+    if (partContent == null) {
+      final path = id.asPath;
+      if (_data.remove(path) != null) {
+        _changedPaths.add(path);
+      }
+      return;
+    }
+    _writeContent(
+      BuildRunnerFileContent(
+        path: id.asPath,
+        exists: true,
+        content: partContent.stringValue(),
+        contentHash: partContent.digest.toString(),
+        phase: -1,
+      ),
+    );
+  }
 
   /// Whether [path] exists.
-  bool exists(String path) =>
-      _data.containsKey(path) && _phase > _phaseOf(path);
+  bool exists(String path) {
+    final content = _data[path];
+    if (content == null) return false;
+    return _phase > content.phase;
+  }
 
   /// Reads the data previously written to [path].
   ///
   /// Throws if ![exists].
+  @Requires('exists(path)')
+  @Ensures('result == _data[path]!.content')
   String read(String path) {
     if (!exists(path)) throw StateError('Read of non-existent file.');
     return _data[path]!.content;
   }
 
   /// Writes [content].
-  void writeContent(BuildRunnerFileContent content) {
+  void _writeContent(BuildRunnerFileContent content) {
     if (!content.exists) throw ArgumentError('content must exist');
     final path = content.path;
     final previousContent = _data[path];
-    final isVisible = _phase > _phaseOf(path);
+    final isVisible = _phase > content.phase;
     if (previousContent != null &&
         content.contentHash == previousContent.contentHash) {
       return;
@@ -150,10 +223,14 @@ class AnalysisDriverFilesystem
     if (isVisible) {
       _changedPaths.add(path);
     }
-    assert(_changedPathsThisBuild.add(path), path);
+    assert(
+      _changedPathsThisBuild.add(path) ||
+          (tryParseAssetPath(path)?.isBrSharedPart ?? false),
+      path,
+    );
   }
 
-  /// Paths that were modified by [writeContent] since the last
+  /// Paths that were modified by [_writeContent] since the last
   /// call to [clearChangedPaths].
   Iterable<String> get changedPaths => _changedPaths;
 
@@ -188,6 +265,8 @@ class AnalysisDriverFilesystem
   /// /<package>/lib/<rest> --> package:<package>/<rest>
   /// /<package>/<rest> --> asset:<package>/<rest>
   /// ```
+  @Requires('path.startsWith("/")')
+  @Ensures('result.isScheme("package") || result.isScheme("asset")')
   @override
   Uri pathToUri(String path) {
     if (!path.startsWith('/')) {
@@ -252,6 +331,12 @@ class AnalysisDriverFilesystem
     return null;
   }
 
+  /// Parses in-memory filesystem [path] into an [AssetId].
+  ///
+  /// Returns null if the path cannot be parsed.
+  static AssetId? tryParseAssetPath(String path) =>
+      parseAsset(Uri(scheme: 'file', path: path));
+
   // `ResourceProvider` methods.
 
   @override
@@ -275,6 +360,8 @@ class AnalysisDriverFilesystem
   Folder? getStateLocation(String pluginId) => throw UnimplementedError();
 }
 
+@Invariant('path.startsWith("/")')
+@Invariant('exists || (content.isEmpty && contentHash.isEmpty && phase == -1)')
 class BuildRunnerFileContent implements FileContent {
   @override
   final String path;
@@ -285,15 +372,23 @@ class BuildRunnerFileContent implements FileContent {
   @override
   final String contentHash;
 
-  BuildRunnerFileContent(
-    this.path,
-    this.exists,
-    this.content,
-    this.contentHash,
-  );
+  final int phase;
 
-  static BuildRunnerFileContent missing(String path) =>
-      BuildRunnerFileContent(path, false, '', '');
+  BuildRunnerFileContent({
+    required this.path,
+    required this.exists,
+    required this.content,
+    required this.contentHash,
+    required this.phase,
+  });
+
+  static BuildRunnerFileContent missing(String path) => BuildRunnerFileContent(
+    path: path,
+    exists: false,
+    content: '',
+    contentHash: '',
+    phase: -1,
+  );
 }
 
 /// Minimal implementation of [File] and [Folder].

@@ -21,8 +21,9 @@ class InputMatcher {
   final List<Glob>? excludeGlobs;
 
   InputMatcher(InputSet inputSet, {BuiltList<String>? defaultInclude})
-    : includeGlobs =
-          (inputSet.include ?? defaultInclude)?.map(Glob.new).toList(),
+    : includeGlobs = (inputSet.include ?? defaultInclude)
+          ?.map(Glob.new)
+          .toList(),
       excludeGlobs = inputSet.exclude?.map(Glob.new).toList();
 
   /// Whether [input] is included in this set of assets.

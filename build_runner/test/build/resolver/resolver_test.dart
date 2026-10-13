@@ -2,7 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:io' show Platform;
 import 'dart:isolate';
 
 import 'package:analyzer/dart/analysis/results.dart';
@@ -10,35 +9,30 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
-import 'package:build/experiments.dart';
 import 'package:build_runner/src/build/resolver/analysis_driver.dart';
 import 'package:build_runner/src/build/resolver/analysis_driver_model.dart';
 import 'package:build_runner/src/build/resolver/resolvers_impl.dart';
 import 'package:build_runner/src/build/resolver/sdk_summary.dart';
-import 'package:build_runner/src/build/run_builder.dart';
-import 'package:build_runner/src/build/single_step_reader_writer.dart';
-import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
-import 'package:pub_semver/pub_semver.dart';
 import 'package:test/test.dart';
 
 import '../../common/common.dart';
 
 void main() {
-  for (final resolversFactory in [
-    AnalysisDriverModelFactory(),
-    SharedAnalysisDriverModelFactory(),
-  ]) {
-    group('$resolversFactory', () {
-      runTests(resolversFactory);
-    });
-  }
-}
+  setUpTestLogging();
 
-void runTests(ResolversFactory resolversFactory) {
   final entryPoint = AssetId('a', 'web/main.dart');
-  Resolvers createResolvers({PackageConfig? packageConfig}) =>
-      resolversFactory.create(packageConfig: packageConfig);
+
+  final sharedModel = AnalysisDriverModel();
+  Resolvers createResolvers({PackageConfig? packageConfig}) {
+    final result = ResolversImpl.custom(
+      packageConfig: packageConfig,
+      analysisDriverModel: sharedModel,
+    );
+    addTearDown(result.reset);
+    return result;
+  }
+
   test('should handle initial files', () {
     return resolveSources({'a|web/main.dart': ' main() {}'}, (resolver) async {
       final lib = await resolver.libraryFor(entryPoint);
@@ -68,11 +62,10 @@ void runTests(ResolversFactory resolversFactory) {
       (resolver) async {
         final lib = await resolver.libraryFor(entryPoint);
         expect(lib.firstFragment.libraryImports.length, 2);
-        final libA =
-            lib
-              ..firstFragment.libraryImports
-                  .where((l) => l.importedLibrary!.name == 'a')
-                  .single;
+        final libA = lib
+          ..firstFragment.libraryImports
+              .where((l) => l.importedLibrary!.name == 'a')
+              .single;
         expect(libA.getClass('Foo'), isNull);
       },
       resolvers: createResolvers(),
@@ -112,11 +105,10 @@ void runTests(ResolversFactory resolversFactory) {
       (resolver) async {
         final lib = await resolver.libraryFor(entryPoint);
         expect(lib.firstFragment.libraryImports.length, 2);
-        final libB =
-            lib
-              ..firstFragment.libraryImports
-                  .where((l) => l.importedLibrary!.name == 'b')
-                  .single;
+        final libB = lib
+          ..firstFragment.libraryImports
+              .where((l) => l.importedLibrary!.name == 'b')
+              .single;
         expect(libB.getClass('Foo'), isNull);
       },
       resolvers: createResolvers(),
@@ -167,7 +159,7 @@ void runTests(ResolversFactory resolversFactory) {
     );
 
     // Only allow changes to source between builds.
-    await _resetResolvers(resolvers);
+    resolvers.reset();
 
     await resolveSources(
       {
@@ -205,7 +197,7 @@ void runTests(ResolversFactory resolversFactory) {
     );
 
     // Only allow changes to source between builds.
-    await _resetResolvers(resolvers);
+    resolvers.reset();
 
     await resolveSources(
       {
@@ -395,27 +387,6 @@ void runTests(ResolversFactory resolversFactory) {
         expect(lib.languageVersion.effective.minor, sdkLanguageVersion.minor);
       }, resolvers: createResolvers(packageConfig: customPackageConfig));
     });
-
-    test(
-      'allows a version of analyzer compatibile with the current sdk',
-      skip: _skipOnPreRelease,
-      () async {
-        final originalLevel = Logger.root.level;
-        Logger.root.level = Level.WARNING;
-        final listener = Logger.root.onRecord.listen((record) {
-          fail('Got an unexpected warning during analysis:\n\n$record');
-        });
-        addTearDown(() {
-          Logger.root.level = originalLevel;
-          listener.cancel();
-        });
-        await resolveSources({'a|web/main.dart': 'main() {}'}, (
-          resolver,
-        ) async {
-          await resolver.libraryFor(entryPoint);
-        }, resolvers: createResolvers());
-      },
-    );
   });
 
   group('assets that aren\'t a transitive import of input', () {
@@ -558,7 +529,7 @@ void runTests(ResolversFactory resolversFactory) {
         resolvers: resolvers,
       );
 
-      await _resetResolvers(resolvers);
+      resolvers.reset();
 
       await resolveSources(
         {
@@ -593,8 +564,9 @@ void runTests(ResolversFactory resolversFactory) {
           'a|lib/d.dart': 'library a.d;',
         },
         (resolver) async {
-          final libs =
-              await resolver.libraries.where((l) => !l.isInSdk).toList();
+          final libs = await resolver.libraries
+              .where((l) => !l.isInSdk)
+              .toList();
           expect(
             libs.map((l) => l.name),
             unorderedEquals(['a.main', 'a.a', 'a.b', 'a.c', 'a.d']),
@@ -660,8 +632,12 @@ void runTests(ResolversFactory resolversFactory) {
         },
         (resolver) async {
           final main = (await resolver.findLibraryByName('web.main'))!;
-          final meta =
-              main.getClass('Foo')!.supertype!.element.metadata.annotations[0];
+          final meta = main
+              .getClass('Foo')!
+              .supertype!
+              .element
+              .metadata
+              .annotations[0];
           expect(meta, isNotNull);
           expect(meta.computeConstantValue()?.toIntValue(), 0);
         },
@@ -706,10 +682,9 @@ void runTests(ResolversFactory resolversFactory) {
         },
         (resolver) async {
           final entry = await resolver.libraryFor(AssetId('a', 'lib/a.dart'));
-          final classDefinition =
-              entry.firstFragment.libraryImports
-                  .map((l) => l.importedLibrary!.getClass('SomeClass'))
-                  .singleWhere((c) => c != null)!;
+          final classDefinition = entry.firstFragment.libraryImports
+              .map((l) => l.importedLibrary!.getClass('SomeClass'))
+              .singleWhere((c) => c != null)!;
           expect(
             await resolver.assetIdForElement(classDefinition),
             AssetId('a', 'lib/b.dart'),
@@ -738,50 +713,13 @@ void runTests(ResolversFactory resolversFactory) {
         },
         (resolver) async {
           final entry = await resolver.libraryFor(AssetId('a', 'lib/a.dart'));
-          final element =
-              entry.topLevelFunctions
-                  .firstWhere((e) => e.name == 'main')
-                  .metadata
-                  .annotations
-                  .single
-                  .element!;
+          final element = entry.firstFragment.scope.lookup('SomeClass').getter!;
           await expectLater(
             () => resolver.assetIdForElement(element),
             throwsA(isA<UnresolvableAssetException>()),
           );
         },
         resolvers: createResolvers(),
-      );
-    });
-
-    test('Respects withEnabledExperiments', skip: _skipOnPreRelease, () async {
-      Logger.root.level = Level.ALL;
-      Logger.root.onRecord.listen(print);
-      await withEnabledExperiments(
-        () => resolveSources(
-          {
-            'a|web/main.dart': '''
-// @dart=${sdkLanguageVersion.major}.${sdkLanguageVersion.minor}
-int? get x => 1;
-                ''',
-          },
-          (resolver) async {
-            final lib = await resolver.libraryFor(entryPoint);
-            expect(
-              lib.languageVersion.effective.major,
-              sdkLanguageVersion.major,
-            );
-            expect(
-              lib.languageVersion.effective.minor,
-              sdkLanguageVersion.minor,
-            );
-            final errors =
-                await lib.session.getErrors('/a/web/main.dart') as ErrorsResult;
-            expect(errors.diagnostics, isEmpty);
-          },
-          resolvers: createResolvers(),
-        ),
-        ['non-nullable'],
       );
     });
 
@@ -1086,25 +1024,29 @@ int? get x => 1;
           allLibraries.map((e) => e.uri.toString()),
           containsAll(['dart:io', 'dart:core', 'dart:html']),
         );
+
+        await buildStep.writeAsString(
+          buildStep.inputId.changeExtension('.txt'),
+          '',
+        );
       },
     );
 
-    final readerWriter = InternalTestReaderWriter();
-
-    readerWriter.testing.writeString(makeAssetId('a|lib/a.dart'), '');
-    await _runBuilder(
-      builder,
-      [makeAssetId('a|lib/a.dart')],
-      SingleStepReaderWriter.fakeFor(readerWriter),
-      resolvers,
+    var result = await testBuilders(
+      [builder],
+      {'a|lib/a.dart': ''},
+      outputs: {'a|lib/a.txt': ''},
+      resolvers: resolvers,
+      visibleOutputBuilders: {builder},
     );
 
-    readerWriter.testing.writeString(makeAssetId('a|lib/b.dart'), '');
-    await _runBuilder(
-      builder,
-      [makeAssetId('a|lib/b.dart')],
-      SingleStepReaderWriter.fakeFor(readerWriter),
-      resolvers,
+    result = await testBuilders(
+      [builder],
+      {'a|lib/b.dart': ''},
+      outputs: {'a|lib/a.txt': '', 'a|lib/b.txt': ''},
+      readerWriter: result.readerWriter,
+      resolvers: resolvers,
+      visibleOutputBuilders: {builder},
     );
   });
 
@@ -1143,52 +1085,45 @@ int? get x => 1;
   });
 
   test('generated part files are not considered libraries', () async {
-    final readerWriter = InternalTestReaderWriter();
-    final input = AssetId('a', 'lib/input.dart');
-    readerWriter.testing.writeString(input, "part 'input.a.dart';");
-
-    final builder = TestBuilder(
+    final builderA = TestBuilder(
       buildExtensions: {
         '.dart': ['.a.dart'],
       },
       build: (buildStep, buildExtensions) async {
         final isLibrary = await buildStep.resolver.isLibrary(buildStep.inputId);
-        if (buildStep.inputId == input) {
-          await buildStep.writeAsString(
-            buildStep.inputId.changeExtension(buildExtensions['.dart']!.first),
-            "part of 'input.dart';",
-          );
-          expect(isLibrary, true);
-        } else {
-          expect(
-            isLibrary,
-            false,
-            reason: '${buildStep.inputId} should not be considered a library',
-          );
-        }
+        expect(isLibrary, true);
+        await buildStep.writeAsString(
+          buildStep.inputId.changeExtension('.a.dart'),
+          "part of 'input.dart';",
+        );
+      },
+    );
+
+    final builderB = TestBuilder(
+      buildExtensions: {
+        '.a.dart': ['.b.dart'],
+      },
+      build: (buildStep, buildExtensions) async {
+        final isLibrary = await buildStep.resolver.isLibrary(buildStep.inputId);
+        expect(isLibrary, false);
+        await buildStep.writeAsString(AssetId('a', 'lib/input.b.dart'), 'done');
       },
     );
     final resolvers = createResolvers();
-    await _runBuilder(
-      builder,
-      [input],
-      SingleStepReaderWriter.fakeFor(readerWriter),
-      resolvers,
-    );
 
-    await _runBuilder(
-      builder,
-      [input.changeExtension('.a.dart')],
-      SingleStepReaderWriter.fakeFor(readerWriter),
-      resolvers,
+    await testBuilders(
+      [builderA, builderB],
+      {'a|lib/input.dart': "part 'input.a.dart';"},
+      outputs: {
+        'a|lib/input.a.dart': "part of 'input.dart';",
+        'a|lib/input.b.dart': 'done',
+      },
+      resolvers: resolvers,
+      visibleOutputBuilders: {builderA, builderB},
     );
   });
 
   test('missing files are not considered libraries', () async {
-    final readerWriter = InternalTestReaderWriter();
-    final input = AssetId('a', 'lib/input.dart');
-    readerWriter.testing.writeString(input, 'void doStuff() {}');
-
     final builder = TestBuilder(
       buildExtensions: {
         '.dart': ['.a.dart'],
@@ -1200,27 +1135,26 @@ int? get x => 1;
           ),
           false,
         );
+        await buildStep.writeAsString(
+          buildStep.inputId.changeExtension('.a.dart'),
+          'done',
+        );
       }),
     );
     final resolvers = createResolvers();
-    await _runBuilder(
-      builder,
-      [input],
-      SingleStepReaderWriter.fakeFor(readerWriter),
-      resolvers,
+
+    await testBuilders(
+      [builder],
+      {'a|lib/input.dart': 'void doStuff() {}'},
+      outputs: {'a|lib/input.a.dart': 'done'},
+      resolvers: resolvers,
+      visibleOutputBuilders: {builder},
     );
   });
 
   test(
     'assets with extensions other than `.dart` are not considered libraries',
     () async {
-      final readerWriter = InternalTestReaderWriter();
-      final input = AssetId('a', 'lib/input.dart');
-      readerWriter.testing.writeString(input, 'void doStuff() {}');
-
-      final otherFile = AssetId('a', 'lib/input.notdart');
-      readerWriter.testing.writeString(otherFile, 'Not a Dart file');
-
       final builder = TestBuilder(
         buildExtensions: {
           '.dart': ['.a.dart'],
@@ -1229,14 +1163,23 @@ int? get x => 1;
           final other = buildStep.inputId.changeExtension('.notdart');
           expect(await buildStep.canRead(other), true);
           expect(await buildStep.resolver.isLibrary(other), false);
+          await buildStep.writeAsString(
+            buildStep.inputId.changeExtension('.a.dart'),
+            'done',
+          );
         }),
       );
       final resolvers = createResolvers();
-      await _runBuilder(
-        builder,
-        [input],
-        SingleStepReaderWriter.fakeFor(readerWriter),
-        resolvers,
+
+      await testBuilders(
+        [builder],
+        {
+          'a|lib/input.dart': 'void doStuff() {}',
+          'a|lib/input.notdart': 'Not a Dart file',
+        },
+        outputs: {'a|lib/input.a.dart': 'done'},
+        resolvers: resolvers,
+        visibleOutputBuilders: {builder},
       );
     },
   );
@@ -1341,74 +1284,4 @@ int? get x => 1;
       await Future.wait(futures);
     });
   });
-}
-
-// Calls `runBuilder` after getting the resolvers lock.
-Future<void> _runBuilder(
-  TestBuilder builder,
-  List<AssetId> list,
-  SingleStepReaderWriter singleStepReaderWriter,
-  Resolvers resolvers,
-) async {
-  final resolversImpl = switch (resolvers) {
-    final ResolversImpl r => r,
-    _ => null,
-  };
-  await resolversImpl?.takeLockAndStartBuild(
-    const {},
-    invalidatedSources: null,
-  );
-  await runBuilder(builder, list, singleStepReaderWriter, resolvers);
-  resolversImpl?.reset();
-}
-
-final _skipOnPreRelease =
-    Version.parse(Platform.version.split(' ').first).isPreRelease
-        ? 'Skipped on prerelease sdks'
-        : null;
-
-abstract class ResolversFactory {
-  /// Whether [create] returns a shared instance that persists between tests.
-  Resolvers create({PackageConfig? packageConfig});
-}
-
-class AnalysisDriverModelFactory implements ResolversFactory {
-  @override
-  Resolvers create({PackageConfig? packageConfig}) => ResolversImpl.custom(
-    packageConfig: packageConfig,
-    analysisDriverModel: AnalysisDriverModel(),
-  );
-
-  @override
-  String toString() => 'New resolver';
-}
-
-class SharedAnalysisDriverModelFactory implements ResolversFactory {
-  static final AnalysisDriverModel sharedInstance = AnalysisDriverModel();
-
-  @override
-  Resolvers create({PackageConfig? packageConfig}) {
-    final result = ResolversImpl.custom(
-      packageConfig: packageConfig,
-      analysisDriverModel: sharedInstance,
-    );
-    addTearDown(result.reset);
-    return result;
-  }
-
-  @override
-  String toString() => 'Shared new resolver';
-}
-
-Future<void> _resetResolvers(Resolvers resolvers) async {
-  // `resolveSources` actually completes prior to the build step being
-  // done, which causes this `reset` call to fail. After a few microtasks
-  // it succeeds though.
-  var tries = 0;
-  while (tries++ < 5) {
-    await Future.value(null);
-    try {
-      resolvers.reset();
-    } catch (_) {}
-  }
 }

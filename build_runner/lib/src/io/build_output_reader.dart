@@ -5,101 +5,106 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
-import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
-import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
-import '../build/build_state/build_state.dart';
-import '../build_plan/build_plan.dart';
+import '../build/asset_content.dart';
+import '../build/br_outputs.dart';
+import '../build/build_file_index.dart';
+import '../build/build_state/finished_build_state.dart';
+import '../build_plan/build_packages.dart';
 import '../build_plan/build_step_plan.dart';
+import '../contracts.dart';
+import 'build_output_read_result.dart';
 import 'reader_writer.dart';
 
-/// A view of the build output.
+/// A view of the build inputs and output.
 ///
-/// If [canRead] returns false, [unreadableReason] explains why the file is
-/// missing; for example, it might say that generation failed.
+/// Build inputs that were used and all outputs are returned from memory.
 ///
-/// Files are only visible if they were a required part of the build, even if
-/// they exist on disk from a previous build.
+/// Build inputs that were not used in the build are not in memory and are
+/// returned directly from disk with no caching.
+@Invariant(
+  '_sourcesConsumedOutsideBuild.every((id) => buildState.isSource(id))',
+)
+@Invariant(
+  '_sourcesConsumedOutsideBuild.every('
+  '(id) => !buildStepPlan.isDeclaredOutput(id))',
+)
+@Invariant(
+  '_sourcesConsumedOutsideBuild.every('
+  '(id) => !buildState.isActualPostOutput(id))',
+)
 class BuildOutputReader {
-  final BuildPlan? _buildPlan;
-  final BuildStepPlan? _buildStepPlan;
-  final BuildState? _buildState;
-  final Set<AssetId>? _processedOutputs;
-  final ReaderWriter? _readerWriter;
+  final BuildPackages buildPackages;
+  final ReaderWriter readerWriter;
+  final FinishedBuildState buildState;
 
-  late final Set<AssetId> _assetsDeletedByPostProcessBuilders =
-      _collectAssetsDeletedByPostProcessBuilders();
+  BuildStepPlan get buildStepPlan => buildState.buildStepPlan;
 
-  /// For an unexpected failure condition, a fully empty output.
-  BuildOutputReader.empty()
-    : _buildState = null,
-      _buildPlan = null,
-      _buildStepPlan = null,
-      _readerWriter = null,
-      _processedOutputs = null;
+  late final BuildFileIndex _fileIndex = BuildFileIndex(
+    buildState.sources
+        .followedBy(buildStepPlan.declaredOutputs)
+        .followedBy(buildState.sharedPartIds),
+  );
 
-  /// For testing: a build output that does not check build phases to determine
-  /// whether outputs were required.
-  @visibleForTesting
-  BuildOutputReader.buildStateOnly({
-    required ReaderWriter readerWriter,
-    required BuildState buildState,
-    BuildStepPlan? buildStepPlan,
-  }) : _buildPlan = null,
-       _buildStepPlan = buildStepPlan,
-       _buildState = buildState,
-       _readerWriter = readerWriter,
-       _processedOutputs = null;
-
-  /// Creates from build results.
+  /// Sources that were read or digested but only outside the build, for example
+  /// by an asset server.
   ///
-  /// [processedOutputs] is the set of generated outputs in the build that were
-  /// considered for building. This excludes generated outputs that were skipped
-  /// due to not matching build dirs or not matching build filters.
-  BuildOutputReader({
-    required BuildPlan buildPlan,
-    required ReaderWriter readerWriter,
-    required BuildState buildState,
-    required Set<AssetId> processedOutputs,
-  }) : _readerWriter = readerWriter,
-       _buildState = buildState,
-       _buildPlan = buildPlan,
-       _buildStepPlan = buildPlan.buildStepPlan,
-       _processedOutputs = processedOutputs;
+  /// Changes to these files trigger build notifications even when no build step
+  /// consumes them as inputs.
+  final Set<AssetId> _sourcesConsumedOutsideBuild = {};
 
-  Set<AssetId> _collectAssetsDeletedByPostProcessBuilders() =>
-      _buildState?.assetsDeletedByPostProcess ?? const {};
+  /// Sources that were read or digested through this reader but only outside
+  /// the build.
+  Set<AssetId> get sourcesConsumedOutsideBuild => _sourcesConsumedOutsideBuild;
+
+  /// Whether [id] was read or digested through this reader but only outside
+  /// the build.
+  bool wasSourceConsumedOutsideBuild(AssetId id) =>
+      _sourcesConsumedOutsideBuild.contains(id);
+
+  BuildOutputReader({
+    required this.buildPackages,
+    required this.readerWriter,
+    required this.buildState,
+  });
+
+  @Requires('id.package.isNotEmpty')
+  @Requires('id.path.isNotEmpty')
+  String pathFor(AssetId id) {
+    return readerWriter.assetPathProvider.pathFor(
+      id,
+      inArtifactTree: buildState.isInArtifactTree(id),
+    );
+  }
 
   /// Returns a reason why [id] is not readable, or null if it is readable.
-  Future<UnreadableReason?> unreadableReason(AssetId id) async {
-    if (_buildState == null || _readerWriter == null) {
+  Future<UnreadableReason?> _unreadableReason(AssetId id) async {
+    if (id.isBrSharedPart && !buildState.isSource(id)) {
+      if (buildState.contentOf(id) != null) return null;
       return UnreadableReason.notFound;
     }
-    if (!_isFile(id)) {
-      return UnreadableReason.notFound;
-    }
-    if (_assetsDeletedByPostProcessBuilders.contains(id)) {
+
+    if (buildState.assetsDeletedByPostProcess.contains(id)) {
       return UnreadableReason.deleted;
     }
-    if (!_isFile(id)) return UnreadableReason.assetType;
 
-    if (_buildState.isActualPostOutput(id)) {
+    if (buildState.isActualPostOutput(id)) {
       return null;
     }
-    final step = _buildStepPlan?.stepForDeclaredOutputOrNull(id);
+    final step = buildStepPlan.stepForDeclaredOutputOrNull(id);
     if (step != null) {
-      if (_processedOutputs?.contains(id) == false) {
+      final stepResult = buildState.stepResultOrNull(step);
+      if (stepResult == null) {
         // The generated output was not considered for building because its
-        // transitive input(s) did not match build dirs and/or build filters.
+        // transitive inputs did not match build dirs and/or build filters.
         return UnreadableReason.notOutput;
       }
-      final stepResult = _buildState.stepResult(step);
       if (stepResult.failed) {
         return UnreadableReason.failed;
       }
-      if (!_buildState.isActualOutput(buildStepPlan: _buildStepPlan!, id: id)) {
+      if (!stepResult.outputs.contains(id)) {
         return UnreadableReason.notOutput;
       }
 
@@ -108,88 +113,96 @@ class BuildOutputReader {
       return null;
     }
 
-    if (_buildState.isSource(id) && await _readerWriter.canRead(id)) {
+    if (buildState.isSource(id) &&
+        await readerWriter.canRead(
+          id,
+          inArtifactTree: buildState.isInArtifactTree(id),
+        )) {
       return null;
     }
-    return UnreadableReason.unknown;
+    return UnreadableReason.notFound;
   }
 
-  Future<bool> canRead(AssetId id) async =>
-      (await unreadableReason(id)) == null;
-
-  Future<Digest> digest(AssetId id) async {
-    final unreadableReason = await this.unreadableReason(id);
-    // Do provide digests for generated files that are known but not output
-    // or known to be deleted. `build serve` uses these digests, which
-    // reflect that the file is missing.
-    if (unreadableReason != null &&
-        unreadableReason != UnreadableReason.notOutput &&
-        unreadableReason != UnreadableReason.deleted) {
-      throw AssetNotFoundException(id);
+  /// Reads [id] from the build output, returning a [BuildOutputReadResult].
+  @Requires('id.package.isNotEmpty')
+  @Requires('id.path.isNotEmpty')
+  Future<BuildOutputReadResult> read(AssetId id) async {
+    final reason = await _unreadableReason(id);
+    if (reason != null) {
+      return BuildOutputReadResult.unreadable(id, reason);
     }
-    return _ensureDigest(id);
+
+    final cached = buildState.contentOf(id);
+    if (cached != null) {
+      _recordSourceConsumedOutsideBuild(id);
+      return BuildOutputReadResult.available(id, cached);
+    }
+
+    final bytes = await readerWriter.readAsBytes(
+      id,
+      inArtifactTree: buildState.isInArtifactTree(id),
+    );
+    _recordSourceConsumedOutsideBuild(id);
+    return BuildOutputReadResult.available(id, AssetContent.bytes(bytes));
   }
 
-  Future<List<int>> readAsBytes(AssetId id) => _readerWriter!.readAsBytes(id);
+  @Requires('id.package.isNotEmpty')
+  @Requires('id.path.isNotEmpty')
+  Future<bool> canRead(AssetId id) async =>
+      (await _unreadableReason(id)) == null;
+
+  void _recordSourceConsumedOutsideBuild(AssetId id) {
+    if (buildState.isSource(id) && buildState.contentOf(id) == null) {
+      _sourcesConsumedOutsideBuild.add(id);
+    }
+  }
 
   Stream<AssetId> findAssets(Glob glob, {required String package}) async* {
-    if (_buildState == null || _readerWriter == null) return;
-    for (final id in _buildState.findFiles(
-      package: package,
-      buildStepPlan: _buildStepPlan,
-      glob: glob,
-    )) {
-      if (await _readerWriter.canRead(id)) {
+    for (final id in _fileIndex.findFiles(package, glob: glob)) {
+      if (await canRead(id)) {
         yield id;
       }
     }
   }
 
-  /// Returns the `lastKnownDigest` of [id], computing and caching it if
-  /// necessary.
-  ///
-  /// Note that [id] must exist in the asset graph.
-  FutureOr<Digest> _ensureDigest(AssetId id) {
-    final digest = _buildState!.digestOf(buildStepPlan: _buildStepPlan, id: id);
-    if (digest != null) return digest;
-    return _readerWriter!.digest(id).then((digest) {
-      _buildState.updateSourceDigest(id, digest);
-      return digest;
-    });
-  }
-
   /// A lazily computed view of all the assets available after a build.
   List<AssetId> allAssets({String? rootDir}) {
-    final buildState = _buildState;
-    if (buildState == null) return [];
     final result = <AssetId>[];
     for (final id in buildState.sources) {
-      if (!_shouldSkipId(buildState, id, rootDir)) {
+      if (!_shouldSkipId(id, rootDir)) {
         result.add(id);
       }
     }
-    final buildStepPlan = _buildStepPlan;
-    if (buildStepPlan != null) {
-      for (final id in buildStepPlan.declaredOutputs) {
-        if (!_shouldSkipId(buildState, id, rootDir)) {
-          result.add(id);
-        }
+    for (final id in buildStepPlan.declaredOutputs) {
+      if (!_shouldSkipId(id, rootDir)) {
+        result.add(id);
       }
     }
-    result.addAll(buildState.actualPostOutputs);
+    for (final id in buildState.actualPostOutputs) {
+      if (!_shouldSkipId(id, rootDir)) {
+        result.add(id);
+      }
+    }
+    for (final id in buildState.sharedPartIds) {
+      if (!_shouldSkipId(id, rootDir)) {
+        result.add(id);
+      }
+    }
     return result;
   }
 
-  bool _shouldSkipId(BuildState buildState, AssetId id, String? rootDir) {
-    if (_buildPlan == null) return false;
-    if (!_isFile(id)) return true;
-    if (_assetsDeletedByPostProcessBuilders.contains(id)) return true;
+  bool _shouldSkipId(AssetId id, String? rootDir) {
+    if (id.isBrSharedPart && !buildState.isSource(id)) {
+      if (buildState.contentOf(id) == null) return true;
+    } else {
+      if (buildState.assetsDeletedByPostProcess.contains(id)) return true;
+    }
 
     // Exclude non-lib assets if they're outside of the root directory or not
     // an output package of the build.
     if (!id.path.startsWith('lib/')) {
       if (rootDir != null && !p.isWithin(rootDir, id.path)) return true;
-      if (!_buildPlan.buildPackages.outputPackages.contains(id.package)) {
+      if (!buildPackages.outputPackages.contains(id.package)) {
         return true;
       }
     }
@@ -197,30 +210,18 @@ class BuildOutputReader {
     if (buildState.isActualPostOutput(id)) {
       return false;
     }
-    final step = _buildStepPlan?.stepForDeclaredOutputOrNull(id);
+    final step = buildStepPlan.stepForDeclaredOutputOrNull(id);
     if (step != null) {
       final stepResult = buildState.stepResultOrNull(step);
       if (stepResult == null ||
           stepResult.failed ||
-          !stepResult.outputs.containsKey(id)) {
+          !stepResult.outputs.contains(id)) {
         return true;
       }
-      return !_processedOutputs!.contains(id);
+      return false;
     }
     if (id.path == '.packages') return true;
     if (id.path == '.dart_tool/package_config.json') return true;
     return false;
   }
-
-  bool _isFile(AssetId id) =>
-      _buildState!.isFile(buildStepPlan: _buildStepPlan, id: id);
-}
-
-enum UnreadableReason {
-  notFound,
-  notOutput,
-  assetType,
-  deleted,
-  failed,
-  unknown,
 }

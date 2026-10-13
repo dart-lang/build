@@ -1,3 +1,7 @@
+## 1.2.2
+
+- Fix `changedFilesInBuild` not showing newly added files.
+
 ## 1.2.1
 
 - Move source to

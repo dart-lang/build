@@ -21,8 +21,9 @@ import 'invalidation_tester.dart';
 Future<void> main() async {
   for (var iteration = 0; iteration != 500; ++iteration) {
     test('invalidation stress test $iteration', () async {
-      final tester = InvalidationTester()..logSetup();
       final random = Random(iteration);
+      final tester = InvalidationTester(discardResolver: random.nextBool())
+        ..logSetup();
 
       // Whether to change the imports in source files between builds.
       final changeImports = iteration % 10 == 0;
@@ -75,8 +76,8 @@ Future<void> main() async {
             to: '.${i + 1}',
             // Cover optional+required builders.
             isOptional: random.nextBool(),
-            // Cover builders with hidden+visible output.
-            outputIsVisible: random.nextBool(),
+            // Cover builders with artifact tree and package path output.
+            outputAtPackagePath: random.nextBool(),
           )
           // Use the input as the seed for what additional reads to do,
           // so reads won't change between identical runs.
@@ -102,16 +103,15 @@ Future<void> main() async {
         Future<void> addExpectedOutputs(String invalidatedInput) async {
           for (final output in outputs) {
             final assetId = AssetId('pkg', 'lib/$output.dart');
-            final hiddenAssetId = AssetId(
+            final artifactTreeAssetId = AssetId(
               'pkg',
               '.dart_tool/build/generated/pkg/lib/$output.dart',
             );
-            final outputContents =
-                tester.readerWriter!.testing.exists(assetId)
-                    ? tester.readerWriter!.testing.readString(assetId)
-                    : tester.readerWriter!.testing.exists(hiddenAssetId)
-                    ? tester.readerWriter!.testing.readString(hiddenAssetId)
-                    : '';
+            final outputContents = tester.readerWriter!.testing.exists(assetId)
+                ? tester.readerWriter!.testing.readString(assetId)
+                : tester.readerWriter!.testing.exists(artifactTreeAssetId)
+                ? tester.readerWriter!.testing.readString(artifactTreeAssetId)
+                : '';
             // The test builder output is a list of "$name,$hash" for each input
             // that was read, including transitively resolved sources. Check it
             // for [input]. If found, this output is invalidated: recursively
@@ -129,8 +129,8 @@ Future<void> main() async {
         // If [changeImports] then change some imports; it's only possible to
         // change imports for files that will be output.
         if (changeImports && expectedOutputs.isNotEmpty) {
-          final sourceToChangeImports =
-              expectedOutputs.toList()[random.nextInt(expectedOutputs.length)];
+          final sourceToChangeImports = expectedOutputs
+              .toList()[random.nextInt(expectedOutputs.length)];
           importGraph[sourceToChangeImports] = randomImportList();
           tester.importGraph(importGraph);
         }

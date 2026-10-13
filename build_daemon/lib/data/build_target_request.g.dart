@@ -96,8 +96,9 @@ class _$BuildTargetRequest extends BuildTargetRequest {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper(r'BuildTargetRequest')
-      ..add('target', target)).toString();
+    return (newBuiltValueToStringHelper(
+      r'BuildTargetRequest',
+    )..add('target', target)).toString();
   }
 }
 

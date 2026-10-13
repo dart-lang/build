@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:build_web_compilers/src/build_frontend_server/fes_server_info.dart';
 import 'package:build_web_compilers/src/common.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
@@ -50,23 +51,23 @@ void main() {
 
       // Wait for a config file to be written.
       final configFile = File(p.join(tempDir.path, fesManagerConfigPath));
-      final content = await _waitForFileContentChanges(configFile);
-      final json = jsonDecode(content) as Map<String, dynamic>;
-      final port = json['port'] as int?;
+      await _waitForFileContentChanges(configFile);
+      final serverInfo = FesServerInfo.fromFile(configFile);
+      expect(serverInfo, isNotNull);
+      expect(serverInfo!.port, isPositive);
+      expect(serverInfo.token, isNotEmpty);
 
-      expect(port, isNotNull);
-
-      // Connect to the FES socket, send a request, and verify its response.
-      final socket = await Socket.connect(InternetAddress.loopbackIPv4, port!);
+      // Connect to the FES socket, authenticate, send a request, and verify
+      // response.
+      final connection = await _connectAndAuth(
+        serverInfo.port,
+        serverInfo.token,
+      );
+      final socket = connection.socket;
       socket.writeln(
         jsonEncode({'instruction': 'READ_OUTPUT_FILE', 'path': 'non_existent'}),
       );
-      final responseLine =
-          await socket
-              .cast<List<int>>()
-              .transform(utf8.decoder)
-              .transform(const LineSplitter())
-              .first;
+      final responseLine = await connection.socketLines.first;
       final response = jsonDecode(responseLine) as Map<String, dynamic>;
       expect(response.containsKey('error'), isTrue);
 
@@ -102,31 +103,36 @@ void main() {
           .listen((line) => print('Manager defines test stdout: $line'));
 
       final configFile = File(p.join(tempDir.path, fesManagerConfigPath));
-      final content = await _waitForFileContentChanges(configFile);
-      final json = jsonDecode(content) as Map<String, dynamic>;
-      final port = json['port'] as int?;
+      await _waitForFileContentChanges(configFile);
+      final serverInfo = FesServerInfo.fromFile(configFile);
 
-      expect(port, isNotNull);
+      expect(serverInfo, isNotNull);
 
-      final socket = await Socket.connect(InternetAddress.loopbackIPv4, port!);
-      final socketLines =
-          socket
-              .cast<List<int>>()
-              .transform(utf8.decoder)
-              .transform(const LineSplitter())
-              .asBroadcastStream();
+      final connection = await _connectAndAuth(
+        serverInfo!.port,
+        serverInfo.token,
+      );
+      final socket = connection.socket;
+      final socketLines = connection.socketLines;
+
+      socket.writeln(
+        jsonEncode({
+          'instruction': 'COMPILE',
+          'entrypoint': 'org-dartlang-app:///web/main.dart',
+        }),
+      );
+      var responseLine = await socketLines.first;
+      var response = jsonDecode(responseLine) as Map<String, dynamic>;
+      expect(response['errorCount'], 0);
 
       socket.writeln(
         jsonEncode({
           'instruction': 'READ_OUTPUT_FILE',
           'path': 'test_scratch_space/web/main.ddc.js',
-          'entrypoint': 'org-dartlang-app:///web/main.dart',
-          'invalidatedFiles': ['org-dartlang-app:///web/main.dart'],
         }),
       );
-
-      final responseLine = await socketLines.first;
-      final response = jsonDecode(responseLine) as Map<String, dynamic>;
+      responseLine = await socketLines.first;
+      response = jsonDecode(responseLine) as Map<String, dynamic>;
       expect(response.containsKey('content'), isTrue);
       expect(response['content'], contains('manager_hello'));
 
@@ -166,24 +172,20 @@ void main() {
       ], workingDirectory: tempDir.path);
 
       // Wait for the config file to be updated with new content
-      final content2 = await _waitForFileContentChanges(
-        configFile,
-        previousContent: content1,
-      );
-      final json2 = jsonDecode(content2) as Map<String, dynamic>;
-      final port2 = json2['port'] as int;
+      await _waitForFileContentChanges(configFile, previousContent: content1);
+      final serverInfo2 = FesServerInfo.fromFile(configFile);
+      expect(serverInfo2, isNotNull);
 
       // Connect to the new socket and send a request.
-      final socket = await Socket.connect(InternetAddress.loopbackIPv4, port2);
+      final connection = await _connectAndAuth(
+        serverInfo2!.port,
+        serverInfo2.token,
+      );
+      final socket = connection.socket;
       socket.writeln(
         jsonEncode({'instruction': 'READ_OUTPUT_FILE', 'path': 'non_existent'}),
       );
-      final responseLine =
-          await socket
-              .cast<List<int>>()
-              .transform(utf8.decoder)
-              .transform(const LineSplitter())
-              .first;
+      final responseLine = await connection.socketLines.first;
 
       final response = jsonDecode(responseLine) as Map<String, dynamic>;
       expect(response.containsKey('error'), isTrue);
@@ -191,6 +193,136 @@ void main() {
       await socket.close();
       process2.kill();
       await process2.exitCode;
+    });
+
+    group('Token authorization', () {
+      late Directory authTempDir;
+      late File authPackageConfig;
+      late Process authProcess;
+      late FesServerInfo authServerInfo;
+
+      setUp(() async {
+        authTempDir = await Directory.systemTemp.createTemp('fes-auth-test');
+        authPackageConfig = File(
+          p.join(authTempDir.path, '.dart_tool', 'package_config.json'),
+        );
+        authPackageConfig.createSync(recursive: true);
+        authPackageConfig.writeAsStringSync(
+          jsonEncode({'configVersion': 2, 'packages': <String>[]}),
+        );
+
+        final fileSystemRoot = authTempDir.uri.resolve('fes_root/');
+        await Directory.fromUri(fileSystemRoot).create(recursive: true);
+
+        final scriptPath = _resolveFesManagerScriptPath();
+        authProcess = await Process.start('dart', [
+          scriptPath,
+          sdkDir,
+          fileSystemRoot.toString(),
+          p.toUri(authPackageConfig.path).toString(),
+        ], workingDirectory: authTempDir.path);
+
+        final configFile = File(p.join(authTempDir.path, fesManagerConfigPath));
+        await _waitForFileContentChanges(configFile);
+        authServerInfo = FesServerInfo.fromFile(configFile)!;
+      });
+
+      tearDown(() async {
+        authProcess.kill();
+        await authProcess.exitCode;
+        await authTempDir.delete(recursive: true);
+      });
+
+      test('rejects connection with invalid token', () async {
+        final socket = await Socket.connect(
+          InternetAddress.loopbackIPv4,
+          authServerInfo.port,
+        );
+        final socketLines = socket
+            .cast<List<int>>()
+            .transform(utf8.decoder)
+            .transform(const LineSplitter())
+            .asBroadcastStream();
+
+        final authResponseFuture = socketLines.first;
+        socket.writeln(jsonEncode({'token': 'wrong_token'}));
+        await socket.flush();
+
+        final responseLine = await authResponseFuture;
+        final response = jsonDecode(responseLine) as Map<String, dynamic>;
+        expect(response['error'], 'Unauthorized');
+
+        // Verify that the socket was closed by the server
+        expect(socketLines.isEmpty, completion(isTrue));
+      });
+
+      test('rejects connection without token handshake', () async {
+        final socket = await Socket.connect(
+          InternetAddress.loopbackIPv4,
+          authServerInfo.port,
+        );
+        final socketLines = socket
+            .cast<List<int>>()
+            .transform(utf8.decoder)
+            .transform(const LineSplitter())
+            .asBroadcastStream();
+
+        final authResponseFuture = socketLines.first;
+        socket.writeln(
+          jsonEncode({'instruction': 'COMPILE', 'entrypoint': 'test.dart'}),
+        );
+        await socket.flush();
+
+        final responseLine = await authResponseFuture;
+        final response = jsonDecode(responseLine) as Map<String, dynamic>;
+        expect(response['error'], 'Unauthorized');
+
+        // Verify that the socket was closed by the server
+        expect(socketLines.isEmpty, completion(isTrue));
+      });
+
+      test('config directory is user-private', () {
+        final configFile = File(p.join(authTempDir.path, fesManagerConfigPath));
+        final configDir = configFile.parent;
+
+        if (Platform.isWindows) {
+          final result = Process.runSync('powershell', [
+            '-NoProfile',
+            '-NonInteractive',
+            '-Command',
+            '(Get-Acl "${configDir.path}").AreAccessRulesProtected',
+          ]);
+          expect(result.exitCode, 0);
+          expect(result.stdout.toString().trim(), 'True');
+        } else {
+          final dirStat = configDir.statSync();
+          final dirMode = dirStat.mode & (7 * 8 * 8 + 7 * 8 + 7);
+          expect(dirMode, 7 * 8 * 8);
+        }
+      });
+
+      test(
+        'throws version skew error when reading config file without token',
+        () {
+          final legacyConfigFile = File(
+            p.join(authTempDir.path, 'legacy_config.json'),
+          )..writeAsStringSync(jsonEncode({'port': 12345}));
+
+          expect(
+            () => FesServerInfo.fromFile(legacyConfigFile),
+            throwsA(
+              isA<StateError>().having(
+                (e) => e.message,
+                'message',
+                allOf(
+                  contains('incompatible version of build_web_compilers'),
+                  contains('build_web_compilers >=4.8.11'),
+                ),
+              ),
+            ),
+          );
+        },
+      );
     });
 
     group('FES Manager API', () {
@@ -240,17 +372,29 @@ void main() {
             .listen((line) => print('FES Manager stderr: $line'));
 
         final configFile = File(p.join(testTempDir.path, fesManagerConfigPath));
-        final content = await _waitForFileContentChanges(configFile);
-        final json = jsonDecode(content) as Map<String, dynamic>;
-        final port = json['port'] as int;
+        await _waitForFileContentChanges(configFile);
+        final serverInfo = FesServerInfo.fromFile(configFile)!;
+        final connection = await _connectAndAuth(
+          serverInfo.port,
+          serverInfo.token,
+        );
+        testSocket = connection.socket;
+        testSocketLines = connection.socketLines;
 
-        testSocket = await Socket.connect(InternetAddress.loopbackIPv4, port);
-        testSocketLines =
-            testSocket
-                .cast<List<int>>()
-                .transform(utf8.decoder)
-                .transform(const LineSplitter())
-                .asBroadcastStream();
+        // Perform an initial compile to ensure the Frontend Server is warmed up
+        // and initialized for subsequent expression compilation and metadata
+        // merging tests.
+        testSocket.writeln(
+          jsonEncode({
+            'instruction': 'COMPILE',
+            'entrypoint': 'org-dartlang-app:///web/main.dart',
+          }),
+        );
+        final responseLine = await testSocketLines.first;
+        final response = jsonDecode(responseLine) as Map<String, dynamic>;
+        if (response['errorCount'] != 0) {
+          throw StateError('Failed to run initial compile: $response');
+        }
       });
 
       tearDownAll(() async {
@@ -400,19 +544,59 @@ void main() {
         expect(response['errorCount'], 0);
       });
 
+      test('throws an error when recompiling a different entrypoint '
+          'without restart', () async {
+        testMainFile.writeAsStringSync('void main() { print("hello"); }');
+        testSocket.writeln(
+          jsonEncode({
+            'instruction': 'COMPILE',
+            'entrypoint': 'org-dartlang-app:///web/main.dart',
+          }),
+        );
+        var responseLine = await testSocketLines.first;
+        var response = jsonDecode(responseLine) as Map<String, dynamic>;
+        expect(response['errorCount'], 0);
+
+        // Compile a different entrypoint.
+        testSocket.writeln(
+          jsonEncode({
+            'instruction': 'COMPILE',
+            'entrypoint': 'org-dartlang-app:///web/other.dart',
+          }),
+        );
+        responseLine = await testSocketLines.first;
+        response = jsonDecode(responseLine) as Map<String, dynamic>;
+
+        expect(response.containsKey('error'), isTrue);
+        expect(
+          response['error'],
+          contains('Cannot compile a different entrypoint'),
+        );
+      });
+
       test('READ_OUTPUT_FILE handles failures and recovers', () async {
         // 1. Initial valid compilation
         testMainFile.writeAsStringSync('void main() { print("hello"); }');
         testSocket.writeln(
           jsonEncode({
-            'instruction': 'READ_OUTPUT_FILE',
-            'path': 'test_scratch_space/web/main.ddc.js',
+            'instruction': 'RECOMPILE_AND_RECORD',
             'entrypoint': 'org-dartlang-app:///web/main.dart',
+            'filesToWrite': ['web/main.ddc.js'],
             'invalidatedFiles': ['org-dartlang-app:///web/main.dart'],
           }),
         );
         var responseLine = await testSocketLines.first;
         var response = jsonDecode(responseLine) as Map<String, dynamic>;
+        expect(response['errorCount'], 0);
+
+        testSocket.writeln(
+          jsonEncode({
+            'instruction': 'READ_OUTPUT_FILE',
+            'path': 'test_scratch_space/web/main.ddc.js',
+          }),
+        );
+        responseLine = await testSocketLines.first;
+        response = jsonDecode(responseLine) as Map<String, dynamic>;
         expect(response.containsKey('content'), isTrue);
         expect(response['content'], contains('print("hello")'));
 
@@ -420,9 +604,9 @@ void main() {
         testMainFile.writeAsStringSync('void main() { print("hello"');
         testSocket.writeln(
           jsonEncode({
-            'instruction': 'READ_OUTPUT_FILE',
-            'path': 'test_scratch_space/web/main.ddc.js',
+            'instruction': 'RECOMPILE_AND_RECORD',
             'entrypoint': 'org-dartlang-app:///web/main.dart',
+            'filesToWrite': ['web/main.ddc.js'],
             'invalidatedFiles': [
               'org-dartlang-app:///web/main.dart',
               'org-dartlang-app:///web/dummy1.dart',
@@ -431,19 +615,29 @@ void main() {
         );
         responseLine = await testSocketLines.first;
         response = jsonDecode(responseLine) as Map<String, dynamic>;
-        expect(response.containsKey('error'), isTrue);
+        expect(response['errorCount'], greaterThan(0));
 
         // 3. Fix the invalid file and recover
         testMainFile.writeAsStringSync('void main() { print("hello fixed"); }');
         testSocket.writeln(
           jsonEncode({
-            'instruction': 'READ_OUTPUT_FILE',
-            'path': 'test_scratch_space/web/main.ddc.js',
+            'instruction': 'RECOMPILE_AND_RECORD',
             'entrypoint': 'org-dartlang-app:///web/main.dart',
+            'filesToWrite': ['web/main.ddc.js'],
             'invalidatedFiles': [
               'org-dartlang-app:///web/main.dart',
               'org-dartlang-app:///web/dummy2.dart',
             ],
+          }),
+        );
+        responseLine = await testSocketLines.first;
+        response = jsonDecode(responseLine) as Map<String, dynamic>;
+        expect(response['errorCount'], 0);
+
+        testSocket.writeln(
+          jsonEncode({
+            'instruction': 'READ_OUTPUT_FILE',
+            'path': 'test_scratch_space/web/main.ddc.js',
           }),
         );
         responseLine = await testSocketLines.first;
@@ -453,6 +647,26 @@ void main() {
       });
     });
   });
+}
+
+Future<({Socket socket, Stream<String> socketLines})> _connectAndAuth(
+  int port,
+  String token,
+) async {
+  final socket = await Socket.connect(InternetAddress.loopbackIPv4, port);
+  final socketLines = socket
+      .cast<List<int>>()
+      .transform(utf8.decoder)
+      .transform(const LineSplitter())
+      .asBroadcastStream();
+
+  final authFuture = socketLines.first;
+  socket.writeln(jsonEncode({'token': token}));
+  await socket.flush();
+  final authResponseLine = await authFuture;
+  final authResponse = jsonDecode(authResponseLine) as Map<String, dynamic>;
+  expect(authResponse['status'], 'AUTHENTICATED');
+  return (socket: socket, socketLines: socketLines);
 }
 
 Future<String> _waitForFileContentChanges(
@@ -474,7 +688,6 @@ Future<String> _waitForFileContentChanges(
   }
 }
 
-// TODO(markzipan): Determine if this is sufficient to find 'fes_manager.dart'.
 String _resolveFesManagerScriptPath() {
   final localScript = p.absolute('bin/fes_manager.dart');
   if (File(localScript).existsSync()) return localScript;

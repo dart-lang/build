@@ -8,6 +8,7 @@ import 'dart:io';
 
 import 'package:async/async.dart';
 import 'package:build/build.dart';
+import 'package:build_runner/src/build/asset_content.dart';
 import 'package:build_runner/src/build/build_result.dart';
 import 'package:build_runner/src/build/build_state/build_state.dart';
 import 'package:build_runner/src/build/build_state/build_step_id.dart';
@@ -22,11 +23,11 @@ import 'package:build_runner/src/build_plan/phase.dart';
 import 'package:build_runner/src/commands/serve/server.dart';
 import 'package:build_runner/src/commands/watch/watcher.dart';
 import 'package:build_runner/src/io/build_output_reader.dart';
+import 'package:build_runner/src/logging/build_log.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
 import 'package:stream_channel/stream_channel.dart';
-import 'package:test/fake.dart';
 import 'package:test/test.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
@@ -120,17 +121,17 @@ void main() {
     readerWriter = InternalTestReaderWriter(
       outputRootPackage: buildPackages.outputRoot,
     );
-    buildState = BuildState.create(sources: <AssetId>{});
-    watcher = FakeWatcher(buildPackages);
-    serveHandler = ServeHandler(watcher);
     buildStepPlan = BuildStepPlan(
       (BuildStepPlanBuilder b) =>
           b..buildPhases = BuildPhases(const <InBuildPhase>[]),
     );
-    finalizedReader = BuildOutputReader.buildStateOnly(
+    buildState = BuildState(buildStepPlan: buildStepPlan, sources: const {});
+    watcher = FakeWatcher(buildPackages);
+    serveHandler = ServeHandler(watcher);
+    finalizedReader = BuildOutputReader(
+      buildPackages: buildPackages,
       readerWriter: readerWriter,
-      buildState: buildState,
-      buildStepPlan: buildStepPlan,
+      buildState: buildState.toFinishedBuildState(),
     );
     watcher.addFutureResult(
       Future.value(
@@ -146,15 +147,34 @@ void main() {
     final parsedId = AssetId.parse(id);
     if (deleted) {
       buildState.addPostProcessBuildStepResult(
-        PostProcessBuildStepId(input: parsedId, actionNumber: 1),
-        PostProcessBuildStepResult(hidden: true, deletedPrimaryInput: true),
+        step: PostProcessBuildStepId(input: parsedId, actionNumber: 1),
+        result: PostProcessBuildStepResult(
+          inArtifactTree: true,
+          deletedPrimaryInput: true,
+        ),
       );
     }
     buildState.addSourceForTest(
       parsedId,
-      digest: computeDigest(parsedId, content),
+      content: AssetContent.string(
+        content,
+        digest: computeDigest(parsedId, content),
+      ),
     );
     readerWriter.testing.writeString(parsedId, content);
+    finalizedReader = BuildOutputReader(
+      buildPackages: buildPackages,
+      readerWriter: readerWriter,
+      buildState: buildState.toFinishedBuildState(),
+    );
+    watcher.addFutureResult(
+      Future.value(
+        BuildResult(
+          status: BuildStatus.success,
+          buildOutputReader: finalizedReader,
+        ),
+      ),
+    );
   }
 
   test('can get handlers for a subdirectory', () async {
@@ -255,29 +275,211 @@ void main() {
     expect(() => serveHandler.handlerFor('.'), throwsArgumentError);
   });
 
+  group('restrictToLoopback', () {
+    test('rejects requests with a missing host', () async {
+      addSource('a|web/index.html', 'content');
+      final response = await serveHandler.handlerFor(
+        'web',
+        restrictToLoopback: true,
+      )(Request('GET', Uri.parse('http://localhost/index.html')));
+      expect(response.statusCode, HttpStatus.forbidden);
+    });
+
+    test('rejects requests with a non-loopback host', () async {
+      addSource('a|web/index.html', 'content');
+      final response =
+          await serveHandler.handlerFor('web', restrictToLoopback: true)(
+            Request(
+              'GET',
+              Uri.parse('http://localhost/index.html'),
+              headers: {'host': 'attacker.example.com'},
+            ),
+          );
+      expect(response.statusCode, HttpStatus.forbidden);
+    });
+
+    test('rejects requests with a non-loopback origin', () async {
+      addSource('a|web/index.html', 'content');
+      final response =
+          await serveHandler.handlerFor('web', restrictToLoopback: true)(
+            Request(
+              'GET',
+              Uri.parse('http://localhost/index.html'),
+              headers: {
+                'host': 'localhost',
+                'origin': 'http://attacker.example.com',
+              },
+            ),
+          );
+      expect(response.statusCode, HttpStatus.forbidden);
+    });
+
+    test('serves requests with a loopback host', () async {
+      addSource('a|web/index.html', 'content');
+      final response =
+          await serveHandler.handlerFor('web', restrictToLoopback: true)(
+            Request(
+              'GET',
+              Uri.parse('http://localhost/index.html'),
+              headers: {'host': 'localhost'},
+            ),
+          );
+      expect(response.statusCode, HttpStatus.ok);
+      expect(await response.readAsString(), 'content');
+    });
+
+    test('serves requests with a loopback host and origin', () async {
+      addSource('a|web/index.html', 'content');
+      final response =
+          await serveHandler.handlerFor('web', restrictToLoopback: true)(
+            Request(
+              'GET',
+              Uri.parse('http://localhost/index.html'),
+              headers: {'host': 'localhost', 'origin': 'http://localhost:8080'},
+            ),
+          );
+      expect(response.statusCode, HttpStatus.ok);
+      expect(await response.readAsString(), 'content');
+    });
+
+    test('does not restrict when disabled (default)', () async {
+      addSource('a|web/index.html', 'content');
+      final response = await serveHandler.handlerFor('web')(
+        Request(
+          'GET',
+          Uri.parse('http://localhost/index.html'),
+          headers: {'host': 'attacker.example.com'},
+        ),
+      );
+      expect(response.statusCode, HttpStatus.ok);
+      expect(await response.readAsString(), 'content');
+    });
+
+    test('serves requests with allowed host when not loopback', () async {
+      addSource('a|web/index.html', 'content');
+      final response =
+          await serveHandler.handlerFor(
+            'web',
+            allowedHost: 'my-host.example.com',
+          )(
+            Request(
+              'GET',
+              Uri.parse('http://localhost/index.html'),
+              headers: {'host': 'my-host.example.com'},
+            ),
+          );
+      expect(response.statusCode, HttpStatus.ok);
+      expect(await response.readAsString(), 'content');
+    });
+
+    test('serves requests with allowed host and port in host header', () async {
+      addSource('a|web/index.html', 'content');
+      final response =
+          await serveHandler.handlerFor(
+            'web',
+            allowedHost: 'my-host.example.com',
+          )(
+            Request(
+              'GET',
+              Uri.parse('http://localhost/index.html'),
+              headers: {'host': 'my-host.example.com:8080'},
+            ),
+          );
+      expect(response.statusCode, HttpStatus.ok);
+      expect(await response.readAsString(), 'content');
+    });
+
+    test(
+      'rejects requests with mismatched host when allowedHost set',
+      () async {
+        addSource('a|web/index.html', 'content');
+        final response =
+            await serveHandler.handlerFor(
+              'web',
+              allowedHost: 'my-host.example.com',
+            )(
+              Request(
+                'GET',
+                Uri.parse('http://localhost/index.html'),
+                headers: {'host': 'attacker.example.com'},
+              ),
+            );
+        expect(response.statusCode, HttpStatus.forbidden);
+      },
+    );
+
+    test(
+      'rejects requests with disallowed origin when allowedHost set',
+      () async {
+        addSource('a|web/index.html', 'content');
+        final response =
+            await serveHandler.handlerFor(
+              'web',
+              allowedHost: 'my-host.example.com',
+            )(
+              Request(
+                'GET',
+                Uri.parse('http://localhost/index.html'),
+                headers: {
+                  'host': 'my-host.example.com',
+                  'origin': 'http://attacker.example.com',
+                },
+              ),
+            );
+        expect(response.statusCode, HttpStatus.forbidden);
+      },
+    );
+
+    test('serves requests with matching origin when allowedHost set', () async {
+      addSource('a|web/index.html', 'content');
+      final response =
+          await serveHandler.handlerFor(
+            'web',
+            allowedHost: 'my-host.example.com',
+          )(
+            Request(
+              'GET',
+              Uri.parse('http://localhost/index.html'),
+              headers: {
+                'host': 'my-host.example.com',
+                'origin': 'http://my-host.example.com:8080',
+              },
+            ),
+          );
+      expect(response.statusCode, HttpStatus.ok);
+      expect(await response.readAsString(), 'content');
+    });
+  });
+
   group('build failures', () {
     setUp(() async {
-      addSource('a|web/index.html', '');
       final primaryId = AssetId('a', 'web/main.dart');
       final outputId = AssetId('a', 'web/main.ddc.js');
       final buildStepId = BuildStepId(primaryInput: primaryId, phaseNumber: 0);
 
       final buildStepPlan = BuildStepPlan((BuildStepPlanBuilder b) {
-        b.buildPhases = BuildPhases(const <InBuildPhase>[]);
+        b.buildPhases = BuildPhases([
+          InBuildPhase(builder: TestBuilder(), key: 'b1', package: 'a'),
+        ]);
+        b.buildStepsByPhase.add(BuiltList<BuildStepId>([buildStepId]));
         b.buildStepsByDeclaredOutput.addAll({outputId: buildStepId});
+        b.declaredOutputsByStep.add(buildStepId, outputId);
       });
 
-      finalizedReader = BuildOutputReader.buildStateOnly(
-        readerWriter: readerWriter,
-        buildState: buildState,
-        buildStepPlan: buildStepPlan,
-      );
+      buildState = BuildState(buildStepPlan: buildStepPlan, sources: const {});
+      addSource('a|web/index.html', '');
 
       final stepResult = BuildStepResult((b) {
         b.result = false;
-        b.isHidden = false;
+        b.inArtifactTree = false;
       });
-      buildState.updateBuildStepResult(buildStepId, stepResult);
+      buildState.addBuildStepResult(step: buildStepId, result: stepResult);
+
+      finalizedReader = BuildOutputReader(
+        buildPackages: buildPackages,
+        readerWriter: readerWriter,
+        buildState: buildState.toFinishedBuildState(),
+      );
       watcher.addFutureResult(
         Future.value(
           BuildResult(
@@ -305,8 +507,17 @@ void main() {
     });
 
     test('logs rejected requests', () async {
+      final logController = StreamController<LogRecord>();
+      final originalConfig = buildLog.configuration;
+      buildLog.configuration = buildLog.configuration.rebuild(
+        (b) => b.onLog = logController.add,
+      );
+      addTearDown(() {
+        logController.close();
+        buildLog.configuration = originalConfig;
+      });
       expect(
-        Logger.root.onRecord,
+        logController.stream,
         emitsThrough(
           predicate<LogRecord>(
             (record) =>
@@ -323,8 +534,17 @@ void main() {
 
   test('logs requests if you ask it to', () async {
     addSource('a|web/index.html', 'content');
+    final logController = StreamController<LogRecord>();
+    final originalConfig = buildLog.configuration;
+    buildLog.configuration = buildLog.configuration.rebuild(
+      (b) => b.onLog = logController.add,
+    );
+    addTearDown(() {
+      logController.close();
+      buildLog.configuration = originalConfig;
+    });
     expect(
-      Logger.root.onRecord,
+      logController.stream,
       emitsThrough(
         predicate<LogRecord>(
           (record) =>
@@ -354,13 +574,14 @@ void main() {
       ),
     );
     expect(jsonDecode(await response.readAsString()), {
-      'index.html':
-          computeDigest(AssetId('a', 'web/index.html'), 'content1').toString(),
-      'packages/a/some.dart.js':
-          computeDigest(
-            AssetId('a', 'lib/some.dart.js'),
-            'content2',
-          ).toString(),
+      'index.html': computeDigest(
+        AssetId('a', 'web/index.html'),
+        'content1',
+      ).toString(),
+      'packages/a/some.dart.js': computeDigest(
+        AssetId('a', 'lib/some.dart.js'),
+        'content2',
+      ).toString(),
     });
   });
 
@@ -468,18 +689,16 @@ void main() {
             (Request request) =>
                 Response(200, context: {'onConnect': onConnect});
 
-        createMockConnection = (
-          WebSocketChannel serverChannel,
-          String rootDir,
-        ) async {
-          final mockResponse = await handler.createHandlerByRootDir(rootDir)(
-            FakeRequest(),
-          );
-          final onConnect =
-              mockResponse.context['onConnect']
-                  as void Function(WebSocketChannel, String);
-          onConnect(serverChannel, '');
-        };
+        createMockConnection =
+            (WebSocketChannel serverChannel, String rootDir) async {
+              final mockResponse = await handler.createHandlerByRootDir(
+                rootDir,
+              )(Request('GET', Uri.parse('http://localhost/')));
+              final onConnect =
+                  mockResponse.context['onConnect']
+                      as void Function(WebSocketChannel, String);
+              onConnect(serverChannel, '');
+            };
 
         handler = BuildUpdatesWebSocketHandler(mockHandlerFactory);
 
@@ -552,22 +771,20 @@ void main() {
       test('emits build results digests', () async {
         addSource('a|web/index.html', 'content1');
         addSource('a|lib/some.dart.js', 'content2');
-        final indexHash =
-            computeDigest(
-              AssetId('a', 'web/index.html'),
-              'content1',
-            ).toString();
+        final indexHash = computeDigest(
+          AssetId('a', 'web/index.html'),
+          'content1',
+        ).toString();
         expect(
           clientChannel1.stream.map((s) => jsonDecode(s.toString())),
           emitsInOrder([
             {'index.html': indexHash},
             {
               'index.html': indexHash,
-              'packages/a/some.dart.js':
-                  computeDigest(
-                    AssetId('a', 'lib/some.dart.js'),
-                    'content2',
-                  ).toString(),
+              'packages/a/some.dart.js': computeDigest(
+                AssetId('a', 'lib/some.dart.js'),
+                'content2',
+              ).toString(),
             },
             emitsDone,
           ]),
@@ -583,11 +800,29 @@ void main() {
         await handler.emitUpdateMessage(
           BuildResult(
             status: BuildStatus.success,
-            outputs:
-                [
-                  AssetId('a', 'web/index.html'),
-                  AssetId('a', 'lib/some.dart.js'),
-                ].build(),
+            outputs: [
+              AssetId('a', 'web/index.html'),
+              AssetId('a', 'lib/some.dart.js'),
+            ].build(),
+            buildOutputReader: finalizedReader,
+          ),
+        );
+        await clientChannel1.sink.close();
+      });
+
+      test('emits null digest for deleted files', () async {
+        expect(
+          clientChannel1.stream.map((s) => jsonDecode(s.toString())),
+          emitsInOrder([
+            {'index.html': null},
+            emitsDone,
+          ]),
+        );
+        await createMockConnection(serverChannel1, 'web');
+        await handler.emitUpdateMessage(
+          BuildResult(
+            status: BuildStatus.success,
+            outputs: [AssetId('a', 'web/index.html')].build(),
             buildOutputReader: finalizedReader,
           ),
         );
@@ -598,20 +833,18 @@ void main() {
         addSource('a|web1/index.html', 'content1');
         addSource('a|web2/index.html', 'content2');
         addSource('a|lib/some.dart.js', 'content3');
-        final someDartHash =
-            computeDigest(
-              AssetId('a', 'lib/some.dart.js'),
-              'content3',
-            ).toString();
+        final someDartHash = computeDigest(
+          AssetId('a', 'lib/some.dart.js'),
+          'content3',
+        ).toString();
         expect(
           clientChannel1.stream.map((s) => jsonDecode(s.toString())),
           emitsInOrder([
             {
-              'index.html':
-                  computeDigest(
-                    AssetId('a', 'web1/index.html'),
-                    'content1',
-                  ).toString(),
+              'index.html': computeDigest(
+                AssetId('a', 'web1/index.html'),
+                'content1',
+              ).toString(),
               'packages/a/some.dart.js': someDartHash,
             },
             emitsDone,
@@ -621,11 +854,10 @@ void main() {
           clientChannel2.stream.map((s) => jsonDecode(s.toString())),
           emitsInOrder([
             {
-              'index.html':
-                  computeDigest(
-                    AssetId('a', 'web2/index.html'),
-                    'content2',
-                  ).toString(),
+              'index.html': computeDigest(
+                AssetId('a', 'web2/index.html'),
+                'content2',
+              ).toString(),
               'packages/a/some.dart.js': someDartHash,
             },
             emitsDone,
@@ -636,12 +868,11 @@ void main() {
         await handler.emitUpdateMessage(
           BuildResult(
             status: BuildStatus.success,
-            outputs:
-                [
-                  AssetId('a', 'web1/index.html'),
-                  AssetId('a', 'web2/index.html'),
-                  AssetId('a', 'lib/some.dart.js'),
-                ].build(),
+            outputs: [
+              AssetId('a', 'web1/index.html'),
+              AssetId('a', 'web2/index.html'),
+              AssetId('a', 'lib/some.dart.js'),
+            ].build(),
             buildOutputReader: finalizedReader,
           ),
         );
@@ -661,30 +892,18 @@ class FakeWatcher implements Watcher {
   @override
   Future<BuildResult> get currentBuildResult => _currentBuild!;
 
-  final _futureBuildResultsController = StreamController<Future<BuildResult>>();
-  final _buildResultsController = StreamController<BuildResult>();
+  final _buildResultsController = StreamController<BuildResult>.broadcast();
 
   @override
   Stream<BuildResult> get buildResults => _buildResultsController.stream;
 
   void addFutureResult(Future<BuildResult> result) {
-    _futureBuildResultsController.add(result);
+    _currentBuild = result;
+    result.then(_buildResultsController.add);
   }
 
-  FakeWatcher(this.buildPackages) {
-    final firstBuild = Completer<BuildResult>();
-    _currentBuild = firstBuild.future;
-    _futureBuildResultsController.stream.listen((futureBuildResult) {
-      if (!firstBuild.isCompleted) {
-        firstBuild.complete(futureBuildResult);
-      }
-      _currentBuild = _currentBuild!.then((_) => futureBuildResult)
-        ..then(_buildResultsController.add);
-    });
-  }
+  FakeWatcher(this.buildPackages);
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
-
-class FakeRequest with Fake implements Request {}

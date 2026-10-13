@@ -32,7 +32,8 @@ class Workspace {
   void writeWebEntrypoint() {
     write(
       'web/index.html',
-      source: '''
+      source:
+          '''
 <!DOCTYPE html>
 <html><head>
     <meta charset="utf-8">
@@ -45,7 +46,8 @@ class Workspace {
     );
     write(
       'web/main.dart',
-      source: '''
+      source:
+          '''
 /// ignore_for_file: unused_import
 import 'package:$name/app.dart';
 void main() {
@@ -78,63 +80,40 @@ void main() {
     return result;
   }
 
-  Future<void> _measure(PendingResult result) async {
-    // Clean build.
+  /// Runs `build_runner` in [directory] and records elapsed time or failure.
+  Future<Duration?> _runBuild(String description, PendingResult result) async {
     final stopwatch = Stopwatch()..start();
-    var process = await Process.start('dart', [
+    final process = await Process.start('dart', [
       'run',
       'build_runner',
       'build',
       '-d',
     ], workingDirectory: directory.path);
-    var exitCode = await process.exitCode;
+    final exitCode = await process.exitCode;
     if (exitCode == 0) {
-      result.cleanBuildTime = stopwatch.elapsed;
+      return stopwatch.elapsed;
     } else {
       final stdout = await process.stdout.transform(utf8.decoder).join();
       final stderr = await process.stderr.transform(utf8.decoder).join();
-      result.failure = 'Initial build failed:\n$stdout\n$stderr';
-      return;
+      result.failure = '$description build failed:\n$stdout\n$stderr';
+      return null;
     }
+  }
+
+  Future<void> _measure(PendingResult result) async {
+    // Clean build.
+    result.cleanBuildTime = await _runBuild('Initial', result);
+    if (result.isFailure) return;
 
     result.graphSize = _readGraphSize();
 
     // Build with no changes.
-    stopwatch.reset();
-    process = await Process.start('dart', [
-      'run',
-      'build_runner',
-      'build',
-      '-d',
-    ], workingDirectory: directory.path);
-    exitCode = await process.exitCode;
-    if (exitCode == 0) {
-      result.noChangesBuildTime = stopwatch.elapsed;
-    } else {
-      final stdout = await process.stdout.transform(utf8.decoder).join();
-      final stderr = await process.stderr.transform(utf8.decoder).join();
-      result.failure = 'No changes build failed:\n$stdout\n$stderr';
-      return;
-    }
+    result.noChangesBuildTime = await _runBuild('No changes', result);
+    if (result.isFailure) return;
 
     // Incremental build after a change.
     edit('lib/app.dart');
-    stopwatch.reset();
-    process = await Process.start('dart', [
-      'run',
-      'build_runner',
-      'build',
-      '-d',
-    ], workingDirectory: directory.path);
-    exitCode = await process.exitCode;
-    if (exitCode == 0) {
-      result.incrementalBuildTime = stopwatch.elapsed;
-    } else {
-      final stdout = await process.stdout.transform(utf8.decoder).join();
-      final stderr = await process.stderr.transform(utf8.decoder).join();
-      result.failure = 'Incremental build failed:\n$stdout\n$stderr';
-      return;
-    }
+    result.incrementalBuildTime = await _runBuild('Incremental', result);
   }
 
   /// Returns the `build_runner` asset graph size, or `null` if not found.

@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:checked_yaml/checked_yaml.dart';
@@ -94,10 +95,9 @@ class BuildConfig {
       () {
         final key = '$packageName:$packageName';
         final target = BuildTarget(
-          dependencies:
-              dependencies
-                  .map((dep) => normalizeTargetKeyUsage(dep, packageName))
-                  .toList(),
+          dependencies: dependencies
+              .map((dep) => normalizeTargetKeyUsage(dep, packageName))
+              .toList(),
           sources: InputSet.anything,
         );
         return BuildConfig(
@@ -158,12 +158,12 @@ class BuildConfig {
     this.triggersByBuilder = const {},
   }) : buildTargets =
            identical(buildTargets, BuildConfig._placeholderBuildTarget)
-               ? {
-                 _defaultTarget(packageName ?? currentPackage): BuildTarget(
-                   dependencies: currentPackageDefaultDependencies,
-                 ),
-               }
-               : buildTargets,
+           ? {
+               _defaultTarget(packageName ?? currentPackage): BuildTarget(
+                 dependencies: currentPackageDefaultDependencies,
+               ),
+             }
+           : buildTargets,
        globalOptions = (globalOptions ?? const {}).map(
          (key, config) =>
              MapEntry(normalizeBuilderKeyUsage(key, currentPackage), config),
@@ -175,6 +175,10 @@ class BuildConfig {
        postProcessBuilderDefinitions = _normalizeBuilderDefinitions(
          postProcessBuilderDefinitions ?? const {},
          packageName ?? currentPackage,
+         otherDefinitions: _normalizeBuilderDefinitions(
+           builderDefinitions ?? const {},
+           packageName ?? currentPackage,
+         ),
        ),
        packageName = packageName ?? currentPackage {
     // Set up the expandos for all our build targets and definitions so they
@@ -198,13 +202,47 @@ class BuildConfig {
 
 String _defaultTarget(String package) => '$package:$package';
 
+/// Normalizes the keys of [builderDefinitions].
+///
+/// Throws [ArgumentError] if a key contains a line break, if two keys
+/// normalize to the same key, such as `foo` and `:foo`, or if a key is in
+/// [otherDefinitions].
+///
+/// Line breaks are not allowed because shared part files record builder keys
+/// in line comments.
 Map<String, T> _normalizeBuilderDefinitions<T>(
   Map<String, T> builderDefinitions,
-  String packageName,
-) => builderDefinitions.map(
-  (key, definition) =>
-      MapEntry(normalizeBuilderKeyDefinition(key, packageName), definition),
-);
+  String packageName, {
+  Map<String, Object?> otherDefinitions = const {},
+}) {
+  final result = <String, T>{};
+  final originalKeys = <String, String>{};
+  for (final MapEntry(:key, value: definition) in builderDefinitions.entries) {
+    if (key.contains('\n') || key.contains('\r')) {
+      throw ArgumentError(
+        'Builder key ${jsonEncode(key)} contains a line break, which is not '
+        'allowed.',
+      );
+    }
+    final normalizedKey = normalizeBuilderKeyDefinition(key, packageName);
+    final otherKey = originalKeys[normalizedKey];
+    if (otherKey != null) {
+      throw ArgumentError(
+        'Builder keys "$otherKey" and "$key" both refer to builder '
+        '"$normalizedKey".',
+      );
+    }
+    if (otherDefinitions.containsKey(normalizedKey)) {
+      throw ArgumentError(
+        'Builder "$normalizedKey" is defined in both `builders` and '
+        '`post_process_builders`.',
+      );
+    }
+    originalKeys[normalizedKey] = key;
+    result[normalizedKey] = definition;
+  }
+  return result;
+}
 
 Map<String, BuildTarget> _buildTargetsFromJson(Map? json) {
   if (json == null) {

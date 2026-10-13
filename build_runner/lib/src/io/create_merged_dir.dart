@@ -16,8 +16,6 @@ import '../build_plan/build_packages.dart';
 import '../logging/build_log.dart';
 import '../logging/timed_activities.dart';
 import 'build_output_reader.dart';
-import 'filesystem.dart';
-import 'reader_writer.dart';
 
 /// Pool for async file operations, we don't want to use too many file handles.
 final _descriptorPool = Pool(32);
@@ -33,16 +31,8 @@ Future<bool> createMergedOutputDirectories({
   required BuildPackages buildPackages,
   required bool outputSymlinksOnly,
   required BuildOutputReader buildOutputReader,
-  required ReaderWriter readerWriter,
 }) async {
   return await TimedActivity.write.runAsync(() async {
-    if (outputSymlinksOnly && readerWriter.filesystem is! IoFilesystem) {
-      buildLog.error(
-        'The current environment does not support symlinks, but symlinks were '
-        'requested.',
-      );
-      return false;
-    }
     final conflictingOutputs = _conflicts(buildDirs);
     if (conflictingOutputs.isNotEmpty) {
       buildLog.error(
@@ -63,7 +53,6 @@ Future<bool> createMergedOutputDirectories({
           // TODO(grouma) - retrieve symlink information from target only.
           symlinkOnly: outputSymlinksOnly || outputLocation.useSymlinks,
           hoist: outputLocation.hoist,
-          readerWriter: readerWriter,
         )) {
           return false;
         }
@@ -76,7 +65,10 @@ Future<bool> createMergedOutputDirectories({
 Set<String> _conflicts(BuiltSet<BuildDirectory> buildDirs) {
   final seen = <String>{};
   final conflicts = <String>{};
-  final outputLocations = buildDirs.map((d) => d.outputLocation?.path).nonNulls;
+  final outputLocations = buildDirs
+      .map((d) => d.outputLocation?.path)
+      .nonNulls
+      .map(p.normalize);
   for (final location in outputLocations) {
     if (!seen.add(location)) conflicts.add(location);
   }
@@ -90,7 +82,6 @@ Future<bool> _createMergedOutputDir({
   required bool symlinkOnly,
   required bool hoist,
   required BuildOutputReader buildOutputReader,
-  required ReaderWriter readerWriter,
 }) async {
   try {
     final outputRootPackage = buildPackages[buildPackages.outputRoot]!;
@@ -125,11 +116,11 @@ Future<bool> _createMergedOutputDir({
       await Future.wait([
         for (final id in builtAssets)
           _writeAsset(
+            buildOutputReader,
             id,
             outputDir,
             root,
             buildPackages,
-            readerWriter,
             symlinkOnly,
             hoist,
           ),
@@ -194,12 +185,12 @@ Future<String> _writeModifiedPackageConfig(
       for (final package in buildPackages.packages.values)
         {
           'name': package.name,
-          'rootUri':
-              package.name == rootPackage
-                  ? '../'
-                  : '../packages/${package.name}',
-          'packageUri':
-              package.name == rootPackage ? 'packages/${package.name}' : '',
+          'rootUri': package.name == rootPackage
+              ? '../'
+              : '../packages/${package.name}',
+          'packageUri': package.name == rootPackage
+              ? 'packages/${package.name}'
+              : '',
           if (package.languageVersion != null)
             'languageVersion': '${package.languageVersion}',
         },
@@ -226,11 +217,11 @@ Set<String> _findRootDirs(Iterable<AssetId> allAssets, String outputPath) {
 ///
 /// Returns the relative path under [outputDir] that it was written to.
 Future<String> _writeAsset(
+  BuildOutputReader buildOutputReader,
   AssetId id,
   Directory outputDir,
   String root,
   BuildPackages buildPackages,
-  ReaderWriter readerWriter,
   bool symlinkOnly,
   bool hoist,
 ) {
@@ -252,20 +243,14 @@ Future<String> _writeAsset(
 
     try {
       if (symlinkOnly) {
-        // We assert at the top of `createMergedOutputDirectories` that the
-        // reader filesystem is `IoFilesystem`, so symlinks make sense.
-        await Link(_filePathFor(outputDir, assetPath)).create(
-          readerWriter.assetPathProvider.pathFor(
-            id,
-            hide: readerWriter.generatedAssetHider.isHidden(id),
-          ),
-          recursive: true,
-        );
+        await Link(
+          _filePathFor(outputDir, assetPath),
+        ).create(buildOutputReader.pathFor(id), recursive: true);
       } else {
         await _writeAsBytes(
           outputDir,
           assetPath,
-          await readerWriter.readAsBytes(id),
+          (await buildOutputReader.read(id)).bytes,
         );
       }
     } on AssetNotFoundException catch (e) {
@@ -306,7 +291,7 @@ String _filePathFor(Directory outputDir, String path) {
 ///
 /// Returns whether or not the directory was successfully cleaned up.
 Future<bool> _cleanUpOutputDir(Directory outputDir) async {
-  final outputPath = outputDir.path;
+  final outputPath = outputDir.resolveSymbolicLinksSync();
   final manifestFile = File(p.join(outputPath, _manifestName));
   if (!manifestFile.existsSync()) {
     if (outputDir.listSync(recursive: false).isNotEmpty) {
@@ -323,8 +308,8 @@ Future<bool> _cleanUpOutputDir(Directory outputDir) async {
 
     for (final path in previousOutputs) {
       final file = File(p.join(outputPath, path));
-      if (!p.isWithin(outputPath, file.path)) continue;
-      if (file.existsSync()) file.deleteSync();
+      if (!_existsResolvedWithin(file, outputPath)) continue;
+      file.deleteSync();
     }
     _cleanEmptyDirectories(outputPath, previousOutputs);
   }
@@ -351,8 +336,16 @@ void _deleteUp(String from, String to) {
   var directoryPath = from;
   while (p.isWithin(to, directoryPath)) {
     final directory = Directory(directoryPath);
-    if (!directory.existsSync() || directory.listSync().isNotEmpty) return;
+    if (!_existsResolvedWithin(directory, to) ||
+        directory.listSync().isNotEmpty) {
+      return;
+    }
     directory.deleteSync();
     directoryPath = p.dirname(directoryPath);
   }
+}
+
+bool _existsResolvedWithin(FileSystemEntity entity, String rootPath) {
+  if (!entity.existsSync()) return false;
+  return p.isWithin(rootPath, entity.resolveSymbolicLinksSync());
 }

@@ -9,6 +9,8 @@ import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:meta/meta.dart';
 
+import 'high_resolution_mtime.dart';
+
 /// A depfile, as written by `dart compile kernel ... --depfile=<output>`.
 ///
 /// It contains the output path followed by a colon then a space-separated list
@@ -36,23 +38,44 @@ class Depfile {
   /// will be re-used from disk if possible instead of recomputed.
   FreshnessResult checkFreshness({required bool digestsAreFresh}) {
     final outputFile = File(outputPath);
-    if (!outputFile.existsSync()) return FreshnessResult(outputIsFresh: false);
     final depsFile = File(depfilePath);
-    if (!depsFile.existsSync()) return FreshnessResult(outputIsFresh: false);
     final digestFile = File(digestPath);
-    if (!digestFile.existsSync()) return FreshnessResult(outputIsFresh: false);
+
+    if (!outputFile.existsSync() ||
+        !depsFile.existsSync() ||
+        !digestFile.existsSync()) {
+      return FreshnessResult(outputIsFresh: false);
+    }
+
+    _depfilePaths ??= _readPaths();
+
+    // Digests are computed after the compile. If any file was modified during
+    // the compile then we can't know if the output is fresh, because we can't
+    // know if the compiler used the original or modified file. Check for that
+    // case by comparing timestamps.
+    final stampPath = '$digestPath.stamp';
+    if (File(stampPath).existsSync()) {
+      if (HighResolutionMtime.hasModifiedBetween(
+        paths: _depfilePaths!,
+        startStampPath: stampPath,
+        endStampPath: digestPath,
+      )) {
+        return FreshnessResult(outputIsFresh: false);
+      }
+    }
+
     final digests = digestFile.readAsStringSync();
 
     if (digestsAreFresh) {
-      _depfilePaths ??= _readPaths();
       return FreshnessResult(outputIsFresh: true, digest: digests);
     }
 
-    _depfilePaths = _readPaths();
     final expectedDigests = _digestPaths();
-    return digests == expectedDigests
-        ? FreshnessResult(outputIsFresh: true, digest: digests)
-        : FreshnessResult(outputIsFresh: false);
+    if (digests == expectedDigests) {
+      return FreshnessResult(outputIsFresh: true, digest: digests);
+    } else {
+      return FreshnessResult(outputIsFresh: false);
+    }
   }
 
   /// Checks whether [path] is mentioned in the depfile.
@@ -60,6 +83,19 @@ class Depfile {
   /// Uses the paths loaded by the most recent [checkFreshness] or
   /// [writeDigest], throws if neither was called.
   bool isDependency(String path) => _depfilePaths!.contains(path);
+
+  /// Updates the compilation stamp to the current time then waits until the
+  /// filesystem clock has advanced.
+  ///
+  /// This ensures that the next write by any tool will have a distinguishably
+  /// later timestamp.
+  Future<void> updateStamp() async {
+    final stampPath = '$digestPath.stamp';
+    File(stampPath)
+      ..createSync(recursive: true)
+      ..writeAsBytesSync(const []);
+    await HighResolutionMtime.waitForNewMtime(stampPath);
+  }
 
   /// Writes a digest of all input files mentioned in [depfilePath] to
   /// [digestPath].
@@ -94,9 +130,13 @@ class Depfile {
       final item = items[i];
       final path = item.replaceAll('\u0000', ' ');
       // File ends in a newline.
-      result.add(
-        i == items.length - 1 ? path.substring(0, path.length - 1) : path,
-      );
+      var parsedPath = i == items.length - 1
+          ? path.substring(0, path.length - 1)
+          : path;
+      if (parsedPath.startsWith('file://')) {
+        parsedPath = Uri.parse(parsedPath).toFilePath();
+      }
+      result.add(parsedPath);
     }
     return result;
   }
@@ -104,11 +144,12 @@ class Depfile {
   String _digestPaths() {
     final digestSink = AccumulatorSink<Digest>();
     final result = md5.startChunkedConversion(digestSink);
-    for (final dep in _depfilePaths!) {
-      final file = File(dep);
+    for (final path in _depfilePaths!) {
+      final file = File(path);
       if (file.existsSync()) {
         result.add([1]);
-        result.add(File(dep).readAsBytesSync());
+        final bytes = file.readAsBytesSync();
+        result.add(bytes);
       } else {
         result.add([0]);
       }

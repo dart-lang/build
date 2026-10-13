@@ -52,13 +52,12 @@ class ModuleLibrary {
   ModuleLibrary._(
     this.id, {
     required this.isEntryPoint,
-    required Set<AssetId> deps,
+    required this._deps,
     required this.parts,
     required this.conditionalDeps,
     required this.sdkDeps,
     required this.hasMain,
-  }) : _deps = deps,
-       isImportable = true;
+  }) : isImportable = true;
 
   ModuleLibrary._nonImportable(this.id)
     : isImportable = false,
@@ -196,14 +195,13 @@ class ModuleLibrary {
       deps: _deserializeAssetIds(json['deps'] as Iterable),
       parts: _deserializeAssetIds(json['parts'] as Iterable),
       sdkDeps: Set.of((json['sdkDeps'] as Iterable).cast<String>()),
-      conditionalDeps:
-          (json['conditionalDeps'] as Iterable).map((conditions) {
-            return Map.of(
-              (conditions as Map<String, dynamic>).map(
-                (k, v) => MapEntry(k, AssetId.parse(v as String)),
-              ),
-            );
-          }).toList(),
+      conditionalDeps: (json['conditionalDeps'] as Iterable).map((conditions) {
+        return Map.of(
+          (conditions as Map<String, dynamic>).map(
+            (k, v) => MapEntry(k, AssetId.parse(v as String)),
+          ),
+        );
+      }).toList(),
       hasMain: json['hasMain'] as bool,
     );
   }
@@ -212,13 +210,11 @@ class ModuleLibrary {
     'isEntrypoint': isEntryPoint,
     'deps': _deps.map((id) => id.toString()).toList(),
     'parts': parts.map((id) => id.toString()).toList(),
-    'conditionalDeps':
-        conditionalDeps
-            .map(
-              (conditions) =>
-                  conditions.map((k, v) => MapEntry(k, v.toString())),
-            )
-            .toList(),
+    'conditionalDeps': conditionalDeps
+        .map(
+          (conditions) => conditions.map((k, v) => MapEntry(k, v.toString())),
+        )
+        .toList(),
     'sdkDeps': sdkDeps.toList(),
     'hasMain': hasMain,
   });
@@ -250,8 +246,8 @@ class ModuleLibrary {
   }
 }
 
-Set<AssetId> _deserializeAssetIds(Iterable serlialized) =>
-    Set.from(serlialized.map((decoded) => AssetId.parse(decoded as String)));
+Set<AssetId> _deserializeAssetIds(Iterable serialized) =>
+    Set.from(serialized.map((decoded) => AssetId.parse(decoded as String)));
 
 bool _isPart(CompilationUnit dart) =>
     dart.directives.any((directive) => directive is PartOfDirective);

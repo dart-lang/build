@@ -38,10 +38,9 @@ class BuildTarget {
     Iterable<String>? dependencies,
     Map<String, TargetBuilderConfig>? builders,
   }) : autoApplyBuilders = autoApplyBuilders ?? true,
-       dependencies =
-           (dependencies ?? currentPackageDefaultDependencies)
-               .map((d) => normalizeTargetKeyUsage(d, currentPackage))
-               .toList(),
+       dependencies = (dependencies ?? currentPackageDefaultDependencies)
+           .map((d) => normalizeTargetKeyUsage(d, currentPackage))
+           .toList(),
        builders = (builders ?? const {}).map(
          (key, config) =>
              MapEntry(normalizeBuilderKeyUsage(key, currentPackage), config),
@@ -54,14 +53,13 @@ class BuildTarget {
   }
 
   @override
-  String toString() =>
-      {
-        'package': package,
-        'sources': sources,
-        'dependencies': dependencies,
-        'builders': builders,
-        'autoApplyBuilders': autoApplyBuilders,
-      }.toString();
+  String toString() => {
+    'package': package,
+    'sources': sources,
+    'dependencies': dependencies,
+    'builders': builders,
+    'autoApplyBuilders': autoApplyBuilders,
+  }.toString();
 }
 
 /// The configuration a particular [BuildTarget] applies to a Builder.
@@ -119,14 +117,13 @@ class TargetBuilderConfig {
   }
 
   @override
-  String toString() =>
-      {
-        'isEnabled': isEnabled,
-        'generateFor': generateFor,
-        'options': options,
-        'devOptions': devOptions,
-        'releaseOptions': releaseOptions,
-      }.toString();
+  String toString() => {
+    'isEnabled': isEnabled,
+    'generateFor': generateFor,
+    'options': options,
+    'devOptions': devOptions,
+    'releaseOptions': releaseOptions,
+  }.toString();
 }
 
 /// The configuration for a Builder applied globally.
@@ -179,11 +176,10 @@ class GlobalBuilderConfig {
   }
 
   @override
-  String toString() =>
-      {
-        'options': options,
-        'devOptions': devOptions,
-        'releaseOptions': releaseOptions,
-        'runsBefore': runsBefore,
-      }.toString();
+  String toString() => {
+    'options': options,
+    'devOptions': devOptions,
+    'releaseOptions': releaseOptions,
+    'runsBefore': runsBefore,
+  }.toString();
 }

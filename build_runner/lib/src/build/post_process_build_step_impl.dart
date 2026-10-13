@@ -5,52 +5,56 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:crypto/crypto.dart' show Digest;
 
-import 'single_step_reader_writer.dart';
+import 'asset_content.dart';
+import 'builder_filesystem.dart';
+import 'resolver/asset_ids.dart';
 
 class PostProcessBuildStepImpl implements PostProcessBuildStep {
   @override
   final AssetId inputId;
+  final BuilderFilesystem buildFilesystem;
 
-  final SingleStepReaderWriter _readerWriter;
   final void Function(AssetId) _addAsset;
   final void Function(AssetId) _deleteAsset;
 
-  /// The result of any writes which are starting during this step.
-  final _writeResults = <Future<Result<void>>>[];
+  final Map<AssetId, AssetContent> outputs = {};
 
-  PostProcessBuildStepImpl(
-    this.inputId,
-    this._readerWriter,
-    this._addAsset,
-    this._deleteAsset,
-  );
-
-  @override
-  Future<Digest> digest(AssetId id) =>
-      inputId == id
-          ? _readerWriter.digest(id)
-          : Future.error(InvalidInputException(id));
+  PostProcessBuildStepImpl({
+    required this.inputId,
+    required this.buildFilesystem,
+    required void Function(AssetId) addAsset,
+    required void Function(AssetId) deleteAsset,
+  }) : _addAsset = addAsset,
+       _deleteAsset = deleteAsset;
 
   @override
-  Future<List<int>> readInputAsBytes() => _readerWriter.readAsBytes(inputId);
+  Future<Digest> digest(AssetId id) async {
+    id = id.normalize();
+    return inputId == id
+        ? (await buildFilesystem.contentOf(id)).digest
+        : Future.error(InvalidInputException(id));
+  }
 
   @override
-  Future<String> readInputAsString({Encoding encoding = utf8}) =>
-      _readerWriter.readAsString(inputId, encoding: encoding);
+  Future<List<int>> readInputAsBytes() async {
+    return (await buildFilesystem.contentOf(inputId)).bytes;
+  }
 
   @override
-  Future<void> writeAsBytes(AssetId id, FutureOr<List<int>> bytes) {
+  Future<String> readInputAsString({Encoding encoding = utf8}) async {
+    return (await buildFilesystem.contentOf(
+      inputId,
+    )).stringValue(encoding: encoding);
+  }
+
+  @override
+  Future<void> writeAsBytes(AssetId id, FutureOr<List<int>> bytes) async {
+    id = id.normalize();
     _addAsset(id);
-    final done = _futureOrWrite(
-      bytes,
-      (List<int> b) => _readerWriter.writeAsBytes(id, b),
-    );
-    _writeResults.add(Result.capture(done));
-    return done;
+    outputs[id] = AssetContent.bytes(await bytes);
   }
 
   @override
@@ -58,14 +62,10 @@ class PostProcessBuildStepImpl implements PostProcessBuildStep {
     AssetId id,
     FutureOr<String> content, {
     Encoding encoding = utf8,
-  }) {
+  }) async {
+    id = id.normalize();
     _addAsset(id);
-    final done = _futureOrWrite(
-      content,
-      (String c) => _readerWriter.writeAsString(id, c, encoding: encoding),
-    );
-    _writeResults.add(Result.capture(done));
-    return done;
+    outputs[id] = AssetContent.string(await content, encoding: encoding);
   }
 
   /// Marks an asset for deletion in the post process step.
@@ -79,12 +79,5 @@ class PostProcessBuildStepImpl implements PostProcessBuildStep {
   /// This method should be called after a build has completed. After the
   /// returned [Future] completes then all outputs have been written.
   @override
-  Future<void> complete() async {
-    await Future.wait(_writeResults.map(Result.release));
-  }
+  Future<void> complete() async {}
 }
-
-Future<void> _futureOrWrite<T>(
-  FutureOr<T> content,
-  Future<void> Function(T content) write,
-) => (content is Future<T>) ? content.then(write) : write(content);

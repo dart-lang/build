@@ -52,17 +52,16 @@ class BuildStepResolver implements ReleasableResolver {
       // `BuildStep.canRead`. They'd still be reachable by crawling the element
       // model manually.
       yield current;
-      final toCrawl =
-          current.firstFragment.libraryImports
-              .map((import) => import.importedLibrary)
-              .followedBy(
-                current.firstFragment.libraryExports.map(
-                  (export) => export.exportedLibrary,
-                ),
-              )
-              .nonNulls
-              .where((library) => !seen.contains(library))
-              .toSet();
+      final toCrawl = current.firstFragment.libraryImports
+          .map((import) => import.importedLibrary)
+          .followedBy(
+            current.firstFragment.libraryExports.map(
+              (export) => export.exportedLibrary,
+            ),
+          )
+          .nonNulls
+          .where((library) => !seen.contains(library))
+          .toSet();
       toVisit.addAll(toCrawl);
       seen.addAll(toCrawl);
     }
@@ -148,8 +147,7 @@ class BuildStepResolver implements ReleasableResolver {
       await _buildStep.trackStage(
         'Resolving library $entrypoint',
         () => _buildResolver.updateDriverForEntrypoint(
-          phasedReader: _buildStep.phasedReader,
-          inputTracker: _buildStep.inputTracker,
+          buildStep: _buildStep,
           entrypoint: entrypoint,
           transitive: transitive,
         ),

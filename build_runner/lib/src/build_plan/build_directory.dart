@@ -21,8 +21,8 @@ class BuildDirectory {
   static BuiltSet<String> buildPaths(BuiltSet<BuildDirectory> buildDirs) =>
       // The empty string means build everything.
       buildDirs.any((b) => b.directory == '')
-          ? BuiltSet()
-          : buildDirs.map((b) => b.directory).toBuiltSet();
+      ? BuiltSet()
+      : buildDirs.map((b) => b.directory).toBuiltSet();
 }
 
 class OutputLocation {

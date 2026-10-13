@@ -5,14 +5,12 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
-import 'package:build_runner/src/logging/build_log.dart';
-import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
+import '../common/common.dart';
 
 void main() {
-  setUp(() {
-    BuildLog.resetForTests(printOnFailure: printOnFailure);
-  });
+  setUpTestLogging();
+
   group('Resolver Reuse', () {
     test(
       'Does not remove sources due to crawling for an earlier phase',
@@ -36,11 +34,10 @@ void main() {
         );
         final nonOptionalWritesImportedFile = TestBuilder(
           buildExtensions: replaceExtension('.dart', '.imported.dart'),
-          build:
-              (buildStep, _) => buildStep.writeAsString(
-                buildStep.inputId.changeExtension('.imported.dart'),
-                'class SomeClass {}',
-              ),
+          build: (buildStep, _) => buildStep.writeAsString(
+            buildStep.inputId.changeExtension('.imported.dart'),
+            'class SomeClass {}',
+          ),
         );
         final nonOptionalResolveImportedFile = TestBuilder(
           buildExtensions: appendExtension('.bar'),
@@ -51,16 +48,14 @@ void main() {
             await buildStep.canRead(buildStep.inputId.addExtension('.foo'));
             // Check that the `.imported.dart` library is still reachable
             // through the resolver.
-            final importedLibrary =
-                inputLibrary.firstFragment.libraryImports
-                    .firstWhere(
-                      (l) => l.importedLibrary!.uri.path.endsWith(
-                        '.imported.dart',
-                      ),
-                    )
-                    .importedLibrary!;
-            final classNames =
-                importedLibrary.classes.map((c) => c.name).toList();
+            final importedLibrary = inputLibrary.firstFragment.libraryImports
+                .firstWhere(
+                  (l) => l.importedLibrary!.uri.path.endsWith('.imported.dart'),
+                )
+                .importedLibrary!;
+            final classNames = importedLibrary.classes
+                .map((c) => c.name)
+                .toList();
             return buildStep.writeAsString(
               buildStep.inputId.addExtension('.bar'),
               '$classNames',
@@ -84,7 +79,7 @@ void main() {
       },
     );
 
-    test('A hidden generated file does not poison resolving', () async {
+    test('An artifact tree generated file does not poison resolving', () async {
       final slowBuilderCompleter = Completer<void>();
       final builders = [
         TestBuilder(
@@ -104,9 +99,13 @@ void main() {
           build: (buildStep, _) async {
             if (buildStep.inputId.path != 'lib/a.dart') return;
             final library = await buildStep.inputLibrary;
-            final annotation =
-                library.topLevelFunctions.single.metadata.annotations.single
-                    .computeConstantValue();
+            final annotation = library
+                .topLevelFunctions
+                .single
+                .metadata
+                .annotations
+                .single
+                .computeConstantValue();
             await buildStep.writeAsString(
               buildStep.inputId.changeExtension('.g2.dart'),
               '//$annotation',

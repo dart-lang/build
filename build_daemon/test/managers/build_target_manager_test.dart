@@ -84,16 +84,14 @@ void main() {
     final channelA = DummyChannel();
     final channelB = DummyChannel();
     final targetA = DefaultBuildTarget(
-      (b) =>
-          b
-            ..target = 'foo'
-            ..blackListPatterns.replace([RegExp('bar')]),
+      (b) => b
+        ..target = 'foo'
+        ..blackListPatterns.replace([RegExp('bar')]),
     );
     final targetB = DefaultBuildTarget(
-      (b) =>
-          b
-            ..target = 'foo'
-            ..blackListPatterns.replace([RegExp('bar')]),
+      (b) => b
+        ..target = 'foo'
+        ..blackListPatterns.replace([RegExp('bar')]),
     );
     manager
       ..addBuildTarget(targetA, channelA)
@@ -107,10 +105,9 @@ void main() {
     final channelB = DummyChannel();
     final targetA = DefaultBuildTarget((b) => b..target = 'foo');
     final targetB = DefaultBuildTarget(
-      (b) =>
-          b
-            ..target = 'foo'
-            ..blackListPatterns.replace([RegExp('bar')]),
+      (b) => b
+        ..target = 'foo'
+        ..blackListPatterns.replace([RegExp('bar')]),
     );
     manager
       ..addBuildTarget(targetA, channelA)
@@ -124,10 +121,9 @@ void main() {
       final manager = BuildTargetManager();
       final channel = DummyChannel();
       final target = DefaultBuildTarget(
-        (b) =>
-            b
-              ..target = 'foo'
-              ..blackListPatterns.replace([RegExp(r'.*_test\.dart$')]),
+        (b) => b
+          ..target = 'foo'
+          ..blackListPatterns.replace([RegExp(r'.*_test\.dart$')]),
       );
       manager.addBuildTarget(target, channel);
       var targets = manager.targetsForChanges([

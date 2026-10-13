@@ -7,11 +7,13 @@ import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
+import '../../contracts.dart';
 import 'library_cycle.dart';
 
 part 'library_cycle_graph.g.dart';
 
 /// A directed acyclic graph of [LibraryCycle]s.
+@Invariant('children.every((c) => c.root != root)')
 abstract class LibraryCycleGraph
     implements Built<LibraryCycleGraph, LibraryCycleGraphBuilder> {
   static Serializer<LibraryCycleGraph> get serializer =>

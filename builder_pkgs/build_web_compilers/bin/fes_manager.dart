@@ -5,6 +5,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:build_web_compilers/src/build_frontend_server/fes_server_info.dart';
+import 'package:build_web_compilers/src/build_frontend_server/file_permissions.dart';
 import 'package:build_web_compilers/src/build_frontend_server/frontend_server_driver.dart';
 import 'package:build_web_compilers/src/build_frontend_server/package_config.dart';
 import 'package:build_web_compilers/src/common.dart';
@@ -65,13 +67,18 @@ void main(List<String> args) async {
     environment: environment,
   );
 
+  final token = FesServerInfo.generateToken();
   final server = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
 
   // Write the Frontend Server's config to file so we can create connections to
   // it later in the build.
+  final configDir = configFile.parent;
+  configDir.createSync(recursive: true);
+  FilePermissions.makeUserPrivate(configDir.path);
+
+  final serverInfo = FesServerInfo(server.port, token);
   final tempConfigFile = File('${configFile.path}.tmp');
-  tempConfigFile.createSync(recursive: true);
-  tempConfigFile.writeAsStringSync(jsonEncode({'port': server.port}));
+  serverInfo.writeToFile(tempConfigFile);
   tempConfigFile.renameSync(configFile.path);
 
   print('Frontend Server Manager listening on port ${server.port}');
@@ -82,12 +89,33 @@ void main(List<String> args) async {
     socket.done.catchError((Object error) {
       // Ignore 'SocketException: Connection reset by peer' exceptions.
     });
+    var authenticated = false;
     socket
         .cast<List<int>>()
         .transform(utf8.decoder)
         .transform(const LineSplitter())
         .listen(
-          (line) => manager.handleRequest(line, socket),
+          (line) {
+            // Require authentication on the first message before processing any
+            // instructions.
+            if (!authenticated) {
+              try {
+                final auth = jsonDecode(line);
+                if (auth is Map<String, dynamic> && auth['token'] == token) {
+                  authenticated = true;
+                  socket.writeln(jsonEncode({'status': 'AUTHENTICATED'}));
+                  return;
+                }
+              } on FormatException {
+                // Reject malformed JSON payloads.
+              }
+              // Terminate unauthenticated connections.
+              socket.writeln(jsonEncode({'error': 'Unauthorized'}));
+              socket.destroy();
+              return;
+            }
+            manager.handleRequest(line, socket);
+          },
           onDone: () => activeSockets.remove(socket),
           onError: (_) => activeSockets.remove(socket),
         );
@@ -119,9 +147,7 @@ class FesManager {
   final FrontendServerProxyDriver driver;
   final PackageConfig packageConfig;
   final Pool _pool = Pool(1);
-
   String? _cachedEntrypoint;
-  final Set<String> _lastCompiledInvalidations = {};
 
   FesManager._({
     required this.fes,
@@ -135,15 +161,27 @@ class FesManager {
     required Uri packagesFile,
     Map<String, String> environment = const {},
   }) async {
-    final fes = await PersistentFrontendServer.start(
+    final fes = PersistentFrontendServer(
       sdkRoot: sdkRoot,
       fileSystemRoot: fileSystemRoot,
       packagesFile: packagesFile,
       environment: environment,
     );
+    await fes.ensureStarted();
     final driver = FrontendServerProxyDriver()..init(fes);
     final packageConfig = await PackageConfig.load(File.fromUri(packagesFile));
     return FesManager._(fes: fes, driver: driver, packageConfig: packageConfig);
+  }
+
+  void _verifyEntrypoint(String? entrypoint) {
+    if (entrypoint == null) return;
+    if (_cachedEntrypoint != null && entrypoint != _cachedEntrypoint) {
+      throw StateError(
+        'Cannot compile a different entrypoint: '
+        'expected $_cachedEntrypoint but got $entrypoint.',
+      );
+    }
+    _cachedEntrypoint ??= entrypoint;
   }
 
   /// Delegates custom JSON instructions on [jsonLine] to [fes] and/or [driver].
@@ -153,6 +191,8 @@ class FesManager {
     try {
       final request = jsonDecode(jsonLine) as Map<String, dynamic>;
       final instruction = request['instruction'] as String?;
+      final entrypoint = request['entrypoint'] as String?;
+      _verifyEntrypoint(entrypoint);
 
       await _pool.withResource(() async {
         switch (instruction) {
@@ -171,8 +211,9 @@ class FesManager {
             );
 
             final bytes = result?.expressionData;
-            final expressionDataString =
-                bytes != null ? base64.encode(bytes) : null;
+            final expressionDataString = bytes != null
+                ? base64.encode(bytes)
+                : null;
 
             socket.writeln(
               jsonEncode({
@@ -238,21 +279,21 @@ class FesManager {
     Socket socket,
   ) async {
     final entrypoint = request['entrypoint'] as String;
-    _cachedEntrypoint = entrypoint;
     final recompileRestart = request['recompileRestart'] as bool? ?? false;
     // Rename the build system's '.ddc.js' extensions to FES's '.dart.lib.js'.
-    final filesToWrite =
-        (request['filesToWrite'] as List)
-            .cast<String>()
-            .map((f) => f.replaceAll(jsModuleExtension, fesJsExtension))
-            .toList();
-    final invalidatedFiles =
-        (request['invalidatedFiles'] as List)
-            .cast<String>()
-            .map(Uri.parse)
-            .toList();
-    // Copy invalidated files to FES's scratch space.
-    _copyFilesToScratchSpace(invalidatedFiles);
+    final filesToWrite = (request['filesToWrite'] as List)
+        .cast<String>()
+        .map((f) => f.replaceAll(jsModuleExtension, fesJsExtension))
+        .toList();
+    final invalidatedFiles = (request['invalidatedFiles'] as List)
+        .cast<String>()
+        .map(Uri.parse)
+        .map(_translateBuildRunnerUriToFrontendServerUri)
+        .toList();
+    final entrypointUri = Uri.parse(entrypoint);
+    if (!invalidatedFiles.contains(entrypointUri)) {
+      invalidatedFiles.add(entrypointUri);
+    }
 
     final result = await driver.recompileAndRecord(
       entrypoint,
@@ -300,57 +341,24 @@ class FesManager {
     Socket socket,
   ) async {
     final path = request['path'] as String;
-    _cachedEntrypoint ??= request['entrypoint'] as String?;
-    final invalidated = (request['invalidatedFiles'] as List?) ?? [];
-    final isColdStart = fes.fileSystem.files.isEmpty;
-    final invalidatedPaths = invalidated.cast<String>().toSet();
-
-    final isSameAsLastCompile =
-        invalidatedPaths.length == _lastCompiledInvalidations.length &&
-        invalidatedPaths.every(_lastCompiledInvalidations.contains);
-    final shouldCompile =
-        _cachedEntrypoint != null &&
-        (isColdStart || (invalidatedPaths.isNotEmpty && !isSameAsLastCompile));
-    if (shouldCompile) {
-      _lastCompiledInvalidations.clear();
-      _lastCompiledInvalidations.addAll(invalidatedPaths);
-      // Sync the modified files to the Frontend Server's scratch space.
-      _copyFilesToScratchSpace(invalidatedPaths.map(Uri.parse));
-      final compileResult =
-          isColdStart
-              ? await fes.compile(_cachedEntrypoint!)
-              : await fes.recompile(
-                _cachedEntrypoint!,
-                invalidatedPaths.map(Uri.parse).toList(),
-              );
-      final isSuccess = compileResult != null && compileResult.errorCount == 0;
-      if (isSuccess) {
-        await fes.accept();
-        fes.recordFiles();
-        fes.writeAllFiles();
-      } else {
-        await fes.reject();
-        _lastCompiledInvalidations.clear();
-        throw StateError('Compilation failed: ${compileResult?.errorMessage}');
-      }
-    }
 
     // Look up the requested file in the memory filesystem caches.
     String? content;
     final scratchSpacePrefix = testScratchSpacePathPrefix;
     final index = path.indexOf(scratchSpacePrefix);
-    if (index != -1) {
-      final relativeKey = fesToAssetPath(
-        path.substring(index + scratchSpacePrefix.length),
-        rootPackage: fes.fileSystem.rootPackageName,
-      );
-      final memoryData =
-          fes.fileSystem.files[relativeKey] ??
-          fes.fileSystem.sourcemaps[relativeKey] ??
-          fes.fileSystem.metadata[relativeKey];
-      if (memoryData != null) {
-        content = utf8.decode(memoryData);
-      }
+    final strippedPath = index != -1
+        ? path.substring(index + scratchSpacePrefix.length)
+        : path;
+    final relativeKey = fesToAssetPath(
+      strippedPath,
+      rootPackage: fes.fileSystem.rootPackageName,
+    );
+    final memoryData =
+        fes.fileSystem.files[relativeKey] ??
+        fes.fileSystem.sourcemaps[relativeKey] ??
+        fes.fileSystem.metadata[relativeKey];
+    if (memoryData != null) {
+      content = utf8.decode(memoryData);
     }
     if (content == null) {
       throw StateError(
@@ -360,46 +368,28 @@ class FesManager {
     socket.writeln(jsonEncode({'content': content}));
   }
 
-  void _copy(({File source, File target}) item) {
-    if (item.source.existsSync()) {
-      item.target.createSync(recursive: true);
-      item.source.copySync(item.target.path);
-    }
-  }
-
-  /// Copies invalidated Dart source files to the Frontend Server's scratch
-  /// space so that recompiles have can read the updated code.
-  void _copyFilesToScratchSpace(Iterable<Uri> uris) {
-    final targetOutputPath = p.dirname(fes.outputDillUri.toFilePath());
-
-    for (final uri in uris) {
-      // Transform the URI to its scratch space URI. For example:
-      // For web assets and entrypoints:
-      // - input URI: `org-dartlang-app:///web/main.dart`
-      // - source: `Directory.current.path/web/main.dart`
-      //           (e.g. `/tmp/build_runner_tester/root_pkg/web/main.dart`)
-      // - target: `<targetOutputPath>/web/main.dart`
-      //           (e.g. `/tmp/fes_root/web/main.dart`)
-      //
-      // For package files:
-      // - input URI: `package:foo/lib/bar.dart` or `org-dartlang-app:///packages/foo/bar.dart`
-      // - source: `packageConfig.resolve/lib/bar.dart`
-      //           (e.g. `/tmp/build_runner_tester/foo/lib/bar.dart`)
-      // - target: `<targetOutputPath>/packages/foo/bar.dart`
-      //           (e.g. `/tmp/fes_root/packages/foo/bar.dart`)
-      final relativePath = fesToAssetPath(uri.toString());
-      final resolvedUri = packageConfig.resolveScratchSpacePath(relativePath);
-
-      if (resolvedUri != null && resolvedUri.scheme == 'file') {
-        final sourceFile = File(resolvedUri.toFilePath());
-        final targetFile = File(p.join(targetOutputPath, relativePath));
-        _copy((source: sourceFile, target: targetFile));
-      } else if (!relativePath.startsWith('packages/')) {
-        final sourceFile = File(p.join(Directory.current.path, relativePath));
-        final targetFile = File(p.join(targetOutputPath, relativePath));
-        _copy((source: sourceFile, target: targetFile));
+  /// Translates a build runner [uri] into the format expected by the Frontend
+  /// Server.
+  ///
+  /// build runner reports reloaded root under 'packages/' (e.g.
+  /// `packages/<root_package>/`), but the Frontend Server expects them to be
+  /// at its workspace root directory (`org-dartlang-app:///`). For example:
+  /// Before: `org-dartlang-app:///packages/my_root_package/src/foo.dart`
+  /// After:  `org-dartlang-app:///lib/src/foo.dart`
+  Uri _translateBuildRunnerUriToFrontendServerUri(Uri uri) {
+    if (uri.scheme == 'org-dartlang-app') {
+      final segments = uri.pathSegments;
+      final rootPackageName = fes.fileSystem.rootPackageName;
+      if (segments.length >= 3 &&
+          segments[0] == 'packages' &&
+          segments[1] == rootPackageName) {
+        final rootPackageUri = packageConfig.packages[rootPackageName];
+        if (rootPackageUri != null && rootPackageUri.path.endsWith('lib/')) {
+          return uri.replace(pathSegments: ['lib', ...segments.skip(2)]);
+        }
       }
     }
+    return uri;
   }
 
   Future<void> shutdown() async {

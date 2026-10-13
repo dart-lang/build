@@ -18,13 +18,12 @@ class CleanCommand implements BuildRunnerCommand {
 
   @override
   Future<int> run() async {
-    // Delete specific directories and files instead of the whole cache
-    // directory, which can't be deleted on Windows due to the open lock file.
+    // Delete specific directories and files instead of the whole hidden build
+    // directory, which cannot be deleted on Windows due to the open lock file.
 
-    final basePath =
-        buildPaths.buildWorkspace
-            ? buildPaths.workspacePath!
-            : buildPaths.packagePath;
+    final basePath = buildPaths.buildWorkspace
+        ? buildPaths.workspacePath!
+        : buildPaths.packagePath;
 
     final entrypointDir = Directory(p.join(basePath, entrypointDirectoryPath));
     if (entrypointDir.existsSync()) {
@@ -36,9 +35,9 @@ class CleanCommand implements BuildRunnerCommand {
       assetGraphJsonFile.deleteSync();
     }
 
-    final generatedDir = Directory(p.join(basePath, generatedOutputDirectory));
-    if (generatedDir.existsSync()) {
-      generatedDir.deleteSync(recursive: true);
+    final artifactTreeDir = Directory(p.join(basePath, artifactTreePath));
+    if (artifactTreeDir.existsSync()) {
+      artifactTreeDir.deleteSync(recursive: true);
     }
 
     return ExitCode.success.code;

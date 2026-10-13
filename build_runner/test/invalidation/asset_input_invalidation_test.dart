@@ -234,10 +234,9 @@ void main() {
       tester.builder(from: '.1', to: '.2', isOptional: true)
         ..reads('.1')
         ..writes('.2');
-      bBuilder =
-          tester.builder(from: '.3', to: '.4')
-            ..reads('.3')
-            ..writes('.4');
+      bBuilder = tester.builder(from: '.3', to: '.4')
+        ..reads('.3')
+        ..writes('.4');
     });
 
     test('only b.4 is built', () async {

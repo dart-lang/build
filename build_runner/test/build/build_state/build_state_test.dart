@@ -4,16 +4,18 @@
 
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
+import 'package:build_runner/src/build/asset_content.dart';
 import 'package:build_runner/src/build/build_state/build_state.dart';
 import 'package:build_runner/src/build/build_state/build_step_id.dart';
 import 'package:build_runner/src/build/build_state/build_step_result.dart';
 import 'package:build_runner/src/build/build_state/exceptions.dart';
+import 'package:build_runner/src/build/build_state/post_process_build_step_id.dart';
+import 'package:build_runner/src/build/build_state/post_process_build_step_result.dart';
 import 'package:build_runner/src/build_plan/build_phases.dart';
 import 'package:build_runner/src/build_plan/build_step_plan.dart';
 import 'package:build_runner/src/build_plan/phase.dart';
 
 import 'package:test/test.dart';
-import 'package:watcher/watcher.dart';
 
 import '../../common/common.dart';
 
@@ -32,7 +34,7 @@ void main() {
 
     group('simple build state', () {
       setUp(() async {
-        buildState = BuildState.create(sources: <AssetId>{});
+        buildState = BuildState.empty();
       });
 
       test('add, contains, get, allNodes', () {
@@ -61,34 +63,26 @@ void main() {
             targetSources: targetSources,
             options: const BuilderOptions({}),
             generateFor: const InputSet(),
-            hideOutput: true,
+            outputsToArtifactTree: true,
           ),
         ]),
       );
       final primaryInputId = makeAssetId('foo|file.txt');
       final excludedInputId = makeAssetId('foo|excluded.txt');
       final primaryOutputId = makeAssetId('foo|file.txt.copy');
-      final syntheticId = makeAssetId('foo|synthetic.txt');
-      final syntheticOutputId = makeAssetId('foo|synthetic.txt.copy');
 
       setUp(() async {
-        buildState = BuildState.create(
-          sources: {primaryInputId, excludedInputId},
-        );
+        final sources = [primaryInputId, excludedInputId];
         buildStepPlan = BuildStepPlan.compute(
           buildPhases: buildPhases,
           placeholderIds: [],
-          sources: buildState.sources,
+          sources: sources,
+        );
+        buildState = BuildState(
+          buildStepPlan: buildStepPlan,
+          sources: {primaryInputId: null, excludedInputId: null},
         );
       });
-
-      void recomputeBuildStepPlan() {
-        buildStepPlan = BuildStepPlan.compute(
-          buildPhases: buildPhases,
-          placeholderIds: [],
-          sources: buildState.sources,
-        );
-      }
 
       test('build', () {
         expect(
@@ -114,88 +108,13 @@ void main() {
         );
       });
 
-      group('updateAndInvalidate', () {
-        test('add new primary input', () async {
-          final changes = {AssetId('foo', 'new.txt'): ChangeType.ADD};
-          buildState.updateForNextBuild(buildStepPlan, changes);
-          recomputeBuildStepPlan();
-          expect(
-            buildStepPlan.isDeclaredOutput(AssetId('foo', 'new.txt.copy')),
-            isTrue,
-          );
-        });
-
-        test('modify primary input', () async {
-          final changes = {primaryInputId: ChangeType.MODIFY};
-          expect(buildStepPlan.isDeclaredOutput(primaryOutputId), isTrue);
-          final buildStepId = BuildStepId(
-            primaryInput: primaryInputId,
-            phaseNumber: 0,
-          );
-          final stepResult = BuildStepResult((b) {
-            b.result = true;
-            b.isHidden = false;
-            b.inputs.add(primaryInputId);
-          });
-          buildState.updateBuildStepResult(buildStepId, stepResult);
-          buildState.updateForNextBuild(buildStepPlan, changes);
-          recomputeBuildStepPlan();
-          expect(buildState.isSource(primaryInputId), isTrue);
-          expect(buildStepPlan.isDeclaredOutput(primaryOutputId), isTrue);
-        });
-
-        test('add new primary input which replaces a synthetic node', () async {
-          buildState.addMissingSource(syntheticId);
-          expect(buildState.isMissingSource(syntheticId), isTrue);
-
-          final changes = {syntheticId: ChangeType.ADD};
-          buildState.updateForNextBuild(buildStepPlan, changes);
-          recomputeBuildStepPlan();
-
-          expect(buildState.isSource(syntheticId), isTrue);
-          expect(buildStepPlan.isDeclaredOutput(syntheticOutputId), isTrue);
-        });
-
-        test(
-          'add new generated asset which replaces a synthetic node',
-          () async {
-            buildState.addMissingSource(syntheticOutputId);
-            expect(buildState.isMissingSource(syntheticOutputId), isTrue);
-
-            final changes = {syntheticId: ChangeType.ADD};
-            buildState.updateForNextBuild(buildStepPlan, changes);
-            recomputeBuildStepPlan();
-
-            expect(buildStepPlan.isDeclaredOutput(syntheticOutputId), isTrue);
-          },
-        );
-
-        test(
-          'removing nodes deletes primary outputs and secondary edges',
-          () async {
-            final secondaryId = makeAssetId('foo|secondary.txt');
-
-            final buildStepId = BuildStepId(
-              primaryInput: primaryInputId,
-              phaseNumber: 0,
-            );
-            final stepResult = BuildStepResult((b) {
-              b.result = true;
-              b.isHidden = false;
-              b.inputs.add(secondaryId);
-            });
-            buildState.updateBuildStepResult(buildStepId, stepResult);
-
-            buildState.addSourceForTest(secondaryId);
-            expect(buildState.isSource(secondaryId), isTrue);
-
-            final changes = {primaryInputId: ChangeType.REMOVE};
-            buildState.updateForNextBuild(buildStepPlan, changes);
-            recomputeBuildStepPlan();
-
-            expect(buildState.isMissingSource(primaryInputId), isTrue);
-            expect(buildState.isMissingSource(primaryOutputId), isTrue);
-          },
+      test('clash between source and declared output throws', () {
+        expect(
+          () => BuildState(
+            buildStepPlan: buildStepPlan,
+            sources: {primaryOutputId: null},
+          ),
+          throwsArgumentError,
         );
       });
 
@@ -228,7 +147,7 @@ void main() {
               ),
               key: 'TestBuilder',
               package: 'foo',
-              hideOutput: false,
+              outputsToArtifactTree: false,
             ),
             InBuildPhase(
               builder: TestBuilder(
@@ -236,7 +155,7 @@ void main() {
               ),
               key: 'TestBuilder',
               package: 'foo',
-              hideOutput: false,
+              outputsToArtifactTree: false,
             ),
             InBuildPhase(
               builder: TestBuilder(
@@ -244,7 +163,7 @@ void main() {
               ),
               key: 'TestBuilder',
               package: 'foo',
-              hideOutput: false,
+              outputsToArtifactTree: false,
             ),
           ]);
 
@@ -310,57 +229,179 @@ void main() {
           );
         });
 
-        test('https://github.com/dart-lang/build/issues/1804', () async {
-          final source = AssetId('a', 'lib/a.dart');
-          final renamedSource = AssetId('a', 'lib/A.dart');
-          final generatedPart = AssetId('a', 'lib/a.g.part');
-          final toBeGeneratedDart = AssetId('a', 'lib/A.g.dart');
-          final buildPhases = BuildPhases([
-            InBuildPhase(
-              builder: TestBuilder(
-                buildExtensions: replaceExtension('.dart', '.g.part'),
-              ),
-              key: 'TestBuilder',
-              package: 'a',
-            ),
-            InBuildPhase(
-              builder: TestBuilder(
-                buildExtensions: replaceExtension('.g.part', '.g.dart'),
-              ),
-              key: 'TestBuilder',
-              package: 'a',
-            ),
-          ]);
-          final buildState = BuildState.create(sources: {source});
-
-          final computed = BuildStepPlan.compute(
-            buildPhases: buildPhases,
-            placeholderIds: [],
-            sources: {source},
-          );
-
-          // Pretend a build happened.
-          buildState.addMissingSource(toBeGeneratedDart);
-          final buildStepId = BuildStepId(
-            primaryInput: generatedPart,
-            phaseNumber: 1,
+        test('addBuildStepResult records step and contents', () {
+          final step = BuildStepId(
+            primaryInput: primaryInputId,
+            phaseNumber: 0,
           );
           final stepResult = BuildStepResult((b) {
             b.result = true;
-            b.isHidden = false;
-            b.inputs.addAll([generatedPart, toBeGeneratedDart]);
+            b.inArtifactTree = true;
+            b.outputs.add(primaryOutputId);
           });
-          buildState.updateBuildStepResult(buildStepId, stepResult);
+          final content = AssetContent.string('output content');
 
-          expect(buildState.isSource(source), isTrue);
+          buildState.addBuildStepResult(
+            step: step,
+            result: stepResult,
+            contents: {primaryOutputId: content},
+          );
 
-          buildState.updateForNextBuild(computed, {
-            renamedSource: ChangeType.ADD,
-            source: ChangeType.REMOVE,
+          expect(buildState.stepResult(step), stepResult);
+          expect(buildState.contentOf(primaryOutputId), content);
+          expect(buildState.digestOf(primaryOutputId), content.digest);
+        });
+
+        test('addBuildStepResult records skipped or failed step', () {
+          final step = BuildStepId(
+            primaryInput: primaryInputId,
+            phaseNumber: 0,
+          );
+          final stepResult = BuildStepResult((b) {
+            b.result = false;
+            b.inArtifactTree = true;
           });
 
-          // The old generated part file should be marked as missing.
-          expect(buildState.isMissingSource(generatedPart), isTrue);
+          buildState.addBuildStepResult(step: step, result: stepResult);
+
+          expect(buildState.stepResult(step), stepResult);
+        });
+
+        test('addBuildStepResult throws on output mismatch', () {
+          final step = BuildStepId(
+            primaryInput: primaryInputId,
+            phaseNumber: 0,
+          );
+          final stepResult = BuildStepResult((b) {
+            b.result = true;
+            b.inArtifactTree = true;
+            b.outputs.add(primaryOutputId);
+          });
+
+          expect(
+            () => buildState.addBuildStepResult(
+              step: step,
+              result: stepResult,
+              contents: <AssetId, AssetContent>{},
+            ),
+            throwsArgumentError,
+          );
+
+          final wrongId = makeAssetId('foo|wrong.txt');
+          expect(
+            () => buildState.addBuildStepResult(
+              step: step,
+              result: stepResult,
+              contents: {wrongId: AssetContent.string('wrong')},
+            ),
+            throwsArgumentError,
+          );
+        });
+
+        test('addBuildStepResult throws on duplicate', () {
+          final step = BuildStepId(
+            primaryInput: primaryInputId,
+            phaseNumber: 0,
+          );
+          final stepResult = BuildStepResult((b) {
+            b.result = true;
+            b.inArtifactTree = true;
+            b.outputs.add(primaryOutputId);
+          });
+          final content = AssetContent.string('output content');
+
+          buildState.addBuildStepResult(
+            step: step,
+            result: stepResult,
+            contents: {primaryOutputId: content},
+          );
+
+          expect(
+            () => buildState.addBuildStepResult(
+              step: step,
+              result: stepResult,
+              contents: {primaryOutputId: content},
+            ),
+            throwsStateError,
+          );
+        });
+
+        test('addPostProcessBuildStepResult records step and contents', () {
+          final step = PostProcessBuildStepId(
+            input: primaryInputId,
+            actionNumber: 0,
+          );
+          final postOutputId = makeAssetId('foo|file.txt.post');
+          final stepResult = PostProcessBuildStepResult(
+            inArtifactTree: true,
+            outputs: [postOutputId],
+            errors: const [],
+            deletedPrimaryInput: false,
+          );
+          final content = AssetContent.string('post content');
+
+          buildState.addPostProcessBuildStepResult(
+            step: step,
+            result: stepResult,
+            contents: {postOutputId: content},
+          );
+
+          expect(buildState.postProcessBuildStepResultFor(step), stepResult);
+          expect(buildState.contentOf(postOutputId), content);
+          expect(buildState.digestOf(postOutputId), content.digest);
+        });
+
+        test('addPostProcessBuildStepResult throws on output mismatch', () {
+          final step = PostProcessBuildStepId(
+            input: primaryInputId,
+            actionNumber: 0,
+          );
+          final postOutputId = makeAssetId('foo|file.txt.post');
+          final stepResult = PostProcessBuildStepResult(
+            inArtifactTree: true,
+            outputs: [postOutputId],
+            errors: const [],
+            deletedPrimaryInput: false,
+          );
+
+          expect(
+            () => buildState.addPostProcessBuildStepResult(
+              step: step,
+              result: stepResult,
+              contents: <AssetId, AssetContent>{},
+            ),
+            throwsArgumentError,
+          );
+        });
+
+        test('addPostProcessBuildStepResult throws on duplicate', () {
+          final step = PostProcessBuildStepId(
+            input: primaryInputId,
+            actionNumber: 0,
+          );
+          final postOutputId = makeAssetId('foo|file.txt.post');
+          final stepResult = PostProcessBuildStepResult(
+            inArtifactTree: true,
+            outputs: [postOutputId],
+            errors: const [],
+            deletedPrimaryInput: false,
+          );
+          final content = AssetContent.string('post content');
+
+          buildState.addPostProcessBuildStepResult(
+            step: step,
+            result: stepResult,
+            contents: {postOutputId: content},
+          );
+
+          expect(
+            () => buildState.addPostProcessBuildStepResult(
+              step: step,
+              result: stepResult,
+              contents: {postOutputId: content},
+            ),
+            throwsStateError,
+          );
         });
       });
     });
@@ -375,9 +416,7 @@ void main() {
 
     test('empty plan', () {
       expect(plan.transitiveDeclaredOutputsOf([]), isEmpty);
-      expect(plan.transitiveDeclaredOutputsOf([makeAssetId('foo|a')]), {
-        makeAssetId('foo|a'),
-      });
+      expect(plan.transitiveDeclaredOutputsOf([makeAssetId('foo|a')]), isEmpty);
     });
 
     test('chain: a -> b -> c', () {
@@ -385,16 +424,15 @@ void main() {
       final b = makeAssetId('foo|b');
       final c = makeAssetId('foo|c');
       plan = BuildStepPlan(
-        (builder) =>
-            builder
-              ..buildPhases = BuildPhases([])
-              ..declaredOutputsByPrimaryInput.addValues(a, [b])
-              ..declaredOutputsByPrimaryInput.addValues(b, [c]),
+        (builder) => builder
+          ..buildPhases = BuildPhases([])
+          ..declaredOutputsByPrimaryInput.addValues(a, [b])
+          ..declaredOutputsByPrimaryInput.addValues(b, [c]),
       );
 
-      expect(plan.transitiveDeclaredOutputsOf([a]), unorderedEquals({a, b, c}));
-      expect(plan.transitiveDeclaredOutputsOf([b]), unorderedEquals({b, c}));
-      expect(plan.transitiveDeclaredOutputsOf([c]), unorderedEquals({c}));
+      expect(plan.transitiveDeclaredOutputsOf([a]), unorderedEquals({b, c}));
+      expect(plan.transitiveDeclaredOutputsOf([b]), unorderedEquals({c}));
+      expect(plan.transitiveDeclaredOutputsOf([c]), isEmpty);
     });
 
     test('diamond: a -> b, c; b -> d; c -> d', () {
@@ -403,18 +441,14 @@ void main() {
       final c = makeAssetId('foo|c');
       final d = makeAssetId('foo|d');
       plan = BuildStepPlan(
-        (builder) =>
-            builder
-              ..buildPhases = BuildPhases([])
-              ..declaredOutputsByPrimaryInput.addValues(a, [b, c])
-              ..declaredOutputsByPrimaryInput.addValues(b, [d])
-              ..declaredOutputsByPrimaryInput.addValues(c, [d]),
+        (builder) => builder
+          ..buildPhases = BuildPhases([])
+          ..declaredOutputsByPrimaryInput.addValues(a, [b, c])
+          ..declaredOutputsByPrimaryInput.addValues(b, [d])
+          ..declaredOutputsByPrimaryInput.addValues(c, [d]),
       );
 
-      expect(
-        plan.transitiveDeclaredOutputsOf([a]),
-        unorderedEquals({a, b, c, d}),
-      );
+      expect(plan.transitiveDeclaredOutputsOf([a]), unorderedEquals({b, c, d}));
     });
 
     test('multiple inputs', () {
@@ -423,17 +457,13 @@ void main() {
       final c = makeAssetId('foo|c');
       final d = makeAssetId('foo|d');
       plan = BuildStepPlan(
-        (builder) =>
-            builder
-              ..buildPhases = BuildPhases([])
-              ..declaredOutputsByPrimaryInput.addValues(a, [b])
-              ..declaredOutputsByPrimaryInput.addValues(c, [d]),
+        (builder) => builder
+          ..buildPhases = BuildPhases([])
+          ..declaredOutputsByPrimaryInput.addValues(a, [b])
+          ..declaredOutputsByPrimaryInput.addValues(c, [d]),
       );
 
-      expect(
-        plan.transitiveDeclaredOutputsOf([a, c]),
-        unorderedEquals({a, b, c, d}),
-      );
+      expect(plan.transitiveDeclaredOutputsOf([a, c]), unorderedEquals({b, d}));
     });
   });
 }

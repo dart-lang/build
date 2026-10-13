@@ -20,8 +20,10 @@ void main() {
     await testBuilder(
       MetaModuleBuilder(testPlatform),
       {
-        'a|lib/a.module.library':
-            ModuleLibrary.fromSource(assetA, '').serialize(),
+        'a|lib/a.module.library': ModuleLibrary.fromSource(
+          assetA,
+          '',
+        ).serialize(),
       },
       outputs: {
         'a|lib/${metaModuleExtension(testPlatform)}': encodedMatchesMetaModule(
@@ -47,10 +49,14 @@ void main() {
       await testBuilder(
         MetaModuleBuilder(testPlatform),
         {
-          'a|lib/a.module.library':
-              ModuleLibrary.fromSource(assetA, '').serialize(),
-          'a|lib/b.module.library':
-              ModuleLibrary.fromSource(assetB, "import 'dart:io';").serialize(),
+          'a|lib/a.module.library': ModuleLibrary.fromSource(
+            assetA,
+            '',
+          ).serialize(),
+          'a|lib/b.module.library': ModuleLibrary.fromSource(
+            assetB,
+            "import 'dart:io';",
+          ).serialize(),
         },
         outputs: {
           'a|lib/${metaModuleExtension(testPlatform)}':
@@ -75,16 +81,14 @@ void main() {
         await testBuilder(
           MetaModuleBuilder(testPlatform),
           {
-            'a|lib/a.module.library':
-                ModuleLibrary.fromSource(
-                  assetA,
-                  "import 'b.dart';",
-                ).serialize(),
-            'a|lib/b.module.library':
-                ModuleLibrary.fromSource(
-                  assetB,
-                  "import 'dart:io';import 'a.dart';",
-                ).serialize(),
+            'a|lib/a.module.library': ModuleLibrary.fromSource(
+              assetA,
+              "import 'b.dart';",
+            ).serialize(),
+            'a|lib/b.module.library': ModuleLibrary.fromSource(
+              assetB,
+              "import 'dart:io';import 'a.dart';",
+            ).serialize(),
           },
           outputs: {
             'a|lib/${metaModuleExtension(testPlatform)}':
@@ -108,13 +112,14 @@ void main() {
       await testBuilder(
         MetaModuleBuilder(testPlatform),
         {
-          'a|lib/a.module.library':
-              ModuleLibrary.fromSource(
-                assetA,
-                "import 'src/b.dart';",
-              ).serialize(),
-          'a|lib/src/b.module.library':
-              ModuleLibrary.fromSource(assetB, "import 'dart:io';").serialize(),
+          'a|lib/a.module.library': ModuleLibrary.fromSource(
+            assetA,
+            "import 'src/b.dart';",
+          ).serialize(),
+          'a|lib/src/b.module.library': ModuleLibrary.fromSource(
+            assetB,
+            "import 'dart:io';",
+          ).serialize(),
         },
         outputs: {
           'a|lib/${metaModuleExtension(testPlatform)}':
@@ -144,10 +149,14 @@ void main() {
       await testBuilder(
         MetaModuleBuilder(testPlatform),
         {
-          'a|lib/a.module.library':
-              ModuleLibrary.fromSource(assetA, "import 'b.dart';").serialize(),
-          'a|lib/b.module.library':
-              ModuleLibrary.fromSource(assetB, "import 'dart:io';").serialize(),
+          'a|lib/a.module.library': ModuleLibrary.fromSource(
+            assetA,
+            "import 'b.dart';",
+          ).serialize(),
+          'a|lib/b.module.library': ModuleLibrary.fromSource(
+            assetB,
+            "import 'dart:io';",
+          ).serialize(),
         },
         outputs: {
           'a|lib/${metaModuleExtension(testPlatform)}':

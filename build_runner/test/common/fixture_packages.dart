@@ -19,6 +19,9 @@ class FixturePackage {
 
 class FixturePackages {
   /// Copies .txt files to .txt.$outputExtension files.
+  ///
+  /// If [waitForFileAtBuildStart] is set, each build step waits until a file
+  /// exists at that absolute path before doing any work.
   static FixturePackage copyBuilder({
     String packageName = 'builder_pkg',
     bool buildToCache = false,
@@ -27,12 +30,15 @@ class FixturePackages {
     String appliesBuilders = '[]',
     List<String> pathDependencies = const [],
     bool delayAtBuildStart = false,
+    String? waitForFileAtBuildStart,
+    String? defaultGlob,
   }) => FixturePackage(
     name: packageName,
-    dependencies: ['build', 'build_runner'],
+    dependencies: ['build', 'build_runner', 'glob'],
     pathDependencies: pathDependencies,
     files: {
-      'build.yaml': '''
+      'build.yaml':
+          '''
 builders:
   test_builder:
     import: 'package:$packageName/builder.dart'
@@ -41,13 +47,30 @@ builders:
     auto_apply: ${applyToAllPackages ? 'all_packages' : 'root_package'}
     build_to: ${buildToCache ? 'cache' : 'source'}
     applies_builders: $appliesBuilders
+${defaultGlob != null ? '    defaults:\n      options:\n        glob: "$defaultGlob"' : ''}
 ''',
-      'lib/builder.dart': '''
-import 'package:build/build.dart';
+      'lib/builder.dart':
+          '''
+import 'dart:io';
 
-Builder testBuilderFactory(BuilderOptions options) => TestBuilder();
+import 'package:build/build.dart';
+import 'package:glob/glob.dart';
+
+Builder testBuilderFactory(BuilderOptions options) => TestBuilder(
+      options.config['copy_from'] == null
+          ? null
+          : AssetId.parse(options.config['copy_from'] as String),
+      options.config['extra_content'] as Object? ?? '',
+      options.config['glob'] as String?,
+    );
 
 class TestBuilder implements Builder {
+  final AssetId? otherInput;
+  final Object extraContent;
+  final String? glob;
+
+  TestBuilder(this.otherInput, this.extraContent, [this.glob]);
+
   @override
   Map<String, List<String>> get buildExtensions
       => {'.txt': ['.txt$outputExtension']};
@@ -55,9 +78,23 @@ class TestBuilder implements Builder {
   @override
   Future<void> build(BuildStep buildStep) async {
 ${delayAtBuildStart ? 'await Future.delayed(Duration(seconds: 1));' : ''}
-    buildStep.writeAsString(
+${waitForFileAtBuildStart == null ? '' : '''
+    while (!File(r'$waitForFileAtBuildStart').existsSync()) {
+      await Future.delayed(Duration(milliseconds: 100));
+    }'''}
+    final globAssets = glob == null
+        ? <String>[]
+        : ([
+            await for (final asset in buildStep.findAssets(Glob(glob!)))
+              asset.path,
+          ]..sort());
+    final globSuffix =
+        globAssets.isEmpty ? '' : '\\n' + globAssets.join('\\n');
+    await buildStep.writeAsString(
         buildStep.inputId.addExtension('$outputExtension'),
-        await buildStep.readAsString(buildStep.inputId),
+        await buildStep.readAsString(otherInput ?? buildStep.inputId) +
+            '\$extraContent' +
+            globSuffix,
     );
   }
 }
@@ -135,7 +172,8 @@ class ReadBuilder implements Builder {
     name: packageName,
     dependencies: ['build', 'build_runner'],
     files: {
-      'build.yaml': '''
+      'build.yaml':
+          '''
 builders:
   test_builder:
     import: "package:$packageName/builder.dart"

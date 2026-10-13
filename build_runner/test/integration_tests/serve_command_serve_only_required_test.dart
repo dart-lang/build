@@ -42,7 +42,7 @@ void main() async {
     await serve.expect(BuildLog.successPattern);
     await serve.fetch('a.txt.copy', expectResponseCode: 404);
 
-    // But it is not removed from the source tree.
+    // But it is not removed from the package path.
     expect(tester.readFileTree('root_pkg/web'), {
       'a.txt': 'a',
       'a.txt.copy': 'a',
@@ -75,8 +75,8 @@ void main() async {
 
     // Regression test for an issue whereby serve mode directories with
     // ports were not correctly parsed to build directories, causing
-    // non-optional outputs to cache in served directories that are not also
-    // inputs to other build steps to be skipped.
+    // non-optional artifact tree outputs in served directories that are not
+    // also inputs to other build steps to be skipped.
     tester.writeFixturePackage(
       FixturePackages.copyBuilder(buildToCache: true, outputExtension: '.copy'),
     );

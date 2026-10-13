@@ -244,8 +244,7 @@ abstract class AnnotationBuildTrigger
     return false;
   }
 
-  String? get warning =>
-      annotation.contains(_regexp)
-          ? null
-          : 'Invalid annotation trigger: `$annotation`';
+  String? get warning => annotation.contains(_regexp)
+      ? null
+      : 'Invalid annotation trigger: `$annotation`';
 }

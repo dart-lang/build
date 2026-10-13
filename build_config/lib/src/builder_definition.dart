@@ -16,11 +16,10 @@ part 'builder_definition.g.dart';
 enum AutoApply { none, dependents, allPackages, rootPackage }
 
 enum BuildTo {
-  /// Generated files are written to the source directory next to their primary
-  /// inputs.
+  /// Outputs are written to their package paths.
   source,
 
-  /// Generated files are written to the hidden 'generated' directory.
+  /// Outputs are written to the artifact tree `.dart_tool/build/generated`.
   cache,
 }
 
@@ -79,6 +78,9 @@ class BuilderDefinition {
   /// Where the outputs of this builder should be written.
   final BuildTo buildTo;
 
+  /// Whether this builder is allowed to use `BuildStep.librarySourceSink`.
+  final bool addsToLibrary;
+
   final TargetBuilderConfigDefaults defaults;
 
   BuilderDefinition({
@@ -92,13 +94,14 @@ class BuilderDefinition {
     Iterable<String>? appliesBuilders,
     bool? isOptional,
     BuildTo? buildTo,
+    bool? addsToLibrary,
     TargetBuilderConfigDefaults? defaults,
   }) : // ignore: deprecated_member_use
-       target =
-           target != null
-               ? normalizeTargetKeyUsage(target, currentPackage)
-               : null,
+       target = target != null
+           ? normalizeTargetKeyUsage(target, currentPackage)
+           : null,
        autoApply = autoApply ?? AutoApply.none,
+       addsToLibrary = addsToLibrary ?? false,
        requiredInputs = requiredInputs?.toList() ?? const [],
        runsBefore =
            runsBefore
@@ -132,6 +135,35 @@ class BuilderDefinition {
             'the output extensions must not contain the input extension',
       );
     }
+    if (this.addsToLibrary && this.isOptional) {
+      throw ArgumentError(
+        'A builder cannot set both `adds_to_library: true` and '
+        '`is_optional: true`.',
+      );
+    }
+    if (this.addsToLibrary) {
+      final nonDartInputs = buildExtensions.keys.where(
+        (input) => !input.endsWith('.dart'),
+      );
+      if (nonDartInputs.isNotEmpty) {
+        throw ArgumentError(
+          'A builder with `adds_to_library: true` can only have `.dart` '
+          "inputs, but has: ${nonDartInputs.map((i) => "'$i'").join(', ')}.",
+        );
+      }
+      if (this.buildTo != BuildTo.source) {
+        throw ArgumentError(
+          'A builder with `adds_to_library: true` must set `build_to: source`.',
+        );
+      }
+      if (builderFactories.length != 1) {
+        throw ArgumentError(
+          'A builder with `adds_to_library: true` must have exactly one '
+          'builder factory, but has: '
+          '${builderFactories.map((f) => "'$f'").join(', ')}.',
+        );
+      }
+    }
   }
 
   factory BuilderDefinition.fromJson(Map json) {
@@ -140,18 +172,18 @@ class BuilderDefinition {
   }
 
   @override
-  String toString() =>
-      {
-        'autoApply': autoApply,
-        'import': import,
-        'builderFactories': builderFactories,
-        'buildExtensions': buildExtensions,
-        'requiredInputs': requiredInputs,
-        'runsBefore': runsBefore,
-        'isOptional': isOptional,
-        'buildTo': buildTo,
-        'defaults': defaults,
-      }.toString();
+  String toString() => {
+    'autoApply': autoApply,
+    'import': import,
+    'builderFactories': builderFactories,
+    'buildExtensions': buildExtensions,
+    'requiredInputs': requiredInputs,
+    'runsBefore': runsBefore,
+    'isOptional': isOptional,
+    'buildTo': buildTo,
+    'addsToLibrary': addsToLibrary,
+    'defaults': defaults,
+  }.toString();
 }
 
 /// The definition of a `PostProcessBuilder` in the `post_process_builders`
@@ -206,12 +238,11 @@ class PostProcessBuilderDefinition {
   }
 
   @override
-  String toString() =>
-      {
-        'import': import,
-        'builderFactory': builderFactory,
-        'defaults': defaults,
-      }.toString();
+  String toString() => {
+    'import': import,
+    'builderFactory': builderFactory,
+    'defaults': defaults,
+  }.toString();
 }
 
 /// Default values that builder authors can specify when users don't fill in the

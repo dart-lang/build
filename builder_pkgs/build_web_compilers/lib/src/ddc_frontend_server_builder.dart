@@ -4,10 +4,8 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:build/build.dart';
-import 'package:scratch_space/scratch_space.dart';
 
 import 'build_modules/build_modules.dart';
 import 'common.dart';
@@ -16,21 +14,15 @@ import 'platforms.dart';
 
 /// A builder that compiles DDC modules with the Frontend Server.
 class DdcFrontendServerBuilder implements Builder {
-  /// A custom directory to use for the scratch space, if provided.
-  ///
-  /// Used to share the scratch space directory with the `fes_manager` process
-  /// when it is initialized separately from the build daemon (like in tests).
-  final String? scratchSpaceDir;
+  final String? librariesPath;
+  final String? platformSdk;
+  final String? sdkKernelPath;
 
-  /// A persistent scratch space instance used when a custom scratch space
-  /// directory is provided.
-  ///
-  /// We cache this instance to maintain ScratchSpace's in-memory digests cache
-  /// for recompiles.
-  ScratchSpace? _scratchSpace;
-
-  DdcFrontendServerBuilder({this.scratchSpaceDir});
-
+  DdcFrontendServerBuilder({
+    this.librariesPath,
+    this.platformSdk,
+    this.sdkKernelPath,
+  });
   @override
   Map<String, List<String>> get buildExtensions => {
     moduleExtension(ddcPlatform): [
@@ -52,131 +44,127 @@ class DdcFrontendServerBuilder implements Builder {
     );
     final ddcEntrypointId = module.primarySource;
     final entrypoint = frontendServerState.entrypointAssetId;
-    final isEntrypoint =
-        entrypoint == null
-            ? ddcEntrypointId.changeExtension('.ddc.module') ==
-                buildStep.inputId
-            : ddcEntrypointId == entrypoint;
+    final isEntrypoint = entrypoint == null
+        ? ddcEntrypointId.changeExtension('.ddc.module') == buildStep.inputId
+        : ddcEntrypointId == entrypoint;
     if (isEntrypoint && entrypoint == null) {
       frontendServerState.entrypointAssetId = ddcEntrypointId;
     }
     final entrypointAssetId = frontendServerState.entrypointAssetId!;
-    final transitiveDeps = await buildStep.trackStage(
-      'CollectTransitiveDeps',
-      () => module.computeTransitiveDependencies(buildStep),
+    final transitiveDeps = await module.computeTransitiveDependencies(
+      buildStep,
     );
-    final transitiveJsDeps = [
-      for (final dep in transitiveDeps)
-        if (dep.primarySource.package != buildStep.inputId.package) ...[
-          dep.primarySource.changeExtension(jsModuleExtension),
-          dep.primarySource.changeExtension(metadataExtension),
-        ],
-    ];
     final transitiveSources = [
       for (final dep in transitiveDeps) ...dep.sources,
     ];
     final scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
-    await buildStep.trackStage(
-      'EnsureAssets',
-      () => scratchSpace.ensureAssets([
-        ...module.sources,
-        ...transitiveSources,
-      ], buildStep),
-    );
+    // The entrypoint always has to be in the scratch space: any module can
+    // trigger a compilation of the main app, including a deferred one.
+    //
+    // Stage it from here whenever this build step can read it, which also
+    // records it as an input so that this step is rerun when it changes. A
+    // generated entrypoint in another package can't be read here at all, as
+    // it's a hidden output of a build phase that runs after this one; fall
+    // back to the copy `WebEntrypointMarkerBuilder` staged in that case.
+    //
+    // The marker builder is guaranteed to have run first not because of its
+    // `runs_before`, which can only order builders within a single package,
+    // but because the DDC builders are optional: they are demand driven from
+    // the root package's entrypoint builder, which runs after the marker.
+    final entrypointIsStaged =
+        frontendServerState.stagedEntrypointAssetId == entrypointAssetId;
+    final stageEntrypoint =
+        !entrypointIsStaged || await buildStep.canRead(entrypointAssetId);
     final root = getRootPackageName();
+    final frontendServer = await buildStep.fetchResource(
+      persistentFrontendServerResource,
+    );
+    await frontendServer.ensureStarted(
+      librariesPath: librariesPath,
+      platformSdk: platformSdk,
+      sdkKernelPath: sdkKernelPath,
+    );
     final driver = await buildStep.fetchResource(
       frontendServerProxyDriverResource,
     );
-    await buildStep.fetchResource(persistentFrontendServerResource);
-    final entrypointArg = sourceArg(frontendServerState.entrypointAssetId!);
-    String assetPath(AssetId id) =>
-        id.package == root
-            ? id.path
-            : 'packages/${id.package}/${id.path.replaceFirst('lib/', '')}';
-    final changedAssetUris = [
-      for (final asset in scratchSpace.changedFilesInBuild)
-        Uri(scheme: multiRootScheme, host: '', path: '/${assetPath(asset)}'),
-    ];
+    final entrypointArg = sourceArg(entrypointAssetId);
+    // Translates an AssetId to its scratch space file path.
+    //
+    // For example, AssetId('app', 'lib/src/foo.dart') becomes:
+    // 'lib/src/foo.dart' if 'app' is the root package
+    // 'packages/app/src/bar.dart' if 'app' is a standard package.
+    String assetPath(AssetId id) => id.package == root
+        ? id.path
+        : 'packages/${id.package}/${id.path.replaceFirst('lib/', '')}';
     try {
+      final changedAssetUris = <Uri>[];
       frontendServerState.triggerSharedCompilation(entrypointAssetId, () async {
-        final ScratchSpace sSpace;
-        final customDir = scratchSpaceDir;
-        if (customDir != null) {
-          frontendServerState.customScratchSpacePath = customDir;
-          sSpace =
-              _scratchSpace ??= ScratchSpace.existing(Directory(customDir));
-        } else {
-          sSpace = scratchSpace;
-        }
-        await buildStep.trackStage(
-          'EnsureAssets',
-          () => sSpace.ensureAssets([
-            if (frontendServerState.entrypointAssetId!.package ==
-                buildStep.inputId.package)
+        await scratchSpace.ensureAssets([
+          if (stageEntrypoint) entrypointAssetId,
+          ...module.sources,
+          ...transitiveSources,
+        ], buildStep);
+        changedAssetUris.addAll([
+          for (final asset in scratchSpace.changedFilesInBuild)
+            asset.path.startsWith('lib/')
+                ? Uri(
+                    scheme: 'package',
+                    path:
+                        '${asset.package}/${asset.path.replaceFirst('lib/', '')}',
+                  )
+                : Uri(
+                    scheme: multiRootScheme,
+                    host: '',
+                    path: '/${assetPath(asset)}',
+                  ),
+        ]);
+        scratchSpace.dispose();
+        final shouldCompile =
+            changedAssetUris.isNotEmpty ||
+            frontendServerState.needsRecompileRestart;
+        if (shouldCompile) {
+          final compilerOutput = await driver.recompileAndRecord(
+            entrypointArg,
+            changedAssetUris,
+            [assetPath(ddcEntrypointId.changeExtension(fesJsExtension))],
+            recompileRestart: frontendServerState.needsRecompileRestart,
+          );
+          if (compilerOutput == null) {
+            throw FrontendServerCompilationException(
               frontendServerState.entrypointAssetId!,
-          ], buildStep),
-        );
-        final compilerOutput = await driver.recompileAndRecord(
-          entrypointArg,
-          changedAssetUris,
-          [assetPath(ddcEntrypointId.changeExtension(fesJsExtension))],
-          recompileRestart: frontendServerState.needsRecompileRestart,
-        );
-        if (compilerOutput == null) {
-          throw FrontendServerCompilationException(
-            frontendServerState.entrypointAssetId!,
-            'Frontend Server produced no output.',
-          );
-        }
-        if (compilerOutput.errorCount != 0) {
-          throw FrontendServerCompilationException(
-            frontendServerState.entrypointAssetId!,
-            compilerOutput.errorMessage ?? 'Unknown error',
-          );
+              'Frontend Server produced no output.',
+            );
+          }
+          if (compilerOutput.errorCount != 0) {
+            throw FrontendServerCompilationException(
+              frontendServerState.entrypointAssetId!,
+              compilerOutput.errorMessage ?? 'Unknown error',
+            );
+          }
         }
       });
       await frontendServerState.waitForCompilation(entrypointAssetId);
-      await buildStep.trackStage(
-        'EnsureAssets',
-        () => scratchSpace.ensureAssets(transitiveJsDeps, buildStep),
-      );
 
-      final jsOutputId = ddcEntrypointId.changeExtension(jsModuleExtension);
-      final mapOutputId = ddcEntrypointId.changeExtension(jsSourceMapExtension);
-      final metadataOutputId = ddcEntrypointId.changeExtension(
-        metadataExtension,
-      );
-
-      final jsPath = '$testScratchSpacePathPrefix${assetPath(jsOutputId)}';
-      final mapPath = '$testScratchSpacePathPrefix${assetPath(mapOutputId)}';
-      final metadataPath =
-          '$testScratchSpacePathPrefix${assetPath(metadataOutputId)}';
-
-      final jsContent = await driver.readInMemoryFile(
-        jsPath,
-        entrypointArg,
-        changedAssetUris,
-      );
-      final mapContent = await driver.readInMemoryFile(
-        mapPath,
-        entrypointArg,
-        changedAssetUris,
-      );
-      final metadataContent = await driver.readInMemoryFile(
-        metadataPath,
-        entrypointArg,
-        changedAssetUris,
-      );
-
-      if (jsContent != null) {
-        await buildStep.writeAsString(jsOutputId, jsContent);
+      // Reads the compiled asset with [extension] from the Frontend Server's
+      // filesystem and writes it to the build runner's output.
+      Future<void> readAndWriteOutput(String extension) async {
+        final outputId = ddcEntrypointId.changeExtension(extension);
+        final path = '$testScratchSpacePathPrefix${assetPath(outputId)}';
+        final content = await driver.readInMemoryFile(
+          path,
+          entrypointArg,
+          changedAssetUris,
+        );
+        if (content != null) {
+          await buildStep.writeAsString(outputId, content);
+        }
       }
-      if (mapContent != null) {
-        await buildStep.writeAsString(mapOutputId, mapContent);
-      }
-      if (metadataContent != null) {
-        await buildStep.writeAsString(metadataOutputId, metadataContent);
-      }
+
+      await Future.wait([
+        readAndWriteOutput(jsModuleExtension),
+        readAndWriteOutput(jsSourceMapExtension),
+        readAndWriteOutput(metadataExtension),
+      ]);
 
       if (isEntrypoint) {
         frontendServerState.needsRecompileRestart = false;

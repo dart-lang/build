@@ -45,12 +45,11 @@ class TestCommand implements BuildRunnerCommand {
       b.verboseDurations = buildOptions.verboseDurations;
       b.onLog = testingOverrides.onLog;
     });
-    final tempPath =
-        Directory.systemTemp
-            .createTempSync('build_runner_test')
-            .absolute
-            .uri
-            .toFilePath();
+    final tempPath = Directory.systemTemp
+        .createTempSync('build_runner_test')
+        .absolute
+        .uri
+        .toFilePath();
     try {
       final buildPackages =
           testingOverrides.buildPackages ??
@@ -69,25 +68,24 @@ dev_dependencies:
         return ExitCode.config.code;
       }
 
-      final result =
-          await BuildCommand(
-            builderFactories: builderFactories,
-            buildOptions: buildOptions.copyWith(
-              buildDirs: buildOptions.buildDirs.rebuild((b) {
-                b.add(
-                  BuildDirectory(
-                    'test',
-                    outputLocation: OutputLocation(
-                      tempPath,
-                      useSymlinks: buildOptions.outputSymlinksOnly,
-                      hoist: false,
-                    ),
-                  ),
-                );
-              }),
-            ),
-            testingOverrides: testingOverrides,
-          ).run();
+      final result = await BuildCommand(
+        builderFactories: builderFactories,
+        buildOptions: buildOptions.copyWith(
+          buildDirs: buildOptions.buildDirs.rebuild((b) {
+            b.add(
+              BuildDirectory(
+                'test',
+                outputLocation: OutputLocation(
+                  tempPath,
+                  useSymlinks: buildOptions.outputSymlinksOnly,
+                  hoist: false,
+                ),
+              ),
+            );
+          }),
+        ),
+        testingOverrides: testingOverrides,
+      ).run();
       if (result != ExitCode.success.code) {
         stdout.writeln('Skipping tests due to build failure');
         return result;
@@ -127,10 +125,9 @@ void _ensureProcessExit(Process process) {
   });
 }
 
-Stream<ProcessSignal> get _exitProcessSignals =>
-    Platform.isWindows
-        ? ProcessSignal.sigint.watch()
-        : StreamGroup.merge([
-          ProcessSignal.sigterm.watch(),
-          ProcessSignal.sigint.watch(),
-        ]);
+Stream<ProcessSignal> get _exitProcessSignals => Platform.isWindows
+    ? ProcessSignal.sigint.watch()
+    : StreamGroup.merge([
+        ProcessSignal.sigterm.watch(),
+        ProcessSignal.sigint.watch(),
+      ]);

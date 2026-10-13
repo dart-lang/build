@@ -15,8 +15,14 @@ Iterable<BuilderDefinition> findBuilderOrder(
   Iterable<BuilderDefinition> builders,
   Map<String, GlobalBuilderConfig> globalBuilderConfigs,
 ) {
-  final consistentOrderBuilders =
-      builders.toList()..sort((a, b) => a.key.compareTo(b.key));
+  final consistentOrderBuilders = builders.toList()
+    ..sort((a, b) => a.key.compareTo(b.key));
+  final seenKeys = <String>{};
+  for (final builder in consistentOrderBuilders) {
+    if (!seenKeys.add(builder.key)) {
+      throw ArgumentError('Duplicate builder key: ${builder.key}');
+    }
+  }
   Iterable<BuilderDefinition> dependencies(BuilderDefinition parent) =>
       consistentOrderBuilders.where(
         (child) =>

@@ -28,8 +28,9 @@ class IdentitySerializer<T> implements PrimitiveSerializer<T> {
   /// A serializer wrapping [delegate] to deduplicate by identity.
   IdentitySerializer(this.delegate)
     : _primitiveDelegate = delegate is PrimitiveSerializer<T> ? delegate : null,
-      _structuredDelegate =
-          delegate is StructuredSerializer<T> ? delegate : null;
+      _structuredDelegate = delegate is StructuredSerializer<T>
+          ? delegate
+          : null;
 
   /// Sets the stored object values to [objects].
   ///
@@ -80,10 +81,9 @@ class IdentitySerializer<T> implements PrimitiveSerializer<T> {
     return _ids.putIfAbsent(object, () {
       // Otherwise, serialize it, store the value and serialized value, and
       // return the index of the last of `_objects` as the ID.
-      final serialized =
-          _primitiveDelegate == null
-              ? _structuredDelegate!.serialize(serializers, object)
-              : _primitiveDelegate.serialize(serializers, object);
+      final serialized = _primitiveDelegate == null
+          ? _structuredDelegate!.serialize(serializers, object)
+          : _primitiveDelegate.serialize(serializers, object);
       _serializedObjects.add(serialized);
       return (_objects..add(object)).length - 1;
     });

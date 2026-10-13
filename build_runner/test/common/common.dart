@@ -3,9 +3,10 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:convert';
-
 import 'package:build/build.dart';
+import 'package:build_runner/src/logging/build_log.dart';
 import 'package:crypto/crypto.dart';
+import 'package:test/test.dart';
 
 export 'package:build_test/build_test.dart';
 export 'package:build_test/src/internal_test_reader_writer.dart';
@@ -21,4 +22,19 @@ Digest computeDigest(AssetId id, String contents) {
   if (idString.startsWith(r'$$')) idString = idString.substring(2);
 
   return md5.convert([...utf8.encode(contents), ...idString.codeUnits]);
+}
+
+/// Configures `setUp` that redirects logging to `printOnFailure`.
+///
+/// Runs `addTearDown` that restores the original logging configuration.
+void setUpTestLogging() {
+  setUp(() {
+    final originalConfig = buildLog.configuration;
+    buildLog.configuration = buildLog.configuration.rebuild(
+      (b) => b.printOnFailure = printOnFailure,
+    );
+    addTearDown(() {
+      buildLog.configuration = originalConfig;
+    });
+  });
 }

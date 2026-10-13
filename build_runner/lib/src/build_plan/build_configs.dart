@@ -8,6 +8,7 @@ import 'package:build/build.dart';
 import 'package:build_config/build_config.dart' hide BuildTarget;
 import 'package:built_collection/built_collection.dart';
 import 'package:glob/glob.dart';
+import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
 import '../exceptions.dart';
@@ -54,6 +55,17 @@ class BuildConfigs {
     this._publicAssetsByPackage,
   );
 
+  @visibleForTesting
+  BuildConfigs.empty()
+    : buildTargets = BuiltMap(),
+      buildTargetsByPackage = BuiltListMultimap(),
+      buildConfigByPackage = BuiltMap(),
+      buildTriggers = BuildTriggers(
+        triggers: BuiltMap(),
+        warningsByPackage: BuiltMap(),
+      ),
+      _publicAssetsByPackage = BuiltMap();
+
   /// Loads [BuildConfigs] for [buildPackages].
   ///
   /// Pass [testingOverrides] to override `reader`, `buildConfig` or
@@ -96,10 +108,10 @@ class BuildConfigs {
         (readerWriter == null
             ? null
             : await findBuildConfigOverrides(
-              buildPackages: buildPackages,
-              readerWriter: readerWriter,
-              configKey: configKey,
-            ));
+                buildPackages: buildPackages,
+                readerWriter: readerWriter,
+                configKey: configKey,
+              ));
     for (final package in buildPackages.packages.values) {
       final config =
           configOverrides?[package.name] ??
@@ -108,29 +120,28 @@ class BuildConfigs {
 
       BuiltList<String> defaultInclude;
       if (package.isOutput) {
-        defaultInclude =
-            [
-              ...(testingOverrides?.defaultRootPackageSources ??
-                  defaultInBuildPackageSources),
-              ...config.additionalPublicAssets,
-            ].build();
+        defaultInclude = [
+          ...(testingOverrides?.defaultRootPackageSources ??
+              defaultInBuildPackageSources),
+          ...config.additionalPublicAssets,
+        ].build();
       } else if (package.name == r'$sdk') {
-        defaultInclude =
-            const ['lib/dev_compiler/**.js', 'lib/_internal/**.sum'].build();
+        defaultInclude = const [
+          'lib/dev_compiler/**.js',
+          'lib/_internal/**.sum',
+        ].build();
       } else {
-        defaultInclude =
-            [
-              ...defaultDependencyVisibleAssets,
-              ...config.additionalPublicAssets,
-            ].build();
+        defaultInclude = [
+          ...defaultDependencyVisibleAssets,
+          ...config.additionalPublicAssets,
+        ].build();
       }
       publicAssetsByPackage[package.name] = InputMatcher(
         const InputSet(),
-        defaultInclude:
-            [
-              ...defaultDependencyVisibleAssets, // public by default
-              ...config.additionalPublicAssets, // user-defined public assets
-            ].build(),
+        defaultInclude: [
+          ...defaultDependencyVisibleAssets, // public by default
+          ...config.additionalPublicAssets, // user-defined public assets
+        ].build(),
       );
       final buildTargets = config.buildTargets.values.map(
         (target) => BuildTarget(target, defaultInclude: defaultInclude),
@@ -141,8 +152,9 @@ class BuildConfigs {
           Placeholders.packageName,
           Placeholders.libPath,
         ];
-        final requiredPackagePaths =
-            package.isOutput ? requiredRootSourcePaths : requiredSourcePaths;
+        final requiredPackagePaths = package.isOutput
+            ? requiredRootSourcePaths
+            : requiredSourcePaths;
         final requiredIds = requiredPackagePaths.map(
           (path) => AssetId(package.name, path),
         );
@@ -234,7 +246,8 @@ class BuildConfigs {
   /// choose to include `include/**` as a public asset.
   ///
   /// Public assets are added as default sources to the default target. They are
-  /// also not considered optional outputs for hidden build phases.
+  /// also not considered optional outputs for build phases that output to the
+  /// artifact tree.
   bool isPublicAsset(AssetId id) {
     final filter =
         _publicAssetsByPackage[id.package] ?? _defaultMatcherForDependency;
@@ -347,36 +360,34 @@ Future<BuiltMap<String, BuildConfig>> findBuildConfigOverrides({
 ///
 /// This is also the default list of files for targets in non-root packages when
 /// an explicit include is not provided.
-final BuiltList<String> defaultDependencyVisibleAssets =
-    [
-      'CHANGELOG*',
-      'lib/**',
-      'bin/**',
-      'LICENSE*',
-      'pubspec.yaml',
-      'README*',
-    ].build();
+final BuiltList<String> defaultDependencyVisibleAssets = [
+  'CHANGELOG*',
+  'lib/**',
+  'bin/**',
+  'LICENSE*',
+  'pubspec.yaml',
+  'README*',
+].build();
 
 /// The default list of files to include when an explicit include is not
 /// provided.
 ///
 /// This should be a superset of [defaultDependencyVisibleAssets].
-final BuiltList<String> defaultInBuildPackageSources =
-    [
-      'assets/**',
-      'benchmark/**',
-      'bin/**',
-      'CHANGELOG*',
-      'example/**',
-      'lib/**',
-      'test/**',
-      'integration_test/**',
-      'tool/**',
-      'web/**',
-      'node/**',
-      'LICENSE*',
-      'pubspec.yaml',
-      'pubspec.lock',
-      'README*',
-      r'$package$',
-    ].build();
+final BuiltList<String> defaultInBuildPackageSources = [
+  'assets/**',
+  'benchmark/**',
+  'bin/**',
+  'CHANGELOG*',
+  'example/**',
+  'lib/**',
+  'test/**',
+  'integration_test/**',
+  'tool/**',
+  'web/**',
+  'node/**',
+  'LICENSE*',
+  'pubspec.yaml',
+  'pubspec.lock',
+  'README*',
+  r'$package$',
+].build();

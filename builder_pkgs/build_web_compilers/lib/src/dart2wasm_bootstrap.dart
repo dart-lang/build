@@ -84,20 +84,13 @@ Future<Dart2WasmBootstrapResult> _bootstrapDart2Wasm(
         throwIfUnsupported: !unsafeAllowUnsupportedModules,
       ))..add(module);
     } on UnsupportedModules catch (e) {
-      final librariesString = (await e.exactLibraries(buildStep).toList())
-          .map(
-            (lib) => AssetId(
-              lib.id.package,
-              lib.id.path.replaceFirst(moduleLibraryExtension, '.dart'),
-            ),
-          )
-          .join('\n');
-      log.warning('''
-Skipping compiling ${buildStep.inputId} with dart2wasm because some of its
-transitive libraries have sdk dependencies that are not supported on this platform:
-
-$librariesString
-''');
+      log.warning(
+        await e.formattedUnsupportedMessage(
+          'dart2wasm',
+          buildStep.inputId,
+          buildStep,
+        ),
+      );
       return const Dart2WasmBootstrapResult.didNotCompile();
     }
 
@@ -105,13 +98,12 @@ $librariesString
     final allSrcs = allDeps.expand((module) => module.sources);
     await scratchSpace.ensureAssets(allSrcs, buildStep);
 
-    final dartUri =
-        dartEntrypointId.path.startsWith('lib/')
-            ? Uri.parse(
-              'package:${dartEntrypointId.package}/'
-              '${dartEntrypointId.path.substring('lib/'.length)}',
-            )
-            : Uri.parse('$multiRootScheme:///${dartEntrypointId.path}');
+    final dartUri = dartEntrypointId.path.startsWith('lib/')
+        ? Uri.parse(
+            'package:${dartEntrypointId.package}/'
+            '${dartEntrypointId.path.substring('lib/'.length)}',
+          )
+        : Uri.parse('$multiRootScheme:///${dartEntrypointId.path}');
     final wasmOutputPath =
         p.withoutExtension(
           dartUri.scheme == 'package'
@@ -187,10 +179,9 @@ $librariesString
       await buildStep.writeAsBytes(archiveId, TarEncoder().encode(archive));
     }
 
-    final loaderContents =
-        await scratchSpace
-            .fileFor(dartEntrypointId.changeExtension(moduleJsExtension))
-            .readAsBytes();
+    final loaderContents = await scratchSpace
+        .fileFor(dartEntrypointId.changeExtension(moduleJsExtension))
+        .readAsBytes();
     await buildStep.writeAsBytes(
       dartEntrypointId.changeExtension(javaScriptModuleExtension),
       loaderContents,

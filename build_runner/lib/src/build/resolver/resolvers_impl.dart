@@ -13,8 +13,10 @@ import 'package:package_config/package_config.dart';
 import 'package:pool/pool.dart';
 
 import '../../bootstrap/build_process_state.dart';
+import '../../build_plan/build_inputs.dart';
 import '../../logging/build_log.dart';
 import '../build_step_impl.dart';
+import '../builder_filesystem.dart';
 import '../library_cycle_graph/phased_asset_deps.dart';
 import 'analysis_driver.dart';
 import 'analysis_driver_model.dart';
@@ -70,16 +72,16 @@ class ResolversImpl implements Resolvers {
     await _initializationPool.withResource(() async {
       if (_buildResolver != null) return;
       _warnOnLanguageVersionMismatch();
-      final loadedConfig =
-          _packageConfig ??= await loadPackageConfigUri(
-            Uri.parse(buildProcessState.packageConfigUri),
-          );
+      final loadedConfig = _packageConfig ??= await loadPackageConfigUri(
+        Uri.parse(buildProcessState.packageConfigUri),
+      );
       final driver = analysisDriver(
         _analysisDriverModel,
-        AnalysisOptionsImpl()
-          ..contextFeatures = _featureSet(
-            enableExperiments: enabledExperiments,
-          ),
+        (AnalysisOptionsBuilder()
+              ..contextFeatures = _featureSet(
+                enableExperiments: enabledExperiments,
+              ))
+            .build(),
         await defaultSdkSummaryGenerator(),
         loadedConfig,
       );
@@ -90,7 +92,7 @@ class ResolversImpl implements Resolvers {
     return BuildStepResolver(_buildResolver!, buildStep as BuildStepImpl);
   }
 
-  /// Start a build with [declaredOutputPhases].
+  /// Starts a build.
   ///
   /// If another build has the lock, waits for it to finish.
   ///
@@ -101,12 +103,12 @@ class ResolversImpl implements Resolvers {
   /// implementation that needs locking. Find a way to do better. Fortunately,
   /// only two codepaths need to care about the lock: the main build in
   /// `build.dart` and test builds in `package:build_test` `test_builder.dart`.
-  Future<void> takeLockAndStartBuild(
-    Map<AssetId, int> declaredOutputPhases, {
-    required Set<AssetId>? invalidatedSources,
+  Future<void> takeLockAndStartBuild({
+    required BuilderFilesystem builderFilesystem,
+    required BuildInputs buildInputs,
   }) => _analysisDriverModel.takeLockAndStartBuild(
-    declaredOutputPhases,
-    invalidatedSources: invalidatedSources,
+    builderFilesystem: builderFilesystem,
+    buildInputs: buildInputs,
   );
 
   PhasedAssetDeps phasedAssetDeps() => _analysisDriverModel.phasedAssetDeps();
@@ -125,8 +127,9 @@ class ResolversImpl implements Resolvers {
 void _warnOnLanguageVersionMismatch() async {
   if (sdkLanguageVersion <= ExperimentStatus.currentVersion) return;
 
-  final upgradeCommand =
-      isFlutter ? 'flutter packages upgrade' : 'dart pub upgrade';
+  final upgradeCommand = isFlutter
+      ? 'flutter packages upgrade'
+      : 'dart pub upgrade';
   buildLog.warning(
     'SDK language version $sdkLanguageVersion is newer than `analyzer` '
     'language version ${ExperimentStatus.currentVersion}. '

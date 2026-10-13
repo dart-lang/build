@@ -25,11 +25,11 @@ void main() {
       // first.
       tester.sources(['a.g', 'a', 'b', 'b.g']);
 
-      tester.builder(from: '', to: '.g', outputIsVisible: true)
+      tester.builder(from: '', to: '.g', outputAtPackagePath: true)
         ..reads('')
         ..writes('.g');
 
-      tester.builder(from: '', to: '.other', outputIsVisible: true)
+      tester.builder(from: '', to: '.other', outputAtPackagePath: true)
         ..reads('')
         ..writes('.other');
     });
@@ -62,7 +62,7 @@ void main() {
       // `build_state.dart`.
       tester.sources(['a.g.g', 'a.g', 'a']);
 
-      tester.builder(from: '', to: '.g', outputIsVisible: true)
+      tester.builder(from: '', to: '.g', outputAtPackagePath: true)
         ..reads('')
         ..writes('.g');
     });
@@ -81,10 +81,10 @@ void main() {
       // `build_state.dart`.
       tester.sources(['a.g.other.g', 'a.g.other', 'a.g', 'a']);
 
-      tester.builder(from: '', to: '.g', outputIsVisible: true)
+      tester.builder(from: '', to: '.g', outputAtPackagePath: true)
         ..reads('')
         ..writes('.g');
-      tester.builder(from: '.g', to: '.g.other', outputIsVisible: true)
+      tester.builder(from: '.g', to: '.g.other', outputAtPackagePath: true)
         ..reads('.g')
         ..writes('.g.other');
     });

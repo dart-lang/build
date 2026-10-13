@@ -16,10 +16,10 @@ import 'package:collection/collection.dart' show IterableExtension;
 import 'package:pool/pool.dart';
 
 import '../../logging/timed_activities.dart';
-import '../input_tracker.dart';
-import '../library_cycle_graph/phased_reader.dart';
+import '../build_step_impl.dart';
 import 'analysis_driver_filesystem.dart';
 import 'analysis_driver_model.dart';
+import 'asset_ids.dart';
 import 'build_step_resolver.dart';
 
 /// [Resolver] for the entire build.
@@ -39,7 +39,7 @@ class BuildResolver {
     : _driverPool = AnalyzeActivityPool(driverPool);
 
   Future<bool> isLibrary(AssetId assetId) async {
-    if (assetId.extension != '.dart') return false;
+    if (!assetId.isDart) return false;
     return _driverPool.withResource(() async {
       if (!_driver.isUriOfExistingFile(assetId.uri)) return false;
       final result =
@@ -158,23 +158,22 @@ class BuildResolver {
   }
 
   Stream<LibraryElement> get sdkLibraries {
-    final loadLibraries =
-        _sdkLibraries ??= Future.sync(() {
-          final publicSdkUris = _driver.sdkLibraryUris.where(
-            (e) => !e.path.startsWith('_'),
-          );
+    final loadLibraries = _sdkLibraries ??= Future.sync(() {
+      final publicSdkUris = _driver.sdkLibraryUris.where(
+        (e) => !e.path.startsWith('_'),
+      );
 
-          return Future.wait(
-            publicSdkUris.map((uri) {
-              return _driverPool.withResource(() async {
-                final result =
-                    await _driver.currentSession.getLibraryByUri(uri.toString())
-                        as LibraryElementResult;
-                return result.element;
-              });
-            }),
-          );
-        });
+      return Future.wait(
+        publicSdkUris.map((uri) {
+          return _driverPool.withResource(() async {
+            final result =
+                await _driver.currentSession.getLibraryByUri(uri.toString())
+                    as LibraryElementResult;
+            return result.element;
+          });
+        }),
+      );
+    });
 
     return Stream.fromFuture(loadLibraries).expand((libraries) => libraries);
   }
@@ -199,22 +198,20 @@ class BuildResolver {
   }
 
   /// Updates the analysis driver with updated source of [entrypoint] at
-  /// the phase viewed by [phasedReader].
+  /// the phase of the [buildStep].
   ///
   /// If [transitive], then all the transitive imports from [entrypoint] are
   /// also updated.
   ///
-  /// Records what was read in [inputTracker].
+  /// Records what was read in the [buildStep]'s input tracker.
   Future<void> updateDriverForEntrypoint({
+    required BuildStepImpl buildStep,
     required AssetId entrypoint,
-    required PhasedReader phasedReader,
-    required InputTracker inputTracker,
     required bool transitive,
   }) => _analysisDriverModel.updateDriver(
-    withDriver:
-        (withDriver) => _driverPool.withResource(() => withDriver(_driver)),
-    phasedReader: phasedReader,
-    inputTracker: inputTracker,
+    withDriver: (withDriver) =>
+        _driverPool.withResource(() => withDriver(_driver)),
+    buildStep: buildStep,
     entrypoint: entrypoint,
     transitive: transitive,
   );

@@ -41,16 +41,16 @@ void main() {
     );
 
     test('finds transitive deps', () async {
-      await testBuilder(
+      final result = await testBuilder(
         TestBuilder(
           buildExtensions: {
             'lib/a${moduleExtension(platform)}': ['.transitive'],
           },
           build: expectAsync2((buildStep, _) async {
             final transitiveDeps =
-                (await rootModule.computeTransitiveDependencies(
-                  buildStep,
-                )).map((m) => m.primarySource).toList();
+                (await rootModule.computeTransitiveDependencies(buildStep))
+                    .map((m) => m.primarySource)
+                    .toList();
             expect(
               transitiveDeps,
               unorderedEquals([
@@ -86,10 +86,11 @@ void main() {
           ),
         },
       );
+      expect(result.errors, isEmpty);
     });
 
     test('missing modules report nice errors', () async {
-      await testBuilder(
+      final result = await testBuilder(
         TestBuilder(
           buildExtensions: {
             'lib/a${moduleExtension(platform)}': ['.transitive'],
@@ -130,6 +131,7 @@ Please check the following imports:
           'b|lib/b.dart': 'import \'src/dep.dart\';',
         },
       );
+      expect(result.errors, isEmpty);
     });
 
     test('missing conditional imports yield helpful errors', () async {
@@ -171,8 +173,7 @@ Please check the following imports:
             transitiveDepModule.toJson(),
           ),
           // No module for b|lib/src/dep.dart
-          'b|lib/b.dart':
-              'import \'some_other_dep.dart\' if (dart.library.js_interop) \'src/dep.dart\';',
+          'b|lib/b.dart': 'import \'some_other_dep.dart\' if (dart.library.js_interop) \'src/dep.dart\';',
         },
       );
     });
@@ -317,6 +318,87 @@ Please check the following imports:
             ),
           },
         );
+      });
+    });
+
+    group('circular dependencies', () {
+      test('do not crash on when involving the root module', () async {
+        // A <-> B
+        final moduleA = Module(rootId, [rootId], [directDepId], platform, true);
+        final moduleB = Module(
+          directDepId,
+          [directDepId],
+          [rootId],
+          platform,
+          true,
+        );
+
+        final result = await testBuilder(
+          TestBuilder(
+            buildExtensions: {
+              'lib/a${moduleExtension(platform)}': ['.transitive'],
+            },
+            build: expectAsync2((buildStep, _) async {
+              final transitiveDeps =
+                  (await moduleA.computeTransitiveDependencies(buildStep))
+                      .map((m) => m.primarySource)
+                      .toList();
+              expect(transitiveDeps, contains(moduleB.primarySource));
+            }),
+          ),
+          {
+            'a|lib/a${moduleExtension(platform)}': jsonEncode(moduleA.toJson()),
+            'a|lib/src/dep${moduleExtension(platform)}': jsonEncode(
+              moduleB.toJson(),
+            ),
+          },
+        );
+        expect(result.errors, isEmpty);
+      });
+
+      test('do not crash when in transitive dependencies', () async {
+        // A -> B, B <-> C
+        final moduleA = Module(rootId, [rootId], [directDepId], platform, true);
+        final moduleB = Module(
+          directDepId,
+          [directDepId],
+          [transitiveDepId],
+          platform,
+          true,
+        );
+        final moduleC = Module(
+          transitiveDepId,
+          [transitiveDepId],
+          [directDepId],
+          platform,
+          true,
+        );
+
+        final result = await testBuilder(
+          TestBuilder(
+            buildExtensions: {
+              'lib/a${moduleExtension(platform)}': ['.transitive'],
+            },
+            build: expectAsync2((buildStep, _) async {
+              final transitiveDeps =
+                  (await moduleA.computeTransitiveDependencies(buildStep))
+                      .map((m) => m.primarySource)
+                      .toList();
+              expect(
+                transitiveDeps,
+                unorderedEquals([moduleB.primarySource, moduleC.primarySource]),
+              );
+            }),
+          ),
+          {
+            'a|lib/a${moduleExtension(platform)}': jsonEncode(moduleA.toJson()),
+            'a|lib/src/dep${moduleExtension(platform)}': jsonEncode(
+              moduleB.toJson(),
+            ),
+            'b|lib/b${moduleExtension(platform)}': jsonEncode(moduleC.toJson()),
+          },
+        );
+        expect(result.errors, isEmpty);
       });
     });
   });

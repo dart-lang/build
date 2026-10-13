@@ -27,8 +27,9 @@ class _$PhasedValueSerializer
     final isUnderspecified =
         specifiedType.isUnspecified || specifiedType.parameters.isEmpty;
     if (!isUnderspecified) serializers.expectBuilder(specifiedType);
-    final parameterT =
-        isUnderspecified ? FullType.object : specifiedType.parameters[0];
+    final parameterT = isUnderspecified
+        ? FullType.object
+        : specifiedType.parameters[0];
 
     final result = <Object?>[
       'values',
@@ -52,14 +53,13 @@ class _$PhasedValueSerializer
     final isUnderspecified =
         specifiedType.isUnspecified || specifiedType.parameters.isEmpty;
     if (!isUnderspecified) serializers.expectBuilder(specifiedType);
-    final parameterT =
-        isUnderspecified ? FullType.object : specifiedType.parameters[0];
+    final parameterT = isUnderspecified
+        ? FullType.object
+        : specifiedType.parameters[0];
 
-    final result =
-        isUnderspecified
-            ? PhasedValueBuilder<Object?>()
-            : serializers.newBuilder(specifiedType)
-                as PhasedValueBuilder<Object?>;
+    final result = isUnderspecified
+        ? PhasedValueBuilder<Object?>()
+        : serializers.newBuilder(specifiedType) as PhasedValueBuilder<Object?>;
 
     final iterator = serialized.iterator;
     while (iterator.moveNext()) {
@@ -101,8 +101,9 @@ class _$ExpiringValueSerializer
     final isUnderspecified =
         specifiedType.isUnspecified || specifiedType.parameters.isEmpty;
     if (!isUnderspecified) serializers.expectBuilder(specifiedType);
-    final parameterT =
-        isUnderspecified ? FullType.object : specifiedType.parameters[0];
+    final parameterT = isUnderspecified
+        ? FullType.object
+        : specifiedType.parameters[0];
 
     final result = <Object?>[
       'value',
@@ -127,14 +128,14 @@ class _$ExpiringValueSerializer
     final isUnderspecified =
         specifiedType.isUnspecified || specifiedType.parameters.isEmpty;
     if (!isUnderspecified) serializers.expectBuilder(specifiedType);
-    final parameterT =
-        isUnderspecified ? FullType.object : specifiedType.parameters[0];
+    final parameterT = isUnderspecified
+        ? FullType.object
+        : specifiedType.parameters[0];
 
-    final result =
-        isUnderspecified
-            ? ExpiringValueBuilder<Object?>()
-            : serializers.newBuilder(specifiedType)
-                as ExpiringValueBuilder<Object?>;
+    final result = isUnderspecified
+        ? ExpiringValueBuilder<Object?>()
+        : serializers.newBuilder(specifiedType)
+              as ExpiringValueBuilder<Object?>;
 
     final iterator = serialized.iterator;
     while (iterator.moveNext()) {
@@ -191,8 +192,9 @@ class _$PhasedValue<T> extends PhasedValue<T> {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper(r'PhasedValue')
-      ..add('values', values)).toString();
+    return (newBuiltValueToStringHelper(
+      r'PhasedValue',
+    )..add('values', values)).toString();
   }
 }
 

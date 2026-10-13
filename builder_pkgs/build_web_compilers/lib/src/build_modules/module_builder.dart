@@ -43,15 +43,13 @@ class ModuleBuilder implements Builder {
   @override
   Future build(BuildStep buildStep) async {
     final metaModules = await buildStep.fetchResource(metaModuleCache);
-    final metaModuleExtensionString =
-        usesWebHotReload
-            ? metaModuleExtension(_platform)
-            : metaModuleCleanExtension(_platform);
-    final metaModule =
-        (await metaModules.find(
-          AssetId(buildStep.inputId.package, 'lib/$metaModuleExtensionString'),
-          buildStep,
-        ))!;
+    final metaModuleExtensionString = usesWebHotReload
+        ? metaModuleExtension(_platform)
+        : metaModuleCleanExtension(_platform);
+    final metaModule = (await metaModules.find(
+      AssetId(buildStep.inputId.package, 'lib/$metaModuleExtensionString'),
+      buildStep,
+    ))!;
     var outputModule = metaModule.modules.firstWhereOrNull(
       (m) => m.primarySource == buildStep.inputId,
     );

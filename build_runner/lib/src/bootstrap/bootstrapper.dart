@@ -130,26 +130,21 @@ class Bootstrapper {
       // The child process needs to know how it was compiled to check its
       // freshness, so pass `--force-aot` or `--force-jit`, except for when
       // strategy is alwaysJit.
-      final result =
-          _compiler.compileType == CompileType.aot
-              ? await ParentProcess.runAotSnapshotAndSend(
-                aotSnapshot: p.join(
-                  buildPaths.outputRootPath,
-                  entrypointAotPath,
-                ),
-                arguments: _insertFlag(arguments, '--force-aot'),
-                message: buildProcessState.serialize(),
-                runUnderPerf: dartAotPerf,
-              )
-              : await ParentProcess.runAndSend(
-                script: p.join(buildPaths.outputRootPath, entrypointDillPath),
-                arguments:
-                    compileStrategy == CompileStrategy.commandForcesJit
-                        ? arguments.toList()
-                        : _insertFlag(arguments, '--force-jit'),
-                message: buildProcessState.serialize(),
-                jitVmArgs: jitVmArgs,
-              );
+      final result = _compiler.compileType == CompileType.aot
+          ? await ParentProcess.runAotSnapshotAndSend(
+              aotSnapshot: p.join(buildPaths.outputRootPath, entrypointAotPath),
+              arguments: _insertFlag(arguments, '--force-aot'),
+              message: buildProcessState.serialize(),
+              runUnderPerf: dartAotPerf,
+            )
+          : await ParentProcess.runAndSend(
+              script: p.join(buildPaths.outputRootPath, entrypointDillPath),
+              arguments: compileStrategy == CompileStrategy.commandForcesJit
+                  ? arguments.toList()
+                  : _insertFlag(arguments, '--force-jit'),
+              message: buildProcessState.serialize(),
+              jitVmArgs: jitVmArgs,
+            );
       buildProcessState.deserializeAndSet(result.message);
       final exitCode = result.exitCode;
 
@@ -170,8 +165,9 @@ class Bootstrapper {
   Future<void> _writeBuildScript() async {
     final buildScript = await generateBuildScript(buildPaths: buildPaths);
     final path = p.join(buildPaths.outputRootPath, entrypointScriptPath);
-    final existingBuildScript =
-        File(path).existsSync() ? File(path).readAsStringSync() : null;
+    final existingBuildScript = File(path).existsSync()
+        ? File(path).readAsStringSync()
+        : null;
     if (buildScript != existingBuildScript) {
       File(path)
         ..createSync(recursive: true)

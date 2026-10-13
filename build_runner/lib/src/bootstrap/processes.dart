@@ -15,6 +15,7 @@ import '../build_plan/builder_factories.dart';
 import '../build_runner.dart';
 import '../logging/build_log.dart';
 import 'build_process_state.dart';
+import 'powershell.dart';
 
 /// Methods for causing a child process to run and do work.
 ///
@@ -61,23 +62,23 @@ class ParentProcess {
     );
     return runUnderPerf
         ? await _runAndSend(
-          executable: 'perf',
-          arguments: [
-            'record',
-            '-g',
-            '--output',
-            'perf.data',
-            dartAotRuntime,
-            aotSnapshot,
-            ...arguments,
-          ],
-          message: message,
-        )
+            executable: 'perf',
+            arguments: [
+              'record',
+              '-g',
+              '--output',
+              'perf.data',
+              dartAotRuntime,
+              aotSnapshot,
+              ...arguments,
+            ],
+            message: message,
+          )
         : await _runAndSend(
-          executable: dartAotRuntime,
-          arguments: [aotSnapshot, ...arguments],
-          message: message,
-        );
+            executable: dartAotRuntime,
+            arguments: [aotSnapshot, ...arguments],
+            message: message,
+          );
   }
 
   static Future<RunAndSendResult> _runAndSend({
@@ -114,6 +115,11 @@ class ParentProcess {
     // Due to https://github.com/dart-lang/sdk/issues/61571 the end of the message
     // can't be signalled by closing stdin, that would cause a crash on Windows.
     // So send `_sentinal` instead.
+    //
+    // Ignore asynchronous errors that occur if the child exits early and closes
+    //  its stdin pipe.
+    unawaited(process.stdin.done.catchError((_) {}));
+
     try {
       process.stdin.write(message);
       process.stdin.write(_sentinel);
@@ -179,10 +185,7 @@ class ParentProcess {
     try {
       if (Platform.isWindows) {
         return await Process.start('powershell', [
-          // Flutter uses "-ExecutionPolicy Bypass" when it uses powershell for
-          // its "update Dart" script, do the same.
-          '-ExecutionPolicy',
-          'Bypass',
+          ...Powershell.baseArgs,
           '-Command',
           'Wait-Process -Id $parentPid; Stop-Process -Id $childPid -Force',
         ]);
@@ -228,11 +231,10 @@ class ChildProcess {
   ) async {
     _isRunning = true;
     buildProcessState.deserializeAndSet(await receive());
-    final exitCode =
-        await BuildRunner(
-          arguments: arguments,
-          builderFactories: builderFactories,
-        ).run();
+    final exitCode = await BuildRunner(
+      arguments: arguments,
+      builderFactories: builderFactories,
+    ).run();
     await exitWithMessage(
       exitCode: exitCode,
       message: buildProcessState.serialize(),

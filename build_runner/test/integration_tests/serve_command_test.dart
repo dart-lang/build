@@ -7,7 +7,6 @@ library;
 
 import 'dart:io';
 
-import 'package:build_runner/src/logging/build_log.dart';
 import 'package:io/io.dart';
 import 'package:test/test.dart';
 
@@ -51,8 +50,10 @@ void main() async {
     );
 
     // Responds with etags, accepts and checks them.
-    final etag =
-        (await serve.fetch('a.txt')).headers[HttpHeaders.etagHeader]!.single;
+    expect(await serve.fetchContent('a.txt'), 'a');
+    final etag = (await serve.fetch(
+      'a.txt',
+    )).headers[HttpHeaders.etagHeader]!.single;
     await serve.fetch(
       'a.txt',
       headers: {HttpHeaders.ifNoneMatchHeader: etag},
@@ -60,12 +61,15 @@ void main() async {
     );
 
     // Etag changes if file changes.
-    final etag2 =
-        (await serve.fetch('a.txt')).headers[HttpHeaders.etagHeader]!.single;
+    final etag2 = (await serve.fetch(
+      'a.txt',
+    )).headers[HttpHeaders.etagHeader]!.single;
     tester.write('root_pkg/web/a.txt', 'b');
-    await serve.expect(BuildLog.successPattern);
-    final etag3 =
-        (await serve.fetch('a.txt')).headers[HttpHeaders.etagHeader]!.single;
+    await serve.expectNoOutput(const Duration(seconds: 1));
+    expect(await serve.fetchContent('a.txt'), 'b');
+    final etag3 = (await serve.fetch(
+      'a.txt',
+    )).headers[HttpHeaders.etagHeader]!.single;
     expect(etag, etag2);
     expect(etag, isNot(etag3));
 

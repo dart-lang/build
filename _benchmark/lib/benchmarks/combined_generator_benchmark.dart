@@ -17,7 +17,8 @@ class CombinedGeneratorBenchmark implements Benchmark {
 
     workspace.write(
       'pubspec.yaml',
-      source: '''
+      source:
+          '''
 name: ${workspace.name}
 publish_to: none
 
@@ -68,7 +69,8 @@ ${config.dependencyOverrides}
       // service.
       workspace.write(
         'lib/$libraryName',
-        source: '''
+        source:
+            '''
 // ignore_for_file: unused_import
 import 'package:built_value/built_value.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -104,7 +106,8 @@ class Service$libraryNumber {
       final mockName = testName.replaceAll('.dart', '.mocks.dart');
       workspace.write(
         'test/$testName',
-        source: '''
+        source:
+            '''
 // ignore_for_file: unused_import
 import 'package:mockito/annotations.dart';
 import 'package:${workspace.name}/$libraryName';

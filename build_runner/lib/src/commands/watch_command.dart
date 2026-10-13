@@ -13,6 +13,7 @@ import '../bootstrap/processes.dart';
 import '../build/build_result.dart';
 import '../build_plan/build_options.dart';
 import '../build_plan/build_plan.dart';
+import '../build_plan/build_spec.dart';
 import '../build_plan/builder_factories.dart';
 import '../build_plan/testing_overrides.dart';
 import '../logging/build_log.dart';
@@ -53,13 +54,13 @@ class WatchCommand implements BuildRunnerCommand {
       b.onLog = testingOverrides.onLog;
     });
 
-    final buildPlan = await BuildPlan.load(
+    final buildSpec = await BuildSpec.load(
       builderFactories: builderFactories,
       buildOptions: buildOptions,
       testingOverrides: testingOverrides,
     );
-    await buildPlan.deleteFilesAndFolders();
-    if (buildPlan.restartIsNeeded) return null;
+    final buildPlan = await BuildPlan.load(buildSpec);
+    if (buildSpec.restartIsNeeded) return null;
 
     final terminator = Terminator(testingOverrides.terminateEventStream);
 

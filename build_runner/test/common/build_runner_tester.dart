@@ -33,7 +33,20 @@ class BuildRunnerTester {
       );
 
   BuildRunnerTester._(this.pubspecs, this.tempDirectory) {
-    addTearDown(() => tempDirectory.deleteSync(recursive: true));
+    addTearDown(() async {
+      // Temp cleanup can fail on Windows if some process is slow to close,
+      // retry for 5s.
+      var tries = 0;
+      while (true) {
+        try {
+          tempDirectory.deleteSync(recursive: true);
+          return;
+        } on PathAccessException {
+          if (++tries == 10) rethrow;
+          await Future<void>.delayed(const Duration(milliseconds: 500));
+        }
+      }
+    });
   }
 
   /// Copies the entire workspace, returns a new `BuildRunnerTester` using
@@ -130,6 +143,14 @@ class BuildRunnerTester {
       ..writeAsStringSync(contents);
   }
 
+  /// Writes [contents] to workspace-relative [path].
+  void writeBytes(String path, List<int> contents) {
+    final file = File(p.join(tempDirectory.path, path));
+    file
+      ..createSync(recursive: true)
+      ..writeAsBytesSync(contents);
+  }
+
   /// Updates the file at workspace-relative [path], which must exist.
   void update(String path, String Function(String) update) {
     final file = File(p.join(tempDirectory.path, path));
@@ -212,7 +233,8 @@ class BuildRunnerTester {
       workingDirectory: p.join(tempDirectory.path, directory),
       environment: environment,
     );
-    final output = '''
+    final output =
+        '''
 === $directory: $commandLine
 ${result.stdout}${result.stderr}===
 ''';
@@ -291,8 +313,9 @@ class BuildRunnerProcess {
   ///
   /// Otherwise, waits until [pattern] appears, then completes.
   ///
-  /// Throws if the process appears to be stuck or done: if it outputs nothing
-  /// for 30s.
+  /// A process that hangs is caught by the test timeout, which is set in
+  /// `dart_test.yaml` and scaled by `--timeout` for runs that are expected to
+  /// be slow.
   Future<void> expect(Pattern pattern, {Pattern? failOn}) async =>
       expectAndGetLine(pattern, failOn: failOn);
 
@@ -306,8 +329,9 @@ class BuildRunnerProcess {
   ///
   /// Otherwise, waits until [pattern] appears, returns the matching line.
   ///
-  /// Throws if the process appears to be stuck or done: if it outputs nothing
-  /// for 30s.
+  /// A process that hangs is caught by the test timeout, which is set in
+  /// `dart_test.yaml` and scaled by `--timeout` for runs that are expected to
+  /// be slow.
   Future<String> expectAndGetLine(Pattern pattern, {Pattern? failOn}) async {
     printOnFailure(
       '--- $_testLine expects `$pattern`'
@@ -315,11 +339,9 @@ class BuildRunnerProcess {
     );
     failOn ??= BuildLog.failurePattern;
     while (true) {
-      String? line;
+      String line;
       try {
-        line = await _outputs.next.timeout(const Duration(seconds: 30));
-      } on TimeoutException catch (_) {
-        throw fail('While expecting `$pattern`, timed out after 30s.');
+        line = await _outputs.next;
       } catch (_) {
         throw fail('While expecting `$pattern`, process exited.');
       }
@@ -341,8 +363,9 @@ class BuildRunnerProcess {
   ///
   /// Otherwise, waits until [pattern] appears, returns all text seen.
   ///
-  /// Throws if the process appears to be stuck or done: if it outputs nothing
-  /// for 30s.
+  /// A process that hangs is caught by the test timeout, which is set in
+  /// `dart_test.yaml` and scaled by `--timeout` for runs that are expected to
+  /// be slow.
   Future<String> expectAndGetBlock(Pattern pattern, {Pattern? failOn}) async {
     printOnFailure(
       '--- $_testLine expects `$pattern`'
@@ -351,12 +374,10 @@ class BuildRunnerProcess {
     failOn ??= BuildLog.failurePattern;
     final lines = StringBuffer();
     while (true) {
-      String? line;
+      String line;
       try {
-        line = await _outputs.next.timeout(const Duration(seconds: 30));
+        line = await _outputs.next;
         lines.writeln(line);
-      } on TimeoutException catch (_) {
-        throw fail('While expecting `$pattern`, timed out after 30s.');
       } catch (_) {
         throw fail('While expecting `$pattern`, process exited.');
       }
@@ -369,12 +390,11 @@ class BuildRunnerProcess {
   }
 
   String get _testLine {
-    var result =
-        StackTrace.current
-            .toString()
-            .split('\n')
-            .where((l) => l.contains('_test.dart'))
-            .first;
+    var result = StackTrace.current
+        .toString()
+        .split('\n')
+        .where((l) => l.contains('_test.dart'))
+        .first;
     result = result.substring(result.lastIndexOf('/') + 1);
     result = result.substring(0, result.lastIndexOf(':'));
     return result;
@@ -462,8 +482,12 @@ class Pubspecs {
 
   Pubspecs(this.packageConfig);
 
+  static Future<Pubspecs>? _loadFuture;
+
   /// Creates [Pubspecs] with package config from the current isolate.
-  static Future<Pubspecs> load() async =>
+  static Future<Pubspecs> load() => _loadFuture ??= _load();
+
+  static Future<Pubspecs> _load() async =>
       Pubspecs(await loadPackageConfigUri((await Isolate.packageConfig)!));
 
   /// Returns `pubspec.yaml` content for the package called [name].

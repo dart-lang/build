@@ -44,8 +44,9 @@ class _$ImportBuildTrigger extends ImportBuildTrigger {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper(r'ImportBuildTrigger')
-      ..add('import', import)).toString();
+    return (newBuiltValueToStringHelper(
+      r'ImportBuildTrigger',
+    )..add('import', import)).toString();
   }
 }
 
@@ -130,8 +131,9 @@ class _$AnnotationBuildTrigger extends AnnotationBuildTrigger {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper(r'AnnotationBuildTrigger')
-      ..add('annotation', annotation)).toString();
+    return (newBuiltValueToStringHelper(
+      r'AnnotationBuildTrigger',
+    )..add('annotation', annotation)).toString();
   }
 }
 

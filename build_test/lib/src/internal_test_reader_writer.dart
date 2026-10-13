@@ -22,7 +22,7 @@ import 'test_reader_writer.dart';
 /// and `build_runner`.
 class InternalTestReaderWriter extends ReaderWriter
     implements TestReaderWriter {
-  final String buildCachePackage;
+  final String outputRootPackage;
 
   /// Assets read directly from this reader/writer.
   final Set<AssetId> assetsRead;
@@ -34,9 +34,12 @@ class InternalTestReaderWriter extends ReaderWriter
 
   /// Create a new asset reader/writer.
   ///
-  /// If provided [outputRootPackage] is the package where the build cache is
+  /// If provided [outputRootPackage] is the package where the artifact tree is
   /// written, otherwise `unset` is used.
-  factory InternalTestReaderWriter({String? outputRootPackage}) {
+  factory InternalTestReaderWriter({
+    String? outputRootPackage,
+    bool forceToPackagePathsForTesting = false,
+  }) {
     final filesystem = InMemoryFilesystem();
     return InternalTestReaderWriter.using(
       assetsRead: {},
@@ -45,12 +48,10 @@ class InternalTestReaderWriter extends ReaderWriter
       assetPathProvider: InMemoryAssetPathProvider(
         outputRootPackage ?? 'unset',
       ),
-      buildCachePackage: outputRootPackage ?? 'unset',
-      generatedAssetHider: const NoopGeneratedAssetHider(),
+      outputRootPackage: outputRootPackage ?? 'unset',
       filesystem: filesystem,
-      cache: const PassthroughFilesystemCache(),
-      onDelete: null,
       onCanReadController: StreamController(),
+      forceToPackagePathsForTesting: forceToPackagePathsForTesting,
     );
   }
 
@@ -59,42 +60,35 @@ class InternalTestReaderWriter extends ReaderWriter
     required this.assetsWritten,
     required super.assetFinder,
     required super.assetPathProvider,
-    required this.buildCachePackage,
-    required super.generatedAssetHider,
+    required this.outputRootPackage,
     required super.filesystem,
-    required super.cache,
-    required super.onDelete,
     required this.onCanReadController,
+    super.forceToPackagePathsForTesting = false,
   }) : super.using() {
     InputTracker.captureInputTrackersForTesting = true;
   }
 
-  @override
-  InternalTestReaderWriter copyWith({
-    FilesystemCache? cache,
-    GeneratedAssetHider? generatedAssetHider,
-    void Function(AssetId)? onDelete,
-  }) => InternalTestReaderWriter.using(
-    assetsRead: assetsRead,
-    assetsWritten: assetsWritten,
-    assetFinder: assetFinder,
-    assetPathProvider: assetPathProvider,
-    buildCachePackage: buildCachePackage,
-    generatedAssetHider: generatedAssetHider ?? this.generatedAssetHider,
-    filesystem: filesystem,
-    cache: cache ?? this.cache,
-    onDelete: onDelete ?? this.onDelete,
-    onCanReadController: onCanReadController,
-  );
+  InternalTestReaderWriter copyWith({bool? forceToPackagePathsForTesting}) =>
+      InternalTestReaderWriter.using(
+        assetsRead: assetsRead,
+        assetsWritten: assetsWritten,
+        assetFinder: assetFinder,
+        assetPathProvider: assetPathProvider,
+        outputRootPackage: outputRootPackage,
+        filesystem: filesystem,
+        onCanReadController: onCanReadController,
+        forceToPackagePathsForTesting:
+            forceToPackagePathsForTesting ?? this.forceToPackagePathsForTesting,
+      );
 
   @override
   ReaderWriterTesting get testing => _ReaderWriterTestingImpl(this);
 
   @override
-  Future<bool> canRead(AssetId id) {
+  Future<bool> canRead(AssetId id, {bool inArtifactTree = false}) {
     onCanReadController.add(id);
     assetsRead.add(id);
-    return super.canRead(id);
+    return super.canRead(id, inArtifactTree: inArtifactTree);
   }
 
   /// Emits an event when `canRead` is called.
@@ -104,24 +98,45 @@ class InternalTestReaderWriter extends ReaderWriter
   Stream<AssetId> get onCanRead => onCanReadController.stream;
 
   @override
-  Future<List<int>> readAsBytes(AssetId id) async {
+  Future<List<int>> readAsBytes(
+    AssetId id, {
+    bool inArtifactTree = false,
+  }) async {
     assetsRead.add(id);
-    return super.readAsBytes(id);
+    return super.readAsBytes(id, inArtifactTree: inArtifactTree);
   }
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) {
+  Future<String> readAsString(
+    AssetId id, {
+    Encoding encoding = utf8,
+    bool inArtifactTree = false,
+  }) {
     assetsRead.add(id);
-    return super.readAsString(id, encoding: encoding);
+    return super.readAsString(
+      id,
+      encoding: encoding,
+      inArtifactTree: inArtifactTree,
+    );
   }
 
   @override
-  Future writeAsBytes(AssetId id, List<int> bytes) async {
+  Future writeAsBytes(
+    AssetId id,
+    List<int> bytes, {
+    bool inArtifactTree = false,
+  }) async {
     assetsWritten.add(id);
-    final type = testing.exists(id) ? ChangeType.MODIFY : ChangeType.ADD;
-    await super.writeAsBytes(id, bytes);
+    final eventAssetId = _eventAssetId(id, inArtifactTree: inArtifactTree);
+    final type = testing.exists(eventAssetId)
+        ? ChangeType.MODIFY
+        : ChangeType.ADD;
+    await super.writeAsBytes(id, bytes, inArtifactTree: inArtifactTree);
     FakeWatcher.notifyWatchers(
-      WatchEvent(type, p.absolute(id.package, p.fromUri(id.path))),
+      WatchEvent(
+        type,
+        p.absolute(eventAssetId.package, p.fromUri(eventAssetId.path)),
+      ),
     );
   }
 
@@ -130,23 +145,46 @@ class InternalTestReaderWriter extends ReaderWriter
     AssetId id,
     String contents, {
     Encoding encoding = utf8,
+    bool inArtifactTree = false,
   }) async {
     assetsWritten.add(id);
-    final type = testing.exists(id) ? ChangeType.MODIFY : ChangeType.ADD;
-    await super.writeAsString(id, contents, encoding: encoding);
+    final eventAssetId = _eventAssetId(id, inArtifactTree: inArtifactTree);
+    final type = testing.exists(eventAssetId)
+        ? ChangeType.MODIFY
+        : ChangeType.ADD;
+    await super.writeAsString(
+      id,
+      contents,
+      encoding: encoding,
+      inArtifactTree: inArtifactTree,
+    );
     FakeWatcher.notifyWatchers(
-      WatchEvent(type, p.absolute(id.package, p.fromUri(id.path))),
+      WatchEvent(
+        type,
+        p.absolute(eventAssetId.package, p.fromUri(eventAssetId.path)),
+      ),
     );
   }
 
   @override
-  Future<void> delete(AssetId id) {
-    onDelete?.call(id);
-    FakeWatcher.notifyWatchers(
-      WatchEvent(ChangeType.REMOVE, p.absolute(id.package, p.fromUri(id.path))),
+  Future<void> delete(AssetFile file) {
+    final eventAssetId = _eventAssetId(
+      file.id,
+      inArtifactTree: file.inArtifactTree,
     );
-    return super.delete(id);
+    FakeWatcher.notifyWatchers(
+      WatchEvent(
+        ChangeType.REMOVE,
+        p.absolute(eventAssetId.package, p.fromUri(eventAssetId.path)),
+      ),
+    );
+    return super.delete(file);
   }
+
+  AssetId _eventAssetId(AssetId id, {required bool inArtifactTree}) =>
+      inArtifactTree && !forceToPackagePathsForTesting
+      ? AssetPathProvider.inArtifactTree(id, outputRootPackage)
+      : id;
 }
 
 class InMemoryAssetPathProvider implements AssetPathProvider {
@@ -157,11 +195,11 @@ class InMemoryAssetPathProvider implements AssetPathProvider {
   @override
   String pathFor(
     AssetId id, {
-    required bool hide,
-    bool checkDeleteAllowed = false,
+    required bool inArtifactTree,
+    bool checkWriteAllowed = false,
   }) {
-    if (hide) {
-      id = AssetPathProvider.hide(id, outputRootPackage);
+    if (inArtifactTree) {
+      id = AssetPathProvider.inArtifactTree(id, outputRootPackage);
     }
     return id.toString();
   }
@@ -208,46 +246,42 @@ class _ReaderWriterTestingImpl implements ReaderWriterTesting {
       );
 
   @override
-  Iterable<AssetId> get inputsTracked =>
-      InputTracker.inputTrackersForTesting[_readerWriter.filesystem]!
-          .expand((tracker) => tracker.inputs)
-          .toSet();
+  Iterable<AssetId> get inputsTracked => InputTracker
+      .inputTrackersForTesting[_readerWriter.filesystem]!
+      .expand((tracker) => tracker.inputs)
+      .toSet();
 
   @override
   Iterable<AssetId> inputsTrackedFor({
     AssetId? primaryInput,
     String? builderLabel,
-  }) =>
-      InputTracker.inputTrackersForTesting[_readerWriter.filesystem]!
-          .where((inputTracker) {
-            return (primaryInput == null ||
-                    primaryInput == inputTracker.primaryInput) &&
-                (builderLabel == null ||
-                    builderLabel == inputTracker.builderLabel);
-          })
-          .expand((tracker) => tracker.inputs)
-          .toSet();
+  }) => InputTracker.inputTrackersForTesting[_readerWriter.filesystem]!
+      .where((inputTracker) {
+        return (primaryInput == null ||
+                primaryInput == inputTracker.primaryInput) &&
+            (builderLabel == null || builderLabel == inputTracker.builderLabel);
+      })
+      .expand((tracker) => tracker.inputs)
+      .toSet();
 
   @override
-  Iterable<AssetId> get resolverEntrypointsTracked =>
-      InputTracker.inputTrackersForTesting[_readerWriter.filesystem]!
-          .expand((tracker) => tracker.resolverEntrypoints)
-          .toSet();
+  Iterable<AssetId> get resolverEntrypointsTracked => InputTracker
+      .inputTrackersForTesting[_readerWriter.filesystem]!
+      .expand((tracker) => tracker.resolverEntrypoints)
+      .toSet();
 
   @override
   Iterable<AssetId> resolverEntrypointsTrackedFor({
     AssetId? primaryInput,
     String? builderLabel,
-  }) =>
-      InputTracker.inputTrackersForTesting[_readerWriter.filesystem]!
-          .where((inputTracker) {
-            return (primaryInput == null ||
-                    primaryInput == inputTracker.primaryInput) &&
-                (builderLabel == null ||
-                    builderLabel == inputTracker.builderLabel);
-          })
-          .expand((tracker) => tracker.resolverEntrypoints)
-          .toSet();
+  }) => InputTracker.inputTrackersForTesting[_readerWriter.filesystem]!
+      .where((inputTracker) {
+        return (primaryInput == null ||
+                primaryInput == inputTracker.primaryInput) &&
+            (builderLabel == null || builderLabel == inputTracker.builderLabel);
+      })
+      .expand((tracker) => tracker.resolverEntrypoints)
+      .toSet();
 
   @override
   Iterable<AssetId> get assetsRead => _readerWriter.assetsRead;
@@ -257,35 +291,35 @@ class _ReaderWriterTestingImpl implements ReaderWriterTesting {
 
   @override
   bool exists(AssetId id) => _readerWriter.filesystem.existsSync(
-    _readerWriter.assetPathProvider.pathFor(id, hide: false),
+    _readerWriter.assetPathProvider.pathFor(id, inArtifactTree: false),
   );
 
   @override
   void writeString(AssetId id, String contents) =>
       _readerWriter.filesystem.writeAsStringSync(
-        _readerWriter.assetPathProvider.pathFor(id, hide: false),
+        _readerWriter.assetPathProvider.pathFor(id, inArtifactTree: false),
         contents,
       );
 
   @override
   void writeBytes(AssetId id, List<int> contents) =>
       _readerWriter.filesystem.writeAsBytesSync(
-        _readerWriter.assetPathProvider.pathFor(id, hide: false),
+        _readerWriter.assetPathProvider.pathFor(id, inArtifactTree: false),
         contents,
       );
 
   @override
   Uint8List readBytes(AssetId id) => _readerWriter.filesystem.readAsBytesSync(
-    _readerWriter.assetPathProvider.pathFor(id, hide: false),
+    _readerWriter.assetPathProvider.pathFor(id, inArtifactTree: false),
   );
 
   @override
   String readString(AssetId id) => _readerWriter.filesystem.readAsStringSync(
-    _readerWriter.assetPathProvider.pathFor(id, hide: false),
+    _readerWriter.assetPathProvider.pathFor(id, inArtifactTree: false),
   );
 
   @override
   void delete(AssetId id) => _readerWriter.filesystem.deleteSync(
-    _readerWriter.assetPathProvider.pathFor(id, hide: false),
+    _readerWriter.assetPathProvider.pathFor(id, inArtifactTree: false),
   );
 }

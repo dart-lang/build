@@ -5,9 +5,9 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import '../../build_plan/build_plan_digest.dart';
+import '../../build_plan/build_spec_digest.dart';
 import '../library_cycle_graph/phased_asset_deps.dart';
-import 'build_state.dart';
+import 'incremental_build_state.dart';
 import 'serializers.dart';
 
 /// State stored in `asset_graph.json`.
@@ -15,27 +15,30 @@ import 'serializers.dart';
 /// Enough information to determine whether an incremental build is possible,
 /// and if so exactly what should be rebuilt.
 class AssetGraphJson {
-  final BuildPlanDigest buildPlanDigest;
-  final BuildState buildState;
+  final BuildSpecDigest buildPlanDigest;
+  final IncrementalBuildState incrementalBuildState;
   final PhasedAssetDeps phasedAssetDeps;
 
   AssetGraphJson({
     required this.buildPlanDigest,
-    required this.buildState,
+    required this.incrementalBuildState,
     required this.phasedAssetDeps,
   });
 
   /// Serializes for `asset_graph.json`.
   static Uint8List serialize({
-    required BuildPlanDigest buildPlanDigest,
-    required BuildState buildState,
+    required BuildSpecDigest buildPlanDigest,
+    required IncrementalBuildState buildState,
     required PhasedAssetDeps phasedAssetDeps,
   }) {
     // Serialize fields first so all `AssetId` instances are seen by
     // `identityAssetIdSeralizer`.
-    final serializedBuildState = serializeBuildState(buildState);
+    final serializedBuildState = serializers.serializeWith(
+      IncrementalBuildState.serializer,
+      buildState,
+    );
     final serializedBuildPlanDigest = serializers.serializeWith(
-      BuildPlanDigest.serializer,
+      BuildSpecDigest.serializer,
       buildPlanDigest,
     );
     final serializedPhasedAssetDeps = serializers.serializeWith(
@@ -69,12 +72,13 @@ class AssetGraphJson {
       );
 
       final buildPlanDigest = serializers.deserializeWith(
-        BuildPlanDigest.serializer,
+        BuildSpecDigest.serializer,
         deserialized['buildPlanDigest'],
       );
 
-      final buildState = deserializeBuildState(
-        deserialized['buildState'] as Map,
+      final buildState = serializers.deserializeWith(
+        IncrementalBuildState.serializer,
+        deserialized['buildState'],
       );
 
       final phasedAssetDeps = serializers.deserializeWith(
@@ -83,7 +87,7 @@ class AssetGraphJson {
       );
 
       return AssetGraphJson(
-        buildState: buildState!,
+        incrementalBuildState: buildState!,
         buildPlanDigest: buildPlanDigest!,
         phasedAssetDeps: phasedAssetDeps!,
       );
@@ -96,5 +100,5 @@ class AssetGraphJson {
 }
 
 /// Increment whenever older `asset_graph.json` files should be rejected.
-const _version = 42;
+const _version = 48;
 final jsonUtf8 = json.fuse(utf8);

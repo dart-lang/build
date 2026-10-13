@@ -96,8 +96,9 @@ class _$AssetDeps extends AssetDeps {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper(r'AssetDeps')
-      ..add('deps', deps)).toString();
+    return (newBuiltValueToStringHelper(
+      r'AssetDeps',
+    )..add('deps', deps)).toString();
   }
 }
 

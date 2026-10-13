@@ -1,0 +1,54 @@
+// Copyright (c) 2026, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
+import 'contracts.dart';
+
+class Calculator {
+  @Ensures('result >= 0')
+  int abs(int x) {
+    if (x < 0)
+      return ((int result) {
+        if (!Contracts.checking) {
+          Contracts.checking = true;
+          try {
+            if (!(result >= 0))
+              throw ContractViolation('Postcondition failed: result >= 0');
+          } finally {
+            Contracts.checking = false;
+          }
+        }
+        return result;
+      })(-x);
+    return ((int result) {
+      if (!Contracts.checking) {
+        Contracts.checking = true;
+        try {
+          if (!(result >= 0))
+            throw ContractViolation('Postcondition failed: result >= 0');
+        } finally {
+          Contracts.checking = false;
+        }
+      }
+      return result;
+    })(x);
+  }
+
+  @Ensures('result.length == count')
+  List<int> zeros(int count) {
+    return ((List<int> result) {
+      if (!Contracts.checking) {
+        Contracts.checking = true;
+        try {
+          if (!(result.length == count))
+            throw ContractViolation(
+              'Postcondition failed: result.length == count',
+            );
+        } finally {
+          Contracts.checking = false;
+        }
+      }
+      return result;
+    })(List.filled(count, 0));
+  }
+}

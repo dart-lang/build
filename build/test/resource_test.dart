@@ -7,6 +7,7 @@ library;
 import 'dart:async';
 
 import 'package:build/build.dart';
+import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -45,6 +46,44 @@ void main() {
       await resourceManager.disposeAll();
       final second = await resourceManager.fetch(intResource);
       expect(second, 0);
+    });
+
+    group('on failure', () {
+      final logs = <LogRecord>[];
+      setUp(() {
+        logs.clear();
+        final sub = Logger.root.onRecord.listen(logs.add);
+        addTearDown(sub.cancel);
+      });
+
+      for (final (type, dispose) in [
+        ('sync', (_) => throw StateError('fail')),
+        ('async', (_) async => throw StateError('fail')),
+      ]) {
+        test('discards instance and logs if $type dispose throws', () async {
+          final resource = Resource(Object.new, dispose: dispose);
+          final first = await resourceManager.fetch(resource);
+          await resourceManager.disposeAll();
+          expect(logs.single.message, contains('Error disposing resource'));
+          expect(await resourceManager.fetch(resource), isNot(same(first)));
+        });
+      }
+
+      test('discards instance without logging if create throws', () async {
+        var throws = true;
+        final resource = Resource(
+          () => throws ? throw StateError('fail') : Object(),
+          dispose: (_) {},
+        );
+        await expectLater(
+          resourceManager.fetch(resource),
+          throwsA(isA<StateError>()),
+        );
+        await resourceManager.disposeAll();
+        expect(logs, isEmpty);
+        throws = false;
+        expect(await resourceManager.fetch(resource), isA<Object>());
+      });
     });
 
     test('can asynchronously get resources', () async {

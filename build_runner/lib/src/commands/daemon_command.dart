@@ -13,16 +13,18 @@ import 'package:build_daemon/data/serializers.dart';
 import 'package:build_daemon/data/server_log.dart';
 import 'package:built_collection/built_collection.dart';
 
+import 'package:path/path.dart' as p;
+
 import '../bootstrap/build_process_state.dart';
 import '../bootstrap/processes.dart';
 import '../build_plan/build_options.dart';
 import '../build_plan/build_plan.dart';
+import '../build_plan/build_spec.dart';
 import '../build_plan/builder_factories.dart';
 import '../build_plan/testing_overrides.dart';
 import '../logging/build_log.dart';
 import 'build_runner_command.dart';
 import 'daemon/asset_server.dart';
-import 'daemon/constants.dart';
 import 'daemon/daemon_builder.dart';
 import 'daemon_options.dart';
 
@@ -85,20 +87,19 @@ class DaemonCommand implements BuildRunnerCommand {
       //
       // `BuildRunnerDaemonBuilder` sets its own `onLog` replacing this one.
       buildLog.configuration = buildLog.configuration.rebuild((b) {
-        b.onLog =
-            (record) => stdout.writeln('''
+        b.onLog = (record) => stdout.writeln('''
 $logStartMarker
 ${jsonEncode(serializers.serialize(ServerLog.fromLogRecord(record)))}
 $logEndMarker''');
       });
 
-      final buildPlan = await BuildPlan.load(
+      final buildSpec = await BuildSpec.load(
         builderFactories: builderFactories,
         buildOptions: buildOptions,
         testingOverrides: testingOverrides,
       );
-      await buildPlan.deleteFilesAndFolders();
-      if (buildPlan.restartIsNeeded) {
+      final buildPlan = await BuildPlan.load(buildSpec);
+      if (buildSpec.restartIsNeeded) {
         return ChildProcess.recompileBuildersExitCode;
       }
 
@@ -121,7 +122,7 @@ $logEndMarker''');
       final server = await AssetServer.run(
         daemonOptions,
         builder,
-        buildPlan.buildPackages.outputRoot,
+        buildPlan.buildSpec.buildPackages.outputRoot,
       );
       File(
         assetServerPortFilePath(workingDirectory),
@@ -153,3 +154,6 @@ $logEndMarker''');
     }
   }
 }
+
+String assetServerPortFilePath(String workingDirectory) =>
+    p.join(daemonWorkspace(workingDirectory), '.asset_server_port');

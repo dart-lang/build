@@ -7,17 +7,20 @@ import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
+import '../../contracts.dart';
+
 part 'post_process_build_step_result.g.dart';
 
 /// The outputs and errors of a post process build step, and whether its
-/// output is hidden.
+/// outputs are in the artifact tree.
+@Invariant('outputs.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)')
 abstract class PostProcessBuildStepResult
     implements
         Built<PostProcessBuildStepResult, PostProcessBuildStepResultBuilder> {
   static Serializer<PostProcessBuildStepResult> get serializer =>
       _$postProcessBuildStepResultSerializer;
 
-  bool get hidden;
+  bool get inArtifactTree;
 
   bool get deletedPrimaryInput;
 
@@ -26,12 +29,12 @@ abstract class PostProcessBuildStepResult
   BuiltList<String> get errors;
 
   factory PostProcessBuildStepResult({
-    required bool hidden,
+    required bool inArtifactTree,
     Iterable<AssetId> outputs = const [],
     Iterable<String> errors = const [],
     bool deletedPrimaryInput = false,
   }) => _$PostProcessBuildStepResult._(
-    hidden: hidden,
+    inArtifactTree: inArtifactTree,
     deletedPrimaryInput: deletedPrimaryInput,
     outputs: outputs.toBuiltSet(),
     errors: errors.toBuiltList(),

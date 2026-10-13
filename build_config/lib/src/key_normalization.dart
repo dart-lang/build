@@ -44,8 +44,8 @@ String normalizeBuilderKeyUsage(String builderKey, String packageName) =>
 ///   - "some_package:some_target" => "some_package|some_target"
 String normalizeTargetKeyDefinition(String targetKey, String packageName) =>
     targetKey == _defaultTargetNamePlaceholder
-        ? '$packageName:$packageName'
-        : _normalizeDefinition(targetKey, packageName);
+    ? '$packageName:$packageName'
+    : _normalizeDefinition(targetKey, packageName);
 
 /// Returns the normalized [targetKey] usage when used from [packageName].
 ///
@@ -93,5 +93,10 @@ String _normalizeUsage(String name, String packageName) {
 String _normalizeDefinition(String name, String packageName) {
   if (name.startsWith(':')) return '$packageName$name';
   if (!name.contains(':')) return '$packageName:$name';
+  if (!name.startsWith('$packageName:')) {
+    throw ArgumentError(
+      'Builder key "$name" does not belong to package "$packageName".',
+    );
+  }
   return name;
 }

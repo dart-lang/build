@@ -1,4 +1,112 @@
-## 2.15.1-wip
+## 2.16.3-wip
+
+- Allow `built_collection` 6.x.
+- Fix `build_runner run` with `built_collection` 6.x by passing
+  `Isolate.spawnUri` a plain list of arguments.
+- Add `SharedPartAccumulator` and `SharedPartAccumulatorCodec` for shared part
+  outputs.
+- Support shared parts written using `BuildStep.librarySourceSink` when builders
+  opt in with `adds_to_library: true` and `build_to: source` in `build.yaml`. If
+  a library is missing the `part` directive for its shared part, `build_runner`
+  adds it and rebuilds; if the directive is unused because builders ran and
+  contributed nothing, and nothing in the build failed, `build_runner` removes
+  it and rebuilds. With `--only-check` it reports the directives to add or
+  remove instead.
+- The `serve` command now rejects non-loopback `Host` and `Origin` headers when
+  bound to a loopback interface, and validates them against `--hostname` when a
+  specific host is given.
+- Require `build` 4.1.0.
+- Require `build_config` 1.4.0.
+- Bug fix: allow calling `BuildStep.canRead` on outputs written by the same
+  build step.
+- Bug fix: run post-process builder on incremental builds when no prior step
+  result exists.
+- Bug fix: preserve analyzer dependency information on unhandled build failures,
+  preventing subsequent incremental builds from missing changes to transitively
+  imported files.
+- Bug fix: complete the active building future in daemon mode when the build
+  script is updated, preventing asset server requests from hanging.
+- Bug fix: write the SDK summary deps file atomically, so a concurrently
+  running build does not read it while it is empty; and rebuild the summary
+  instead of failing if the deps file turns out to be corrupt.
+- Bug fix: handle deletions of unread sources during watch, serve, and
+  daemon modes.
+- Bug fix: in watch, serve, and daemon modes, do not run a build when nothing
+  changed that can affect any output. A file can be written without changing
+  its content, and one write can produce more than one filesystem event.
+- Bug fix: detect duplicate `--output` directories that are spelled
+  differently, for example `build` and `build/`, instead of writing both and
+  silently keeping only the last.
+- Bug fix: in watch, serve, and daemon modes, notice a generated file being
+  deleted after a previous build deleted and then rewrote that same file.
+  Previously the delete was mistaken for the build's own earlier delete and
+  ignored, so deleting a generated file no longer forced it to be regenerated.
+- Bug fix: in daemon mode, after a builder change keep serving the previous
+  build's outputs until shutdown, instead of returning 404.
+
+## 2.16.2
+
+- Support `analyzer` 14.5.0. Require `analyzer` 14.3.0.
+
+## 2.16.1
+
+- Clarify terminology: refer to `.dart_tool/build/generated` as the "artifact
+  tree", and the normal output location as the "package path".
+- Reduce logged compile progress output for non-interactive builds, for example
+  presubmits.
+- In `serve` and `daemon` modes, source files not involved in the build are no
+  longer cached on read. They are re-read when requested.
+- Bug fix: make post-process output behavior match normal outputs: by default,
+  rebuild if deleted or incorrect. Follow `--keep-modified-outputs` and
+  `--only-check`.
+- Bug fix: in incremental builds, detect and delete conflicting outputs in the
+  source directory rather than treating them as sources, which could cause
+  builder dependency cycles and hangs; fix #5079.
+- Bug fix: restrict incompatible build output deletion to output packages; do
+  not attempt to delete files in dependency packages.
+- Bug fix: do not invalidate retained package path outputs when conflicting
+  artifact tree files appear; avoid unnecessary build step reruns.
+
+## 2.16.0
+
+- New default output behavior: always fix incorrect generated files. For
+  example: if you "dart run build_runner build", modify a generated file,
+  then build again, it will be fixed, undoing your modifications.
+- New option, `--keep-modified-outputs`. Use this to get the old output
+  behavior: manual modifications to generated files are kept. They will be
+  overwritten if a build is triggered due to an input file change, a
+  configuration change or `dart run build_runner clean`.
+- New option, `--only-check`, for use in continuous builds and tests. With this
+  option `build_runner` writes nothing, but builds and compares with the files
+  already on disk. If there is any difference between disk and expected output
+  then the differences are logged and the build fails.
+- Allow `package_config` 3.0.0.
+
+## 2.15.3
+
+- Simplify deletion of stale outputs: don't try to handle package renames.
+- The `daemon` asset server now rejects various non-local connections.
+- Bug fix: in incremental builds, when an input was deleted, its output was
+  deleted at the start of the build. Make it consistent with other output
+  deletions: wait until the end of the build.
+- Bug fix: post process builders with `build_to: source` can only write to
+  output packages.
+- Bug fix: post process builders with `build_to: cache` can only write output
+  corresponding to known packages.
+- Bug fix: reject incorrect builder config that has duplicate builder keys.
+- Bug fix: reject invalid builder factories in `build.yaml`.
+- Bug fix: correctly filter served or `--output` post process output.
+- Bug fix: `serve` mode only serves the specified package subdirectories.
+- Bug fix: `serve` live reload websocket checks for localhost origin.
+- Bug fix: don't follow symlinks when cleaning up output folders.
+- Bug fix: catch Windows-specific absolute paths.
+
+## 2.15.2
+
+- Allow `analyzer` 14.x, require 13.3.0.
+- Require Dart 3.11.0.
+
+## 2.15.1
 
 - Pass Dart SDK `--packages` arg to builder compiles, so they can be compiled
   with different packages to the current version solve.
@@ -15,6 +123,12 @@
   crashing.
 - Bug fix: fix `dart run build_runner test` to correctly pass arguments after
   `--` to the test process.
+- Bug fix: fix crash if a resolved Dart source contains invalid utf8.
+- Bug fix: fix incorrect output when builder code changes during builder
+  compile.
+- Bug fix: do a clean build when switching between a workspace build and a
+  package build, as incremental builds were sometimes incorrect.
+- Require Dart 3.8.0.
 
 ## 2.15.0
 

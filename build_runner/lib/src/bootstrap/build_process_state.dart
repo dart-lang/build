@@ -113,14 +113,13 @@ class BuildProcessState {
           as String;
 
   /// The [BuildPaths] used for the process lock.
-  BuildPaths? get _buildPaths =>
-      _state.containsKey('packagePath')
-          ? BuildPaths(
-            packagePath: _state['packagePath'] as String,
-            workspacePath: _state['workspacePath'] as String?,
-            buildWorkspace: _state['buildWorkspace'] as bool,
-          )
-          : null;
+  BuildPaths? get _buildPaths => _state.containsKey('packagePath')
+      ? BuildPaths(
+          packagePath: _state['packagePath'] as String,
+          workspacePath: _state['workspacePath'] as String?,
+          buildWorkspace: _state['buildWorkspace'] as bool,
+        )
+      : null;
   set _buildPaths(BuildPaths? value) {
     _state['packagePath'] = value?.packagePath;
     _state['workspacePath'] = value?.workspacePath;

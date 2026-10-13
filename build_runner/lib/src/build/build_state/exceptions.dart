@@ -14,3 +14,15 @@ class DuplicateAssetIdException implements Exception {
   String toString() =>
       'Builders $builder1 and $builder2 outputs collide: ${assetId.uri}';
 }
+
+class DuplicateSharedPartContributionException implements Exception {
+  final AssetId libraryId;
+  final String builder;
+
+  DuplicateSharedPartContributionException(this.libraryId, this.builder);
+  @override
+  String toString() =>
+      'Builder $builder applies to ${libraryId.uri} more than once, which is '
+      'not supported for builders with `adds_to_library: true`. Check that '
+      'build targets applying it do not overlap.';
+}

@@ -1,0 +1,23 @@
+name: _contract_weaver
+publish_to: none
+description: >-
+  Weaves contract programming checks into a copy of Dart source. The shape
+  closely follows Cofoja, Contracts for Java.
+environment:
+  sdk: ^3.11.0
+resolution: workspace
+
+dependencies:
+  analyzer: '>=14.3.0 <15.0.0'
+  args: ^2.5.0
+  built_collection: ^5.1.1
+  built_value: ^8.10.1
+  dart_style: '>=3.1.0 <4.0.0'
+  path: ^1.8.0
+  yaml: ^3.1.0
+
+dev_dependencies:
+  build_runner: any
+  built_value_generator: any
+  dart_flutter_team_lints: ^3.1.0
+  test: ^1.25.5

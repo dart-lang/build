@@ -6,22 +6,36 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 
-import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:async/async.dart';
 import 'package:build/build.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:package_config/package_config_types.dart';
 
+import '../contracts.dart';
+import 'asset_content.dart';
+import 'builder_filesystem.dart';
 import 'input_tracker.dart';
-import 'library_cycle_graph/phased_reader.dart';
-import 'single_step_reader_writer.dart';
+import 'library_source_sink_impl.dart';
+import 'resolver/asset_ids.dart';
+import 'resolver/delegating_resolver.dart';
 
 /// A single step in the build processes.
 ///
 /// This represents a single input and its expected and real outputs. It also
 /// handles tracking of dependencies.
+@Invariant('inputId.package.isNotEmpty')
+@Invariant('inputId.path.isNotEmpty')
+@Invariant('phase >= 0')
+@Invariant(
+  'allowedOutputs.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)',
+)
+@Invariant('outputs.keys.every((id) => allowedOutputs.contains(id))')
+@Invariant(
+  'outputs.keys.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)',
+)
 class BuildStepImpl implements BuildStep {
   final Resolvers? _resolvers;
 
@@ -40,39 +54,79 @@ class BuildStepImpl implements BuildStep {
   @override
   final Set<AssetId> allowedOutputs;
 
-  /// The result of any writes which are starting during this step.
-  final _writeResults = <Future<Result<void>>>[];
+  final InputTracker inputTracker;
+  final Map<AssetId, AssetContent> outputs = {};
+  bool get wrotePartContribution =>
+      _librarySourceSink?.hasContribution ?? false;
+  LibrarySourceSinkImpl? _librarySourceSink;
+  String? get partContribution => _librarySourceSink?.contribution;
+  BuiltList<String> get partImports =>
+      _librarySourceSink?.imports ?? BuiltList<String>();
+  String? get languageVersion => _librarySourceSink?.languageVersion;
 
-  final _writtenAssets = <AssetId>{};
+  @override
+  Future<LibrarySourceSink?> get librarySourceSink async {
+    if (partPhaseIndex == null) {
+      throw UnsupportedError(
+        'Builder must opt into adds_to_library in build.yaml to write parts.',
+      );
+    }
+    if (!await resolver.isLibrary(inputId)) {
+      return null;
+    }
+    if (_librarySourceSink == null) {
+      final library = await resolver.libraryFor(inputId);
+      final overrideVersion = library.languageVersion.override;
+      final languageVersion = overrideVersion == null
+          ? null
+          : '// @dart=${overrideVersion.major}.${overrideVersion.minor}';
+      _librarySourceSink = LibrarySourceSinkImpl(
+        this,
+        prefixForPhase(partPhaseIndex!),
+        languageVersion,
+      );
+    }
+    return _librarySourceSink;
+  }
 
-  final SingleStepReaderWriter _singleStepReaderWriter;
+  final int phase;
+  final int? partPhaseIndex;
+
+  final BuilderFilesystem buildFilesystem;
 
   final ResourceManager _resourceManager;
 
   bool _isComplete = false;
+  bool get isComplete => _isComplete;
 
   final void Function(Iterable<AssetId>)? _reportUnusedAssets;
 
-  final Future<PackageConfig> Function() _resolvePackageConfig;
   Future<Result<PackageConfig>>? _resolvedPackageConfig;
 
-  BuildStepImpl(
-    this.inputId,
-    Iterable<AssetId> expectedOutputs,
-    this._singleStepReaderWriter,
-    this._resolvers,
-    this._resourceManager,
-    this._resolvePackageConfig, {
+  Future<ReleasableResolver>? _resolver;
+
+  BuildStepImpl({
+    required this.inputId,
+    required Iterable<AssetId> expectedOutputs,
+    required this.inputTracker,
+    required this.buildFilesystem,
+    required this.phase,
+    this.partPhaseIndex,
+    required Resolvers resolvers,
+    required ResourceManager resourceManager,
     void Function(Iterable<AssetId>)? reportUnusedAssets,
   }) : allowedOutputs = UnmodifiableSetView(expectedOutputs.toSet()),
+       _resolvers = resolvers,
+       _resourceManager = resourceManager,
        _reportUnusedAssets = reportUnusedAssets;
-
-  InputTracker get inputTracker => _singleStepReaderWriter.inputTracker;
 
   @override
   Future<PackageConfig> get packageConfig async {
-    final resolved =
-        _resolvedPackageConfig ??= Result.capture(_resolvePackageConfig());
+    final resolved = _resolvedPackageConfig ??= Result.capture(
+      Future.value(
+        _transformToAssetUris(buildFilesystem.buildPackages.asPackageConfig),
+      ),
+    );
 
     return (await resolved).asFuture;
   }
@@ -85,19 +139,42 @@ class BuildStepImpl implements BuildStep {
       throw UnsupportedError('Resolvers are not available in this build.');
     }
 
-    return _DelayedResolver(_resolver ??= resolvers.get(this));
+    return DelegatingResolver(_resolver ??= resolvers.get(this));
   }
 
-  Future<ReleasableResolver>? _resolver;
+  Future<bool> _isReadable(
+    AssetId id, {
+    bool catchInvalidInputs = false,
+    bool track = true,
+  }) async {
+    if (outputs.containsKey(id)) return true;
+    if (track) inputTracker.add(id);
+    return await buildFilesystem.isReadable(
+      id,
+      phase,
+      catchInvalidInputs: catchInvalidInputs,
+    );
+  }
 
-  /// A reader for assets that additionally provides information about when an
-  /// asset was generated or will be generated.
-  PhasedReader get phasedReader => _singleStepReaderWriter;
-
+  @Requires('id.package.isNotEmpty')
+  @Requires('id.path.isNotEmpty')
+  @Ensures('!outputs.containsKey(id.normalize()) || result == true')
   @override
-  Future<bool> canRead(AssetId id) {
+  Future<bool> canRead(AssetId id, {bool track = true}) async {
     if (_isComplete) throw BuildStepCompletedException();
-    return _singleStepReaderWriter.canRead(id);
+    id = id.normalize();
+    final isReadable = await _isReadable(
+      id,
+      catchInvalidInputs: true,
+      track: track,
+    );
+    if (!isReadable) return false;
+    if (outputs.containsKey(id)) return true;
+
+    // Read the file so it's in memory; if that fails the file was deleted
+    // during the build and the build is aborted.
+    await buildFilesystem.contentOf(id);
+    return true;
   }
 
   @override
@@ -106,60 +183,94 @@ class BuildStepImpl implements BuildStep {
     return _resourceManager.fetch(resource);
   }
 
+  @Requires('id.package.isNotEmpty')
+  @Requires('id.path.isNotEmpty')
   @override
-  Future<List<int>> readAsBytes(AssetId id) {
+  Future<List<int>> readAsBytes(AssetId id) async {
     if (_isComplete) throw BuildStepCompletedException();
-    return _singleStepReaderWriter.readAsBytes(id);
+    id = id.normalize();
+    final isReadable = await _isReadable(id);
+    if (!isReadable) {
+      throw AssetNotFoundException(id);
+    }
+    if (outputs.containsKey(id)) {
+      return outputs[id]!.bytes;
+    }
+    final content = await buildFilesystem.contentOf(id);
+    return content.bytes;
   }
 
+  @Requires('id.package.isNotEmpty')
+  @Requires('id.path.isNotEmpty')
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) {
+  Future<String> readAsString(
+    AssetId id, {
+    Encoding encoding = utf8,
+    bool track = true,
+  }) async {
     if (_isComplete) throw BuildStepCompletedException();
-    return _singleStepReaderWriter.readAsString(id, encoding: encoding);
+    id = id.normalize();
+    final isReadable = await _isReadable(id, track: track);
+    if (!isReadable) {
+      throw AssetNotFoundException(id);
+    }
+    if (outputs.containsKey(id)) {
+      return outputs[id]!.stringValue(encoding: encoding);
+    }
+    final content = await buildFilesystem.contentOf(id);
+    return content.stringValue(encoding: encoding);
   }
 
   @override
   Stream<AssetId> findAssets(Glob glob) {
     if (_isComplete) throw BuildStepCompletedException();
-    return _singleStepReaderWriter.assetFinder.find(
+    return buildFilesystem.findAssets(
       glob,
       package: inputId.package,
+      phase: phase,
+      trackGlob: inputTracker.addGlob,
     );
   }
 
+  @Requires('id.package.isNotEmpty')
+  @Requires('id.path.isNotEmpty')
   @override
-  Future<void> writeAsBytes(AssetId id, FutureOr<List<int>> bytes) {
+  Future<void> writeAsBytes(AssetId id, FutureOr<List<int>> bytes) async {
     if (_isComplete) throw BuildStepCompletedException();
+    id = id.normalize();
     _checkOutput(id);
-    final done = _futureOrWrite(
-      bytes,
-      (List<int> b) => _singleStepReaderWriter.writeAsBytes(id, b),
-    );
-    _writeResults.add(Result.capture(done));
-    return done;
+    outputs[id] = AssetContent.bytes(await bytes);
   }
 
+  @Requires('id.package.isNotEmpty')
+  @Requires('id.path.isNotEmpty')
   @override
   Future<void> writeAsString(
     AssetId id,
     FutureOr<String> content, {
     Encoding encoding = utf8,
-  }) {
+  }) async {
     if (_isComplete) throw BuildStepCompletedException();
+    id = id.normalize();
     _checkOutput(id);
-    final done = _futureOrWrite(
-      content,
-      (String c) =>
-          _singleStepReaderWriter.writeAsString(id, c, encoding: encoding),
-    );
-    _writeResults.add(Result.capture(done));
-    return done;
+    outputs[id] = AssetContent.string(await content, encoding: encoding);
   }
 
+  @Requires('id.package.isNotEmpty')
+  @Requires('id.path.isNotEmpty')
   @override
-  Future<Digest> digest(AssetId id) {
+  Future<Digest> digest(AssetId id, {bool track = true}) async {
     if (_isComplete) throw BuildStepCompletedException();
-    return _singleStepReaderWriter.digest(id);
+    id = id.normalize();
+    final isReadable = await _isReadable(id, track: track);
+
+    if (!isReadable) {
+      throw AssetNotFoundException(id);
+    }
+    if (outputs.containsKey(id)) {
+      return outputs[id]!.digest;
+    }
+    return (await buildFilesystem.contentOf(id)).digest;
   }
 
   @override
@@ -169,11 +280,6 @@ class BuildStepImpl implements BuildStep {
     bool isExternal = false,
   }) => action();
 
-  Future<void> _futureOrWrite<T>(
-    FutureOr<T> content,
-    Future<void> Function(T content) write,
-  ) => (content is Future<T>) ? content.then(write) : write(content);
-
   /// Waits for work to finish and cleans up resources.
   ///
   /// This method should be called after a build has completed. After the
@@ -181,7 +287,6 @@ class BuildStepImpl implements BuildStep {
   /// [Resolver] for this build step - if any - has been released.
   Future<void> complete() async {
     _isComplete = true;
-    await Future.wait(_writeResults.map(Result.release));
     try {
       (await _resolver)?.release();
     } catch (_) {}
@@ -194,7 +299,7 @@ class BuildStepImpl implements BuildStep {
       throw UnexpectedOutputException(id, expected: allowedOutputs);
     }
 
-    if (!_writtenAssets.add(id)) {
+    if (outputs.containsKey(id)) {
       throw InvalidOutputException(
         id,
         'This build step already wrote to `$id`. Duplicate writes to the same '
@@ -209,51 +314,17 @@ class BuildStepImpl implements BuildStep {
   }
 }
 
-class _DelayedResolver implements Resolver {
-  final Future<Resolver> _delegate;
+final _lib = Uri.parse('lib/');
 
-  _DelayedResolver(this._delegate);
-
-  @override
-  Future<bool> isLibrary(AssetId assetId) async =>
-      (await _delegate).isLibrary(assetId);
-
-  @override
-  Stream<LibraryElement> get libraries {
-    final completer = StreamCompleter<LibraryElement>();
-    _delegate.then((r) => completer.setSourceStream(r.libraries));
-    return completer.stream;
-  }
-
-  @override
-  Future<AstNode?> astNodeFor(
-    Fragment fragment, {
-    bool resolve = false,
-  }) async => (await _delegate).astNodeFor(fragment, resolve: resolve);
-
-  @override
-  Future<CompilationUnit> compilationUnitFor(
-    AssetId assetId, {
-    bool allowSyntaxErrors = false,
-  }) async => (await _delegate).compilationUnitFor(
-    assetId,
-    allowSyntaxErrors: allowSyntaxErrors,
-  );
-
-  @override
-  Future<LibraryElement> libraryFor(
-    AssetId assetId, {
-    bool allowSyntaxErrors = false,
-  }) async => (await _delegate).libraryFor(
-    assetId,
-    allowSyntaxErrors: allowSyntaxErrors,
-  );
-
-  @override
-  Future<LibraryElement?> findLibraryByName(String libraryName) async =>
-      (await _delegate).findLibraryByName(libraryName);
-
-  @override
-  Future<AssetId> assetIdForElement(Element element) async =>
-      (await _delegate).assetIdForElement(element);
+PackageConfig _transformToAssetUris(PackageConfig config) {
+  return PackageConfig([
+    for (final package in config.packages)
+      Package(
+        package.name,
+        Uri(scheme: 'asset', pathSegments: [package.name, '']),
+        packageUriRoot: _lib,
+        extraData: package.extraData,
+        languageVersion: package.languageVersion,
+      ),
+  ], extraData: config.extraData);
 }

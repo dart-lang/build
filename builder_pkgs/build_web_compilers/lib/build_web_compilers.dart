@@ -3,6 +3,16 @@
 // BSD-style license that can be found in the LICENSE file.
 
 export 'src/archive_extractor.dart' show Dart2JsArchiveExtractor;
+export 'src/build_modules/build_modules.dart'
+    show
+        DartPlatform,
+        MissingModulesException,
+        Module,
+        ModuleBuilder,
+        UnsupportedModules,
+        moduleExtension,
+        scratchSpace,
+        scratchSpaceResource;
 export 'src/common.dart'
     show
         fullKernelExtension,

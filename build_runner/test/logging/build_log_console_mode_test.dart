@@ -54,14 +54,14 @@ E An error.'''),
       expect(
         render(),
         padLinesRight('''
-0s compiling builders/jit'''),
+compiling builders/jit'''),
       );
       buildLog.logCompile(compileType: CompileType.aot, function: () async {});
       expect(
         render(),
         padLinesRight('''
-0s compiling builders/jit
-0s compiling builders/aot'''),
+compiling builders/jit
+compiling builders/aot'''),
       );
     });
 
@@ -284,12 +284,11 @@ E An error.'''),
 
       final rawLine = renderRaw().single;
       final targetUri = _packageFileUri(buildPackages, assetId);
-      final linkedText =
-          [
-            AnsiBuffer.openHyperlink(targetUri),
-            'lib/src/logging/build_log.dart',
-            AnsiBuffer.closeHyperlink,
-          ].join();
+      final linkedText = [
+        AnsiBuffer.openHyperlink(targetUri),
+        'lib/src/logging/build_log.dart',
+        AnsiBuffer.closeHyperlink,
+      ].join();
 
       expect(rawLine, contains(linkedText));
       expect(render().single, contains('lib/src/logging/build_log.dart'));
@@ -313,12 +312,11 @@ E An error.'''),
 
       final rawLine = renderRaw().first;
       final targetUri = _packageFileUri(buildPackages, assetId);
-      final linkedText =
-          [
-            AnsiBuffer.openHyperlink(targetUri),
-            'lib/src/logging/build_log.dart',
-            AnsiBuffer.closeHyperlink,
-          ].join();
+      final linkedText = [
+        AnsiBuffer.openHyperlink(targetUri),
+        'lib/src/logging/build_log.dart',
+        AnsiBuffer.closeHyperlink,
+      ].join();
 
       expect(rawLine, contains(linkedText));
       expect(
@@ -425,4 +423,4 @@ BuildPackages _testBuildPackages(String packageName) =>
     ]);
 
 Uri _packageFileUri(BuildPackages buildPackages, AssetId assetId) =>
-    Uri.file(buildPackages.pathFor(assetId, hide: false));
+    Uri.file(buildPackages.pathFor(assetId, inArtifactTree: false));

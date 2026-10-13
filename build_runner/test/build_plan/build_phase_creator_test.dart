@@ -22,6 +22,8 @@ import 'package:test/test.dart';
 import '../common/common.dart';
 
 void main() {
+  setUpTestLogging();
+
   group('BuildPhaseCreator', () {
     final buildPackages = BuildPackages.singlePackageBuild('a', [
       BuildPackage.forTesting(name: 'a', dependencies: ['b'], isOutput: true),
@@ -35,25 +37,20 @@ void main() {
           defaultRootPackageSources: ['**'].build(),
         ),
       );
-      final phases =
-          await BuildPhaseCreator(
-            builderFactories: BuilderFactories({
-              'b:cool_builder': [CoolBuilder.new],
-            }),
-            buildPackages: buildPackages,
-            buildConfigs: buildConfigs,
-            builderDefinitions: [
-              BuilderDefinition(
-                'b:cool_builder',
-                autoApply: AutoApply.allPackages,
-              ),
-            ],
-            builderConfigOverrides:
-                {
-                  'b:cool_builder': {'option_a': 'a', 'option_c': 'c'}.build(),
-                }.build(),
-            isReleaseBuild: false,
-          ).createBuildPhases();
+      final phases = await BuildPhaseCreator(
+        builderFactories: BuilderFactories({
+          'b:cool_builder': [CoolBuilder.new],
+        }),
+        buildPackages: buildPackages,
+        buildConfigs: buildConfigs,
+        builderDefinitions: [
+          BuilderDefinition('b:cool_builder', autoApply: AutoApply.allPackages),
+        ],
+        builderConfigOverrides: {
+          'b:cool_builder': {'option_a': 'a', 'option_c': 'c'}.build(),
+        }.build(),
+        isReleaseBuild: false,
+      ).createBuildPhases();
       for (final phase in phases.inBuildPhases) {
         expect((phase.builder as CoolBuilder).optionA, equals('a'));
         expect((phase.builder as CoolBuilder).optionB, equals('defaultB'));
@@ -66,24 +63,23 @@ void main() {
       () async {
         await runInBuildConfigZone(
           () async {
-            final overrides =
-                {
-                  'a': BuildConfig(
-                    packageName: 'a',
-                    buildTargets: {
-                      'a:a': BuildTarget(dependencies: {'b:b'}),
+            final overrides = {
+              'a': BuildConfig(
+                packageName: 'a',
+                buildTargets: {
+                  'a:a': BuildTarget(dependencies: {'b:b'}),
+                },
+                globalOptions: {
+                  'b:cool_builder': GlobalBuilderConfig(
+                    options: const {
+                      'option_a': 'global a',
+                      'option_b': 'global b',
                     },
-                    globalOptions: {
-                      'b:cool_builder': GlobalBuilderConfig(
-                        options: const {
-                          'option_a': 'global a',
-                          'option_b': 'global b',
-                        },
-                        releaseOptions: const {'option_b': 'release global b'},
-                      ),
-                    },
+                    releaseOptions: const {'option_b': 'release global b'},
                   ),
-                }.build();
+                },
+              ),
+            }.build();
             final buildConfigs = await BuildConfigs.load(
               buildPackages: buildPackages,
               testingOverrides: TestingOverrides(
@@ -91,25 +87,23 @@ void main() {
                 buildConfig: overrides,
               ),
             );
-            final phases =
-                await BuildPhaseCreator(
-                  builderFactories: BuilderFactories({
-                    'b:cool_builder': [CoolBuilder.new],
-                  }),
-                  buildPackages: buildPackages,
-                  buildConfigs: buildConfigs,
-                  builderDefinitions: [
-                    BuilderDefinition(
-                      'b:cool_builder',
-                      autoApply: AutoApply.allPackages,
-                    ),
-                  ],
-                  builderConfigOverrides:
-                      {
-                        'b:cool_builder': {'option_c': '--define c'}.build(),
-                      }.build(),
-                  isReleaseBuild: true,
-                ).createBuildPhases();
+            final phases = await BuildPhaseCreator(
+              builderFactories: BuilderFactories({
+                'b:cool_builder': [CoolBuilder.new],
+              }),
+              buildPackages: buildPackages,
+              buildConfigs: buildConfigs,
+              builderDefinitions: [
+                BuilderDefinition(
+                  'b:cool_builder',
+                  autoApply: AutoApply.allPackages,
+                ),
+              ],
+              builderConfigOverrides: {
+                'b:cool_builder': {'option_c': '--define c'}.build(),
+              }.build(),
+              isReleaseBuild: true,
+            ).createBuildPhases();
             for (final phase in phases.inBuildPhases) {
               expect(
                 (phase.builder as CoolBuilder).optionA,
@@ -139,22 +133,18 @@ void main() {
           defaultRootPackageSources: ['**'].build(),
         ),
       );
-      final phases =
-          await BuildPhaseCreator(
-            builderFactories: BuilderFactories({
-              'b:cool_builder': [CoolBuilder.new],
-            }),
-            buildPackages: buildPackages,
-            buildConfigs: buildConfigs,
-            builderDefinitions: [
-              BuilderDefinition(
-                'b:cool_builder',
-                autoApply: AutoApply.dependents,
-              ),
-            ],
-            builderConfigOverrides: BuiltMap(),
-            isReleaseBuild: false,
-          ).createBuildPhases();
+      final phases = await BuildPhaseCreator(
+        builderFactories: BuilderFactories({
+          'b:cool_builder': [CoolBuilder.new],
+        }),
+        buildPackages: buildPackages,
+        buildConfigs: buildConfigs,
+        builderDefinitions: [
+          BuilderDefinition('b:cool_builder', autoApply: AutoApply.dependents),
+        ],
+        builderConfigOverrides: BuiltMap(),
+        isReleaseBuild: false,
+      ).createBuildPhases();
       expect(phases, hasLength(1));
       expect(phases.inBuildPhases.first.package, 'a');
     });
@@ -174,18 +164,17 @@ void main() {
         ),
         BuilderDefinition('b:not_by_default', autoApply: AutoApply.none),
       ];
-      final phases =
-          await BuildPhaseCreator(
-            builderFactories: BuilderFactories({
-              'b:cool_builder': [CoolBuilder.new],
-              'b:not_by_default': [(_) => TestBuilder()],
-            }),
-            buildPackages: buildPackages,
-            buildConfigs: buildConfigs,
-            builderDefinitions: builderDefinitions,
-            builderConfigOverrides: BuiltMap(),
-            isReleaseBuild: false,
-          ).createBuildPhases();
+      final phases = await BuildPhaseCreator(
+        builderFactories: BuilderFactories({
+          'b:cool_builder': [CoolBuilder.new],
+          'b:not_by_default': [(_) => TestBuilder()],
+        }),
+        buildPackages: buildPackages,
+        buildConfigs: buildConfigs,
+        builderDefinitions: builderDefinitions,
+        builderConfigOverrides: BuiltMap(),
+        isReleaseBuild: false,
+      ).createBuildPhases();
       expect(phases, hasLength(2));
       expect(
         phases.inBuildPhases,
@@ -199,7 +188,7 @@ void main() {
       );
     });
 
-    test('skips non-hidden builders on non-root packages', () async {
+    test('skips package path builders on non-root packages', () async {
       final buildPackages = BuildPackages.singlePackageBuild('a', [
         BuildPackage.forTesting(
           name: 'a',
@@ -215,23 +204,22 @@ void main() {
           defaultRootPackageSources: ['**'].build(),
         ),
       );
-      final phases =
-          await BuildPhaseCreator(
-            builderFactories: BuilderFactories({
-              'c:cool_builder': [CoolBuilder.new],
-            }),
-            buildPackages: buildPackages,
-            buildConfigs: buildConfigs,
-            builderDefinitions: [
-              BuilderDefinition(
-                'c:cool_builder',
-                autoApply: AutoApply.dependents,
-                hideOutput: false,
-              ),
-            ],
-            builderConfigOverrides: BuiltMap(),
-            isReleaseBuild: false,
-          ).createBuildPhases();
+      final phases = await BuildPhaseCreator(
+        builderFactories: BuilderFactories({
+          'c:cool_builder': [CoolBuilder.new],
+        }),
+        buildPackages: buildPackages,
+        buildConfigs: buildConfigs,
+        builderDefinitions: [
+          BuilderDefinition(
+            'c:cool_builder',
+            autoApply: AutoApply.dependents,
+            outputsToArtifactTree: false,
+          ),
+        ],
+        builderConfigOverrides: BuiltMap(),
+        isReleaseBuild: false,
+      ).createBuildPhases();
       expect(phases, hasLength(1));
       expect(
         phases.inBuildPhases,
@@ -246,7 +234,7 @@ void main() {
     });
 
     test(
-      'skips builders which apply non-hidden builders on non-root packages',
+      'skips builders which apply package path builders on non-root packages',
       () async {
         final buildPackages = BuildPackages.singlePackageBuild('a', [
           BuildPackage.forTesting(
@@ -272,21 +260,20 @@ void main() {
           BuilderDefinition(
             'c:not_by_default',
             autoApply: AutoApply.none,
-            hideOutput: false,
+            outputsToArtifactTree: false,
           ),
         ];
-        final phases =
-            await BuildPhaseCreator(
-              builderFactories: BuilderFactories({
-                'c:cool_builder': [CoolBuilder.new],
-                'c:not_by_default': [(_) => TestBuilder()],
-              }),
-              buildPackages: buildPackages,
-              buildConfigs: buildConfigs,
-              builderDefinitions: builderDefinitions,
-              builderConfigOverrides: BuiltMap(),
-              isReleaseBuild: false,
-            ).createBuildPhases();
+        final phases = await BuildPhaseCreator(
+          builderFactories: BuilderFactories({
+            'c:cool_builder': [CoolBuilder.new],
+            'c:not_by_default': [(_) => TestBuilder()],
+          }),
+          buildPackages: buildPackages,
+          buildConfigs: buildConfigs,
+          builderDefinitions: builderDefinitions,
+          builderConfigOverrides: BuiltMap(),
+          isReleaseBuild: false,
+        ).createBuildPhases();
         expect(phases, hasLength(2));
         expect(
           phases.inBuildPhases,
@@ -304,15 +291,14 @@ void main() {
     test('returns empty phases if a dependency is missing', () async {
       await runInBuildConfigZone(
         () async {
-          final overrides =
-              {
-                'a': BuildConfig(
-                  packageName: 'a',
-                  buildTargets: {
-                    'a:a': BuildTarget(dependencies: {'b:not_default'}),
-                  },
-                ),
-              }.build();
+          final overrides = {
+            'a': BuildConfig(
+              packageName: 'a',
+              buildTargets: {
+                'a:a': BuildTarget(dependencies: {'b:not_default'}),
+              },
+            ),
+          }.build();
           final buildConfigs = await BuildConfigs.load(
             buildPackages: buildPackages,
             testingOverrides: TestingOverrides(
@@ -321,22 +307,21 @@ void main() {
             ),
           );
           expect(
-            () =>
-                BuildPhaseCreator(
-                  builderFactories: BuilderFactories({
-                    'b:cool_builder': [CoolBuilder.new],
-                  }),
-                  buildPackages: buildPackages,
-                  buildConfigs: buildConfigs,
-                  builderDefinitions: [
-                    BuilderDefinition(
-                      'b:cool_builder',
-                      autoApply: AutoApply.allPackages,
-                    ),
-                  ],
-                  builderConfigOverrides: BuiltMap(),
-                  isReleaseBuild: false,
-                ).createBuildPhases(),
+            () => BuildPhaseCreator(
+              builderFactories: BuilderFactories({
+                'b:cool_builder': [CoolBuilder.new],
+              }),
+              buildPackages: buildPackages,
+              buildConfigs: buildConfigs,
+              builderDefinitions: [
+                BuilderDefinition(
+                  'b:cool_builder',
+                  autoApply: AutoApply.allPackages,
+                ),
+              ],
+              builderConfigOverrides: BuiltMap(),
+              isReleaseBuild: false,
+            ).createBuildPhases(),
             throwsA(const TypeMatcher<CannotBuildException>()),
           );
         },
@@ -355,18 +340,17 @@ void main() {
             buildPackages: buildPackages,
             testingOverrides: TestingOverrides(
               defaultRootPackageSources: ['**'].build(),
-              buildConfig:
-                  {
-                    'a': BuildConfig(
-                      packageName: 'a',
-                      buildTargets: {
-                        'a|a': BuildTarget(
-                          autoApplyBuilders: false,
-                          builders: builderConfigs,
-                        ),
-                      },
+              buildConfig: {
+                'a': BuildConfig(
+                  packageName: 'a',
+                  buildTargets: {
+                    'a|a': BuildTarget(
+                      autoApplyBuilders: false,
+                      builders: builderConfigs,
                     ),
-                  }.build(),
+                  },
+                ),
+              }.build(),
             ),
           ),
           'a',
@@ -470,26 +454,93 @@ void main() {
         ];
 
         expect(
-          () =>
-              BuildPhaseCreator(
-                builderFactories: BuilderFactories(
-                  {
-                    'a:regular': [CoolBuilder.new],
-                  },
-                  postProcessBuilderFactories: {
-                    'a:post': (_) => _InvalidPostProcessBuilder(),
-                  },
-                ),
-                buildPackages: buildPackages,
-                buildConfigs: buildConfigs,
-                builderDefinitions: builderDefinitions,
-                builderConfigOverrides: BuiltMap(),
-                isReleaseBuild: false,
-              ).createBuildPhases(),
+          () => BuildPhaseCreator(
+            builderFactories: BuilderFactories(
+              {
+                'a:regular': [CoolBuilder.new],
+              },
+              postProcessBuilderFactories: {
+                'a:post': (_) => _InvalidPostProcessBuilder(),
+              },
+            ),
+            buildPackages: buildPackages,
+            buildConfigs: buildConfigs,
+            builderDefinitions: builderDefinitions,
+            builderConfigOverrides: BuiltMap(),
+            isReleaseBuild: false,
+          ).createBuildPhases(),
           throwsA(isArgumentError),
         );
       },
     );
+
+    test('throws ArgumentError if builder definition has both addsToLibrary '
+        'and isOptional', () {
+      expect(
+        () => BuilderDefinition(
+          'a:builder',
+          outputsToArtifactTree: false,
+          addsToLibrary: true,
+          isOptional: true,
+        ),
+        throwsA(
+          isArgumentError.having(
+            (e) => e.message,
+            'message',
+            contains('`is_optional: true`'),
+          ),
+        ),
+      );
+    });
+
+    test('throws ArgumentError if builder definition has addsToLibrary '
+        'and outputsToArtifactTree', () {
+      expect(
+        () => BuilderDefinition('a:builder', addsToLibrary: true),
+        throwsA(
+          isArgumentError.having(
+            (e) => e.message,
+            'message',
+            contains('`build_to: source`'),
+          ),
+        ),
+      );
+    });
+
+    test('throws ArgumentError if addsToLibrary builder has two '
+        'factories', () async {
+      final buildConfigs = await BuildConfigs.load(
+        buildPackages: buildPackages,
+        testingOverrides: TestingOverrides(
+          defaultRootPackageSources: ['**'].build(),
+        ),
+      );
+      expect(
+        () => BuildPhaseCreator(
+          builderFactories: BuilderFactories({
+            'a:builder': [CoolBuilder.new, CoolBuilder.new],
+          }),
+          buildPackages: buildPackages,
+          buildConfigs: buildConfigs,
+          builderDefinitions: [
+            BuilderDefinition(
+              'a:builder',
+              outputsToArtifactTree: false,
+              addsToLibrary: true,
+            ),
+          ],
+          builderConfigOverrides: BuiltMap(),
+          isReleaseBuild: false,
+        ).createBuildPhases(),
+        throwsA(
+          isArgumentError.having(
+            (e) => e.message,
+            'message',
+            contains('must have exactly one builder factory'),
+          ),
+        ),
+      );
+    });
   });
 }
 

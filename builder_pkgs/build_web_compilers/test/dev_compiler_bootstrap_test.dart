@@ -97,28 +97,31 @@ void main() {
       // Just do some basic sanity checking, integration tests will validate
       // things actually work.
       final builder = WebEntrypointBuilder.fromOptions(defaultBuilderOptions);
-      final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
-        'a|web/index.dart.bootstrap.js': decodedMatches(
-          allOf([
-            // Maps non-lib modules to remove the top level dir.
-            contains('"web/index": "index.ddc"'),
-            // Maps lib modules to packages path
-            contains('"packages/a/a": "packages/a/a.ddc"'),
-            contains('"packages/b/b": "packages/b/b.ddc"'),
-            // Requires the top level module and dart sdk.
-            contains(
-              'define("index.dart.bootstrap", ["web/index", "dart_sdk"]',
-            ),
-            // Calls main on the top level module.
-            contains('(app.web__index || app.index).main()'),
-            isNot(contains('lib/a')),
-          ]),
-        ),
-        'a|web/index.dart.bootstrap.end.js': isEmpty,
-        'a|web/index.dart.ddc_merged_metadata': isNotEmpty,
-        'a|web/index.dart.js': decodedMatches(contains('index.dart.bootstrap')),
-        'a|web/index.digests': decodedMatches(contains('packages/')),
-      });
+      final expectedOutputs = Map.of(startingExpectedOutputs)
+        ..addAll({
+          'a|web/index.dart.bootstrap.js': decodedMatches(
+            allOf([
+              // Maps non-lib modules to remove the top level dir.
+              contains('"web/index": "index.ddc"'),
+              // Maps lib modules to packages path
+              contains('"packages/a/a": "packages/a/a.ddc"'),
+              contains('"packages/b/b": "packages/b/b.ddc"'),
+              // Requires the top level module and dart sdk.
+              contains(
+                'define("index.dart.bootstrap", ["web/index", "dart_sdk"]',
+              ),
+              // Calls main on the top level module.
+              contains('(app.web__index || app.index).main()'),
+              isNot(contains('lib/a')),
+            ]),
+          ),
+          'a|web/index.dart.bootstrap.end.js': isEmpty,
+          'a|web/index.dart.ddc_merged_metadata': isNotEmpty,
+          'a|web/index.dart.js': decodedMatches(
+            contains('index.dart.bootstrap'),
+          ),
+          'a|web/index.digests': decodedMatches(contains('packages/')),
+        });
       await testBuilders(
         [...startingBuilders, builder],
         startingAssets,

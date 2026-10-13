@@ -88,19 +88,20 @@ void main() {
           ddcLibraryBundle: ddcLibraryBundle,
         );
 
-        final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
-          'a|lib/a$jsModuleExtension': decodedMatches(contains('hello')),
-          'a|lib/a$jsSourceMapExtension': decodedMatches(contains('a.dart')),
-          'a|lib/a$metadataExtension': isNotNull,
-          'a|web/index$jsModuleExtension': decodedMatches(contains('main')),
-          'a|web/index$jsSourceMapExtension': decodedMatches(
-            contains('index.dart'),
-          ),
-          'a|web/index$metadataExtension': isNotNull,
-          'b|lib/b$jsModuleExtension': decodedMatches(contains('world')),
-          'b|lib/b$jsSourceMapExtension': decodedMatches(contains('b.dart')),
-          'b|lib/b$metadataExtension': isNotNull,
-        });
+        final expectedOutputs = Map.of(startingExpectedOutputs)
+          ..addAll({
+            'a|lib/a$jsModuleExtension': decodedMatches(contains('hello')),
+            'a|lib/a$jsSourceMapExtension': decodedMatches(contains('a.dart')),
+            'a|lib/a$metadataExtension': isNotNull,
+            'a|web/index$jsModuleExtension': decodedMatches(contains('main')),
+            'a|web/index$jsSourceMapExtension': decodedMatches(
+              contains('index.dart'),
+            ),
+            'a|web/index$metadataExtension': isNotNull,
+            'b|lib/b$jsModuleExtension': decodedMatches(contains('world')),
+            'b|lib/b$jsSourceMapExtension': decodedMatches(contains('b.dart')),
+            'b|lib/b$metadataExtension': isNotNull,
+          });
 
         final reportedUnused = <AssetId, Iterable<AssetId>>{};
         await testBuilders(
@@ -135,19 +136,20 @@ void main() {
         environment: {'foo': 'zap'},
         ddcLibraryBundle: ddcLibraryBundle,
       );
-      final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
-        'a|lib/a$jsModuleExtension': isNotNull,
-        'a|lib/a$jsSourceMapExtension': isNotNull,
-        'a|lib/a$metadataExtension': isNotNull,
-        'a|web/index$jsModuleExtension': decodedMatches(
-          contains('print("zap")'),
-        ),
-        'a|web/index$jsSourceMapExtension': isNotNull,
-        'a|web/index$metadataExtension': isNotNull,
-        'b|lib/b$jsModuleExtension': isNotNull,
-        'b|lib/b$jsSourceMapExtension': isNotNull,
-        'b|lib/b$metadataExtension': isNotNull,
-      });
+      final expectedOutputs = Map.of(startingExpectedOutputs)
+        ..addAll({
+          'a|lib/a$jsModuleExtension': isNotNull,
+          'a|lib/a$jsSourceMapExtension': isNotNull,
+          'a|lib/a$metadataExtension': isNotNull,
+          'a|web/index$jsModuleExtension': decodedMatches(
+            contains('print("zap")'),
+          ),
+          'a|web/index$jsSourceMapExtension': isNotNull,
+          'a|web/index$metadataExtension': isNotNull,
+          'b|lib/b$jsModuleExtension': isNotNull,
+          'b|lib/b$jsSourceMapExtension': isNotNull,
+          'b|lib/b$metadataExtension': isNotNull,
+        });
       await testBuilders(
         [...startingBuilders, builder],
         startingAssets,
@@ -161,17 +163,18 @@ void main() {
         canaryFeatures: true,
         ddcLibraryBundle: ddcLibraryBundle,
       );
-      final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
-        'a|lib/a$jsModuleExtension': decodedMatches(contains('canary')),
-        'a|lib/a$jsSourceMapExtension': isNotNull,
-        'a|lib/a$metadataExtension': isNotNull,
-        'a|web/index$jsModuleExtension': isNotNull,
-        'a|web/index$jsSourceMapExtension': isNotNull,
-        'a|web/index$metadataExtension': isNotNull,
-        'b|lib/b$jsModuleExtension': isNotNull,
-        'b|lib/b$jsSourceMapExtension': isNotNull,
-        'b|lib/b$metadataExtension': isNotNull,
-      });
+      final expectedOutputs = Map.of(startingExpectedOutputs)
+        ..addAll({
+          'a|lib/a$jsModuleExtension': decodedMatches(contains('canary')),
+          'a|lib/a$jsSourceMapExtension': isNotNull,
+          'a|lib/a$metadataExtension': isNotNull,
+          'a|web/index$jsModuleExtension': isNotNull,
+          'a|web/index$jsSourceMapExtension': isNotNull,
+          'a|web/index$metadataExtension': isNotNull,
+          'b|lib/b$jsModuleExtension': isNotNull,
+          'b|lib/b$jsSourceMapExtension': isNotNull,
+          'b|lib/b$metadataExtension': isNotNull,
+        });
       await testBuilders(
         [...startingBuilders, builder],
         startingAssets,
@@ -184,17 +187,20 @@ void main() {
         platform: ddcPlatform,
         ddcLibraryBundle: ddcLibraryBundle,
       );
-      final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
-        'a|lib/a$jsModuleExtension': decodedMatches(isNot(contains('canary'))),
-        'a|lib/a$jsSourceMapExtension': isNotNull,
-        'a|lib/a$metadataExtension': isNotNull,
-        'a|web/index$jsModuleExtension': isNotNull,
-        'a|web/index$jsSourceMapExtension': isNotNull,
-        'a|web/index$metadataExtension': isNotNull,
-        'b|lib/b$jsModuleExtension': isNotNull,
-        'b|lib/b$jsSourceMapExtension': isNotNull,
-        'b|lib/b$metadataExtension': isNotNull,
-      });
+      final expectedOutputs = Map.of(startingExpectedOutputs)
+        ..addAll({
+          'a|lib/a$jsModuleExtension': decodedMatches(
+            isNot(contains('canary')),
+          ),
+          'a|lib/a$jsSourceMapExtension': isNotNull,
+          'a|lib/a$metadataExtension': isNotNull,
+          'a|web/index$jsModuleExtension': isNotNull,
+          'a|web/index$jsSourceMapExtension': isNotNull,
+          'a|web/index$metadataExtension': isNotNull,
+          'b|lib/b$jsModuleExtension': isNotNull,
+          'b|lib/b$jsSourceMapExtension': isNotNull,
+          'b|lib/b$metadataExtension': isNotNull,
+        });
       await testBuilders(
         [...startingBuilders, builder],
         startingAssets,
@@ -208,20 +214,21 @@ void main() {
         generateFullDill: true,
         ddcLibraryBundle: ddcLibraryBundle,
       );
-      final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
-        'a|lib/a$fullKernelExtension': isNotNull,
-        'a|lib/a$jsModuleExtension': isNotNull,
-        'a|lib/a$jsSourceMapExtension': isNotNull,
-        'a|lib/a$metadataExtension': isNotNull,
-        'a|web/index$fullKernelExtension': isNotNull,
-        'a|web/index$jsModuleExtension': isNotNull,
-        'a|web/index$jsSourceMapExtension': isNotNull,
-        'a|web/index$metadataExtension': isNotNull,
-        'b|lib/b$fullKernelExtension': isNotNull,
-        'b|lib/b$jsModuleExtension': isNotNull,
-        'b|lib/b$jsSourceMapExtension': isNotNull,
-        'b|lib/b$metadataExtension': isNotNull,
-      });
+      final expectedOutputs = Map.of(startingExpectedOutputs)
+        ..addAll({
+          'a|lib/a$fullKernelExtension': isNotNull,
+          'a|lib/a$jsModuleExtension': isNotNull,
+          'a|lib/a$jsSourceMapExtension': isNotNull,
+          'a|lib/a$metadataExtension': isNotNull,
+          'a|web/index$fullKernelExtension': isNotNull,
+          'a|web/index$jsModuleExtension': isNotNull,
+          'a|web/index$jsSourceMapExtension': isNotNull,
+          'a|web/index$metadataExtension': isNotNull,
+          'b|lib/b$fullKernelExtension': isNotNull,
+          'b|lib/b$jsModuleExtension': isNotNull,
+          'b|lib/b$jsSourceMapExtension': isNotNull,
+          'b|lib/b$metadataExtension': isNotNull,
+        });
       await testBuilders(
         [...startingBuilders, builder],
         startingAssets,
@@ -234,17 +241,18 @@ void main() {
         platform: ddcPlatform,
         ddcLibraryBundle: ddcLibraryBundle,
       );
-      final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
-        'a|lib/a$jsModuleExtension': isNotNull,
-        'a|lib/a$jsSourceMapExtension': isNotNull,
-        'a|lib/a$metadataExtension': isNotNull,
-        'a|web/index$jsModuleExtension': isNotNull,
-        'a|web/index$jsSourceMapExtension': isNotNull,
-        'a|web/index$metadataExtension': isNotNull,
-        'b|lib/b$jsModuleExtension': isNotNull,
-        'b|lib/b$jsSourceMapExtension': isNotNull,
-        'b|lib/b$metadataExtension': isNotNull,
-      });
+      final expectedOutputs = Map.of(startingExpectedOutputs)
+        ..addAll({
+          'a|lib/a$jsModuleExtension': isNotNull,
+          'a|lib/a$jsSourceMapExtension': isNotNull,
+          'a|lib/a$metadataExtension': isNotNull,
+          'a|web/index$jsModuleExtension': isNotNull,
+          'a|web/index$jsSourceMapExtension': isNotNull,
+          'a|web/index$metadataExtension': isNotNull,
+          'b|lib/b$jsModuleExtension': isNotNull,
+          'b|lib/b$jsSourceMapExtension': isNotNull,
+          'b|lib/b$metadataExtension': isNotNull,
+        });
       await testBuilders(
         [...startingBuilders, builder],
         startingAssets,
@@ -258,20 +266,21 @@ void main() {
         emitDebugSymbols: true,
         ddcLibraryBundle: ddcLibraryBundle,
       );
-      final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
-        'a|lib/a$jsModuleExtension': isNotNull,
-        'a|lib/a$jsSourceMapExtension': isNotNull,
-        'a|lib/a$metadataExtension': isNotNull,
-        'a|lib/a$symbolsExtension': isNotNull,
-        'a|web/index$jsModuleExtension': isNotNull,
-        'a|web/index$jsSourceMapExtension': isNotNull,
-        'a|web/index$metadataExtension': isNotNull,
-        'a|web/index$symbolsExtension': isNotNull,
-        'b|lib/b$jsModuleExtension': isNotNull,
-        'b|lib/b$jsSourceMapExtension': isNotNull,
-        'b|lib/b$metadataExtension': isNotNull,
-        'b|lib/b$symbolsExtension': isNotNull,
-      });
+      final expectedOutputs = Map.of(startingExpectedOutputs)
+        ..addAll({
+          'a|lib/a$jsModuleExtension': isNotNull,
+          'a|lib/a$jsSourceMapExtension': isNotNull,
+          'a|lib/a$metadataExtension': isNotNull,
+          'a|lib/a$symbolsExtension': isNotNull,
+          'a|web/index$jsModuleExtension': isNotNull,
+          'a|web/index$jsSourceMapExtension': isNotNull,
+          'a|web/index$metadataExtension': isNotNull,
+          'a|web/index$symbolsExtension': isNotNull,
+          'b|lib/b$jsModuleExtension': isNotNull,
+          'b|lib/b$jsSourceMapExtension': isNotNull,
+          'b|lib/b$metadataExtension': isNotNull,
+          'b|lib/b$symbolsExtension': isNotNull,
+        });
       await testBuilders(
         [...startingBuilders, builder],
         startingAssets,
@@ -284,17 +293,18 @@ void main() {
         platform: ddcPlatform,
         ddcLibraryBundle: ddcLibraryBundle,
       );
-      final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
-        'b|lib/b$jsModuleExtension': isNotNull,
-        'b|lib/b$jsSourceMapExtension': isNotNull,
-        'b|lib/b$metadataExtension': isNotNull,
-        'a|lib/a$jsModuleExtension': isNotNull,
-        'a|lib/a$jsSourceMapExtension': isNotNull,
-        'a|lib/a$metadataExtension': isNotNull,
-        'a|web/index$jsModuleExtension': isNotNull,
-        'a|web/index$jsSourceMapExtension': isNotNull,
-        'a|web/index$metadataExtension': isNotNull,
-      });
+      final expectedOutputs = Map.of(startingExpectedOutputs)
+        ..addAll({
+          'b|lib/b$jsModuleExtension': isNotNull,
+          'b|lib/b$jsSourceMapExtension': isNotNull,
+          'b|lib/b$metadataExtension': isNotNull,
+          'a|lib/a$jsModuleExtension': isNotNull,
+          'a|lib/a$jsSourceMapExtension': isNotNull,
+          'a|lib/a$metadataExtension': isNotNull,
+          'a|web/index$jsModuleExtension': isNotNull,
+          'a|web/index$jsSourceMapExtension': isNotNull,
+          'a|web/index$metadataExtension': isNotNull,
+        });
       await testBuilders(
         [...startingBuilders, builder],
         startingAssets,
@@ -307,19 +317,24 @@ void main() {
         platform: ddcPlatform,
         ddcLibraryBundle: ddcLibraryBundle,
       );
-      final expectedOutputs = Map.of(startingExpectedOutputs)..addAll({
-        'a|lib/a$jsModuleExtension': isNotNull,
-        'a|lib/a$jsSourceMapExtension': isNotNull,
-        'a|lib/a$metadataExtension': decodedMatches(isNot(contains('scratch'))),
-        'a|web/index$jsModuleExtension': isNotNull,
-        'a|web/index$jsSourceMapExtension': isNotNull,
-        'a|web/index$metadataExtension': decodedMatches(
-          isNot(contains('scratch')),
-        ),
-        'b|lib/b$jsModuleExtension': isNotNull,
-        'b|lib/b$jsSourceMapExtension': isNotNull,
-        'b|lib/b$metadataExtension': decodedMatches(isNot(contains('scratch'))),
-      });
+      final expectedOutputs = Map.of(startingExpectedOutputs)
+        ..addAll({
+          'a|lib/a$jsModuleExtension': isNotNull,
+          'a|lib/a$jsSourceMapExtension': isNotNull,
+          'a|lib/a$metadataExtension': decodedMatches(
+            isNot(contains('scratch')),
+          ),
+          'a|web/index$jsModuleExtension': isNotNull,
+          'a|web/index$jsSourceMapExtension': isNotNull,
+          'a|web/index$metadataExtension': decodedMatches(
+            isNot(contains('scratch')),
+          ),
+          'b|lib/b$jsModuleExtension': isNotNull,
+          'b|lib/b$jsSourceMapExtension': isNotNull,
+          'b|lib/b$metadataExtension': decodedMatches(
+            isNot(contains('scratch')),
+          ),
+        });
       await testBuilders(
         [...startingBuilders, builder],
         startingAssets,

@@ -131,16 +131,14 @@ class BuildLogLogger implements Logger {
   String get name => phaseName ?? '';
 
   @override
-  Stream<Level?> get onLevelChanged =>
-      throw UnsupportedError(
-        'Builders are not allowed to subscribe to logger level changes.',
-      );
+  Stream<Level?> get onLevelChanged => throw UnsupportedError(
+    'Builders are not allowed to subscribe to logger level changes.',
+  );
 
   @override
-  Stream<LogRecord> get onRecord =>
-      throw UnsupportedError(
-        'Builders are not allowed to subscribe to log records.',
-      );
+  Stream<LogRecord> get onRecord => throw UnsupportedError(
+    'Builders are not allowed to subscribe to log records.',
+  );
 
   @override
   Logger? get parent => null;

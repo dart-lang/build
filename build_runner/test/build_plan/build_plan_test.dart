@@ -5,20 +5,28 @@
 import 'dart:convert';
 
 import 'package:build/build.dart';
-import 'package:build/experiments.dart';
-import 'package:build_config/build_config.dart' hide BuilderDefinition;
+import 'package:build_config/build_config.dart'
+    hide BuilderDefinition, PostProcessBuilderDefinition;
+import 'package:build_runner/src/build/asset_content.dart';
 import 'package:build_runner/src/build/build_state/asset_graph_json.dart';
 import 'package:build_runner/src/build/build_state/build_state.dart';
 import 'package:build_runner/src/build/build_state/build_step_result.dart';
+import 'package:build_runner/src/build/build_state/post_process_build_step_id.dart';
+import 'package:build_runner/src/build/build_state/post_process_build_step_result.dart';
 import 'package:build_runner/src/build/library_cycle_graph/phased_asset_deps.dart';
+import 'package:build_runner/src/build_plan/asset_file.dart';
 import 'package:build_runner/src/build_plan/build_options.dart';
 import 'package:build_runner/src/build_plan/build_package.dart';
 import 'package:build_runner/src/build_plan/build_packages.dart';
 import 'package:build_runner/src/build_plan/build_plan.dart';
+import 'package:build_runner/src/build_plan/build_spec.dart';
 import 'package:build_runner/src/build_plan/builder_definition.dart';
 import 'package:build_runner/src/build_plan/builder_factories.dart';
+import 'package:build_runner/src/build_plan/output_strategy.dart';
+
 import 'package:build_runner/src/build_plan/testing_overrides.dart';
 import 'package:build_runner/src/constants.dart';
+import 'package:build_runner/src/exceptions.dart';
 import 'package:build_runner/src/io/reader_writer.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
@@ -27,6 +35,8 @@ import 'package:test/test.dart';
 import '../common/common.dart';
 
 void main() {
+  setUpTestLogging();
+
   group('BuildPlan', () {
     final assetId = AssetId('a', 'lib/a.dart');
     final outputId = AssetId('a', 'lib/a.dart.copy');
@@ -40,6 +50,19 @@ void main() {
     late TestingOverrides testingOverrides;
     late BuildPlan buildPlan;
 
+    Future<BuildPlan> loadPlan([
+      TestingOverrides? overrides,
+      BuilderFactories? factories,
+    ]) async {
+      return BuildPlan.load(
+        await BuildSpec.load(
+          builderFactories: factories ?? builderFactories,
+          buildOptions: buildOptions,
+          testingOverrides: overrides ?? testingOverrides,
+        ),
+      );
+    }
+
     setUp(() async {
       buildPackages = BuildPackages.singlePackageBuild('a', [
         BuildPackage.forTesting(name: 'a', watch: true, isOutput: true),
@@ -49,24 +72,16 @@ void main() {
       await readerWriter.writeAsString(assetId2, '// other');
       buildOptions = BuildOptions.forTests();
       builderFactories = BuilderFactories({
-        '': [(_) => TestBuilder()],
+        'b1': [(_) => TestBuilder()],
         'b2': [(_) => TestBuilder(buildExtensions: appendExtension('.copy2'))],
       });
       testingOverrides = TestingOverrides(
-        builderDefinitions: [BuilderDefinition('')].build(),
+        builderDefinitions: [BuilderDefinition('b1')].build(),
         readerWriter: readerWriter,
         buildPackages: buildPackages,
         checkBuilderFreshness: false,
       );
-      buildPlan = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides,
-      );
-    });
-
-    test('loads with no previous build state', () async {
-      expect(buildPlan.takePreviousBuildState(), null);
+      buildPlan = await loadPlan();
     });
 
     Future<void> writeBuildStateAndPlan(
@@ -76,194 +91,41 @@ void main() {
       await readerWriter.writeAsBytes(
         assetGraphJsonId,
         AssetGraphJson.serialize(
-          buildPlanDigest: buildPlan.buildPlanDigest,
-          buildState: buildState,
+          buildPlanDigest: buildPlan.buildSpec.buildPlanDigest,
+          buildState: buildState.toIncrementalBuildState(),
           phasedAssetDeps: PhasedAssetDeps(),
         ),
       );
     }
 
-    test('loads previous build state', () async {
-      final buildState = buildPlan.takeBuildState();
-      await writeBuildStateAndPlan(buildState, buildPlan);
-      buildPlan = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides,
-      );
-      final loadedState = buildPlan.takePreviousBuildState();
-
-      expect(loadedState.toString(), buildState.toString());
-    });
-
-    test('requires restart if a factory is missing', () async {
-      final buildPlan = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides.copyWith(
-          builderDefinitions: [BuilderDefinition('missing')].build(),
-        ),
-      );
-
-      expect(buildPlan.buildStepPlan.buildPhases.inBuildPhases.isEmpty, true);
-      expect(buildPlan.restartIsNeeded, true);
-    });
-
-    test('discards previous build state if build phases changed', () async {
-      final buildState = buildPlan.takeBuildState();
-      await writeBuildStateAndPlan(buildState, buildPlan);
-
-      buildPlan = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides.copyWith(
-          builderDefinitions:
-              [
-                BuilderDefinition(''),
-                // Apply a second builder so build phases change.
-                BuilderDefinition('b2'),
-              ].build(),
-        ),
-      );
-
-      expect(buildPlan.takePreviousBuildState(), null);
-
-      // The old state file is in [BuildPlan#filesToDelete] because it's
-      // invalid.
-      expect(await readerWriter.canRead(assetGraphJsonId), true);
-      await buildPlan.deleteFilesAndFolders();
-      buildPlan.readerWriter.cache.flush();
-      expect(await readerWriter.canRead(assetGraphJsonId), false);
-    });
-
-    test('tracks lost outputs if build phases changed', () async {
-      var buildPlan = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides.copyWith(
-          builderDefinitions:
-              [
-                BuilderDefinition(
-                  '',
-                  // Hidden output is easy to find and delete, it's under one
-                  // generated root. Unhide the output so there can be lost
-                  // outputs.
-                  hideOutput: false,
-                ),
-              ].build(),
-        ),
-      );
-      final buildState = buildPlan.takeBuildState();
-
-      // Write an output and add it to the build state as if it was built.
-      await readerWriter.writeAsString(outputId, '// output');
-      final step = buildPlan.buildStepPlan.stepForDeclaredOutput(outputId);
-      buildState.updateBuildStepResult(
-        step,
-        BuildStepResult((b) {
-          b.isHidden = false;
-          b.outputs[outputId] = Digest([]);
-        }),
-      );
-      await writeBuildStateAndPlan(buildState, buildPlan);
-
-      buildPlan = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides.copyWith(
-          builderDefinitions:
-              [
-                BuilderDefinition(''),
-                // Apply a second builder so build phases change.
-                BuilderDefinition('b2'),
-              ].build(),
-        ),
-      );
-
-      expect(buildPlan.takePreviousBuildState(), null);
-      expect(buildPlan.filesToDelete, isNotEmpty);
-
-      // `BuildPlan` can delete lost outputs.
-      expect(await readerWriter.canRead(outputId), true);
-      await buildPlan.deleteFilesAndFolders();
-      buildPlan.readerWriter.cache.flush();
-      expect(await readerWriter.canRead(outputId), false);
-    });
-
-    test('discards previous build state if SDK version changed', () async {
-      final buildState = buildPlan.takeBuildState();
-      await writeBuildStateAndPlan(buildState, buildPlan);
-
-      buildPlan = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides.copyWith(
-          builderDefinitions:
-              [BuilderDefinition(''), BuilderDefinition('b2')].build(),
-        ),
-      );
-
-      expect(buildPlan.takePreviousBuildState(), null);
-    });
-
-    test('discards previous build state if packages changed', () async {
-      final buildState = buildPlan.takeBuildState();
-      await writeBuildStateAndPlan(buildState, buildPlan);
-
-      final buildPackages2 = BuildPackages.singlePackageBuild('b', [
-        BuildPackage.forTesting(name: 'b', watch: true, isOutput: true),
-      ]);
-      final testingOverrides2 = testingOverrides.copyWith(
-        buildPackages: buildPackages2,
-      );
-      buildPlan = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides2,
-      );
-
-      expect(buildPlan.takePreviousBuildState(), null);
-    });
-
-    test(
-      'discards previous build state if enabled experiments changed',
-      () async {
-        final buildState = buildPlan.takeBuildState();
-        await writeBuildStateAndPlan(buildState, buildPlan);
-
-        buildPlan = await withEnabledExperiments(
-          () => BuildPlan.load(
-            builderFactories: builderFactories,
-            buildOptions: buildOptions,
-            testingOverrides: testingOverrides,
-          ),
-          ['an_experiment'],
-        );
-
-        expect(buildPlan.takePreviousBuildState(), null);
-      },
-    );
-
     test('reports updates', () async {
-      final buildState = buildPlan.takeBuildState();
+      final buildState = BuildState(
+        buildStepPlan: buildPlan.buildStepPlan,
+        sources: {assetId: null, assetId2: null},
+      );
 
       // Write an output and add it to the build state as if it was built.
       await readerWriter.writeAsString(outputId, '// output');
       final stepId = buildPlan.buildStepPlan.stepForDeclaredOutput(outputId);
-      buildState.updateBuildStepResult(
-        stepId,
-        BuildStepResult((b) {
-          b.isHidden = false;
-          b.outputs[outputId] = Digest([]);
+      buildState.addBuildStepResult(
+        step: stepId,
+        result: BuildStepResult((b) {
+          b.result = true;
+          b.inArtifactTree = false;
+          b.outputs.add(outputId);
         }),
+        contents: {
+          outputId: AssetContent.string('// output', digest: Digest([])),
+        },
       );
       // Give digests to inputs so they are monitored for modifications.
-      buildState.updateSourceDigest(assetId2, Digest([]));
+      buildState.updateSourceContent(assetId, AssetContent.bytes([]));
+      buildState.updateSourceContent(assetId2, AssetContent.bytes([]));
 
       await writeBuildStateAndPlan(buildState, buildPlan);
 
       // Remove source.
-      await readerWriter.delete(assetId);
+      await readerWriter.delete(AssetFile.atPackagePath(assetId));
       // Change source.
       await readerWriter.writeAsString(assetId2, 'changed');
       // Add source.
@@ -271,15 +133,72 @@ void main() {
       await readerWriter.writeAsString(assetId3, '');
 
       // Remove generated.
-      await readerWriter.delete(outputId);
+      await readerWriter.delete(AssetFile.atPackagePath(outputId));
 
-      buildPlan = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides,
+      buildPlan = await loadPlan();
+
+      expect(
+        buildPlan.buildInputs.updatedSources,
+        unorderedEquals([assetId2, assetId3]),
+      );
+      expect(buildPlan.buildInputs.deletedSources, [assetId]);
+      expect(buildPlan.buildInputs.invalidOutputs, [outputId]);
+    });
+
+    test('keep output strategy preserves manual changes to outputs '
+        'with old digest', () async {
+      buildOptions = BuildOptions.forTests(outputStrategy: OutputStrategy.keep);
+      testingOverrides = testingOverrides.copyWith(
+        builderDefinitions: [
+          BuilderDefinition('b1', outputsToArtifactTree: false),
+        ].build(),
+      );
+      buildPlan = await loadPlan();
+
+      final buildState = BuildState(
+        buildStepPlan: buildPlan.buildStepPlan,
+        sources: {assetId: null, assetId2: null},
       );
 
-      expect(buildPlan.updates!, {assetId, assetId2, assetId3, outputId});
+      await readerWriter.writeAsString(outputId, '// output');
+      final stepId = buildPlan.buildStepPlan.stepForDeclaredOutput(outputId);
+      final initialDigest = md5.convert(utf8.encode('// output'));
+      buildState.addBuildStepResult(
+        step: stepId,
+        result: BuildStepResult((b) {
+          b.result = true;
+          b.inArtifactTree = false;
+          b.outputs.add(outputId);
+        }),
+        contents: {
+          outputId: AssetContent.bytes(
+            utf8.encode('// output'),
+            digest: initialDigest,
+          ),
+        },
+      );
+      buildState.updateSourceContent(
+        assetId,
+        AssetContent.bytes(utf8.encode('// a.dart')),
+      );
+      buildState.updateSourceContent(
+        assetId2,
+        AssetContent.bytes(utf8.encode('// other')),
+      );
+
+      await writeBuildStateAndPlan(buildState, buildPlan);
+
+      await readerWriter.writeAsString(outputId, '// manually edited output');
+
+      buildPlan = await loadPlan();
+
+      expect(buildPlan.buildInputs.invalidOutputs, isEmpty);
+
+      final outputContent =
+          buildPlan.buildInputs.retainedOutputContents[outputId];
+      expect(outputContent, isNotNull);
+      expect(outputContent!.stringValue(), '// manually edited output');
+      expect(outputContent.digest, initialDigest);
     });
 
     test('applies target glob from build config', () async {
@@ -298,15 +217,16 @@ void main() {
         [],
       );
       final buildPlan1 = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides.copyWith(
-          buildConfig: {'a': buildConfig1}.build(),
+        await BuildSpec.load(
+          builderFactories: builderFactories,
+          buildOptions: buildOptions,
+          testingOverrides: testingOverrides.copyWith(
+            buildConfig: {'a': buildConfig1}.build(),
+          ),
         ),
       );
-      final buildState1 = buildPlan1.takeBuildState();
       // Matches the only `*.dart` source.
-      expect(buildState1.sources, <AssetId>{assetId});
+      expect(buildPlan1.buildInputs.sources.toSet(), <AssetId>{assetId});
 
       // Same again but now glob `*.other`.
       final buildConfig2 = runInBuildConfigZone(
@@ -324,222 +244,850 @@ void main() {
         [],
       );
       final buildPlan2 = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides.copyWith(
-          buildConfig: {'a': buildConfig2}.build(),
+        await BuildSpec.load(
+          builderFactories: builderFactories,
+          buildOptions: buildOptions,
+          testingOverrides: testingOverrides.copyWith(
+            buildConfig: {'a': buildConfig2}.build(),
+          ),
         ),
       );
-      final buildState2 = buildPlan2.takeBuildState();
       // Matches the only `*.other` source.
-      expect(buildState2.sources, <AssetId>{assetId2});
+      expect(buildPlan2.buildInputs.sources.toSet(), <AssetId>{assetId2});
     });
 
-    test('tracks cleanBuild when build_plan.json does not exist', () async {
-      final plan = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides,
-      );
-      expect(plan.cleanBuild, isTrue);
-    });
-
-    test(
-      'tracks cleanBuild when build_plan.json compileDigest is fresh',
-      () async {
-        await writeBuildStateAndPlan(buildPlan.takeBuildState(), buildPlan);
-        buildPlan = await BuildPlan.load(
-          builderFactories: builderFactories,
-          buildOptions: buildOptions,
-          testingOverrides: testingOverrides,
-        );
-        expect(buildPlan.cleanBuild, isFalse);
-      },
-    );
-
-    test(
-      'tracks cleanBuild when build_plan.json compileDigest is stale',
-      () async {
-        buildPlan = buildPlan.copyWith(
-          buildPlanDigest: buildPlan.buildPlanDigest.rebuild(
-            (b) => b.compileDigest = 'stale_digest',
-          ),
-        );
-        await writeBuildStateAndPlan(buildPlan.takeBuildState(), buildPlan);
-
-        buildPlan = await BuildPlan.load(
-          builderFactories: builderFactories,
-          buildOptions: buildOptions,
-          testingOverrides: testingOverrides,
-        );
-        expect(buildPlan.cleanBuild, isTrue);
-      },
-    );
-
-    test('tracks triggersChanged when triggers change', () async {
-      buildPlan = buildPlan.copyWith(
-        buildPlanDigest: buildPlan.buildPlanDigest.rebuild(
-          (b) => b.buildTriggersDigest = 'triggers_1',
+    test('throws CannotBuildException if there are conflicting outputs '
+        'in dependencies', () async {
+      final buildPackages = BuildPackages.singlePackageBuild('a', [
+        BuildPackage.forTesting(
+          name: 'a',
+          watch: true,
+          isOutput: true,
+          dependencies: ['dep'],
         ),
-      );
-      await writeBuildStateAndPlan(buildPlan.takeBuildState(), buildPlan);
-
-      final buildConfig2 = runInBuildConfigZone(
-        () {
-          return BuildConfig(
-            packageName: 'a',
-            buildTargets: {
-              'a|a': BuildTarget(
-                builders: {
-                  '': TargetBuilderConfig(
-                    generateFor: const InputSet(include: ['lib/*.dart']),
-                  ),
-                },
-              ),
-            },
-          );
-        },
-        'a',
-        [],
-      );
-
-      final buildPlan2 = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides.copyWith(
-          buildConfig: {'a': buildConfig2}.build(),
-        ),
-      );
-      expect(buildPlan2.cleanBuild, isFalse);
-      expect(buildPlan2.triggersChanged, isTrue);
-    });
-
-    test('tracks phaseOptionsChanged when builder options change', () async {
-      buildPlan = buildPlan.copyWith(
-        buildPlanDigest: buildPlan.buildPlanDigest.rebuild(
-          (b) => b.inBuildPhasesOptionsDigests[0] = 'dummy_digest_1',
-        ),
-      );
-      await writeBuildStateAndPlan(buildPlan.takeBuildState(), buildPlan);
-
-      final buildConfig2 = runInBuildConfigZone(
-        () {
-          return BuildConfig(
-            packageName: 'a',
-            buildTargets: {
-              'a|a': BuildTarget(
-                builders: {
-                  '': TargetBuilderConfig(
-                    options: const {'some_option': 'changed'},
-                  ),
-                },
-              ),
-            },
-          );
-        },
-        'a',
-        [],
-      );
-
-      final buildPlan2 = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides.copyWith(
-          buildConfig: {'a': buildConfig2}.build(),
-        ),
-      );
-      expect(buildPlan2.cleanBuild, isFalse);
-      expect(buildPlan2.phaseOptionsChanged(0), isTrue);
-    });
-
-    test('tracks buildPhasesDigest when build phases change', () async {
-      buildPlan = buildPlan.copyWith(
-        buildPlanDigest: buildPlan.buildPlanDigest.rebuild(
-          (b) => b.buildPhasesDigest = 'stale_digest',
-        ),
-      );
-      await writeBuildStateAndPlan(buildPlan.takeBuildState(), buildPlan);
-
-      buildPlan = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides,
-      );
-      expect(buildPlan.cleanBuild, isTrue);
-    });
-
-    test('tracks dartVersion when SDK version changes', () async {
-      buildPlan = buildPlan.copyWith(
-        buildPlanDigest: buildPlan.buildPlanDigest.rebuild(
-          (b) => b.dartVersion = 'stale_version',
-        ),
-      );
-      await writeBuildStateAndPlan(buildPlan.takeBuildState(), buildPlan);
-
-      buildPlan = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides,
-      );
-      expect(buildPlan.cleanBuild, isTrue);
-    });
-
-    test('tracks enabledExperiments when experiments change', () async {
-      buildPlan = buildPlan.copyWith(
-        buildPlanDigest: buildPlan.buildPlanDigest.rebuild(
-          (b) => b.enabledExperiments.add('stale_experiment'),
-        ),
-      );
-      await writeBuildStateAndPlan(buildPlan.takeBuildState(), buildPlan);
-
-      buildPlan = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides,
-      );
-      expect(buildPlan.cleanBuild, isTrue);
-    });
-
-    test(
-      'tracks packageLanguageVersions when package language versions change',
-      () async {
-        buildPlan = buildPlan.copyWith(
-          buildPlanDigest: buildPlan.buildPlanDigest.rebuild(
-            (b) => b.packageLanguageVersions['a'] = '1.0',
-          ),
-        );
-        await writeBuildStateAndPlan(buildPlan.takeBuildState(), buildPlan);
-
-        buildPlan = await BuildPlan.load(
-          builderFactories: builderFactories,
-          buildOptions: buildOptions,
-          testingOverrides: testingOverrides,
-        );
-        expect(buildPlan.cleanBuild, isTrue);
-      },
-    );
-
-    test('tracks cleanBuild when asset_graph.json version is stale', () async {
-      final assetGraphJsonId = AssetId(
-        buildPackages.outputRoot,
-        assetGraphJsonPath,
-      );
-      await writeBuildStateAndPlan(buildPlan.takeBuildState(), buildPlan);
-
-      final decodedMap =
-          json.decode(await readerWriter.readAsString(assetGraphJsonId)) as Map;
-      decodedMap['version'] = 999;
+        BuildPackage.forTesting(name: 'dep', watch: true, isOutput: false),
+      ]);
+      final readerWriter = InternalTestReaderWriter(outputRootPackage: 'a');
+      await readerWriter.writeAsString(AssetId('a', 'lib/a.dart'), '// a.dart');
       await readerWriter.writeAsString(
-        assetGraphJsonId,
-        json.encode(decodedMap),
+        AssetId('dep', 'lib/a.dart'),
+        '// dep a.dart',
       );
 
-      buildPlan = await BuildPlan.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides,
+      final conflictId = AssetId('dep', 'lib/a.dart.copy');
+      await readerWriter.writeAsString(conflictId, '// conflict');
+
+      final testingOverrides = TestingOverrides(
+        builderDefinitions: [
+          BuilderDefinition(
+            'b1',
+            outputsToArtifactTree: true,
+            autoApply: AutoApply.allPackages,
+          ),
+        ].build(),
+        readerWriter: readerWriter,
+        buildPackages: buildPackages,
+        checkBuilderFreshness: false,
       );
-      expect(buildPlan.cleanBuild, isTrue);
+
+      expect(
+        () async => await BuildPlan.load(
+          await BuildSpec.load(
+            builderFactories: builderFactories,
+            buildOptions: buildOptions,
+            testingOverrides: testingOverrides,
+          ),
+        ),
+        throwsA(const TypeMatcher<CannotBuildException>()),
+      );
+    });
+
+    group('incremental planning', () {
+      test('deleted source is marked as deleted', () async {
+        final buildState = BuildState(
+          buildStepPlan: buildPlan.buildStepPlan,
+          sources: {assetId: null},
+        );
+        buildState.updateSourceContent(
+          assetId,
+          AssetContent.string('// a.dart'),
+        );
+        await writeBuildStateAndPlan(buildState, buildPlan);
+
+        await readerWriter.delete(AssetFile.atPackagePath(assetId));
+        final newPlan = await loadPlan();
+        expect(newPlan.buildInputs.deletedSources, contains(assetId));
+        expect(newPlan.buildInputs.sources, isNot(contains(assetId)));
+      });
+
+      test('deleted output is marked as invalid output', () async {
+        final buildState = BuildState(
+          buildStepPlan: buildPlan.buildStepPlan,
+          sources: {assetId: null},
+        );
+        await readerWriter.writeAsString(outputId, '// output');
+        final stepId = buildPlan.buildStepPlan.stepForDeclaredOutput(outputId);
+        buildState.addBuildStepResult(
+          step: stepId,
+          result: BuildStepResult((b) {
+            b.result = true;
+            b.inArtifactTree = false;
+            b.outputs.add(outputId);
+          }),
+          contents: {outputId: AssetContent.string('// output')},
+        );
+        buildState.updateSourceContent(
+          assetId,
+          AssetContent.string('// a.dart'),
+        );
+        await writeBuildStateAndPlan(buildState, buildPlan);
+
+        await readerWriter.delete(AssetFile.atPackagePath(outputId));
+        final newPlan = await loadPlan();
+        expect(newPlan.buildInputs.invalidOutputs, contains(outputId));
+      });
+
+      test('new source file is marked as updated source', () async {
+        final buildState = BuildState(
+          buildStepPlan: buildPlan.buildStepPlan,
+          sources: {assetId: null},
+        );
+        buildState.updateSourceContent(
+          assetId,
+          AssetContent.string('// a.dart'),
+        );
+        await writeBuildStateAndPlan(buildState, buildPlan);
+
+        final newSourceId = AssetId('a', 'lib/new_file.dart');
+        await readerWriter.writeAsString(newSourceId, '// new');
+        final newPlan = await loadPlan();
+        expect(newPlan.buildInputs.updatedSources, contains(newSourceId));
+        expect(newPlan.buildInputs.sources, contains(newSourceId));
+      });
+
+      test('stale artifact tree file is marked as invalid output', () async {
+        final buildState = BuildState(
+          buildStepPlan: buildPlan.buildStepPlan,
+          sources: {assetId: null},
+        );
+        buildState.updateSourceContent(
+          assetId,
+          AssetContent.string('// a.dart'),
+        );
+        await writeBuildStateAndPlan(buildState, buildPlan);
+
+        final staleArtifactTreeId = AssetId('a', 'lib/stale.dart.copy');
+        await readerWriter.writeAsString(
+          staleArtifactTreeId,
+          '// stale',
+          inArtifactTree: true,
+        );
+        final newPlan = await loadPlan();
+        expect(
+          newPlan.buildInputs.invalidOutputs,
+          contains(staleArtifactTreeId),
+        );
+      });
+
+      test('modified source is marked as updated source', () async {
+        final buildState = BuildState(
+          buildStepPlan: buildPlan.buildStepPlan,
+          sources: {assetId: null},
+        );
+        buildState.updateSourceContent(
+          assetId,
+          AssetContent.string('// a.dart'),
+        );
+        await writeBuildStateAndPlan(buildState, buildPlan);
+
+        await readerWriter.writeAsString(assetId, '// modified content');
+        final newPlan = await loadPlan();
+        expect(newPlan.buildInputs.updatedSources, contains(assetId));
+      });
+
+      test('modified output is marked as invalid output', () async {
+        final buildState = BuildState(
+          buildStepPlan: buildPlan.buildStepPlan,
+          sources: {assetId: null},
+        );
+        await readerWriter.writeAsString(outputId, '// output');
+        final stepId = buildPlan.buildStepPlan.stepForDeclaredOutput(outputId);
+        buildState.addBuildStepResult(
+          step: stepId,
+          result: BuildStepResult((b) {
+            b.result = true;
+            b.inArtifactTree = false;
+            b.outputs.add(outputId);
+          }),
+          contents: {outputId: AssetContent.string('// output')},
+        );
+        buildState.updateSourceContent(
+          assetId,
+          AssetContent.string('// a.dart'),
+        );
+        await writeBuildStateAndPlan(buildState, buildPlan);
+
+        await readerWriter.writeAsString(outputId, '// modified output');
+        final newPlan = await loadPlan();
+        expect(newPlan.buildInputs.invalidOutputs, contains(outputId));
+      });
+
+      test('displaced location where source conflicts with artifact tree '
+          'output marks conflicting source output to delete and keeps '
+          'artifact tree output valid', () async {
+        final buildState = BuildState(
+          buildStepPlan: buildPlan.buildStepPlan,
+          sources: {assetId: null, assetId2: null},
+        );
+        final artifactTreeOutputId = AssetId('a', 'lib/a.dart.copy');
+        await readerWriter.writeAsString(
+          artifactTreeOutputId,
+          '// artifact tree output',
+          inArtifactTree: true,
+        );
+        final stepId = buildPlan.buildStepPlan.stepForDeclaredOutput(
+          artifactTreeOutputId,
+        );
+        buildState.addBuildStepResult(
+          step: stepId,
+          result: BuildStepResult((b) {
+            b.result = true;
+            b.inArtifactTree = true;
+            b.outputs.add(artifactTreeOutputId);
+          }),
+          contents: {
+            artifactTreeOutputId: AssetContent.string(
+              '// artifact tree output',
+            ),
+          },
+        );
+        buildState.updateSourceContent(
+          assetId,
+          AssetContent.string('// a.dart'),
+        );
+        buildState.updateSourceContent(
+          assetId2,
+          AssetContent.string('// other'),
+        );
+        await writeBuildStateAndPlan(buildState, buildPlan);
+
+        // Now user creates a source file with the same ID at the package
+        // path.
+        await readerWriter.writeAsString(
+          artifactTreeOutputId,
+          '// conflicting source',
+        );
+        final newPlan = await loadPlan();
+        expect(
+          newPlan.conflictingOutputs,
+          contains(AssetFile.atPackagePath(artifactTreeOutputId)),
+        );
+        expect(
+          newPlan.buildInputs.invalidOutputs,
+          isNot(contains(artifactTreeOutputId)),
+        );
+        expect(
+          newPlan.buildInputs.sources,
+          isNot(contains(artifactTreeOutputId)),
+        );
+      });
+
+      test('throws CannotBuildException if incremental build encounters '
+          'conflicting outputs in dependencies', () async {
+        final buildPackages = BuildPackages.singlePackageBuild('a', [
+          BuildPackage.forTesting(
+            name: 'a',
+            watch: true,
+            isOutput: true,
+            dependencies: ['dep'],
+          ),
+          BuildPackage.forTesting(name: 'dep', watch: true, isOutput: false),
+        ]);
+        final readerWriter = InternalTestReaderWriter(outputRootPackage: 'a');
+        final aId = AssetId('a', 'lib/a.dart');
+        final depSourceId = AssetId('dep', 'lib/a.dart');
+        await readerWriter.writeAsString(aId, '// a.dart');
+        await readerWriter.writeAsString(depSourceId, '// dep a.dart');
+
+        final testingOverrides = TestingOverrides(
+          builderDefinitions: [
+            BuilderDefinition(
+              'b1',
+              outputsToArtifactTree: true,
+              autoApply: AutoApply.allPackages,
+            ),
+          ].build(),
+          readerWriter: readerWriter,
+          buildPackages: buildPackages,
+          checkBuilderFreshness: false,
+        );
+
+        final initialPlan = await BuildPlan.load(
+          await BuildSpec.load(
+            builderFactories: builderFactories,
+            buildOptions: buildOptions,
+            testingOverrides: testingOverrides,
+          ),
+        );
+        final buildState = BuildState(
+          buildStepPlan: initialPlan.buildStepPlan,
+          sources: {aId: null, depSourceId: null},
+        );
+        await readerWriter.writeAsBytes(
+          AssetId('a', assetGraphJsonPath),
+          AssetGraphJson.serialize(
+            buildPlanDigest: initialPlan.buildSpec.buildPlanDigest,
+            buildState: buildState.toIncrementalBuildState(),
+            phasedAssetDeps: PhasedAssetDeps(),
+          ),
+        );
+
+        // Create a conflicting source file in the dependency.
+        final depConflictId = AssetId('dep', 'lib/a.dart.copy');
+        await readerWriter.writeAsString(depConflictId, '// conflict in dep');
+
+        expect(
+          () async => await BuildPlan.load(
+            await BuildSpec.load(
+              builderFactories: builderFactories,
+              buildOptions: buildOptions,
+              testingOverrides: testingOverrides,
+            ),
+          ),
+          throwsA(const TypeMatcher<CannotBuildException>()),
+        );
+      });
+
+      test('declared output that was never generated is not marked as invalid '
+          'output when missing from disk', () async {
+        final buildState = BuildState(
+          buildStepPlan: buildPlan.buildStepPlan,
+          sources: {assetId: null, assetId2: null},
+        );
+        buildState.updateSourceContent(
+          assetId,
+          AssetContent.string('// a.dart'),
+        );
+        buildState.updateSourceContent(
+          assetId2,
+          AssetContent.string('// other'),
+        );
+        await writeBuildStateAndPlan(buildState, buildPlan);
+
+        final loadedPlan = await loadPlan();
+        final updatedPlan = await loadedPlan.updateForFileChanges({
+          AssetFile.atPackagePath(outputId),
+          AssetFile.inArtifactTree(outputId),
+        });
+        expect(
+          updatedPlan.buildInputs.invalidOutputs,
+          isNot(contains(outputId)),
+        );
+        expect(
+          updatedPlan.buildInputs.deletedSources,
+          isNot(contains(outputId)),
+        );
+      });
+
+      test(
+        'declared output that was never generated is marked as invalid output '
+        'and conflicting output when created in artifact tree',
+        () async {
+          final buildState = BuildState(
+            buildStepPlan: buildPlan.buildStepPlan,
+            sources: {assetId: null, assetId2: null},
+          );
+          buildState.updateSourceContent(
+            assetId,
+            AssetContent.string('// a.dart'),
+          );
+          buildState.updateSourceContent(
+            assetId2,
+            AssetContent.string('// other'),
+          );
+          await writeBuildStateAndPlan(buildState, buildPlan);
+
+          await readerWriter.writeAsString(
+            outputId,
+            '// unexpected artifact tree file',
+            inArtifactTree: true,
+          );
+
+          final loadedPlan = await loadPlan();
+          expect(
+            loadedPlan.conflictingOutputs,
+            contains(AssetFile.inArtifactTree(outputId)),
+          );
+          expect(loadedPlan.buildInputs.invalidOutputs, contains(outputId));
+        },
+      );
+
+      test('existing source is not marked as invalid output when unexpected '
+          'artifact tree file is created', () async {
+        final buildState = BuildState(
+          buildStepPlan: buildPlan.buildStepPlan,
+          sources: {assetId: null, assetId2: null},
+        );
+        buildState.updateSourceContent(
+          assetId,
+          AssetContent.string('// a.dart'),
+        );
+        buildState.updateSourceContent(
+          assetId2,
+          AssetContent.string('// other'),
+        );
+        await writeBuildStateAndPlan(buildState, buildPlan);
+
+        // An unexpected artifact tree file appears with the same ID as an
+        // existing source.
+        await readerWriter.writeAsString(
+          assetId,
+          '// unexpected artifact tree file',
+          inArtifactTree: true,
+        );
+
+        final loadedPlan = await loadPlan();
+        expect(
+          loadedPlan.conflictingOutputs,
+          contains(AssetFile.inArtifactTree(assetId)),
+        );
+        expect(loadedPlan.buildInputs.invalidOutputs, isNot(contains(assetId)));
+        expect(loadedPlan.buildInputs.sources, contains(assetId));
+      });
+
+      test(
+        'incremental build discovers an input and its output simultaneously',
+        () async {
+          final buildState = BuildState(
+            buildStepPlan: buildPlan.buildStepPlan,
+            sources: {assetId2: null},
+          );
+          buildState.updateSourceContent(
+            assetId2,
+            AssetContent.string('// other'),
+          );
+          await writeBuildStateAndPlan(buildState, buildPlan);
+
+          // Write both a new input and a conflicting output simultaneously.
+          final newInputId = AssetId('a', 'lib/new_input.dart');
+          final newOutputId = AssetId('a', 'lib/new_input.dart.copy');
+          await readerWriter.writeAsString(newInputId, '// new input');
+          await readerWriter.writeAsString(
+            newOutputId,
+            '// conflicting output',
+          );
+
+          final loadedPlan = await loadPlan();
+
+          // Input is marked as a source.
+          expect(loadedPlan.buildInputs.sources, contains(newInputId));
+          expect(loadedPlan.buildInputs.updatedSources, contains(newInputId));
+
+          // Output is marked conflicting and not retained as a source.
+          expect(
+            loadedPlan.conflictingOutputs,
+            contains(AssetFile.atPackagePath(newOutputId)),
+          );
+          expect(loadedPlan.buildInputs.sources, isNot(contains(newOutputId)));
+
+          // Output is not used as a primary input.
+          expect(
+            loadedPlan.buildStepPlan.declaredOutputsByPrimaryInput[newOutputId],
+            isEmpty,
+          );
+        },
+      );
+
+      test(
+        'newly discovered source with unexpected artifact tree file does not '
+        'mark source as invalid output',
+        () async {
+          final buildState = BuildState(
+            buildStepPlan: buildPlan.buildStepPlan,
+            sources: {assetId: null},
+          );
+          buildState.updateSourceContent(
+            assetId,
+            AssetContent.string('// a.dart'),
+          );
+          await writeBuildStateAndPlan(buildState, buildPlan);
+
+          final newSourceId = AssetId('a', 'lib/new_source.dart');
+          await readerWriter.writeAsString(newSourceId, '// new source');
+          await readerWriter.writeAsString(
+            newSourceId,
+            '// unexpected artifact tree file',
+            inArtifactTree: true,
+          );
+
+          final loadedPlan = await loadPlan();
+          expect(
+            loadedPlan.conflictingOutputs,
+            contains(AssetFile.inArtifactTree(newSourceId)),
+          );
+          expect(
+            loadedPlan.buildInputs.invalidOutputs,
+            isNot(contains(newSourceId)),
+          );
+          expect(loadedPlan.buildInputs.sources, contains(newSourceId));
+          expect(loadedPlan.buildInputs.updatedSources, contains(newSourceId));
+        },
+      );
+
+      test('deleted input with artifact tree post process output does not mark '
+          'new source as conflicting output', () async {
+        final inputId = AssetId('a', 'lib/input.txt');
+        final postOutputId = AssetId('a', 'lib/input.txt.post');
+        await readerWriter.writeAsString(inputId, '// input');
+        await readerWriter.writeAsString(
+          postOutputId,
+          '// post',
+          inArtifactTree: true,
+        );
+
+        final postBuilderDef = PostProcessBuilderDefinition('a:post');
+        final postOverrides = TestingOverrides(
+          builderDefinitions: [
+            BuilderDefinition(
+              'b1',
+              appliesBuilders: ['a:post'],
+              autoApply: AutoApply.rootPackage,
+            ),
+            postBuilderDef,
+          ].build(),
+          readerWriter: readerWriter,
+          buildPackages: buildPackages,
+          checkBuilderFreshness: false,
+        );
+        final postFactories = BuilderFactories(
+          {
+            'b1': [(_) => TestBuilder()],
+          },
+          postProcessBuilderFactories: {
+            'a:post': (_) =>
+                CopyingPostProcessBuilder(outputExtension: '.post'),
+          },
+        );
+
+        final initialPlan = await loadPlan(postOverrides, postFactories);
+        final postStepId = PostProcessBuildStepId(
+          input: inputId,
+          actionNumber: 0,
+        );
+        final buildState = BuildState(
+          buildStepPlan: initialPlan.buildStepPlan,
+          sources: {inputId: null, assetId: null},
+        );
+        buildState.addPostProcessBuildStepResult(
+          step: postStepId,
+          result: PostProcessBuildStepResult(
+            inArtifactTree: true,
+            outputs: [postOutputId],
+          ),
+          contents: {postOutputId: AssetContent.string('// post')},
+        );
+        buildState.updateSourceContent(
+          inputId,
+          AssetContent.string('// input'),
+        );
+        await writeBuildStateAndPlan(buildState, initialPlan);
+
+        // Delete the input and create a source file at the old output path.
+        await readerWriter.delete(AssetFile.atPackagePath(inputId));
+        await readerWriter.writeAsString(postOutputId, '// new source');
+
+        final loadedPlan = await loadPlan(postOverrides, postFactories);
+        expect(loadedPlan.buildInputs.sources, contains(postOutputId));
+        expect(loadedPlan.buildInputs.updatedSources, contains(postOutputId));
+        expect(
+          loadedPlan.conflictingOutputs,
+          isNot(contains(AssetFile.atPackagePath(postOutputId))),
+        );
+        expect(
+          loadedPlan.buildInputs.invalidOutputs,
+          isNot(contains(postOutputId)),
+        );
+        expect(
+          loadedPlan.buildInputs.retainedOutputContents.containsKey(
+            postOutputId,
+          ),
+          isFalse,
+        );
+      });
+
+      test('deleted input and deleted artifact tree post process output does '
+          'not mark new source as invalid output', () async {
+        final inputId = AssetId('a', 'lib/input.txt');
+        final postOutputId = AssetId('a', 'lib/input.txt.post');
+        await readerWriter.writeAsString(inputId, '// input');
+        await readerWriter.writeAsString(
+          postOutputId,
+          '// post',
+          inArtifactTree: true,
+        );
+
+        final postBuilderDef = PostProcessBuilderDefinition('a:post');
+        final postOverrides = TestingOverrides(
+          builderDefinitions: [
+            BuilderDefinition(
+              'b1',
+              appliesBuilders: ['a:post'],
+              autoApply: AutoApply.rootPackage,
+            ),
+            postBuilderDef,
+          ].build(),
+          readerWriter: readerWriter,
+          buildPackages: buildPackages,
+          checkBuilderFreshness: false,
+        );
+        final postFactories = BuilderFactories(
+          {
+            'b1': [(_) => TestBuilder()],
+          },
+          postProcessBuilderFactories: {
+            'a:post': (_) =>
+                CopyingPostProcessBuilder(outputExtension: '.post'),
+          },
+        );
+
+        final initialPlan = await loadPlan(postOverrides, postFactories);
+        final postStepId = PostProcessBuildStepId(
+          input: inputId,
+          actionNumber: 0,
+        );
+        final buildState = BuildState(
+          buildStepPlan: initialPlan.buildStepPlan,
+          sources: {inputId: null, assetId: null},
+        );
+        buildState.addPostProcessBuildStepResult(
+          step: postStepId,
+          result: PostProcessBuildStepResult(
+            inArtifactTree: true,
+            outputs: [postOutputId],
+          ),
+          contents: {postOutputId: AssetContent.string('// post')},
+        );
+        buildState.updateSourceContent(
+          inputId,
+          AssetContent.string('// input'),
+        );
+        await writeBuildStateAndPlan(buildState, initialPlan);
+
+        // Delete the input and the old artifact tree output.
+        await readerWriter.delete(AssetFile.atPackagePath(inputId));
+        await readerWriter.delete(AssetFile.inArtifactTree(postOutputId));
+        await readerWriter.writeAsString(postOutputId, '// new source');
+
+        final loadedPlan = await loadPlan(postOverrides, postFactories);
+        expect(loadedPlan.buildInputs.sources, contains(postOutputId));
+        expect(loadedPlan.buildInputs.updatedSources, contains(postOutputId));
+        expect(
+          loadedPlan.conflictingOutputs,
+          isNot(contains(AssetFile.atPackagePath(postOutputId))),
+        );
+        expect(
+          loadedPlan.buildInputs.invalidOutputs,
+          isNot(contains(postOutputId)),
+        );
+      });
+
+      test('existing input with artifact tree post process output marks new '
+          'package path source as conflicting output', () async {
+        final inputId = AssetId('a', 'lib/input.txt');
+        final postOutputId = AssetId('a', 'lib/input.txt.post');
+        await readerWriter.writeAsString(inputId, '// input');
+        await readerWriter.writeAsString(
+          postOutputId,
+          '// post',
+          inArtifactTree: true,
+        );
+
+        final postBuilderDef = PostProcessBuilderDefinition('a:post');
+        final postOverrides = TestingOverrides(
+          builderDefinitions: [
+            BuilderDefinition(
+              'b1',
+              appliesBuilders: ['a:post'],
+              autoApply: AutoApply.rootPackage,
+            ),
+            postBuilderDef,
+          ].build(),
+          readerWriter: readerWriter,
+          buildPackages: buildPackages,
+          checkBuilderFreshness: false,
+        );
+        final postFactories = BuilderFactories(
+          {
+            'b1': [(_) => TestBuilder()],
+          },
+          postProcessBuilderFactories: {
+            'a:post': (_) =>
+                CopyingPostProcessBuilder(outputExtension: '.post'),
+          },
+        );
+
+        final initialPlan = await loadPlan(postOverrides, postFactories);
+        final postStepId = PostProcessBuildStepId(
+          input: inputId,
+          actionNumber: 0,
+        );
+        final buildState = BuildState(
+          buildStepPlan: initialPlan.buildStepPlan,
+          sources: {inputId: null, assetId: null},
+        );
+        buildState.addPostProcessBuildStepResult(
+          step: postStepId,
+          result: PostProcessBuildStepResult(
+            inArtifactTree: true,
+            outputs: [postOutputId],
+          ),
+          contents: {postOutputId: AssetContent.string('// post')},
+        );
+        buildState.updateSourceContent(
+          inputId,
+          AssetContent.string('// input'),
+        );
+        await writeBuildStateAndPlan(buildState, initialPlan);
+
+        // Create a package path file at the post-process output location.
+        await readerWriter.writeAsString(
+          postOutputId,
+          '// package path collision',
+        );
+
+        final loadedPlan = await loadPlan(postOverrides, postFactories);
+        expect(
+          loadedPlan.conflictingOutputs,
+          contains(AssetFile.atPackagePath(postOutputId)),
+        );
+        expect(loadedPlan.buildInputs.sources, isNot(contains(postOutputId)));
+        expect(
+          loadedPlan.buildInputs.updatedSources,
+          isNot(contains(postOutputId)),
+        );
+      });
+
+      test('deleted input with transitive declared output replaced by package '
+          'path source does not mark source as invalid output', () async {
+        final stepId = buildPlan.buildStepPlan.stepForDeclaredOutput(outputId);
+        final buildState = BuildState(
+          buildStepPlan: buildPlan.buildStepPlan,
+          sources: {assetId: null},
+        );
+        buildState.addBuildStepResult(
+          step: stepId,
+          result: BuildStepResult((b) {
+            b.result = true;
+            b.inArtifactTree = true;
+            b.outputs.add(outputId);
+          }),
+          contents: {outputId: AssetContent.string('// copy')},
+        );
+        buildState.updateSourceContent(
+          assetId,
+          AssetContent.string('// a.dart'),
+        );
+        await readerWriter.writeAsString(
+          outputId,
+          '// copy',
+          inArtifactTree: true,
+        );
+        await writeBuildStateAndPlan(buildState, buildPlan);
+
+        // Delete the input and the artifact tree output, and add a package
+        // path source file.
+        await readerWriter.delete(AssetFile.atPackagePath(assetId));
+        await readerWriter.delete(AssetFile.inArtifactTree(outputId));
+        await readerWriter.writeAsString(outputId, '// source content');
+
+        final loadedPlan = await loadPlan();
+        expect(loadedPlan.buildInputs.sources, contains(outputId));
+        expect(
+          loadedPlan.buildInputs.invalidOutputs,
+          isNot(contains(outputId)),
+        );
+      });
+
+      test(
+        'outputs of deleted sources are evicted from retainedOutputContents',
+        () async {
+          final overrides = TestingOverrides(
+            builderDefinitions: [
+              BuilderDefinition('b1', outputsToArtifactTree: false),
+            ].build(),
+            readerWriter: readerWriter,
+            buildPackages: buildPackages,
+            checkBuilderFreshness: false,
+          );
+          final initialPlan = await loadPlan(overrides);
+          final buildState = BuildState(
+            buildStepPlan: initialPlan.buildStepPlan,
+            sources: {assetId: null, assetId2: null},
+          );
+          await readerWriter.writeAsString(outputId, '// copy');
+          final stepId = initialPlan.buildStepPlan.stepForDeclaredOutput(
+            outputId,
+          );
+          final initialDigest = md5.convert(utf8.encode('// copy'));
+          buildState.addBuildStepResult(
+            step: stepId,
+            result: BuildStepResult((b) {
+              b.result = true;
+              b.inArtifactTree = false;
+              b.outputs.add(outputId);
+            }),
+            contents: {
+              outputId: AssetContent.bytes(
+                utf8.encode('// copy'),
+                digest: initialDigest,
+              ),
+            },
+          );
+          buildState.updateSourceContent(
+            assetId,
+            AssetContent.bytes(utf8.encode('// a.dart')),
+          );
+          await writeBuildStateAndPlan(buildState, initialPlan);
+
+          // Delete the input source.
+          await readerWriter.delete(AssetFile.atPackagePath(assetId));
+
+          final loadedPlan = await loadPlan(overrides);
+          expect(loadedPlan.buildInputs.deletedSources, contains(assetId));
+          expect(loadedPlan.buildInputs.invalidOutputs, contains(outputId));
+          expect(
+            loadedPlan.buildInputs.retainedOutputContents.containsKey(outputId),
+            isFalse,
+          );
+        },
+      );
+
+      test('withCompatiblePreviousBuild resets change tracking sets and '
+          'cleanBuild', () async {
+        final buildPlan = await loadPlan();
+        final updatedPlan = buildPlan.rebuild(
+          (b) => b
+            ..buildInputs.cleanBuild = false
+            ..buildInputs.sources.remove(assetId)
+            ..buildInputs.sourceContents.remove(assetId)
+            ..buildInputs.deletedSources.add(assetId)
+            ..buildInputs.updatedSources.add(assetId2)
+            ..buildInputs.invalidOutputs.add(outputId),
+        );
+
+        final nextPlan = updatedPlan.withCompatiblePreviousBuild(
+          previousBuildState: BuildState(
+            buildStepPlan: buildPlan.buildStepPlan,
+            sources: {assetId2: null},
+          ).toFinishedBuildState(),
+          previousPhasedAssetDeps: PhasedAssetDeps(),
+        );
+
+        expect(nextPlan.buildInputs.cleanBuild, isFalse);
+        expect(nextPlan.buildInputs.deletedSources, isEmpty);
+        expect(nextPlan.buildInputs.updatedSources, isEmpty);
+        expect(nextPlan.buildInputs.invalidOutputs, isEmpty);
+      });
     });
   });
 }
