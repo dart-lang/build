@@ -1,4 +1,4 @@
-## 2.16.3-wip
+## 2.17.0
 
 - Allow `built_collection` 6.x.
 - Fix `build_runner run` with `built_collection` 6.x by passing

@@ -1,4 +1,4 @@
-## 4.1.0-wip
+## 4.1.0
 
 - Add `librarySourceSink` to `BuildStep`, a new way for builders to add source
   to a library. Additions are collected from all builders and written to a
