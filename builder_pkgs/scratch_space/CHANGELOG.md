@@ -1,3 +1,7 @@
+## 1.2.3-wip
+
+- Allow `build` 5.0.0.
+
 ## 1.2.2
 
 - Fix `changedFilesInBuild` not showing newly added files.

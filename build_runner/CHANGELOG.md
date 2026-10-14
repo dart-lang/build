@@ -1,3 +1,10 @@
+## 2.17.1
+
+- Require `build` 5.0.0, which is the retracted `build` 4.1.0 republished as a
+  major version. `build_runner` implements `build` interfaces, so it now
+  allows only one minor version of `build`.
+  [#5223](https://github.com/dart-lang/build/issues/5223)
+
 ## 2.17.0
 
 - Allow `built_collection` 6.x.
