@@ -1,4 +1,4 @@
-## 4.1.7-wip
+## 4.1.7
 
 - Allow `built_collection` 6.x.
 

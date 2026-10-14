@@ -1,13 +1,10 @@
-## 4.1.0-wip
+## 4.1.0
 
 - Add `librarySourceSink` to `BuildStep`, a new way for builders to add source
   to a library. Additions are collected from all builders and written to a
   single shared part file per library. Experimental, may change following
   feedback and discussion at https://github.com/dart-lang/build/discussions.
 - `AssetId` no longer rejects hyphens in package names.
-
-## 4.0.12-wip
-
 - Bug fix: handle `Resource` disposal failure gracefully: log an error instead
   of letting the exception escape.
 
