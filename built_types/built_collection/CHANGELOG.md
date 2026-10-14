@@ -1,13 +1,16 @@
 # Changelog
 
-## 5.1.3-wip
+## 6.0.0-wip
 
-- Clarify the docs of `asList`, `asSet` and `asMap`.
-- Bug fix: `BuiltList.asList`, `BuiltMap.asMap`, `BuiltListMultimap.asMap` and
-  `BuiltSetMultimap.asMap` now return unmodifiable views instead of copies,
-  as `BuiltSet.asSet` already did.
+- Breaking change: `BuiltList.asList`, `BuiltMap.asMap`,
+  `BuiltListMultimap.asMap` and `BuiltSetMultimap.asMap` now return
+  unmodifiable views instead of copies, as `BuiltSet.asSet` already did. A
+  view is not a built-in `List` or `Map`, so it can't be passed to
+  `Isolate.spawnUri` or used directly as a JS array or object. Copy
+  explicitly there, with `[...list]` or `{...map}`.
 - Bug fix: `BuiltMap.asMap` now preserves the key equality of maps built with
   `withBase`.
+- Clarify the docs of `asList`, `asSet` and `asMap`.
 
 ## 5.1.2
 
