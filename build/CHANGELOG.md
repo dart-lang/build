@@ -5,9 +5,6 @@
   single shared part file per library. Experimental, may change following
   feedback and discussion at https://github.com/dart-lang/build/discussions.
 - `AssetId` no longer rejects hyphens in package names.
-
-## 4.0.12-wip
-
 - Bug fix: handle `Resource` disposal failure gracefully: log an error instead
   of letting the exception escape.
 
