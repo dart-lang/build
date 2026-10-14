@@ -1,11 +1,7 @@
-// GENERATED CODE - DO NOT MODIFY BY HAND
+// dart format off
+part of '../../../../src/build/build_state/build_step_id.dart';
 
-part of 'build_step_id.dart';
-
-// **************************************************************************
-// BuiltValueGenerator
-// **************************************************************************
-
+// === built_value_generator:br_part contribution.
 Serializer<BuildStepId> _$buildStepIdSerializer = _$BuildStepIdSerializer();
 
 class _$BuildStepIdSerializer implements StructuredSerializer<BuildStepId> {
@@ -175,3 +171,4 @@ class BuildStepIdBuilder implements Builder<BuildStepId, BuildStepIdBuilder> {
 }
 
 // ignore_for_file: deprecated_member_use_from_same_package,type=lint
+

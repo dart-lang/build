@@ -1,11 +1,7 @@
-// GENERATED CODE - DO NOT MODIFY BY HAND
+// dart format off
+part of '../../../../src/build/build_state/post_process_build_step_id.dart';
 
-part of 'post_process_build_step_id.dart';
-
-// **************************************************************************
-// BuiltValueGenerator
-// **************************************************************************
-
+// === built_value_generator:br_part contribution.
 Serializer<PostProcessBuildStepId> _$postProcessBuildStepIdSerializer =
     _$PostProcessBuildStepIdSerializer();
 
@@ -183,3 +179,4 @@ class PostProcessBuildStepIdBuilder
 }
 
 // ignore_for_file: deprecated_member_use_from_same_package,type=lint
+

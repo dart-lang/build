@@ -1,11 +1,7 @@
-// GENERATED CODE - DO NOT MODIFY BY HAND
+// dart format off
+part of '../../../src/build/source_edit.dart';
 
-part of 'source_edit.dart';
-
-// **************************************************************************
-// BuiltValueGenerator
-// **************************************************************************
-
+// === built_value_generator:br_part contribution.
 class _$SourceEdit extends SourceEdit {
   @override
   final int offset;
@@ -125,3 +121,4 @@ class SourceEditBuilder implements Builder<SourceEdit, SourceEditBuilder> {
 }
 
 // ignore_for_file: deprecated_member_use_from_same_package,type=lint
+

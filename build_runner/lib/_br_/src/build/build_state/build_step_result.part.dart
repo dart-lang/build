@@ -1,11 +1,7 @@
-// GENERATED CODE - DO NOT MODIFY BY HAND
+// dart format off
+part of '../../../../src/build/build_state/build_step_result.dart';
 
-part of 'build_step_result.dart';
-
-// **************************************************************************
-// BuiltValueGenerator
-// **************************************************************************
-
+// === built_value_generator:br_part contribution.
 Serializer<BuildStepResult> _$buildStepResultSerializer =
     _$BuildStepResultSerializer();
 
@@ -97,12 +93,10 @@ class _$BuildStepResultSerializer
       final Object? value = iterator.current;
       switch (key) {
         case 'result':
-          result.result =
-              serializers.deserialize(
-                    value,
-                    specifiedType: const FullType(bool),
-                  )
-                  as bool?;
+          result.result = serializers.deserialize(
+            value,
+            specifiedType: const FullType(bool),
+          ) as bool?;
           break;
         case 'inArtifactTree':
           result.inArtifactTree =
@@ -124,12 +118,10 @@ class _$BuildStepResultSerializer
           );
           break;
         case 'wrotePartContribution':
-          result.wrotePartContribution =
-              serializers.deserialize(
-                    value,
-                    specifiedType: const FullType(bool),
-                  )
-                  as bool?;
+          result.wrotePartContribution = serializers.deserialize(
+            value,
+            specifiedType: const FullType(bool),
+          ) as bool?;
           break;
         case 'inputs':
           result.inputs.replace(
@@ -385,3 +377,4 @@ class BuildStepResultBuilder
 }
 
 // ignore_for_file: deprecated_member_use_from_same_package,type=lint
+

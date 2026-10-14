@@ -1,11 +1,7 @@
-// GENERATED CODE - DO NOT MODIFY BY HAND
+// dart format off
+part of '../../../src/build_plan/build_spec_digest.dart';
 
-part of 'build_spec_digest.dart';
-
-// **************************************************************************
-// BuiltValueGenerator
-// **************************************************************************
-
+// === built_value_generator:br_part contribution.
 Serializer<BuildSpecDigest> _$buildSpecDigestSerializer =
     _$BuildSpecDigestSerializer();
 
@@ -95,12 +91,10 @@ class _$BuildSpecDigestSerializer
       final Object? value = iterator.current;
       switch (key) {
         case 'compileDigest':
-          result.compileDigest =
-              serializers.deserialize(
-                    value,
-                    specifiedType: const FullType(String),
-                  )
-                  as String?;
+          result.compileDigest = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String?;
           break;
         case 'buildTriggersDigest':
           result.buildTriggersDigest =
@@ -398,3 +392,4 @@ class BuildSpecDigestBuilder
 }
 
 // ignore_for_file: deprecated_member_use_from_same_package,type=lint
+

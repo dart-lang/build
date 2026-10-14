@@ -26,7 +26,7 @@ import 'build_step_plan.dart';
 import 'output_strategy.dart';
 import 'previous_build.dart';
 
-part 'build_plan.g.dart';
+part '../../_br_/src/build_plan/build_plan.part.dart';
 
 /// Options and derived configuration for a build.
 @Invariant(

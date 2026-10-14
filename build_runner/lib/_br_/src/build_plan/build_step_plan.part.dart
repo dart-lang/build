@@ -1,11 +1,7 @@
-// GENERATED CODE - DO NOT MODIFY BY HAND
+// dart format off
+part of '../../../src/build_plan/build_step_plan.dart';
 
-part of 'build_step_plan.dart';
-
-// **************************************************************************
-// BuiltValueGenerator
-// **************************************************************************
-
+// === built_value_generator:br_part contribution.
 class _$BuildStepPlan extends BuildStepPlan {
   @override
   final BuildPhases buildPhases;
@@ -181,3 +177,4 @@ class BuildStepPlanBuilder
 }
 
 // ignore_for_file: deprecated_member_use_from_same_package,type=lint
+

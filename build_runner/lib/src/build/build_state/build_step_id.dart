@@ -8,7 +8,7 @@ import 'package:built_value/serializer.dart';
 
 import '../../contracts.dart';
 
-part 'build_step_id.g.dart';
+part '../../../_br_/src/build/build_state/build_step_id.part.dart';
 
 /// Unique ID for a build step.
 @Invariant('primaryInput.package.isNotEmpty')

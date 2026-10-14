@@ -1,11 +1,7 @@
-// GENERATED CODE - DO NOT MODIFY BY HAND
+// dart format off
+part of '../../../src/logging/build_log_messages.dart';
 
-part of 'build_log_messages.dart';
-
-// **************************************************************************
-// BuiltValueGenerator
-// **************************************************************************
-
+// === built_value_generator:br_part contribution.
 class _$Message extends Message {
   @override
   final String? phaseName;
@@ -247,3 +243,4 @@ class _MessageCategoryBuilder
 }
 
 // ignore_for_file: deprecated_member_use_from_same_package,type=lint
+

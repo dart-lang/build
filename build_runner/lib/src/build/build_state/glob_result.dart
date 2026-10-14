@@ -10,7 +10,7 @@ import 'package:crypto/crypto.dart';
 
 import '../../contracts.dart';
 
-part 'glob_result.g.dart';
+part '../../../_br_/src/build/build_state/glob_result.part.dart';
 
 /// Execution results and dependency tracking for a glob evaluation.
 @Invariant('results.every((id) => inputs.contains(id))')

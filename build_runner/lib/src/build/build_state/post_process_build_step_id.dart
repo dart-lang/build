@@ -8,7 +8,7 @@ import 'package:built_value/serializer.dart';
 
 import '../../contracts.dart';
 
-part 'post_process_build_step_id.g.dart';
+part '../../../_br_/src/build/build_state/post_process_build_step_id.part.dart';
 
 /// Identifies a `PostProcessBuildStep` within a build: the application of a
 /// `PostProcessBuilder` to one input.

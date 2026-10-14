@@ -1,11 +1,7 @@
-// GENERATED CODE - DO NOT MODIFY BY HAND
+// dart format off
+part of '../../../src/logging/build_log_configuration.dart';
 
-part of 'build_log_configuration.dart';
-
-// **************************************************************************
-// BuiltValueGenerator
-// **************************************************************************
-
+// === built_value_generator:br_part contribution.
 class _$BuildLogConfiguration extends BuildLogConfiguration {
   @override
   final BuildLogMode mode;
@@ -211,3 +207,4 @@ class BuildLogConfigurationBuilder
 }
 
 // ignore_for_file: deprecated_member_use_from_same_package,type=lint
+

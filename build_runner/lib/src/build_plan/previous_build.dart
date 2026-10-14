@@ -29,7 +29,7 @@ import 'build_spec.dart';
 import 'build_spec_digest.dart';
 import 'build_step_plan.dart';
 
-part 'previous_build.g.dart';
+part '../../_br_/src/build_plan/previous_build.part.dart';
 
 /// Information about the previous build run and how it relates to the current
 /// configuration.

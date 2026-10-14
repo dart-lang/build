@@ -1,11 +1,7 @@
-// GENERATED CODE - DO NOT MODIFY BY HAND
+// dart format off
+part of '../../../src/build_plan/build_triggers.dart';
 
-part of 'build_triggers.dart';
-
-// **************************************************************************
-// BuiltValueGenerator
-// **************************************************************************
-
+// === built_value_generator:br_part contribution.
 class _$ImportBuildTrigger extends ImportBuildTrigger {
   @override
   final String import;
@@ -185,3 +181,4 @@ class AnnotationBuildTriggerBuilder
 }
 
 // ignore_for_file: deprecated_member_use_from_same_package,type=lint
+
