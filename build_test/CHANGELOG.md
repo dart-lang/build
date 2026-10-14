@@ -1,3 +1,8 @@
+## 3.5.23
+
+- Require `build` 5.0.0.
+- Use `build_runner` 2.17.1.
+
 ## 3.5.22
 
 - Allow `built_collection` 6.x.

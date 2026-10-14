@@ -1,3 +1,7 @@
+## 4.8.13-wip
+
+- Allow `build` 5.0.0.
+
 ## 4.8.12
 
 - Start the persistent Frontend Server and its reaper process in the scratch

@@ -16,7 +16,7 @@ environment:
 
 dependencies:
   analyzer: '>=13.0.0 <15.0.0'
-  build: '>=4.1.0-wip <5.0.0'
+  build: ^5.0.0
   build_config: ^1.2.0
   built_collection: '>=5.0.0 <7.0.0'
   built_value: '>=8.1.0 <8.14.0'

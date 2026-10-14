@@ -1,3 +1,10 @@
+## 5.0.0
+
+- Republish retracted 4.1.0 as a major version. Its new `BuildStep` member,
+  `librarySourceSink`, is a breaking change for packages that implement
+  `BuildStep`, including `build_runner` 2.16.2 and earlier.
+  [#5223](https://github.com/dart-lang/build/issues/5223)
+
 ## 4.1.0
 
 - Add `librarySourceSink` to `BuildStep`, a new way for builders to add source
