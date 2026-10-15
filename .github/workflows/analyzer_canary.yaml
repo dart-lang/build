@@ -1,0 +1,27 @@
+# Checks that the published build_runner still works with analyzer at HEAD of
+# dart-lang/sdk, so that a break reaches us before analyzer publishes it.
+#
+# Advisory: it does not run on PRs and is not a required check. GitHub emails
+# failures of scheduled runs to whoever last changed the cron line.
+#
+# The logic is in tool/lib/analyzer_canary.dart.
+name: Analyzer canary
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
+        with:
+          sdk: main
+      - run: dart pub get
+      - run: dart run tool/bin/analyzer_canary.dart ${{ runner.temp }}/canary

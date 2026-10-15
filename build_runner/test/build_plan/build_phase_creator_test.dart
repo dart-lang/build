@@ -479,10 +479,66 @@ void main() {
       expect(
         () => BuilderDefinition(
           'a:builder',
+          outputsToArtifactTree: false,
           addsToLibrary: true,
           isOptional: true,
         ),
-        throwsArgumentError,
+        throwsA(
+          isArgumentError.having(
+            (e) => e.message,
+            'message',
+            contains('`is_optional: true`'),
+          ),
+        ),
+      );
+    });
+
+    test('throws ArgumentError if builder definition has addsToLibrary '
+        'and outputsToArtifactTree', () {
+      expect(
+        () => BuilderDefinition('a:builder', addsToLibrary: true),
+        throwsA(
+          isArgumentError.having(
+            (e) => e.message,
+            'message',
+            contains('`build_to: source`'),
+          ),
+        ),
+      );
+    });
+
+    test('throws ArgumentError if addsToLibrary builder has two '
+        'factories', () async {
+      final buildConfigs = await BuildConfigs.load(
+        buildPackages: buildPackages,
+        testingOverrides: TestingOverrides(
+          defaultRootPackageSources: ['**'].build(),
+        ),
+      );
+      expect(
+        () => BuildPhaseCreator(
+          builderFactories: BuilderFactories({
+            'a:builder': [CoolBuilder.new, CoolBuilder.new],
+          }),
+          buildPackages: buildPackages,
+          buildConfigs: buildConfigs,
+          builderDefinitions: [
+            BuilderDefinition(
+              'a:builder',
+              outputsToArtifactTree: false,
+              addsToLibrary: true,
+            ),
+          ],
+          builderConfigOverrides: BuiltMap(),
+          isReleaseBuild: false,
+        ).createBuildPhases(),
+        throwsA(
+          isArgumentError.having(
+            (e) => e.message,
+            'message',
+            contains('must have exactly one builder factory'),
+          ),
+        ),
       );
     });
   });

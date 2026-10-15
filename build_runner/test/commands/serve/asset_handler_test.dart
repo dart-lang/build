@@ -18,6 +18,7 @@ import 'package:build_runner/src/build_plan/build_step_plan.dart';
 import 'package:build_runner/src/build_plan/phase.dart';
 import 'package:build_runner/src/commands/serve/server.dart';
 import 'package:build_runner/src/io/build_output_reader.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 
@@ -149,8 +150,12 @@ void main() {
     final outputId = AssetId('a', 'web/main.ddc.js');
     final buildStepId = BuildStepId(primaryInput: primaryId, phaseNumber: 0);
     final buildStepPlan = BuildStepPlan((BuildStepPlanBuilder b) {
-      b.buildPhases = BuildPhases(const <InBuildPhase>[]);
+      b.buildPhases = BuildPhases([
+        InBuildPhase(builder: TestBuilder(), key: 'b1', package: 'a'),
+      ]);
+      b.buildStepsByPhase.add(BuiltList<BuildStepId>([buildStepId]));
       b.buildStepsByDeclaredOutput.addAll({outputId: buildStepId});
+      b.declaredOutputsByStep.add(buildStepId, outputId);
     });
     final buildState = BuildState(
       buildStepPlan: buildStepPlan,

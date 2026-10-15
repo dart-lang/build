@@ -3,7 +3,7 @@ library;
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
-part 'polymorphism.g.dart';
+part '_br_/polymorphism.part.dart';
 
 /// Example of using polymorphism.
 ///

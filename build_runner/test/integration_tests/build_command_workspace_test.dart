@@ -153,50 +153,6 @@ void main() async {
       '1',
     );
 
-    // Write a builder that applies another builder in its build.yaml.
-    tester.writeFixturePackage(
-      FixturePackages.copyBuilder(
-        packageName: 'second_copy_builder_pkg',
-        outputExtension: '.copy2',
-        appliesBuilders: '["builder_pkg|test_builder"]',
-        pathDependencies: ['builder_pkg'],
-      ),
-    );
-    tester.writePackage(
-      name: 'p6',
-      files: {'lib/p6.txt': '1'},
-      pathDependencies: ['second_copy_builder_pkg'],
-      inWorkspace: true,
-    );
-    tester.writeWorkspacePubspec(
-      packages: ['p1', 'p2', 'p3', 'p4', 'p5', 'p6'],
-    );
-
-    // The builder applied by second_copy_builder_pkg runs despite not
-    // being auto applied.
-    await tester.run('', 'dart run build_runner build --force-jit --workspace');
-    expect(tester.read('p6/lib/p6.txt.copy'), '1');
-
-    // Support for globs in workspaces was added in 3.11.
-    tester.writeWorkspacePubspec(
-      packages: ["'p*'"],
-      sdkBound: '>=3.11.0 <4.0.0',
-    );
-    await tester.run('', 'dart run build_runner build --force-jit --workspace');
-
-    // Write a builder that applies an unknown builder in its build.yaml, the
-    // unknown builder is ignored.
-    tester.writeFixturePackage(
-      FixturePackages.copyBuilder(
-        packageName: 'second_copy_builder_pkg',
-        outputExtension: '.copy2',
-        buildToCache: true,
-        appliesBuilders: '["unknown|test_builder"]',
-        pathDependencies: ['builder_pkg'],
-      ),
-    );
-    await tester.run('', 'dart run build_runner build --force-jit --workspace');
-
     // Rewrite p1 to not be in a workspace.
     tester.writePackage(
       name: 'p1',

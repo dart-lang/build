@@ -151,6 +151,18 @@ class BuilderDefinition {
           "inputs, but has: ${nonDartInputs.map((i) => "'$i'").join(', ')}.",
         );
       }
+      if (this.buildTo != BuildTo.source) {
+        throw ArgumentError(
+          'A builder with `adds_to_library: true` must set `build_to: source`.',
+        );
+      }
+      if (builderFactories.length != 1) {
+        throw ArgumentError(
+          'A builder with `adds_to_library: true` must have exactly one '
+          'builder factory, but has: '
+          '${builderFactories.map((f) => "'$f'").join(', ')}.',
+        );
+      }
     }
   }
 

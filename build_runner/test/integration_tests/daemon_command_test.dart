@@ -103,9 +103,19 @@ void main() {
     addTearDown(client.close);
 
     // Builds.
+    //
+    // Any file change in the package can start the first build before the
+    // explicit request below is handled, for example the daemon started above
+    // writing under `.dart_tool`. The explicit request then completes with
+    // the cached result and no changed assets.
+    var results = StreamQueue(client.buildResults);
+    Future<BuildResults> nextBuild() async {
+      expect((await results.next).results.single.status, BuildStatus.started);
+      return results.next;
+    }
+
     client.registerBuildTarget(webTarget);
     client.startBuild();
-    var results = StreamQueue(client.buildResults);
     expect((await results.next).results.single.status, BuildStatus.started);
     expect((await results.next).results.single.status, BuildStatus.succeeded);
     expect(logs, contains('About to build [web]...'));
@@ -113,8 +123,9 @@ void main() {
     // File change causes a build; input and output changes are reported.
     logs.clear();
     tester.update('root_pkg/lib/message.dart', (script) => '$script\n');
-    expect((await results.next).results.single.status, BuildStatus.started);
-    final result = await results.next;
+    var result = await nextBuild();
+    // Skip the cached result of the explicit request, if any.
+    if (result.changedAssets?.isEmpty ?? true) result = await nextBuild();
     expect(result.results.single.status, BuildStatus.succeeded);
     expect(
       result.changedAssets,

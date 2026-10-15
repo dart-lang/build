@@ -11,7 +11,7 @@ import '../../contracts.dart';
 import 'asset_deps.dart';
 import 'phased_value.dart';
 
-part 'phased_asset_deps.g.dart';
+part '../../../_br_/src/build/library_cycle_graph/phased_asset_deps.part.dart';
 
 /// Serializable data from which library cycle graphs can be reconstructed.
 ///

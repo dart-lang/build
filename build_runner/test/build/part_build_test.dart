@@ -196,6 +196,22 @@ class WhitespacePartWritingBuilder implements Builder {
   }
 }
 
+/// Generates a library from a `.txt` file with the same content.
+class LibraryGeneratingBuilder implements Builder {
+  @override
+  Map<String, List<String>> get buildExtensions => {
+    '.txt': ['.dart'],
+  };
+
+  @override
+  Future<void> build(BuildStep buildStep) async {
+    await buildStep.writeAsString(
+      buildStep.inputId.changeExtension('.dart'),
+      await buildStep.readAsString(buildStep.inputId),
+    );
+  }
+}
+
 class PartVerifyingInvisibilityBuilder implements Builder {
   @override
   Map<String, List<String>> get buildExtensions => {
@@ -251,17 +267,17 @@ void main() {
 // dart format off
 part of '../a.dart';
 
-// === a:builder1/0 imports.
+// === a:builder1 imports.
 import 'package:a/b.dart' as $0b;
 
-// === a:builder2/1 imports.
+// === a:builder2 imports.
 import 'package:a/b.dart' as $1b;
 
-// === a:builder1/0 contribution.
+// === a:builder1 contribution.
 // builder saw: initial_b
 var content1 = 1;
 
-// === a:builder2/1 contribution.
+// === a:builder2 contribution.
 // builder saw: initial_c
 var content2 = 1;
 
@@ -284,17 +300,17 @@ var content2 = 1;
 // dart format off
 part of '../a.dart';
 
-// === a:builder1/0 imports.
+// === a:builder1 imports.
 import 'package:a/b.dart' as $0b;
 
-// === a:builder2/1 imports.
+// === a:builder2 imports.
 import 'package:a/b.dart' as $1b;
 
-// === a:builder1/0 contribution.
+// === a:builder1 contribution.
 // builder saw: modified_b
 var content1 = 1;
 
-// === a:builder2/1 contribution.
+// === a:builder2 contribution.
 // builder saw: initial_c
 var content2 = 1;
 
@@ -333,10 +349,10 @@ var content2 = 1;
 // dart format off
 part of '../a.dart';
 
-// === a:builder1/0 imports.
+// === a:builder1 imports.
 import 'package:a/b.dart' as $0b;
 
-// === a:builder1/0 contribution.
+// === a:builder1 contribution.
 // builder saw: initial_b
 var content1 = 1;
 
@@ -417,24 +433,24 @@ var content1 = 1;
 // dart format off
 part of '../a.dart';
 
-// === a:builder1/0 imports.
+// === a:builder1 imports.
 import 'package:a/b.dart' as $0b;
 
-// === a:builder2/1 imports.
+// === a:builder2 imports.
 import 'package:a/b.dart' as $1b;
 
-// === a:builder3/2 imports.
+// === a:builder3 imports.
 import 'package:a/b.dart' as $2b;
 
-// === a:builder1/0 contribution.
+// === a:builder1 contribution.
 // builder saw: b0
 var content1 = 1;
 
-// === a:builder2/1 contribution.
+// === a:builder2 contribution.
 // builder saw: c0
 var content2 = 1;
 
-// === a:builder3/2 contribution.
+// === a:builder3 contribution.
 // builder saw: d0
 var content3 = 1;
 
@@ -458,24 +474,24 @@ var content3 = 1;
 // dart format off
 part of '../a.dart';
 
-// === a:builder1/0 imports.
+// === a:builder1 imports.
 import 'package:a/b.dart' as $0b;
 
-// === a:builder2/1 imports.
+// === a:builder2 imports.
 import 'package:a/b.dart' as $1b;
 
-// === a:builder3/2 imports.
+// === a:builder3 imports.
 import 'package:a/b.dart' as $2b;
 
-// === a:builder1/0 contribution.
+// === a:builder1 contribution.
 // builder saw: b0
 var content1 = 1;
 
-// === a:builder2/1 contribution.
+// === a:builder2 contribution.
 // builder saw: c1_modified
 var content2 = 1;
 
-// === a:builder3/2 contribution.
+// === a:builder3 contribution.
 // builder saw: d0
 var content3 = 1;
 
@@ -500,24 +516,24 @@ var content3 = 1;
 // dart format off
 part of '../a.dart';
 
-// === a:builder1/0 imports.
+// === a:builder1 imports.
 import 'package:a/b.dart' as $0b;
 
-// === a:builder2/1 imports.
+// === a:builder2 imports.
 import 'package:a/b.dart' as $1b;
 
-// === a:builder3/2 imports.
+// === a:builder3 imports.
 import 'package:a/b.dart' as $2b;
 
-// === a:builder1/0 contribution.
+// === a:builder1 contribution.
 // builder saw: b2_modified
 var content1 = 1;
 
-// === a:builder2/1 contribution.
+// === a:builder2 contribution.
 // builder saw: c1_modified
 var content2 = 1;
 
-// === a:builder3/2 contribution.
+// === a:builder3 contribution.
 // builder saw: d2_modified
 var content3 = 1;
 
@@ -561,10 +577,10 @@ var content3 = 1;
 // dart format off
 part of '../a.dart';
 
-// === a:builder1/0 imports.
+// === a:builder1 imports.
 import 'package:a/b.dart' as $0b;
 
-// === a:builder1/0 contribution.
+// === a:builder1 contribution.
 // builder saw: b
 var content = 1;
 
@@ -634,6 +650,61 @@ var content = 1;
       );
     });
 
+    test('builds with the `enhanced-parts` experiment after a build without '
+        'it', () async {
+      final builderFactories = BuilderFactories({
+        'a:builder1': [
+          (_) =>
+              PartWritingBuilder('var content1 = 1;', 'lib/b.txt', '.b1.dart'),
+        ],
+        'a:builder2': [
+          (_) =>
+              PartWritingBuilder('var content2 = 1;', 'lib/c.txt', '.b2.dart'),
+        ],
+      });
+      final builderDefinitions = [
+        BuilderDefinition(
+          'a:builder1',
+          outputsToArtifactTree: false,
+          autoApply: AutoApply.allPackages,
+          addsToLibrary: true,
+        ),
+        BuilderDefinition(
+          'a:builder2',
+          outputsToArtifactTree: false,
+          autoApply: AutoApply.allPackages,
+          addsToLibrary: true,
+        ),
+      ];
+      final inputs = {
+        'a|lib/a.dart': "part '_br_/a.part.dart';\n",
+        'a|lib/b.txt': 'b',
+        'a|lib/c.txt': 'c',
+      };
+
+      await testPhases(
+        builderFactories,
+        builderDefinitions,
+        inputs,
+        status: BuildStatus.failure,
+        onLog: (_) {},
+      );
+      final result = await withEnabledExperiments(
+        () => testPhases(
+          builderFactories,
+          builderDefinitions,
+          inputs,
+          checkBuildStatus: false,
+        ),
+        ['enhanced-parts'],
+      );
+      expect(
+        result.buildResult.status,
+        BuildStatus.success,
+        reason: '${result.buildResult}',
+      );
+    });
+
     partsTest('earlier phase builder does not see later phase part '
         'contribution in incremental build', () async {
       final builderFactories = BuilderFactories({
@@ -668,18 +739,18 @@ var content = 1;
 // dart format off
 part of '../a.dart';
 
-// === a:builder1/0 imports.
+// === a:builder1 imports.
 import 'package:a/b.dart' as $0b;
 
-// === a:builder2/1 imports.
+// === a:builder2 imports.
 import 'package:a/b.dart' as $1b;
 
-// === a:builder1/0 contribution.
+// === a:builder1 contribution.
 // builder saw: initial_b
 // saw later contribution: false
 var content1 = 1;
 
-// === a:builder2/1 contribution.
+// === a:builder2 contribution.
 // builder saw: initial_c
 var content2 = 1;
 
@@ -700,18 +771,18 @@ var content2 = 1;
 // dart format off
 part of '../a.dart';
 
-// === a:builder1/0 imports.
+// === a:builder1 imports.
 import 'package:a/b.dart' as $0b;
 
-// === a:builder2/1 imports.
+// === a:builder2 imports.
 import 'package:a/b.dart' as $1b;
 
-// === a:builder1/0 contribution.
+// === a:builder1 contribution.
 // builder saw: modified_b
 // saw later contribution: false
 var content1 = 1;
 
-// === a:builder2/1 contribution.
+// === a:builder2 contribution.
 // builder saw: initial_c
 var content2 = 1;
 
@@ -764,17 +835,17 @@ var content2 = 1;
 // dart format off
 part of '../a.dart';
 
-// === a:builder1/0 imports.
+// === a:builder1 imports.
 import 'package:a/b.dart' as $0b;
 
-// === a:builder2/1 imports.
+// === a:builder2 imports.
 import 'package:a/b.dart' as $1b;
 
-// === a:builder1/0 contribution.
+// === a:builder1 contribution.
 // builder saw: initial_b
 var content1 = 1;
 
-// === a:builder2/1 contribution.
+// === a:builder2 contribution.
 // builder saw: initial_c
 var content2 = 1;
 
@@ -795,10 +866,10 @@ var content2 = 1;
 // dart format off
 part of '../a.dart';
 
-// === a:builder1/0 imports.
+// === a:builder1 imports.
 import 'package:a/b.dart' as $0b;
 
-// === a:builder1/0 contribution.
+// === a:builder1 contribution.
 // builder saw: initial_b
 var content1 = 1;
 
@@ -852,13 +923,13 @@ var content1 = 1;
 // dart format off
 part of '../a.dart';
 
-// === a:builder1/0 contribution.
+// === a:builder1 contribution.
 // builder saw: initial_b
 class Class1 {
   // sawClass2: false
 }
 
-// === a:builder2/1 contribution.
+// === a:builder2 contribution.
 // builder saw: initial_c
 class Class2 {}
 
@@ -879,13 +950,13 @@ class Class2 {}
 // dart format off
 part of '../a.dart';
 
-// === a:builder1/0 contribution.
+// === a:builder1 contribution.
 // builder saw: modified_b
 class Class1 {
   // sawClass2: false
 }
 
-// === a:builder2/1 contribution.
+// === a:builder2 contribution.
 // builder saw: initial_c
 class Class2 {}
 
@@ -921,7 +992,7 @@ class Class2 {}
         ];
 
         await testPhases(builderFactories, builderDefinitions, {
-          'a|lib/a.dart': 'part \'_br_/a.part.dart\';\n',
+          'a|lib/a.dart': 'class A {}\n',
         }, outputs: {});
       },
     );
@@ -940,9 +1011,73 @@ class Class2 {}
       ];
 
       await testPhases(builderFactories, builderDefinitions, {
-        'a|lib/a.dart': 'part \'_br_/a.part.dart\';\n',
+        'a|lib/a.dart': 'class A {}\n',
       }, outputs: {});
     });
+
+    partsTest('does not add part directive to generated library', () async {
+      final builderFactories = BuilderFactories({
+        'a:generator': [(_) => LibraryGeneratingBuilder()],
+        'a:builder1': [
+          (_) => PartWritingBuilder('var content = 1;', 'lib/b.txt', '.b.dart'),
+        ],
+      });
+      final builderDefinitions = [
+        BuilderDefinition(
+          'a:generator',
+          outputsToArtifactTree: false,
+          autoApply: AutoApply.allPackages,
+        ),
+        BuilderDefinition(
+          'a:builder1',
+          outputsToArtifactTree: false,
+          autoApply: AutoApply.allPackages,
+          addsToLibrary: true,
+        ),
+      ];
+
+      final result = await testPhases(builderFactories, builderDefinitions, {
+        'a|lib/g.txt': 'class G {}\n',
+      }, checkBuildStatus: false);
+      expect(result.buildResult.status, BuildStatus.success);
+      expect(
+        result.readerWriter.testing.readString(AssetId('a', 'lib/g.dart')),
+        'class G {}\n',
+      );
+    });
+
+    partsTest(
+      'does not remove part directive from generated library',
+      () async {
+        final builderFactories = BuilderFactories({
+          'a:generator': [(_) => LibraryGeneratingBuilder()],
+          'a:builder1': [(_) => EmptyPartWritingBuilder()],
+        });
+        final builderDefinitions = [
+          BuilderDefinition(
+            'a:generator',
+            outputsToArtifactTree: false,
+            autoApply: AutoApply.allPackages,
+          ),
+          BuilderDefinition(
+            'a:builder1',
+            outputsToArtifactTree: false,
+            autoApply: AutoApply.allPackages,
+            addsToLibrary: true,
+          ),
+        ];
+
+        const generated = 'part \'_br_/g.part.dart\';\nclass G {}\n';
+        final result = await testPhases(builderFactories, builderDefinitions, {
+          'a|lib/g.txt': generated,
+        }, checkBuildStatus: false);
+        expect(result.buildResult.status, BuildStatus.success);
+        expect(
+          result.readerWriter.testing.readString(AssetId('a', 'lib/g.dart')),
+          generated,
+        );
+      },
+    );
 
     partsTest('_br_ assets are invisible to asset reader calls', () async {
       final builderFactories = BuilderFactories({
@@ -970,10 +1105,10 @@ class Class2 {}
 // dart format off
 part of '../a.dart';
 
-// === a:builder1/0 imports.
+// === a:builder1 imports.
 import 'package:a/b.dart' as $0b;
 
-// === a:builder1/0 contribution.
+// === a:builder1 contribution.
 // builder saw: b
 var content = 1;
 
@@ -1009,10 +1144,10 @@ var content = 1;
 // dart format off
 part of '../a.dart';
 
-// === a:builder1/0 imports.
+// === a:builder1 imports.
 import 'package:a/b.dart' as $0b;
 
-// === a:builder1/0 contribution.
+// === a:builder1 contribution.
 // builder saw: b
 var content = 1;
 
@@ -1071,17 +1206,17 @@ var content = 1;
 // dart format off
 part of '../a.dart';
 
-// === a:builder1/0 imports.
+// === a:builder1 imports.
 import 'package:a/b.dart' as $0b;
 
-// === a:builder2/1 imports.
+// === a:builder2 imports.
 import 'package:a/b.dart' as $1b;
 
-// === a:builder1/0 contribution.
+// === a:builder1 contribution.
 // builder saw: b
 var content1 = 1;
 
-// === a:builder2/1 contribution.
+// === a:builder2 contribution.
 // builder saw: c
 var content2 = 1;
 
@@ -1118,10 +1253,10 @@ var content2 = 1;
 // dart format off
 part of '../a.dart';
 
-// === a:builder1/0 imports.
+// === a:builder1 imports.
 import 'package:a/b.dart' as $0b;
 
-// === a:builder1/0 contribution.
+// === a:builder1 contribution.
 // builder saw: b
 var content1 = 1;
 
@@ -1160,10 +1295,10 @@ var content1 = 1;
 // dart format off
 part of '../a.dart';
 
-// === a:builder1/0 imports.
+// === a:builder1 imports.
 import 'package:a/b.dart' as $0b;
 
-// === a:builder1/0 contribution.
+// === a:builder1 contribution.
 // builder saw: b
 var content = 1;
 
@@ -1235,7 +1370,7 @@ var content = 1;
 // dart format off
 part of '../a.dart';
 
-// === a:builder2/1 contribution.
+// === a:builder2 contribution.
 // builder saw: b
 class Class1 {
   // sawClass2: false

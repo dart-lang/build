@@ -161,6 +161,13 @@ class BuildPhaseCreator {
   ) {
     final builderFactories =
         this.builderFactories.builderFactories[builderDefinition.key]!;
+    if (builderDefinition.addsToLibrary && builderFactories.length != 1) {
+      throw ArgumentError(
+        'A builder with `adds_to_library: true` must have exactly one '
+        'builder factory, but "${builderDefinition.key}" has '
+        '${builderFactories.length}.',
+      );
+    }
     final result = <InBuildPhase>[];
     for (final builderFactory in builderFactories) {
       for (final buildTarget in buildTargets) {

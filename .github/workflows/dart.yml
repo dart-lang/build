@@ -41,16 +41,16 @@ jobs:
       - name: mono_repo self validate
         run: dart pub global run mono_repo generate --validate
   job_002:
-    name: "analyze_and_format; linux; PKGS: _benchmark, build, build_config, build_daemon, build_runner, build_test, builder_pkgs/build_web_compilers, builder_pkgs/mockito, builder_pkgs/scratch_space, built_types/_built_collection_benchmark, built_types/_built_value_benchmark, built_types/_built_value_end_to_end_test, built_types/built_collection, built_types/built_value, built_types/built_value_chat_example, built_types/built_value_example, built_types/built_value_generator, built_types/built_value_test, example; `dart analyze --fatal-infos .`"
+    name: "analyze_and_format; linux; PKGS: _benchmark, build, build_config, build_daemon, build_runner, build_test, builder_pkgs/build_web_compilers, builder_pkgs/mockito, builder_pkgs/scratch_space, built_types/_built_collection_benchmark, built_types/_built_value_benchmark, built_types/_built_value_end_to_end_test, built_types/built_collection, built_types/built_value, built_types/built_value_chat_example, built_types/built_value_example, built_types/built_value_generator, built_types/built_value_test, example, test_infra/_contract_weaver; `dart analyze --fatal-infos .`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:_benchmark-build-build_config-build_daemon-build_runner-build_test-builder_pkgs/build_web_compilers-builder_pkgs/mockito-builder_pkgs/scratch_space-built_types/_built_collection_benchmark-built_types/_built_value_benchmark-built_types/_built_value_end_to_end_test-built_types/built_collection-built_types/built_value-built_types/built_value_chat_example-built_types/built_value_example-built_types/built_value_generator-built_types/bu-!!too_long!!-524-282251679"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:_benchmark-build-build_config-build_daemon-build_runner-build_test-builder_pkgs/build_web_compilers-builder_pkgs/mockito-builder_pkgs/scratch_space-built_types/_built_collection_benchmark-built_types/_built_value_benchmark-built_types/_built_value_end_to_end_test-built_types/built_collection-built_types/built_value-built_types/built_value_chat_example-built_types/built_value_example-built_types/built_value_generator-built_types/bu-!!too_long!!-552-330935068"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:_benchmark-build-build_config-build_daemon-build_runner-build_test-builder_pkgs/build_web_compilers-builder_pkgs/mockito-builder_pkgs/scratch_space-built_types/_built_collection_benchmark-built_types/_built_value_benchmark-built_types/_built_value_end_to_end_test-built_types/built_collection-built_types/built_value-built_types/built_value_chat_example-built_types/built_value_example-built_types/built_value_generator-built_types/built_value_test-example
+            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:_benchmark-build-build_config-build_daemon-build_runner-build_test-builder_pkgs/build_web_compilers-builder_pkgs/mockito-builder_pkgs/scratch_space-built_types/_built_collection_benchmark-built_types/_built_value_benchmark-built_types/_built_value_end_to_end_test-built_types/built_collection-built_types/built_value-built_types/built_value_chat_example-built_types/built_value_example-built_types/built_value_generator-built_types/bu-!!too_long!!-535-219876934
             os:ubuntu-latest;pub-cache-hosted;sdk:dev
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
@@ -234,17 +234,26 @@ jobs:
         run: dart analyze --fatal-infos .
         if: "always() && steps.example_pub_upgrade.conclusion == 'success'"
         working-directory: example
+      - id: test_infra__contract_weaver_pub_upgrade
+        name: test_infra/_contract_weaver; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: test_infra/_contract_weaver
+      - name: "test_infra/_contract_weaver; dart analyze --fatal-infos ."
+        run: dart analyze --fatal-infos .
+        if: "always() && steps.test_infra__contract_weaver_pub_upgrade.conclusion == 'success'"
+        working-directory: test_infra/_contract_weaver
   job_003:
-    name: "analyze_and_format; linux; PKGS: _benchmark, build, build_config, build_daemon, build_runner, build_test, builder_pkgs/build_web_compilers, builder_pkgs/mockito, builder_pkgs/scratch_space, built_types/_built_collection_benchmark, built_types/_built_value_benchmark, built_types/_built_value_end_to_end_test, built_types/built_collection, built_types/built_value, built_types/built_value_chat_example, built_types/built_value_example, built_types/built_value_generator, built_types/built_value_test, example; `dart format --output=none --set-exit-if-changed .`"
+    name: "analyze_and_format; linux; PKGS: _benchmark, build, build_config, build_daemon, build_runner, build_test, builder_pkgs/build_web_compilers, builder_pkgs/mockito, builder_pkgs/scratch_space, built_types/_built_collection_benchmark, built_types/_built_value_benchmark, built_types/_built_value_end_to_end_test, built_types/built_collection, built_types/built_value, built_types/built_value_chat_example, built_types/built_value_example, built_types/built_value_generator, built_types/built_value_test, example, test_infra/_contract_weaver; `dart format --output=none --set-exit-if-changed .`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:_benchmark-build-build_config-build_daemon-build_runner-build_test-builder_pkgs/build_web_compilers-builder_pkgs/mockito-builder_pkgs/scratch_space-built_types/_built_collection_benchmark-built_types/_built_value_benchmark-built_types/_built_value_end_to_end_test-built_types/built_collection-built_types/built_value-built_types/built_value_chat_example-built_types/built_value_example-built_types/built_value_generator-built_types/bu-!!too_long!!-523-646161190"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:_benchmark-build-build_config-build_daemon-build_runner-build_test-builder_pkgs/build_web_compilers-builder_pkgs/mockito-builder_pkgs/scratch_space-built_types/_built_collection_benchmark-built_types/_built_value_benchmark-built_types/_built_value_end_to_end_test-built_types/built_collection-built_types/built_value-built_types/built_value_chat_example-built_types/built_value_example-built_types/built_value_generator-built_types/bu-!!too_long!!-551-905783870"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:_benchmark-build-build_config-build_daemon-build_runner-build_test-builder_pkgs/build_web_compilers-builder_pkgs/mockito-builder_pkgs/scratch_space-built_types/_built_collection_benchmark-built_types/_built_value_benchmark-built_types/_built_value_end_to_end_test-built_types/built_collection-built_types/built_value-built_types/built_value_chat_example-built_types/built_value_example-built_types/built_value_generator-built_types/built_value_test-example
+            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:_benchmark-build-build_config-build_daemon-build_runner-build_test-builder_pkgs/build_web_compilers-builder_pkgs/mockito-builder_pkgs/scratch_space-built_types/_built_collection_benchmark-built_types/_built_value_benchmark-built_types/_built_value_end_to_end_test-built_types/built_collection-built_types/built_value-built_types/built_value_chat_example-built_types/built_value_example-built_types/built_value_generator-built_types/bu-!!too_long!!-535-219876934
             os:ubuntu-latest;pub-cache-hosted;sdk:dev
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
@@ -428,6 +437,15 @@ jobs:
         run: "dart format --output=none --set-exit-if-changed ."
         if: "always() && steps.example_pub_upgrade.conclusion == 'success'"
         working-directory: example
+      - id: test_infra__contract_weaver_pub_upgrade
+        name: test_infra/_contract_weaver; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: test_infra/_contract_weaver
+      - name: "test_infra/_contract_weaver; dart format --output=none --set-exit-if-changed ."
+        run: "dart format --output=none --set-exit-if-changed ."
+        if: "always() && steps.test_infra__contract_weaver_pub_upgrade.conclusion == 'success'"
+        working-directory: test_infra/_contract_weaver
   job_004:
     name: "analyze_and_format; linux; PKG: build_runner; `dart run build_runner build --workspace --force-jit --only-check`"
     runs-on: ubuntu-latest
@@ -461,6 +479,43 @@ jobs:
         if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
         working-directory: build_runner
   job_005:
+    name: "contracts; linux; PKG: build_runner; `../tool/contract_check.sh`"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner;commands:command_1"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner
+            os:ubuntu-latest;pub-cache-hosted;sdk:dev
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
+        with:
+          sdk: dev
+      - id: checkout
+        name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - id: build_runner_pub_upgrade
+        name: build_runner; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_runner
+      - name: build_runner; ../tool/contract_check.sh
+        run: ../tool/contract_check.sh
+        if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
+        working-directory: build_runner
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+  job_006:
     name: "test; linux; PKG: build; `dart test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -497,7 +552,8 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_006:
+      - job_005
+  job_007:
     name: "test; linux; PKG: build_config; `dart test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -534,7 +590,8 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_007:
+      - job_005
+  job_008:
     name: "test; linux; PKG: build_daemon; `dart test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -571,7 +628,8 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_008:
+      - job_005
+  job_009:
     name: "test; linux; PKG: build_test; `dart test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -608,7 +666,8 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_009:
+      - job_005
+  job_010:
     name: "test; linux; PKG: builder_pkgs/build_web_compilers; `dart test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -645,7 +704,8 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_010:
+      - job_005
+  job_011:
     name: "test; linux; PKG: builder_pkgs/mockito; `dart test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -682,7 +742,8 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_011:
+      - job_005
+  job_012:
     name: "test; linux; PKG: builder_pkgs/scratch_space; `dart test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -719,7 +780,8 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_012:
+      - job_005
+  job_013:
     name: "test; linux; PKG: built_types/_built_value_benchmark; `dart test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -756,7 +818,8 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_013:
+      - job_005
+  job_014:
     name: "test; linux; PKG: built_types/_built_value_end_to_end_test; `dart test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -793,7 +856,8 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_014:
+      - job_005
+  job_015:
     name: "test; linux; PKG: built_types/built_collection; `dart test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -830,7 +894,8 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_015:
+      - job_005
+  job_016:
     name: "test; linux; PKG: built_types/built_value; `dart test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -867,7 +932,8 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_016:
+      - job_005
+  job_017:
     name: "test; linux; PKG: built_types/built_value_chat_example; `dart test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -904,7 +970,8 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_017:
+      - job_005
+  job_018:
     name: "test; linux; PKG: built_types/built_value_example; `dart test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -941,7 +1008,8 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_018:
+      - job_005
+  job_019:
     name: "test; linux; PKG: built_types/built_value_generator; `dart test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -978,7 +1046,8 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_019:
+      - job_005
+  job_020:
     name: "test; linux; PKG: built_types/built_value_test; `dart test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -1015,7 +1084,46 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_020:
+      - job_005
+  job_021:
+    name: "test; linux; PKG: test_infra/_contract_weaver; `dart test --test-randomize-ordering-seed=random`"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:test_infra/_contract_weaver;commands:test_0"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:test_infra/_contract_weaver
+            os:ubuntu-latest;pub-cache-hosted;sdk:dev
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
+        with:
+          sdk: dev
+      - id: checkout
+        name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - id: test_infra__contract_weaver_pub_upgrade
+        name: test_infra/_contract_weaver; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: test_infra/_contract_weaver
+      - name: "test_infra/_contract_weaver; dart test --test-randomize-ordering-seed=random"
+        run: "dart test --test-randomize-ordering-seed=random"
+        if: "always() && steps.test_infra__contract_weaver_pub_upgrade.conclusion == 'success'"
+        working-directory: test_infra/_contract_weaver
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+      - job_005
+  job_022:
     name: "test; linux; PKG: build_runner; `../tool/leak_check.sh`"
     runs-on: ubuntu-latest
     steps:
@@ -1023,7 +1131,7 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner;commands:command_1"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner;commands:command_2"
           restore-keys: |
             os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:build_runner
             os:ubuntu-latest;pub-cache-hosted;sdk:dev
@@ -1052,7 +1160,8 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_021:
+      - job_005
+  job_023:
     name: "test; linux; PKG: build_runner; `dart test -t integration1 --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -1089,7 +1198,8 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_022:
+      - job_005
+  job_024:
     name: "test; linux; PKG: build_runner; `dart test -t integration2 --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -1126,7 +1236,8 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_023:
+      - job_005
+  job_025:
     name: "test; linux; PKG: build_runner; `dart test -t integration3 --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -1163,7 +1274,8 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_024:
+      - job_005
+  job_026:
     name: "test; linux; PKG: build_runner; `dart test -t integration4 --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -1200,7 +1312,8 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_025:
+      - job_005
+  job_027:
     name: "test; linux; PKG: build_runner; `dart test -x integration1 -x integration2 -x integration3 -x integration4 --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -1237,7 +1350,8 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_026:
+      - job_005
+  job_028:
     name: "test; linux; PKG: builder_pkgs/mockito; `dart test --test-randomize-ordering-seed=random -p chrome -c dart2wasm`"
     runs-on: ubuntu-latest
     steps:
@@ -1274,7 +1388,8 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_027:
+      - job_005
+  job_029:
     name: "test; linux; PKG: builder_pkgs/mockito; `dart test --test-randomize-ordering-seed=random -p chrome`"
     runs-on: ubuntu-latest
     steps:
@@ -1311,7 +1426,8 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_028:
+      - job_005
+  job_030:
     name: "test; macos; PKG: build_daemon; `dart test --test-randomize-ordering-seed=random`"
     runs-on: macos-latest
     steps:
@@ -1348,7 +1464,8 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_029:
+      - job_005
+  job_031:
     name: "test; macos; PKG: build_runner; `dart test -t integration1 --test-randomize-ordering-seed=random`"
     runs-on: macos-latest
     steps:
@@ -1385,7 +1502,8 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_030:
+      - job_005
+  job_032:
     name: "test; macos; PKG: build_runner; `dart test -t integration2 --test-randomize-ordering-seed=random`"
     runs-on: macos-latest
     steps:
@@ -1422,7 +1540,8 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_031:
+      - job_005
+  job_033:
     name: "test; macos; PKG: build_runner; `dart test -t integration3 --test-randomize-ordering-seed=random`"
     runs-on: macos-latest
     steps:
@@ -1459,7 +1578,8 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_032:
+      - job_005
+  job_034:
     name: "test; macos; PKG: build_runner; `dart test -t integration4 --test-randomize-ordering-seed=random`"
     runs-on: macos-latest
     steps:
@@ -1496,7 +1616,8 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_033:
+      - job_005
+  job_035:
     name: "test; windows; PKG: build_daemon; `dart test --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -1523,7 +1644,8 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_034:
+      - job_005
+  job_036:
     name: "test; windows; PKG: build_runner; `dart test -t integration1 --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -1550,7 +1672,8 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_035:
+      - job_005
+  job_037:
     name: "test; windows; PKG: build_runner; `dart test -t integration2 --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -1577,7 +1700,8 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_036:
+      - job_005
+  job_038:
     name: "test; windows; PKG: build_runner; `dart test -t integration3 --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -1604,7 +1728,8 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_037:
+      - job_005
+  job_039:
     name: "test; windows; PKG: build_runner; `dart test -t integration4 --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -1631,7 +1756,8 @@ jobs:
       - job_002
       - job_003
       - job_004
-  job_038:
+      - job_005
+  job_040:
     name: ci
     runs-on: ubuntu-latest
     if: always()
@@ -1677,3 +1803,5 @@ jobs:
       - job_035
       - job_036
       - job_037
+      - job_038
+      - job_039

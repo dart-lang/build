@@ -69,11 +69,11 @@ void main() {
       await readerWriter.writeAsString(assetId2, '// other');
       buildOptions = BuildOptions.forTests();
       builderFactories = BuilderFactories({
-        '': [(_) => TestBuilder()],
+        'b1': [(_) => TestBuilder()],
         'b2': [(_) => TestBuilder(buildExtensions: appendExtension('.copy2'))],
       });
       testingOverrides = TestingOverrides(
-        builderDefinitions: [BuilderDefinition('')].build(),
+        builderDefinitions: [BuilderDefinition('b1')].build(),
         readerWriter: readerWriter,
         buildPackages: buildPackages,
         checkBuilderFreshness: false,
@@ -122,7 +122,7 @@ void main() {
         buildOptions: buildOptions,
         testingOverrides: testingOverrides.copyWith(
           builderDefinitions: [
-            BuilderDefinition(''),
+            BuilderDefinition('b1'),
             BuilderDefinition('b2'),
           ].build(),
         ),
@@ -136,7 +136,7 @@ void main() {
       final spec = await loadSpec(
         testingOverrides.copyWith(
           builderDefinitions: [
-            BuilderDefinition('', outputsToArtifactTree: false),
+            BuilderDefinition('b1', outputsToArtifactTree: false),
           ].build(),
         ),
       );
@@ -155,6 +155,7 @@ void main() {
       buildState.addBuildStepResult(
         step: step,
         result: BuildStepResult((b) {
+          b.result = true;
           b.inArtifactTree = false;
           b.outputs.add(outputId);
         }),
@@ -172,7 +173,7 @@ void main() {
         buildOptions: buildOptions,
         testingOverrides: testingOverrides.copyWith(
           builderDefinitions: [
-            BuilderDefinition(''),
+            BuilderDefinition('b1'),
             BuilderDefinition('b2'),
           ].build(),
         ),
@@ -198,7 +199,7 @@ void main() {
         buildOptions: buildOptions,
         testingOverrides: testingOverrides.copyWith(
           builderDefinitions: [
-            BuilderDefinition(''),
+            BuilderDefinition('b1'),
             BuilderDefinition('b2'),
           ].build(),
         ),

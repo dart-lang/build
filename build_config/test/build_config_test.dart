@@ -179,6 +179,7 @@ builders:
     builder_factories: ["createBuilder"]
     import: package:example/builders.dart
     build_extensions: {".dart": []}
+    build_to: source
     adds_to_library: true
 ''',
     );
@@ -189,6 +190,7 @@ builders:
         builderFactories: ['createBuilder'],
         import: 'package:example/builders.dart',
         buildExtensions: {'.dart': []},
+        buildTo: BuildTo.source,
         addsToLibrary: true,
       ),
     });

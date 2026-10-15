@@ -9,6 +9,8 @@ stages:
   - format
   - analyze: --fatal-infos .
   - command: dart run build_runner build --workspace --force-jit --only-check
+- contracts:
+  - command: ../tool/contract_check.sh
 - test:
   - test: -x integration1 -x integration2 -x integration3 -x integration4 --test-randomize-ordering-seed=random
   - test: -t integration1 --test-randomize-ordering-seed=random

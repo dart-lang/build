@@ -154,7 +154,8 @@ the following keys:
 - **adds_to_library**: Optional, boolean. Specifies whether this builder adds
   code to a library using `BuildStep.librarySourceSink`. If `true`, the builder
   can access `buildStep.librarySourceSink` to contribute source and imports to
-  a shared part file. Defaults to `false`. Cannot be used with `is_optional`.
+  a shared part file. Defaults to `false`. Requires `build_to: source`. Cannot
+  be used with `is_optional`.
 - **defaults**: Optional: Default values to apply when a user does not specify
   the corresponding key in their `builders` section. May contain the following
   keys:

@@ -200,6 +200,103 @@ builders:
       ),
     );
   });
+
+  test('for builder with adds_to_library and build_to cache', () {
+    final buildYaml = r'''
+builders:
+  package_name:builder:
+    builder_factories: ["someFactory"]
+    import: package:package_name/builders.dart
+    build_extensions: {".dart": []}
+    adds_to_library: true
+''';
+
+    _expectThrows(
+      buildYaml,
+      contains(
+        'A builder with `adds_to_library: true` must set `build_to: source`.',
+      ),
+    );
+  });
+
+  test('for builder with adds_to_library and two factories', () {
+    final buildYaml = r'''
+builders:
+  package_name:builder:
+    builder_factories: ["factory1", "factory2"]
+    import: package:package_name/builders.dart
+    build_extensions: {".dart": []}
+    build_to: source
+    adds_to_library: true
+''';
+
+    _expectThrows(
+      buildYaml,
+      contains(
+        'A builder with `adds_to_library: true` must have exactly one '
+        "builder factory, but has: 'factory1', 'factory2'.",
+      ),
+    );
+  });
+
+  test('for builder keys that refer to the same builder', () {
+    final buildYaml = r'''
+builders:
+  builder:
+    builder_factories: ["someFactory"]
+    import: package:package_name/builders.dart
+    build_extensions: {".dart": [".a.dart"]}
+  ":builder":
+    builder_factories: ["otherFactory"]
+    import: package:package_name/builders.dart
+    build_extensions: {".dart": [".b.dart"]}
+''';
+
+    _expectThrows(
+      buildYaml,
+      contains(
+        'Builder keys "builder" and ":builder" both refer to builder '
+        '"package_name:builder".',
+      ),
+    );
+  });
+
+  test('for builder and post process builder with the same key', () {
+    final buildYaml = r'''
+builders:
+  builder:
+    builder_factories: ["someFactory"]
+    import: package:package_name/builders.dart
+    build_extensions: {".dart": [".a.dart"]}
+post_process_builders:
+  builder:
+    builder_factory: "postFactory"
+    import: package:package_name/builders.dart
+''';
+
+    _expectThrows(
+      buildYaml,
+      contains(
+        'Builder "package_name:builder" is defined in both `builders` and '
+        '`post_process_builders`.',
+      ),
+    );
+  });
+
+  test('for builder key with a line break', () {
+    final buildYaml = r'''
+builders:
+  "my\nbuilder":
+    builder_factories: ["someFactory"]
+    import: package:package_name/builders.dart
+    build_extensions: {".dart": [".a.dart"]}
+''';
+
+    _expectThrows(
+      buildYaml,
+      contains(r'Builder key "my\nbuilder" contains a line break'),
+    );
+  });
 }
 
 void _expectThrows(String buildYaml, Object matcher) => expect(

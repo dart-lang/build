@@ -5,7 +5,7 @@
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 
-part 'part_contribution.g.dart';
+part '../../_br_/src/build/part_contribution.part.dart';
 
 /// What one builder added to a shared part in one phase.
 abstract class PartContribution

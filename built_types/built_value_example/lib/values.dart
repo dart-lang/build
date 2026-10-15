@@ -104,9 +104,11 @@ abstract class ValueWithCode
       _$ValueWithCode;
   ValueWithCode._();
 
-  factory ValueWithCode.fromCustomFactory(int anInt) => ValueWithCode((b) => b
-    ..anInt = anInt
-    ..aString = 'two');
+  factory ValueWithCode.fromCustomFactory(int anInt) => ValueWithCode(
+    (b) => b
+      ..anInt = anInt
+      ..aString = 'two',
+  );
 }
 
 /// Defaults for fields go in an explicit builder class.

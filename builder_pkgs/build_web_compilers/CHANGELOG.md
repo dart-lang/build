@@ -1,5 +1,6 @@
 ## 4.9.0-wip
 
+- Allow `build` 5.0.0.
 - Add a `deprecated-js-interop` option for the `ddc`, `ddc_modules`,
   `dart2js_modules` and `entrypoint` builders. When set, it passes
   `--[no-]deprecated-js-interop` to dartdevc, dart2js, the kernel worker and
@@ -10,6 +11,9 @@
   code, stdout and stderr.
 - Log kernel worker arguments at the fine level instead of including them in
   kernel compilation errors.
+
+## 4.8.12
+
 - Start the persistent Frontend Server and its reaper process in the scratch
   space instead of the package directory, so they do not block deleting it on
   Windows.
@@ -17,6 +21,8 @@
   space.
 - Call DDC with an AOT snapshot via `dart compile js-dev` instead of JIT
   snapshot.
+- Fix `DdcFrontendServerBuilder` to support the same custom sdk build options
+  as `DevCompilerBuilder`.
 
 ## 4.8.11
 
@@ -792,7 +798,7 @@ global_options:
 [analyzer]: https://pub.dev/packages/analyzer
 [front_end]: https://pub.dev/packages/front_end
 [issue tracker]: https://github.com/dart-lang/build/issues/new
-[TestOn]: https://pub.dev/documentation/test/latest/#restricting-tests-to-certain-platforms
+[TestOn]: https://pub.dev/packages/test#restricting-tests-to-certain-platforms
 
 ## 1.2.2
 

@@ -29,7 +29,7 @@ import 'build_spec.dart';
 import 'build_spec_digest.dart';
 import 'build_step_plan.dart';
 
-part 'previous_build.g.dart';
+part '../../_br_/src/build_plan/previous_build.part.dart';
 
 /// Information about the previous build run and how it relates to the current
 /// configuration.
@@ -164,14 +164,14 @@ abstract class PreviousBuild
   // -- Shared parts.
 
   Iterable<AssetId> get sharedPartIds =>
-      digests.keys.where((id) => id.isBrSharedPart);
+      digests.keys.where((id) => id.isBrSharedPart && !isSource(id));
 
   Iterable<AssetId> get sharedPartLibraryIds =>
       sharedPartIds.map((id) => id.sharedPartLibraryId!);
 
   bool hasSharedPart(AssetId id) {
     final partId = id.isBrSharedPart ? id : id.sharedPartId;
-    return partId != null && digests.containsKey(partId);
+    return partId != null && !isSource(partId) && digests.containsKey(partId);
   }
 
   /// Deserializes information about the previous build and compares it to

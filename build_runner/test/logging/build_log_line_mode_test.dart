@@ -29,7 +29,9 @@ void main() {
       buildLog.buildPackages = BuildPackages.compute(
         currentPackage: 'p',
         outputRoot: 'p',
-        packages: {'p': BuildPackage.forTesting(name: 'p')}.build(),
+        packages: {
+          'p': BuildPackage.forTesting(name: 'p', isOutput: true),
+        }.build(),
       );
       buildLog.renderLinkedId(AssetId('p', 'foo/*/bar'), windows: true);
     });

@@ -10,7 +10,7 @@ import 'package:built_value/serializer.dart';
 import '../../contracts.dart';
 import 'library_cycle.dart';
 
-part 'library_cycle_graph.g.dart';
+part '../../../_br_/src/build/library_cycle_graph/library_cycle_graph.part.dart';
 
 /// A directed acyclic graph of [LibraryCycle]s.
 @Invariant('children.every((c) => c.root != root)')

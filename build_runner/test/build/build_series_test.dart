@@ -78,7 +78,7 @@ void main() {
       await readerWriter.writeAsString(assetId, '// a.dart');
       buildOptions = BuildOptions.forTests();
       builderFactories = BuilderFactories({
-        '': [
+        'b1': [
           (_) => TestBuilder(
             buildExtensions: const {
               '.dart': ['.dart.copy'],
@@ -88,7 +88,7 @@ void main() {
       });
       testingOverrides = TestingOverrides(
         builderDefinitions: [
-          BuilderDefinition('', outputsToArtifactTree: false),
+          BuilderDefinition('b1', outputsToArtifactTree: false),
         ].build(),
         readerWriter: readerWriter,
         buildPackages: buildPackages,
@@ -288,7 +288,7 @@ void main() {
         final artifactTreePlan = await loadPlan(
           TestingOverrides(
             builderDefinitions: [
-              BuilderDefinition('', outputsToArtifactTree: true),
+              BuilderDefinition('b1', outputsToArtifactTree: true),
             ].build(),
             readerWriter: readerWriter,
             buildPackages: buildPackages,
@@ -321,7 +321,7 @@ void main() {
         final loadedPlan = await loadPlan(
           TestingOverrides(
             builderDefinitions: [
-              BuilderDefinition('', outputsToArtifactTree: true),
+              BuilderDefinition('b1', outputsToArtifactTree: true),
             ].build(),
             readerWriter: readerWriter,
             buildPackages: buildPackages,
@@ -519,6 +519,35 @@ void main() {
 
         expect(result.failureType, FailureType.buildScriptChanged);
         expect(await series.currentBuildResult, result);
+      });
+
+      test('keeps serving the previous outputs after an early exit', () async {
+        // The extra builder has no factory so a restart is needed, but the
+        // build phases from `buildPlan` still let the first build run.
+        final planWithBuilderDefinitions = await loadPlan(
+          TestingOverrides(
+            builderDefinitions: [
+              BuilderDefinition('b1', outputsToArtifactTree: false),
+              BuilderDefinition('extra:builder', outputsToArtifactTree: false),
+            ].build(),
+            buildPhases: buildPlan.buildSpec.buildPhases,
+            readerWriter: readerWriter,
+            buildPackages: buildPackages,
+            checkBuilderFreshness: false,
+          ),
+        );
+        final series = BuildSeries(planWithBuilderDefinitions);
+        final firstResult = await series.run({}, recentlyBootstrapped: true);
+        expect(firstResult.outputs, contains(outputId));
+
+        final configId = AssetId('a', 'build.yaml');
+        final result = await series.run({
+          configId,
+        }, recentlyBootstrapped: false);
+
+        expect(result.failureType, FailureType.buildScriptChanged);
+        final current = await series.currentBuildResult;
+        expect(await current.buildOutputReader?.canRead(outputId), isTrue);
       });
     });
   });

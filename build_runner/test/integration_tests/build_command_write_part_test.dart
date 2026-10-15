@@ -28,7 +28,7 @@ builders:
     import: 'package:write_part_pkg/builder.dart'
     builder_factories: ['writePartBuilderFactory']
     build_extensions: {'.dart': []}
-    build_to: 'cache'
+    build_to: 'source'
     adds_to_library: true
 ''',
         'lib/builder.dart': r'''
@@ -36,13 +36,57 @@ import 'package:build/build.dart';
 
 Builder writePartBuilderFactory(BuilderOptions options) => WritePartBuilder();
 
+/// Writes a part contribution, unless the library says `// no part`; fails
+/// if it says `// fail`.
 class WritePartBuilder implements Builder {
   @override
   Map<String, List<String>> get buildExtensions => {'.dart': []};
 
   @override
   Future<void> build(BuildStep buildStep) async {
+    final source = await buildStep.readAsString(buildStep.inputId);
+    if (source.contains('// fail')) {
+      log.severe('failed');
+      return;
+    }
+    if (source.contains('// no part')) return;
     (await buildStep.librarySourceSink)?.add('// part content');
+  }
+}
+''',
+      },
+    );
+
+    tester.writePackage(
+      name: 'generate_library_pkg',
+      dependencies: ['build', 'build_runner'],
+      files: {
+        'build.yaml': r'''
+builders:
+  generate_library_builder:
+    import: 'package:generate_library_pkg/builder.dart'
+    builder_factories: ['generateLibraryBuilderFactory']
+    build_extensions: {'.txt': ['.dart']}
+    build_to: 'source'
+    runs_before: ['write_part_pkg:write_part_builder']
+''',
+        'lib/builder.dart': r'''
+import 'package:build/build.dart';
+
+Builder generateLibraryBuilderFactory(BuilderOptions options) =>
+    GenerateLibraryBuilder();
+
+/// Copies `.txt` to `.dart`.
+class GenerateLibraryBuilder implements Builder {
+  @override
+  Map<String, List<String>> get buildExtensions => {'.txt': ['.dart']};
+
+  @override
+  Future<void> build(BuildStep buildStep) async {
+    await buildStep.writeAsString(
+      buildStep.inputId.changeExtension('.dart'),
+      await buildStep.readAsString(buildStep.inputId),
+    );
   }
 }
 ''',
@@ -59,7 +103,7 @@ builders:
     import: 'package:edit_during_build_pkg/builder.dart'
     builder_factories: ['editDuringBuildBuilderFactory']
     build_extensions: {'.dart': []}
-    build_to: 'cache'
+    build_to: 'source'
     adds_to_library: true
 ''',
         'lib/builder.dart': r'''
@@ -99,13 +143,13 @@ builders:
     import: 'package:multi_part_pkg/builder.dart'
     builder_factories: ['factory1']
     build_extensions: {'.dart': []}
-    build_to: 'cache'
+    build_to: 'source'
     adds_to_library: true
   builder2:
     import: 'package:multi_part_pkg/builder.dart'
     builder_factories: ['factory2']
     build_extensions: {'.dart': []}
-    build_to: 'cache'
+    build_to: 'source'
     adds_to_library: true
 ''',
         'lib/builder.dart': r'''
@@ -140,20 +184,20 @@ builders:
     import: 'package:phase_part_pkg/builder.dart'
     builder_factories: ['partGen1Factory']
     build_extensions: {'.dart': ['.dummy1']}
-    build_to: 'cache'
+    build_to: 'source'
     adds_to_library: true
   part_generator_2:
     import: 'package:phase_part_pkg/builder.dart'
     builder_factories: ['partGen2Factory']
     build_extensions: {'.dart': ['.dummy2']}
-    build_to: 'cache'
+    build_to: 'source'
     required_inputs: ['.dummy1']
     adds_to_library: true
   part_generator_3:
     import: 'package:phase_part_pkg/builder.dart'
     builder_factories: ['partGen3Factory']
     build_extensions: {'.dart': ['.resolved.txt']}
-    build_to: 'cache'
+    build_to: 'source'
     required_inputs: ['.dummy2']
     adds_to_library: true
 ''',
@@ -225,7 +269,7 @@ builders:
     import: 'package:write_part_imports_pkg/builder.dart'
     builder_factories: ['writePartBuilderFactory']
     build_extensions: {'.dart': ['.dummy']}
-    build_to: 'cache'
+    build_to: 'source'
     adds_to_library: true
   resolve_part_builder:
     import: 'package:write_part_imports_pkg/builder.dart'
@@ -287,6 +331,7 @@ class ResolvePartBuilder implements Builder {
       dependencies: ['build_runner'],
       pathDependencies: [
         'edit_during_build_pkg',
+        'generate_library_pkg',
         'multi_part_pkg',
         'phase_part_pkg',
         'write_part_imports_pkg',
@@ -339,7 +384,7 @@ targets:
 // dart format off
 part of '../a.dart';
 
-// === write_part_pkg:write_part_builder/0 contribution.
+// === write_part_pkg:write_part_builder contribution.
 // part content
 
 ''');
@@ -355,11 +400,21 @@ part of '../a.dart';
     await watch.expect('Added missing `part` directives for generated code:');
     await watch.expect(BuildLog.failurePattern);
     await watch.expect(BuildLog.successPattern);
-    await watch.kill();
     expect(
       tester.read('root_pkg/lib/a.dart'),
       "part '_br_/a.part.dart';\n\nclass A {}",
     );
+
+    // `watch` also removes a directive that is unused.
+    tester.write(
+      'root_pkg/lib/a.dart',
+      "part '_br_/a.part.dart';\n\n// no part\nclass A {}\n",
+    );
+    await watch.expect('Removed unused `part` directives for generated code:');
+    await watch.expect(BuildLog.failurePattern);
+    await watch.expect(BuildLog.successPattern);
+    await watch.kill();
+    expect(tester.read('root_pkg/lib/a.dart'), '// no part\nclass A {}\n');
 
     // A library that changed during the build gets no directive from that
     // build, which checked the old content. The rerun checks the new content
@@ -393,6 +448,137 @@ targets:
       "part '_br_/a.part.dart';\n\nclass A {} // edited",
     );
 
+    // With `--only-check`, a library whose builders all succeed and write
+    // nothing fails the build if it has a `part` directive for the shared
+    // part, naming the line to remove.
+    tester.write('root_pkg/build.yaml', r'''
+targets:
+  $default:
+    builders:
+      write_part_pkg|write_part_builder:
+        enabled: true
+''');
+    tester.write(
+      'root_pkg/lib/a.dart',
+      "part '_br_/a.part.dart';\n\n// no part\nclass A {}\n",
+    );
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit --only-check',
+      expectExitCode: 1,
+    );
+    expect(
+      output,
+      contains('Remove unused `part` directives for generated code:'),
+    );
+    expect(output, contains("lib/a.dart: part '_br_/a.part.dart';"));
+    expect(
+      tester.read('root_pkg/lib/a.dart'),
+      "part '_br_/a.part.dart';\n\n// no part\nclass A {}\n",
+    );
+
+    // If any build step fails, even for another library, unused directives
+    // are left alone: the failure might be why nothing was written.
+    tester.write('root_pkg/lib/b.dart', '// fail\nclass B {}\n');
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+      expectExitCode: 1,
+    );
+    expect(output, contains('on lib/b.dart:\n  failed'));
+    expect(output, isNot(contains('unused `part` directives')));
+    expect(
+      tester.read('root_pkg/lib/a.dart'),
+      "part '_br_/a.part.dart';\n\n// no part\nclass A {}\n",
+    );
+    tester.delete('root_pkg/lib/b.dart');
+
+    // Otherwise the directive is removed and the build reruns.
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+    );
+    expect(
+      output,
+      contains('Removed unused `part` directives for generated code:'),
+    );
+    expect(output, contains(BuildLog.successPattern));
+    expect(tester.read('root_pkg/lib/a.dart'), '// no part\nclass A {}\n');
+
+    // The URI is compared by value, so it can be written with escapes.
+    tester.write(
+      'root_pkg/lib/a.dart',
+      "part '_br_/a.part.dar\\x74';\n\n// no part\nclass A {}\n",
+    );
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+    );
+    expect(
+      output,
+      contains('Removed unused `part` directives for generated code:'),
+    );
+    expect(tester.read('root_pkg/lib/a.dart'), '// no part\nclass A {}\n');
+
+    // With no builder that adds to the library, nothing says whether the
+    // directive is used, so it is left alone.
+    tester.delete('root_pkg/build.yaml');
+    tester.write(
+      'root_pkg/lib/a.dart',
+      "part '_br_/a.part.dart';\n\nclass A {}\n",
+    );
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+    );
+    expect(output, isNot(contains('unused `part` directives')));
+    expect(
+      tester.read('root_pkg/lib/a.dart'),
+      "part '_br_/a.part.dart';\n\nclass A {}\n",
+    );
+
+    // A generated library is owned by the builder that generates it, so its
+    // missing directive is not added, even though it gets a shared part.
+    tester.write('root_pkg/build.yaml', r'''
+targets:
+  $default:
+    builders:
+      generate_library_pkg|generate_library_builder:
+        enabled: true
+      write_part_pkg|write_part_builder:
+        enabled: true
+''');
+    tester.write('root_pkg/lib/gen.txt', 'class Gen {}\n');
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+    );
+    expect(output, contains(BuildLog.successPattern));
+    expect(output, isNot(contains('missing `part` directives')));
+    expect(tester.read('root_pkg/lib/gen.dart'), 'class Gen {}\n');
+    expect(
+      tester.read('root_pkg/lib/_br_/gen.part.dart'),
+      contains('// part content'),
+    );
+
+    // Nor is its unused directive removed.
+    tester.write(
+      'root_pkg/lib/gen.txt',
+      "part '_br_/gen.part.dart';\n\n// no part\nclass Gen {}\n",
+    );
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+    );
+    expect(output, contains(BuildLog.successPattern));
+    expect(output, isNot(contains('unused `part` directives')));
+    expect(
+      tester.read('root_pkg/lib/gen.dart'),
+      "part '_br_/gen.part.dart';\n\n// no part\nclass Gen {}\n",
+    );
+    tester.delete('root_pkg/lib/gen.txt');
+    tester.delete('root_pkg/lib/gen.dart');
+
     // Two builders writing parts to the same library concatenate.
     tester.write('root_pkg/build.yaml', r'''
 targets:
@@ -412,10 +598,10 @@ targets:
 // dart format off
 part of '../a.dart';
 
-// === multi_part_pkg:builder2/0 contribution.
+// === multi_part_pkg:builder2 contribution.
 // contribution 2
 
-// === multi_part_pkg:builder1/1 contribution.
+// === multi_part_pkg:builder1 contribution.
 // contribution 1
 
 ''');
@@ -439,26 +625,24 @@ targets:
     );
     expect(output, contains(BuildLog.successPattern));
     expect(
-      tester.read(
-        'root_pkg/.dart_tool/build/generated/root_pkg/lib/a.resolved.txt',
-      ),
+      tester.read('root_pkg/lib/a.resolved.txt'),
       contains('Gen3 checks - Class1: true, Class2: true, Class3: false'),
     );
     expect(tester.read('root_pkg/lib/_br_/a.part.dart'), r'''
 // dart format off
 part of '../a.dart';
 
-// === phase_part_pkg:part_generator_1/0 contribution.
+// === phase_part_pkg:part_generator_1 contribution.
 class Class1 {
   // Gen1 checked hasClass1: false, hasClass2: false, hasClass3: false
 }
 
-// === phase_part_pkg:part_generator_2/1 contribution.
+// === phase_part_pkg:part_generator_2 contribution.
 class Class2 {
   // Gen2 checked hasClass1: true, hasClass2: false
 }
 
-// === phase_part_pkg:part_generator_3/2 contribution.
+// === phase_part_pkg:part_generator_3 contribution.
 class Class3 {
   // Gen3 checked hasClass1: true, hasClass2: true, hasClass3: false
 }
@@ -482,17 +666,17 @@ class A {
 // dart format off
 part of '../a.dart';
 
-// === phase_part_pkg:part_generator_1/0 contribution.
+// === phase_part_pkg:part_generator_1 contribution.
 class Class1 {
   // Gen1 checked hasClass1: false, hasClass2: false, hasClass3: false
 }
 
-// === phase_part_pkg:part_generator_2/1 contribution.
+// === phase_part_pkg:part_generator_2 contribution.
 class Class2 {
   // Gen2 checked hasClass1: true, hasClass2: false
 }
 
-// === phase_part_pkg:part_generator_3/2 contribution.
+// === phase_part_pkg:part_generator_3 contribution.
 class Class3 {
   // Gen3 checked hasClass1: true, hasClass2: true, hasClass3: false
 }
@@ -572,11 +756,11 @@ class Dep {}
 // dart format off
 part of '../a.dart';
 
-// === write_part_imports_pkg:write_part_builder/0 imports.
+// === write_part_imports_pkg:write_part_builder imports.
 import 'dart:async' as $0async;
 import 'package:root_pkg/dep.dart' as $0dep;
 
-// === write_part_imports_pkg:write_part_builder/0 contribution.
+// === write_part_imports_pkg:write_part_builder contribution.
 class Generated {
   $0async.Future<void>? future;
   $0dep.Dep? dep;

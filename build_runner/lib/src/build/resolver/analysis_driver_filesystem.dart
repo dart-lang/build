@@ -122,8 +122,13 @@ class AnalysisDriverFilesystem
     }
     _changedPathsThisBuild.clear();
 
+    // Shared parts written by this build are added back as phases run. Shared
+    // parts in dependencies are sources, so they stay.
     final sharedPartPaths = _data.keys.where((path) {
-      return tryParseAssetPath(path)?.isBrSharedPart ?? false;
+      final id = tryParseAssetPath(path);
+      return id != null &&
+          id.isBrSharedPart &&
+          !builderFilesystem.buildState.isSource(id);
     }).toList();
     for (final path in sharedPartPaths) {
       if (_data.remove(path) != null) {
@@ -142,7 +147,7 @@ class AnalysisDriverFilesystem
       }
       return;
     }
-    if (id.isBrSharedPart) {
+    if (id.isBrSharedPart && !_builderFilesystem.buildState.isSource(id)) {
       _updateSharedPartContent(id);
       return;
     }

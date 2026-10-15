@@ -1,11 +1,24 @@
-## 2.16.2-wip
+## 2.17.1
 
+- Require `build` 5.0.0, which is the retracted `build` 4.1.0 republished as a
+  major version. `build_runner` implements `build` interfaces, so it now
+  allows only one minor version of `build`.
+  [#5223](https://github.com/dart-lang/build/issues/5223)
+
+## 2.17.0
+
+- Allow `built_collection` 6.x.
+- Fix `build_runner run` with `built_collection` 6.x by passing
+  `Isolate.spawnUri` a plain list of arguments.
 - Add `SharedPartAccumulator` and `SharedPartAccumulatorCodec` for shared part
   outputs.
 - Support shared parts written using `BuildStep.librarySourceSink` when builders
-  opt in with `adds_to_library: true` in `build.yaml`. If a library is missing
-  the `part` directive for its shared part, `build_runner` adds it and
-  rebuilds; with `--only-check` it reports the directive to add instead.
+  opt in with `adds_to_library: true` and `build_to: source` in `build.yaml`. If
+  a library is missing the `part` directive for its shared part, `build_runner`
+  adds it and rebuilds; if the directive is unused because builders ran and
+  contributed nothing, and nothing in the build failed, `build_runner` removes
+  it and rebuilds. With `--only-check` it reports the directives to add or
+  remove instead.
 - The `serve` command now rejects non-loopback `Host` and `Origin` headers when
   bound to a loopback interface, and validates them against `--hostname` when a
   specific host is given.
@@ -18,7 +31,6 @@
 - Bug fix: preserve analyzer dependency information on unhandled build failures,
   preventing subsequent incremental builds from missing changes to transitively
   imported files.
-- Require `analyzer` 14.3.0.
 - Bug fix: complete the active building future in daemon mode when the build
   script is updated, preventing asset server requests from hanging.
 - Bug fix: write the SDK summary deps file atomically, so a concurrently
@@ -36,6 +48,12 @@
   deleted after a previous build deleted and then rewrote that same file.
   Previously the delete was mistaken for the build's own earlier delete and
   ignored, so deleting a generated file no longer forced it to be regenerated.
+- Bug fix: in daemon mode, after a builder change keep serving the previous
+  build's outputs until shutdown, instead of returning 404.
+
+## 2.16.2
+
+- Support `analyzer` 14.5.0. Require `analyzer` 14.3.0.
 
 ## 2.16.1
 

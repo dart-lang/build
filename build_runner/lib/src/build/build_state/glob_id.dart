@@ -7,7 +7,7 @@ import 'package:built_value/serializer.dart';
 
 import '../../contracts.dart';
 
-part 'glob_id.g.dart';
+part '../../../_br_/src/build/build_state/glob_id.part.dart';
 
 /// Unique ID for a glob evaluation.
 @Invariant('package.isNotEmpty')

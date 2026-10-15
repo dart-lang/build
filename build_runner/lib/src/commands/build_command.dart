@@ -61,14 +61,17 @@ class BuildCommand implements BuildRunnerCommand {
     final buildSeries = BuildSeries(buildPlan);
     var result = await buildSeries.run({}, recentlyBootstrapped: true);
 
-    // Build once more, now with the added `part` directives. Once is enough
-    // because the first build adds every missing directive it finds. If the
-    // rerun still finds one missing, for example because a library changed
-    // during the first build, it adds it and fails; the next build succeeds.
-    if (result.librariesMissingPartDirective.isNotEmpty &&
-        buildOptions.outputStrategy != .verify) {
+    // Build once more, now with `part` directives added or removed. Once is
+    // enough because the first build edits every library it finds. If the
+    // rerun still finds a library to edit, for example because it changed
+    // during the first build, it edits it and fails; the next build succeeds.
+    final editedLibraries = {
+      ...result.librariesMissingPartDirective.keys,
+      ...result.librariesWithUnusedPartDirective.keys,
+    };
+    if (editedLibraries.isNotEmpty && buildOptions.outputStrategy != .verify) {
       result = await buildSeries.run(
-        result.librariesMissingPartDirective.keys.toSet(),
+        editedLibraries,
         recentlyBootstrapped: false,
       );
     }

@@ -13,6 +13,7 @@ import 'part_contribution.dart';
 import 'shared_part_accumulator_codec.dart';
 
 /// Accumulates part file contributions and imports across build phases.
+@ContractImport('package:build_runner/src/build/br_outputs.dart')
 @Invariant('libraryId.package.isNotEmpty')
 @Invariant('libraryId.path.isNotEmpty')
 @Invariant('libraryId.sharedPartId != null')
@@ -107,10 +108,17 @@ class SharedPartAccumulator {
 
   /// Parses the raw content of a shared part file on disk into a
   /// [SharedPartAccumulator].
+  ///
+  /// See [SharedPartAccumulatorCodec.decode] for [phasesByBuilderKey].
   static SharedPartAccumulator parseContent(
     String content,
     AssetId libraryId,
-  ) => const SharedPartAccumulatorCodec().decode(content, libraryId);
+    Map<String, int> phasesByBuilderKey,
+  ) => const SharedPartAccumulatorCodec().decode(
+    content,
+    libraryId,
+    phasesByBuilderKey,
+  );
 
   BuiltMap<int, PartContribution> get contributions => _contributions.build();
 }

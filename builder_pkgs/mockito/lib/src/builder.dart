@@ -2073,6 +2073,16 @@ class _MockClassInfo {
           ..url = 'dart:async'
           ..types.add(elementType);
       }).property('empty').call([]);
+    } else if (type.isProtobufEnum) {
+      return referImported(
+        type.element.name!,
+        type.element.library.uri.toString(),
+      ).property('values').property('first');
+    } else if (type.isProtobufMessage) {
+      return referImported(
+        type.element.name!,
+        type.element.library.uri.toString(),
+      ).call([]);
     } else if (type.isDartTypedDataSealed) {
       // These types (XXXList + ByteData) from dart:typed_data are
       // sealed, e.g. "non-subtypeable", but they
@@ -2111,11 +2121,26 @@ class _MockClassInfo {
       // used, that's `String` when compiling to JS and an internal wrapper type
       // when compiling to Wasm.
       return _dummyValueFallbackToRuntime(type, invocation);
+    } else if (_isFixnumType(type)) {
+      final library = type.element.library;
+      final importUrl =
+          mockLibraryInfo.assetUris[type.element] ?? library.uri.toString();
+      return referImported(type.element.name!, importUrl).property('ZERO');
     }
 
     // This class is unknown; we must likely generate a fake class, and return
     // an instance here.
     return _dummyValueImplementing(type, invocation);
+  }
+
+  bool _isFixnumType(analyzer.DartType type) {
+    if (type is! analyzer.InterfaceType) return false;
+    final name = type.element.name;
+    if (name != 'Int32' && name != 'Int64') return false;
+    final uri = type.element.library.uri;
+    return uri.scheme == 'package' &&
+        uri.pathSegments.isNotEmpty &&
+        uri.pathSegments.first == 'fixnum';
   }
 
   /// Returns a reference to [Future], optionally with a type argument for the
@@ -3041,6 +3066,26 @@ extension on analyzer.DartType {
   bool get isFutureOfVoid =>
       isDartAsyncFuture &&
       (this as analyzer.InterfaceType).typeArguments.first is analyzer.VoidType;
+
+  bool get isProtobufEnum {
+    final element = this.element;
+    if (element is! ClassElement) return false;
+    final supertype = element.supertype?.element;
+    final library = supertype?.library;
+    return library?.uri.toString() ==
+            'package:protobuf/src/protobuf/internal.dart' &&
+        supertype?.name == 'ProtobufEnum';
+  }
+
+  bool get isProtobufMessage {
+    final element = this.element;
+    if (element is! ClassElement) return false;
+    final supertype = element.supertype?.element;
+    final library = supertype?.library;
+    return library?.uri.toString() ==
+            'package:protobuf/src/protobuf/internal.dart' &&
+        supertype?.name == 'GeneratedMessage';
+  }
 
   /// Returns whether this type is a sealed type from the dart:typed_data
   /// library.

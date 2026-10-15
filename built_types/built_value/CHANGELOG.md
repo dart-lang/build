@@ -2,6 +2,7 @@
 
 ## 8.13.1-wip
 
+- Allow `built_collection` 6.x.
 - Document how missing and `null` fields are deserialized.
 - Migrate to `package:dart_flutter_team_lints`.
 - Fix analysis issues and remove the lint suppressions that hid them.

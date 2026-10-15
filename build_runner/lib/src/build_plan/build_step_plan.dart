@@ -12,7 +12,7 @@ import '../contracts.dart';
 import 'build_phases.dart';
 import 'phase.dart';
 
-part 'build_step_plan.g.dart';
+part '../../_br_/src/build_plan/build_step_plan.part.dart';
 
 /// Planned build steps for one build and their declared outputs.
 @Invariant('buildStepsByPhase.length == buildPhases.inBuildPhases.length')
@@ -56,6 +56,7 @@ abstract class BuildStepPlan
     required Iterable<AssetId> sources,
   }) {
     final result = BuildStepPlanBuilder()..buildPhases = buildPhases;
+    final addsToLibraryKeysByInput = <AssetId, Set<String>>{};
 
     final allInputs = sources.toSet();
     allInputs.addAll(placeholderIds);
@@ -75,6 +76,15 @@ abstract class BuildStepPlan
           (id) => result.buildStepsByDeclaredOutput[id],
         )) {
           continue;
+        }
+        if (phase.addsToLibrary &&
+            !addsToLibraryKeysByInput
+                .putIfAbsent(input, () => {})
+                .add(phase.key)) {
+          throw DuplicateSharedPartContributionException(
+            input,
+            phase.displayName,
+          );
         }
         final outputs = expectedOutputs(phase.builder, input);
         phaseOutputs.addAll(outputs);
@@ -105,6 +115,22 @@ abstract class BuildStepPlan
     }
 
     return result.build();
+  }
+
+  /// The phase numbers of the builders that can add to [libraryId], by
+  /// builder key.
+  ///
+  /// [BuildStepPlan.compute] checks that each builder applies to a library
+  /// at most once.
+  Map<String, int> addsToLibraryPhasesByBuilderKey(AssetId libraryId) {
+    final result = <String, int>{};
+    for (var i = 0; i != buildPhases.inBuildPhases.length; ++i) {
+      final phase = buildPhases.inBuildPhases[i];
+      if (phase.addsToLibrary && actionMatches(phase, libraryId)) {
+        result[phase.key] = i;
+      }
+    }
+    return result;
   }
 
   /// Checks if a builder action matches a primary input.

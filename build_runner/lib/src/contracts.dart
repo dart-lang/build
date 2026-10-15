@@ -71,3 +71,15 @@ class Invariant {
 
   const Invariant(this.clause);
 }
+
+/// A library that clauses in this library need, imported only when woven.
+///
+/// Put it on the `library` directive or on any top-level declaration. The
+/// weaver adds `import '[uri]';` to the woven copy, unless the library already
+/// imports exactly that URI. Use it when clauses name something, such as an
+/// extension member, that the library itself does not otherwise import.
+class ContractImport {
+  final String uri;
+
+  const ContractImport(this.uri);
+}

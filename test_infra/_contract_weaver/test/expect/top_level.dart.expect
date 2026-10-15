@@ -1,0 +1,33 @@
+// Copyright (c) 2026, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
+import 'contracts.dart';
+
+@Requires('divisor != 0')
+@Ensures('result * divisor <= dividend')
+int divide(int dividend, int divisor) {
+  if (!Contracts.checking) {
+    Contracts.checking = true;
+    try {
+      if (!(divisor != 0))
+        throw ContractViolation('Precondition failed: divisor != 0');
+    } finally {
+      Contracts.checking = false;
+    }
+  }
+  return ((int result) {
+    if (!Contracts.checking) {
+      Contracts.checking = true;
+      try {
+        if (!(result * divisor <= dividend))
+          throw ContractViolation(
+            'Postcondition failed: result * divisor <= dividend',
+          );
+      } finally {
+        Contracts.checking = false;
+      }
+    }
+    return result;
+  })(dividend ~/ divisor);
+}

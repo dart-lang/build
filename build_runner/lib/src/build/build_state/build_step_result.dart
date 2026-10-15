@@ -10,7 +10,7 @@ import 'package:built_value/serializer.dart';
 import '../../contracts.dart';
 import 'glob_id.dart';
 
-part 'build_step_result.g.dart';
+part '../../../_br_/src/build/build_state/build_step_result.part.dart';
 
 /// Execution results and dependency tracking for a build step.
 @Invariant('hasRun || (outputs.isEmpty && errors.isEmpty)')

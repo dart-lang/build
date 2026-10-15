@@ -10,9 +10,11 @@ void example() {
   final value = SimpleValue((b) => b..anInt = 3);
 
   // Nullable fields will default to null if not set.
-  final value2 = SimpleValue((b) => b
-    ..anInt = 3
-    ..aString = 'three');
+  final value2 = SimpleValue(
+    (b) => b
+      ..anInt = 3
+      ..aString = 'three',
+  );
 
   // All values implement operator==, hashCode and toString.
   assert(value != value2);
@@ -28,9 +30,11 @@ void example() {
   assert(value3 != value4);
 
   // Nested built_value fields are built with nested builders.
-  final value5 = CompoundValue((b) => b
-    ..simpleValue.anInt = 1
-    ..validatedValue.anInt = 2);
+  final value5 = CompoundValue(
+    (b) => b
+      ..simpleValue.anInt = 1
+      ..validatedValue.anInt = 2,
+  );
 
   // Values can use generics.
   final value6 = GenericValue<String>((b) => b..value = 'string');
@@ -41,12 +45,16 @@ void example() {
 
   // Values can use polymorphism.
   final animals = <Animal>[
-    Cat((b) => b
-      ..legs = 3
-      ..tail = true),
-    Fish((b) => b
-      ..legs = 0
-      ..fins = 4),
+    Cat(
+      (b) => b
+        ..legs = 3
+        ..tail = true,
+    ),
+    Fish(
+      (b) => b
+        ..legs = 0
+        ..fins = 4,
+    ),
   ];
   final modifiedAnimals = animals
       .map((animal) => animal.rebuild((b) => b.legs = b.legs! + 1))
@@ -101,13 +109,15 @@ void standardJsonExample() {
         'showMenu': true,
         'skipIntro': true,
         'colorScheme': 'light',
-      }
-    }
+      },
+    },
   };
 
   // Use the deserializeWith method to specify what type you're deserializing.
   final value = standardSerializers.deserializeWith(
-      Account.serializer, serializedAccount)!;
+    Account.serializer,
+    serializedAccount,
+  )!;
   print(value);
 
   assert(value.id == 3);
@@ -116,8 +126,10 @@ void standardJsonExample() {
   assert(value.keyValues['preferences']!.asMap['colorScheme'] == 'light');
 
   // Use the serializeWith method to specify what type you're serializing.
-  final serializedAgain =
-      standardSerializers.serializeWith(Account.serializer, value);
+  final serializedAgain = standardSerializers.serializeWith(
+    Account.serializer,
+    value,
+  );
   assert(serializedAccount.toString() == serializedAgain.toString());
 
   // In this second example we don't know the type we want to
@@ -135,18 +147,21 @@ void standardJsonExample() {
         'showMenu': true,
         'skipIntro': true,
         'colorScheme': 'light',
-      }
-    }
+      },
+    },
   };
 
   // We don't have to specify the type when deserializing.
-  final value2 =
-      standardSerializers.deserialize(serializedAccountWithDiscriminator);
+  final value2 = standardSerializers.deserialize(
+    serializedAccountWithDiscriminator,
+  );
   print(value2);
   assert(value == value2);
 
   // We don't have to specify the type when serializing.
   final serializedAgain2 = standardSerializers.serialize(value2);
-  assert(serializedAccountWithDiscriminator.toString() ==
-      serializedAgain2.toString());
+  assert(
+    serializedAccountWithDiscriminator.toString() ==
+        serializedAgain2.toString(),
+  );
 }

@@ -23,6 +23,7 @@ import 'post_process_build_step_result.dart';
 /// available.
 ///
 /// Used by post-build consumers and to prepare the next incremental build.
+@immutable
 @Invariant(
   'contents.keys.every((id) => '
   'isSource(id) || '
@@ -32,7 +33,14 @@ import 'post_process_build_step_result.dart';
 )
 @Invariant('sources.every((id) => !buildStepPlan.isDeclaredOutput(id))')
 @Invariant('sources.every((id) => !isActualPostOutput(id))')
-@Invariant('sources.every((id) => !id.isBrOutput)')
+@Invariant(
+  'sources.every((id) => '
+  '!id.isBrOutput || '
+  'id.sharedPartLibraryId == null || '
+  'buildStepPlan'
+  '.addsToLibraryPhasesByBuilderKey(id.sharedPartLibraryId!)'
+  '.isEmpty)',
+)
 @Invariant('actualOutputs.every((id) => buildStepPlan.isDeclaredOutput(id))')
 @Invariant(
   'sharedParts.keys.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)',

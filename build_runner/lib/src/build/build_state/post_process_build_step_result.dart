@@ -9,7 +9,7 @@ import 'package:built_value/serializer.dart';
 
 import '../../contracts.dart';
 
-part 'post_process_build_step_result.g.dart';
+part '../../../_br_/src/build/build_state/post_process_build_step_result.part.dart';
 
 /// The outputs and errors of a post process build step, and whether its
 /// outputs are in the artifact tree.

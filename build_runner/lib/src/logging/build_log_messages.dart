@@ -9,7 +9,7 @@ import 'package:logging/logging.dart';
 import 'ansi_buffer.dart';
 import 'build_log.dart';
 
-part 'build_log_messages.g.dart';
+part '../../_br_/src/logging/build_log_messages.part.dart';
 
 /// Messages logged to `BuildLog`.
 ///

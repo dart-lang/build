@@ -16,7 +16,7 @@ import 'glob_result.dart';
 import 'post_process_build_step_id.dart';
 import 'post_process_build_step_result.dart';
 
-part 'incremental_build_state.g.dart';
+part '../../../_br_/src/build/build_state/incremental_build_state.part.dart';
 
 /// `BuildState` saved for use in incremental builds.
 @Invariant('sources.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)')

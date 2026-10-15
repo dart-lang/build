@@ -152,6 +152,12 @@ class BuilderDefinition implements AbstractBuilderDefinition {
         '`is_optional: true`, which is not supported.',
       );
     }
+    if (addsToLibrary && outputsToArtifactTree) {
+      throw ArgumentError(
+        'Builder "$key" sets `adds_to_library: true` so must set '
+        '`build_to: source`.',
+      );
+    }
   }
 
   factory BuilderDefinition.fromConfig(

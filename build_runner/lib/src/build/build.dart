@@ -138,18 +138,24 @@ class Build {
             .toMap(),
       );
 
-  /// Index of each `addsToLibrary` phase among the `addsToLibrary` phases,
-  /// keyed by phase number.
+  /// Index of each `addsToLibrary` phase among the `addsToLibrary` phases for
+  /// the same package, keyed by phase number.
+  ///
+  /// Counting per package keeps import prefixes in generated code the same
+  /// whether or not other packages are in the build.
   ///
   /// Phases that are not `addsToLibrary` are absent.
   late final Map<int, int> _partPhaseIndices = _computePartPhaseIndices();
 
   Map<int, int> _computePartPhaseIndices() {
     final result = <int, int>{};
-    var nextIndex = 0;
+    final nextIndexByPackage = <String, int>{};
     for (var i = 0; i < buildPhases.inBuildPhases.length; i++) {
-      if (buildPhases.inBuildPhases[i].addsToLibrary) {
-        result[i] = nextIndex++;
+      final phase = buildPhases.inBuildPhases[i];
+      if (phase.addsToLibrary) {
+        final index = nextIndexByPackage[phase.package] ?? 0;
+        result[i] = index;
+        nextIndexByPackage[phase.package] = index + 1;
       }
     }
     return result;
@@ -218,6 +224,9 @@ class Build {
       }
     }
 
+    // A failed build might be why a shared part was not written, so unused
+    // `part` directives are only looked for if the build succeeded.
+    final buildFailed = result.status == BuildStatus.failure;
     final librariesMissingPartDirective = await PartDirectives.findMissing(
       buildState,
       _builderFilesystem,
@@ -227,6 +236,18 @@ class Build {
         status: BuildStatus.failure,
         librariesMissingPartDirective: librariesMissingPartDirective,
       );
+    }
+    if (!buildFailed) {
+      final librariesWithUnusedPartDirective = await PartDirectives.findUnused(
+        buildState,
+        _builderFilesystem,
+      );
+      if (librariesWithUnusedPartDirective.isNotEmpty) {
+        result = result.copyWith(
+          status: BuildStatus.failure,
+          librariesWithUnusedPartDirective: librariesWithUnusedPartDirective,
+        );
+      }
     }
 
     await resourceManager.disposeAll();
@@ -1028,7 +1049,7 @@ class Build {
     required AssetId input,
     required int phaseNumber,
   }) async {
-    if (input.isBrSharedPart) {
+    if (input.isBrSharedPart && !buildState.isSource(input)) {
       if (phaseNumber == 0) return false;
       final libraryId = input.sharedPartLibraryId!;
       final accumulator = _previousPartAccumulator(libraryId);
