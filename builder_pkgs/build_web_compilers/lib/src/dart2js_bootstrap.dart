@@ -100,9 +100,8 @@ Future<void> _bootstrapDart2Js(
         entrypointExtension;
     final librariesSpec =
         librariesPath ?? p.joinAll([sdkDir, 'lib', 'libraries.json']);
-    _validateUserArgs(dart2JsArgs, deprecatedJsInterop: deprecatedJsInterop);
     args = [
-      ...withoutOverriddenDart2JsArgs(
+      ...validatedDart2JsArgs(
         dart2JsArgs,
         deprecatedJsInterop: deprecatedJsInterop,
       ),
@@ -199,35 +198,20 @@ String dart2JsFailureMessage(AssetId entrypoint, ProcessResult result) {
   ].join('\n\n');
 }
 
-/// Returns [userArgs] without the arguments that are configured by builder
-/// options, which are added separately.
+/// Validates the user supplied dart2js [userArgs] and returns the ones to pass
+/// to dart2js.
 ///
-/// When [deprecatedJsInterop] is configured, any manual
-/// `--[no-]deprecated-js-interop` argument is removed, since dart2js rejects
-/// getting both forms.
-List<String> withoutOverriddenDart2JsArgs(
+/// Warns about arguments that overlap with ones that we want you to configure
+/// in a different way. Arguments that are configured by builder options, which
+/// are added separately, are removed: when [deprecatedJsInterop] is
+/// configured, any manual `--[no-]deprecated-js-interop` argument is dropped,
+/// since dart2js rejects getting both forms.
+List<String> validatedDart2JsArgs(
   List<String> userArgs, {
   required bool? deprecatedJsInterop,
-}) => [
-  for (final arg in userArgs)
-    if (deprecatedJsInterop == null || !isDeprecatedJsInteropArg(arg)) arg,
-];
-
-final _resourcePool = Pool(maxWorkersPerTask);
-
-const _dart2jsVmArgsEnvVar = 'BUILD_DART2JS_VM_ARGS';
-final _dart2jsVmArgs = () {
-  final env = Platform.environment[_dart2jsVmArgsEnvVar];
-  return env?.split(' ') ?? <String>[];
-}();
-
-/// Validates that user supplied dart2js args don't overlap with ones that we
-/// want you to configure in a different way.
-void _validateUserArgs(
-  List<String> args, {
-  required bool? deprecatedJsInterop,
 }) {
-  for (final arg in args) {
+  final validArgs = <String>[];
+  for (final arg in userArgs) {
     if (arg.endsWith('native-null-assertions')) {
       log.warning(
         'Detected a manual native null assertions dart2js argument `$arg`, '
@@ -243,9 +227,20 @@ void _validateUserArgs(
       );
     } else if (isDeprecatedJsInteropArg(arg)) {
       _warnManualDeprecatedJsInteropArg(arg, deprecatedJsInterop);
+      if (deprecatedJsInterop != null) continue;
     }
+    validArgs.add(arg);
   }
+  return validArgs;
 }
+
+final _resourcePool = Pool(maxWorkersPerTask);
+
+const _dart2jsVmArgsEnvVar = 'BUILD_DART2JS_VM_ARGS';
+final _dart2jsVmArgs = () {
+  final env = Platform.environment[_dart2jsVmArgsEnvVar];
+  return env?.split(' ') ?? <String>[];
+}();
 
 void _warnManualDeprecatedJsInteropArg(String arg, bool? deprecatedJsInterop) {
   final ignored = deprecatedJsInterop == null

@@ -9,6 +9,7 @@ import 'package:build_web_compilers/src/build_modules/platform.dart';
 import 'package:build_web_compilers/src/common.dart';
 import 'package:build_web_compilers/src/dart2js_bootstrap.dart';
 import 'package:build_web_compilers/src/platforms.dart';
+import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
 import '../bin/fes_manager.dart';
@@ -92,23 +93,48 @@ void main() {
     expect(isDeprecatedJsInteropArg('-O4'), isFalse);
   });
 
-  group('withoutOverriddenDart2JsArgs', () {
+  group('validatedDart2JsArgs', () {
     const userArgs = ['-O4', '--no-deprecated-js-interop', '--minify'];
+    late List<LogRecord> warnings;
+
+    setUp(() {
+      warnings = [];
+      final subscription = Logger.root.onRecord
+          .where((record) => record.level == Level.WARNING)
+          .listen(warnings.add);
+      addTearDown(subscription.cancel);
+    });
 
     test('keeps manual flags when the option is not configured', () {
       expect(
-        withoutOverriddenDart2JsArgs(userArgs, deprecatedJsInterop: null),
+        validatedDart2JsArgs(userArgs, deprecatedJsInterop: null),
         userArgs,
       );
+      expect(warnings.single.message, contains('--no-deprecated-js-interop'));
+      expect(warnings.single.message, isNot(contains('ignored')));
     });
 
     test('drops manual flags when the option is configured', () {
       for (final value in [true, false]) {
+        warnings.clear();
+        expect(validatedDart2JsArgs(userArgs, deprecatedJsInterop: value), [
+          '-O4',
+          '--minify',
+        ]);
         expect(
-          withoutOverriddenDart2JsArgs(userArgs, deprecatedJsInterop: value),
-          ['-O4', '--minify'],
+          warnings.single.message,
+          contains(
+            'It is ignored because the `deprecated-js-interop` option '
+            'is set to `$value`.',
+          ),
         );
       }
+    });
+
+    test('warns about, but keeps, other overlapping flags', () {
+      const args = ['--native-null-assertions', '--enable-experiment=foo'];
+      expect(validatedDart2JsArgs(args, deprecatedJsInterop: false), args);
+      expect(warnings, hasLength(2));
     });
   });
 
