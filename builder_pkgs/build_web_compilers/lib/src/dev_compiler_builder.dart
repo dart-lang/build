@@ -69,6 +69,12 @@ class DevCompilerBuilder implements Builder {
   /// Environment defines to pass to ddc (as -D variables).
   final Map<String, String> environment;
 
+  /// Whether DDC allows the deprecated JS interop libraries, such as
+  /// `dart:html`.
+  ///
+  /// If `null` then no flag is passed to DDC, and its default is used.
+  final bool? deprecatedJsInterop;
+
   DevCompilerBuilder({
     this.useIncrementalCompiler = true,
     this.generateFullDill = false,
@@ -81,6 +87,7 @@ class DevCompilerBuilder implements Builder {
     String? librariesPath,
     String? platformSdk,
     this.environment = const {},
+    this.deprecatedJsInterop,
   }) : platformSdk = platformSdk ?? sdkDir,
        librariesPath =
            librariesPath ??
@@ -135,6 +142,7 @@ class DevCompilerBuilder implements Builder {
         dartSdk: platformSdk,
         sdkKernelPath: sdkKernelPath,
         librariesPath: librariesPath,
+        deprecatedJsInterop: deprecatedJsInterop,
       );
     } on DartDevcCompilationException catch (e) {
       await handleError(e);
@@ -158,6 +166,7 @@ Future<void> _createDevCompilerModule(
   required String dartSdk,
   required String sdkKernelPath,
   required String librariesPath,
+  required bool? deprecatedJsInterop,
   bool debugMode = true,
 }) async {
   final transitiveDeps = await buildStep.trackStage(
@@ -218,6 +227,7 @@ Future<void> _createDevCompilerModule(
       '--inline-source-map',
       '--libraries-file=${p.toUri(librariesPath)}',
       '--experimental-emit-debug-metadata',
+      ?deprecatedJsInteropArg(deprecatedJsInterop),
       if (useIncrementalCompiler) ...[
         '--reuse-compiler-result',
         '--use-incremental-compiler',

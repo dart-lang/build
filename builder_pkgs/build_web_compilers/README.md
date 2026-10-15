@@ -191,6 +191,35 @@ global_options:
 ```
 </details>
 
+### Disallowing deprecated JS interop libraries
+
+Dart SDKs that support the compilers' `--[no-]deprecated-js-interop` flag can
+reject imports of the deprecated JS interop libraries, such as `dart:html`,
+`dart:js`, `dart:js_util` and `package:js`. Set the `deprecated-js-interop`
+option to `false` to disallow them, or to `true` to allow them explicitly.
+When it is not set, no flag is passed and the SDK default applies.
+
+The option must have the same value for all of these builders, so configure
+it in `global_options`:
+
+```yaml
+global_options:
+  build_web_compilers:ddc:
+    options:
+      deprecated-js-interop: false
+  build_web_compilers:ddc_modules:
+    options:
+      deprecated-js-interop: false
+  build_web_compilers:dart2js_modules:
+    options:
+      deprecated-js-interop: false
+  build_web_compilers:entrypoint:
+    options:
+      deprecated-js-interop: false
+```
+
+The option applies to dartdevc and dart2js. It does not apply to dart2wasm.
+
 ### Configuring -D environment variables
 
 dartdevc is a modular compiler, so in order to ensure consistent builds

@@ -70,6 +70,13 @@ class KernelBuilder implements Builder {
   /// args).
   final Iterable<String> experiments;
 
+  /// Whether the kernel worker allows the deprecated JS interop libraries,
+  /// such as `dart:html`.
+  ///
+  /// If `null` then no flag is passed to the kernel worker, and its default is
+  /// used.
+  final bool? deprecatedJsInterop;
+
   KernelBuilder({
     required this.platform,
     required this.summaryOnly,
@@ -80,6 +87,7 @@ class KernelBuilder implements Builder {
     this.trackUnusedInputs = false,
     String? platformSdk,
     String? kernelTargetName,
+    this.deprecatedJsInterop,
   }) : platformSdk = platformSdk ?? sdkDir,
        kernelTargetName = kernelTargetName ?? platform.name,
        librariesPath =
@@ -116,6 +124,7 @@ class KernelBuilder implements Builder {
         useIncrementalCompiler: useIncrementalCompiler,
         trackUnusedInputs: trackUnusedInputs,
         experiments: experiments,
+        deprecatedJsInterop: deprecatedJsInterop,
       );
     } on MissingModulesException catch (e) {
       log.severe(e.toString());
@@ -143,6 +152,7 @@ Future<void> _createKernel({
   required bool useIncrementalCompiler,
   required bool trackUnusedInputs,
   required Iterable<String> experiments,
+  required bool? deprecatedJsInterop,
 }) async {
   final request = WorkRequest();
   final scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
@@ -200,6 +210,7 @@ Future<void> _createKernel({
       experiments,
       usedInputsFile: usedInputsFile,
       kernelInputPathToId: kernelInputPathToId,
+      deprecatedJsInterop: deprecatedJsInterop,
     );
   });
 
@@ -217,10 +228,10 @@ Future<void> _createKernel({
       ),
     );
     if (response.exitCode != EXIT_CODE_OK || !await outputFile.exists()) {
-      throw KernelException(
-        outputId,
-        '${request.arguments.join(' ')}\n${response.output}',
-      );
+      // The arguments can be very long, so only log them in verbose mode to
+      // keep the compiler's diagnostics visible.
+      log.fine('Kernel worker arguments: ${request.arguments.join(' ')}');
+      throw KernelException(outputId, response.output);
     }
 
     if (response.output.isNotEmpty) {
@@ -407,6 +418,7 @@ Future<void> _addRequestArguments(
   Iterable<String> experiments, {
   File? usedInputsFile,
   Map<String, AssetId>? kernelInputPathToId,
+  bool? deprecatedJsInterop,
 }) async {
   // Add all kernel outlines as summary inputs, with digests.
   final inputs = await Future.wait(
@@ -434,6 +446,7 @@ Future<void> _addRequestArguments(
     summaryOnly ? '--summary-only' : '--no-summary-only',
     '--target=$targetName',
     '--libraries-file=${p.toUri(librariesPath)}',
+    ?deprecatedJsInteropArg(deprecatedJsInterop),
     if (useIncrementalCompiler) ...[
       '--reuse-compiler-result',
       '--use-incremental-compiler',

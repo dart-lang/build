@@ -1,6 +1,16 @@
-## 4.8.13-wip
+## 4.9.0-wip
 
 - Allow `build` 5.0.0.
+- Add a `deprecated-js-interop` option for the `ddc`, `ddc_modules`,
+  `dart2js_modules` and `entrypoint` builders. When set, it passes
+  `--[no-]deprecated-js-interop` to dartdevc, dart2js, the kernel worker and
+  the Frontend Server, and resolves `dart.library.*` conditional imports the
+  same way the compilers do. It requires a Dart SDK that supports the flag.
+- Report dart2js failures with the compiler output, including the import
+  paths that lead to disallowed libraries, instead of a raw dump of the exit
+  code, stdout and stderr.
+- Log kernel worker arguments at the fine level instead of including them in
+  kernel compilation errors.
 
 ## 4.8.12
 

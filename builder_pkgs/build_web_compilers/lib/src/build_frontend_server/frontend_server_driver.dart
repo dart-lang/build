@@ -272,6 +272,10 @@ class PersistentFrontendServer {
   final List<Uri>? fileSystemRoots;
   final Uri packagesFile;
   final Map<String, String> environment;
+
+  /// The `--[no-]deprecated-js-interop` setting, or `null` to use the
+  /// Frontend Server's default.
+  final bool? deprecatedJsInterop;
   final Uri outputDillUri;
   final WebMemoryFilesystem _fileSystem;
 
@@ -287,6 +291,7 @@ class PersistentFrontendServer {
     this.fileSystemRoots,
     required this.packagesFile,
     this.environment = const {},
+    this.deprecatedJsInterop,
   }) : outputDillUri = fileSystemRoot.resolve('output.dill'),
        _fileSystem = WebMemoryFilesystem(fileSystemRoot, getRootPackageName());
 
@@ -393,6 +398,7 @@ class PersistentFrontendServer {
       '--platform=$platformDill',
       '--output-dill=${outputDillUri.toFilePath()}',
       '--output-incremental-dill=${outputDillUri.toFilePath()}',
+      ?deprecatedJsInteropArg(deprecatedJsInterop),
       for (final define in environment.entries)
         '-D${define.key}=${define.value}',
       for (final experiment in enabledExperiments)

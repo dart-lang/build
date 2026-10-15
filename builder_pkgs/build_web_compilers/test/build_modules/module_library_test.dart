@@ -128,6 +128,31 @@ void main() {
     );
   });
 
+  test('Skips conditional imports of libraries unavailable to conditions', () {
+    final library = ModuleLibrary.fromSource(
+      makeAssetId('myapp|lib/a.dart'),
+      "import 'default.dart'\n"
+      "    if (dart.library.html) 'for_html.dart'\n"
+      "    if (dart.library.js_interop) 'for_js_interop.dart';\n"
+      "import 'dart:html';\n",
+    );
+    final webPlatform = DartPlatform.register('conditions_test', [
+      'html',
+      'js_interop',
+    ]);
+    final restrictedPlatform = webPlatform.withLibrariesUnavailableToConditions(
+      ['html'],
+    );
+
+    expect(library.depsForPlatform(webPlatform), {
+      makeAssetId('myapp|lib/for_html.dart'),
+    });
+    expect(library.depsForPlatform(restrictedPlatform), {
+      makeAssetId('myapp|lib/for_js_interop.dart'),
+    });
+    expect(restrictedPlatform.supportsLibrary('html'), isTrue);
+  });
+
   test('can detect a main method', () async {
     final id = AssetId('myapp', 'lib/a.dart');
     expect(ModuleLibrary.fromSource(id, '').hasMain, false);

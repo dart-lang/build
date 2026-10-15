@@ -145,6 +145,13 @@ final class EntrypointBuilderOptions {
   /// supported by the current platform will be silently allowed.
   final bool unsafeAllowUnsupportedModules;
 
+  /// Whether dart2js allows the deprecated JS interop libraries, such as
+  /// `dart:html`.
+  ///
+  /// If `null` then no flag will be provided to the compiler, and the default
+  /// will be used.
+  final bool? deprecatedJsInterop;
+
   EntrypointBuilderOptions({
     required this.compilers,
     this.nativeNullAssertions,
@@ -153,6 +160,7 @@ final class EntrypointBuilderOptions {
     this.ddcLibraryBundle = false,
     this.librariesPath,
     this.unsafeAllowUnsupportedModules = false,
+    this.deprecatedJsInterop,
   });
 
   factory EntrypointBuilderOptions.fromOptions(BuilderOptions options) {
@@ -183,6 +191,7 @@ final class EntrypointBuilderOptions {
       ddcLibraryBundleOption,
       librariesPathOption,
       unsafeAllowUnsupportedModulesOption,
+      deprecatedJsInteropOption,
       'use-ui-libraries',
     ];
 
@@ -287,6 +296,7 @@ final class EntrypointBuilderOptions {
       ddcLibraryBundle: usesDdcLibraryBundle,
       librariesPath: librariesPath,
       unsafeAllowUnsupportedModules: unsafeAllowUnsupportedModules ?? false,
+      deprecatedJsInterop: readDeprecatedJsInteropOption(options),
     );
   }
 
@@ -411,6 +421,7 @@ class WebEntrypointBuilder implements Builder {
               librariesPath: options.librariesPath,
               unsafeAllowUnsupportedModules:
                   options.unsafeAllowUnsupportedModules,
+              deprecatedJsInterop: options.deprecatedJsInterop,
             ),
           );
         case WebCompiler.Dart2Wasm:
