@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 
 part 'stage_result.g.dart';
@@ -13,6 +14,10 @@ abstract class StageResult implements Built<StageResult, StageResultBuilder> {
 
   /// Files linked to the original, unchanged.
   int get symlinkCount;
+
+  /// The number of clauses woven, by annotation name, in the order of
+  /// `ClauseCounter.names`.
+  BuiltMap<String, int> get clauseCounts;
 
   StageResult._();
   factory StageResult([void Function(StageResultBuilder) updates]) =

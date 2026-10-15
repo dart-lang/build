@@ -11,12 +11,17 @@ class _$StageResult extends StageResult {
   final int transformedCount;
   @override
   final int symlinkCount;
+  @override
+  final BuiltMap<String, int> clauseCounts;
 
   factory _$StageResult([void Function(StageResultBuilder)? updates]) =>
       (StageResultBuilder()..update(updates))._build();
 
-  _$StageResult._({required this.transformedCount, required this.symlinkCount})
-    : super._();
+  _$StageResult._({
+    required this.transformedCount,
+    required this.symlinkCount,
+    required this.clauseCounts,
+  }) : super._();
   @override
   StageResult rebuild(void Function(StageResultBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -29,7 +34,8 @@ class _$StageResult extends StageResult {
     if (identical(other, this)) return true;
     return other is StageResult &&
         transformedCount == other.transformedCount &&
-        symlinkCount == other.symlinkCount;
+        symlinkCount == other.symlinkCount &&
+        clauseCounts == other.clauseCounts;
   }
 
   @override
@@ -37,6 +43,7 @@ class _$StageResult extends StageResult {
     var _$hash = 0;
     _$hash = $jc(_$hash, transformedCount.hashCode);
     _$hash = $jc(_$hash, symlinkCount.hashCode);
+    _$hash = $jc(_$hash, clauseCounts.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -45,7 +52,8 @@ class _$StageResult extends StageResult {
   String toString() {
     return (newBuiltValueToStringHelper(r'StageResult')
           ..add('transformedCount', transformedCount)
-          ..add('symlinkCount', symlinkCount))
+          ..add('symlinkCount', symlinkCount)
+          ..add('clauseCounts', clauseCounts))
         .toString();
   }
 }
@@ -62,6 +70,12 @@ class StageResultBuilder implements Builder<StageResult, StageResultBuilder> {
   int? get symlinkCount => _$this._symlinkCount;
   set symlinkCount(int? symlinkCount) => _$this._symlinkCount = symlinkCount;
 
+  MapBuilder<String, int>? _clauseCounts;
+  MapBuilder<String, int> get clauseCounts =>
+      _$this._clauseCounts ??= MapBuilder<String, int>();
+  set clauseCounts(MapBuilder<String, int>? clauseCounts) =>
+      _$this._clauseCounts = clauseCounts;
+
   StageResultBuilder();
 
   StageResultBuilder get _$this {
@@ -69,6 +83,7 @@ class StageResultBuilder implements Builder<StageResult, StageResultBuilder> {
     if ($v != null) {
       _transformedCount = $v.transformedCount;
       _symlinkCount = $v.symlinkCount;
+      _clauseCounts = $v.clauseCounts.toBuilder();
       _$v = null;
     }
     return this;
@@ -88,20 +103,37 @@ class StageResultBuilder implements Builder<StageResult, StageResultBuilder> {
   StageResult build() => _build();
 
   _$StageResult _build() {
-    final _$result =
-        _$v ??
-        _$StageResult._(
-          transformedCount: BuiltValueNullFieldError.checkNotNull(
-            transformedCount,
-            r'StageResult',
-            'transformedCount',
-          ),
-          symlinkCount: BuiltValueNullFieldError.checkNotNull(
-            symlinkCount,
-            r'StageResult',
-            'symlinkCount',
-          ),
+    _$StageResult _$result;
+    try {
+      _$result =
+          _$v ??
+          _$StageResult._(
+            transformedCount: BuiltValueNullFieldError.checkNotNull(
+              transformedCount,
+              r'StageResult',
+              'transformedCount',
+            ),
+            symlinkCount: BuiltValueNullFieldError.checkNotNull(
+              symlinkCount,
+              r'StageResult',
+              'symlinkCount',
+            ),
+            clauseCounts: clauseCounts.build(),
+          );
+    } catch (_) {
+      late String _$failedField;
+      try {
+        _$failedField = 'clauseCounts';
+        clauseCounts.build();
+      } catch (e) {
+        throw BuiltValueNestedFieldError(
+          r'StageResult',
+          _$failedField,
+          e.toString(),
         );
+      }
+      rethrow;
+    }
     replace(_$result);
     return _$result;
   }

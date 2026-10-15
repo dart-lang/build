@@ -63,6 +63,11 @@ class ContractWeaverCommand {
       'Staged ${layout.displayName}/lib: ${staged.transformedCount} '
       'transformed, ${staged.symlinkCount} symlinked.',
     );
+    final clauses = [
+      for (final MapEntry(:key, :value) in staged.clauseCounts.entries)
+        '$value @$key',
+    ];
+    stdout.writeln('Woven clauses: ${clauses.join(', ')}.');
     return stager;
   }
 

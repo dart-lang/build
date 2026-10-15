@@ -55,11 +55,18 @@ void main() {
     weaver: ContractWeaver(),
   );
 
-  StageResult result(int transformed, int symlinked) => StageResult(
-    (b) => b
-      ..transformedCount = transformed
-      ..symlinkCount = symlinked,
-  );
+  StageResult result(int transformed, int symlinked, {int requires = 0}) =>
+      StageResult(
+        (b) => b
+          ..transformedCount = transformed
+          ..symlinkCount = symlinked
+          ..clauseCounts.replace({
+            'Requires': requires,
+            'Ensures': 0,
+            'ThrowEnsures': 0,
+            'Invariant': 0,
+          }),
+      );
 
   group('Stager', () {
     setUp(() {
@@ -71,7 +78,7 @@ void main() {
     });
 
     test('weaves contracted libraries and links everything else', () {
-      expect(stager().stage(), result(1, 2));
+      expect(stager().stage(), result(1, 2, requires: 1));
       expect(typeOf('stage/lib/a.dart'), FileSystemEntityType.file);
       expect(read('stage/lib/a.dart'), contains('Precondition failed'));
       expect(typeOf('stage/lib/src/b.dart'), FileSystemEntityType.link);
@@ -106,7 +113,7 @@ void main() {
       expect(typeOf('stage/lib/src/b.dart'), FileSystemEntityType.link);
 
       write('p/lib/src/b.dart', _contracted);
-      expect(stager().stage(), result(2, 1));
+      expect(stager().stage(), result(2, 1, requires: 2));
       expect(typeOf('stage/lib/src/b.dart'), FileSystemEntityType.file);
       expect(read('p/lib/src/b.dart'), _contracted);
     });
@@ -195,7 +202,7 @@ void main() {
 
     test('stages the path down to a nested member as real directories', () {
       final s = stager(member: 'pkgs/b');
-      expect(s.stage(), result(1, 0));
+      expect(s.stage(), result(1, 0, requires: 1));
       expect(s.stagedPackage.path, '$stage/pkgs/b');
       expect(typeOf('stage/pkgs'), FileSystemEntityType.directory);
       expect(typeOf('stage/pkgs/b'), FileSystemEntityType.directory);
@@ -218,7 +225,7 @@ void main() {
       write('p/a/pkgs/b/lib/b.dart', _contracted);
       write('p/pkgs/b/tool/lib/t.dart', _contracted);
       final s = stager(member: 'pkgs/b');
-      expect(s.stage(), result(1, 0));
+      expect(s.stage(), result(1, 0, requires: 1));
       expect(typeOf('stage/a'), FileSystemEntityType.link);
       expect(typeOf('stage/pkgs/b/tool'), FileSystemEntityType.link);
       expect(read('p/a/pkgs/b/lib/b.dart'), _contracted);
