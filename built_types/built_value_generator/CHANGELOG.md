@@ -9,6 +9,9 @@
 - Allow `built_collection` 6.x.
 - Migrate to `package:dart_flutter_team_lints`.
 - Fix analysis issues and remove the lint suppressions that hid them.
+- Bug fix: report an error for fields named `build`, `replace` or `update`,
+  which clash with methods on the generated builder, instead of generating
+  code that doesn't compile.
 
 ## 8.13.0
 
