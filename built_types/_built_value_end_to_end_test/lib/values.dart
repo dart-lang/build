@@ -668,6 +668,7 @@ class ValueWithCustomSerializerSerializer
 abstract class ValueWithOnSet
     implements Built<ValueWithOnSet, ValueWithOnSetBuilder> {
   int get value;
+  String? get label;
 
   factory ValueWithOnSet([void Function(ValueWithOnSetBuilder) updates]) =
       _$ValueWithOnSet;

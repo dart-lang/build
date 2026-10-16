@@ -6202,11 +6202,13 @@ class ValueWithCustomSerializerBuilder
 class _$ValueWithOnSet extends ValueWithOnSet {
   @override
   final int value;
+  @override
+  final String? label;
 
   factory _$ValueWithOnSet([void Function(ValueWithOnSetBuilder)? updates]) =>
       (ValueWithOnSetBuilder()..update(updates))._build();
 
-  _$ValueWithOnSet._({required this.value}) : super._();
+  _$ValueWithOnSet._({required this.value, this.label}) : super._();
   @override
   ValueWithOnSet rebuild(void Function(ValueWithOnSetBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -6217,22 +6219,26 @@ class _$ValueWithOnSet extends ValueWithOnSet {
   @override
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
-    return other is ValueWithOnSet && value == other.value;
+    return other is ValueWithOnSet &&
+        value == other.value &&
+        label == other.label;
   }
 
   @override
   int get hashCode {
     var _$hash = 0;
     _$hash = $jc(_$hash, value.hashCode);
+    _$hash = $jc(_$hash, label.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper(
-      r'ValueWithOnSet',
-    )..add('value', value)).toString();
+    return (newBuiltValueToStringHelper(r'ValueWithOnSet')
+          ..add('value', value)
+          ..add('label', label))
+        .toString();
   }
 }
 
@@ -6240,12 +6246,19 @@ class ValueWithOnSetBuilder
     implements Builder<ValueWithOnSet, ValueWithOnSetBuilder> {
   _$ValueWithOnSet? _$v;
 
-  int? _value;
-  int? get value => _$this._value;
   void Function() onSet = () {};
 
+  int? _value;
+  int? get value => _$this._value;
   set value(int? value) {
     _$this._value = value;
+    onSet();
+  }
+
+  String? _label;
+  String? get label => _$this._label;
+  set label(String? label) {
+    _$this._label = label;
     onSet();
   }
 
@@ -6255,6 +6268,7 @@ class ValueWithOnSetBuilder
     final $v = _$v;
     if ($v != null) {
       _value = $v.value;
+      _label = $v.label;
       _$v = null;
     }
     return this;
@@ -6282,6 +6296,7 @@ class ValueWithOnSetBuilder
             r'ValueWithOnSet',
             'value',
           ),
+          label: label,
         );
     replace(_$result);
     return _$result;
