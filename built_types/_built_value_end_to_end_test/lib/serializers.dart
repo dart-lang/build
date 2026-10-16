@@ -52,6 +52,7 @@ part 'serializers.g.dart';
   NewConstructorEnum,
   NewConstructorValue,
   NonBuiltGeneric,
+  NullableCollectionGenericValue,
   OtherValue,
   PartiallySerializableValue,
   PassthroughGenericContainer,

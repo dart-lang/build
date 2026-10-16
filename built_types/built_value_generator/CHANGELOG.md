@@ -9,6 +9,8 @@
 - Allow `built_collection` 6.x.
 - Migrate to `package:dart_flutter_team_lints`.
 - Fix analysis issues and remove the lint suppressions that hid them.
+- Bug fix: a generic class with a field such as `BuiltList<T?>` generated a
+  serializer that didn't compile.
 
 ## 8.13.0
 

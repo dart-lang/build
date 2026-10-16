@@ -43,6 +43,7 @@ Serializers _$serializers =
           ..add(NewConstructorValue.serializer)
           ..add(NoFieldsValue.serializer)
           ..add(NonBuiltGeneric.serializer)
+          ..add(NullableCollectionGenericValue.serializer)
           ..add(OtherValue.serializer)
           ..add(PartiallySerializableValue.serializer)
           ..add(PassthroughGenericContainer.serializer)

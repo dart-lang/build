@@ -16,6 +16,9 @@ Serializer<BoundNullableGenericValue<num>>
     _$BoundNullableGenericValueSerializer();
 Serializer<CollectionGenericValue<Object?>> _$collectionGenericValueSerializer =
     _$CollectionGenericValueSerializer();
+Serializer<NullableCollectionGenericValue<Object?>>
+    _$nullableCollectionGenericValueSerializer =
+    _$NullableCollectionGenericValueSerializer();
 Serializer<GenericContainer> _$genericContainerSerializer =
     _$GenericContainerSerializer();
 Serializer<PassthroughGenericContainer<Object?>>
@@ -268,6 +271,68 @@ class _$CollectionGenericValueSerializer
         ? CollectionGenericValueBuilder<Object?>()
         : serializers.newBuilder(specifiedType)
             as CollectionGenericValueBuilder<Object?>;
+
+    final iterator = serialized.iterator;
+    while (iterator.moveNext()) {
+      final key = iterator.current! as String;
+      iterator.moveNext();
+      final Object? value = iterator.current;
+      switch (key) {
+        case 'values':
+          result.values.replace(serializers.deserialize(value,
+                  specifiedType: FullType(BuiltList, [parameterT]))!
+              as BuiltList<Object?>);
+          break;
+      }
+    }
+
+    return result.build();
+  }
+}
+
+class _$NullableCollectionGenericValueSerializer
+    implements StructuredSerializer<NullableCollectionGenericValue<Object?>> {
+  @override
+  final Iterable<Type> types = const [
+    NullableCollectionGenericValue,
+    _$NullableCollectionGenericValue
+  ];
+  @override
+  final String wireName = 'NullableCollectionGenericValue';
+
+  @override
+  Iterable<Object?> serialize(
+      Serializers serializers, NullableCollectionGenericValue<Object?> object,
+      {FullType specifiedType = FullType.unspecified}) {
+    final isUnderspecified =
+        specifiedType.isUnspecified || specifiedType.parameters.isEmpty;
+    if (!isUnderspecified) serializers.expectBuilder(specifiedType);
+    final parameterT =
+        isUnderspecified ? FullType.object : specifiedType.parameters[0];
+
+    final result = <Object?>[
+      'values',
+      serializers.serialize(object.values,
+          specifiedType: FullType(BuiltList, [parameterT])),
+    ];
+
+    return result;
+  }
+
+  @override
+  NullableCollectionGenericValue<Object?> deserialize(
+      Serializers serializers, Iterable<Object?> serialized,
+      {FullType specifiedType = FullType.unspecified}) {
+    final isUnderspecified =
+        specifiedType.isUnspecified || specifiedType.parameters.isEmpty;
+    if (!isUnderspecified) serializers.expectBuilder(specifiedType);
+    final parameterT =
+        isUnderspecified ? FullType.object : specifiedType.parameters[0];
+
+    final result = isUnderspecified
+        ? NullableCollectionGenericValueBuilder<Object?>()
+        : serializers.newBuilder(specifiedType)
+            as NullableCollectionGenericValueBuilder<Object?>;
 
     final iterator = serialized.iterator;
     while (iterator.moveNext()) {
@@ -1091,6 +1156,105 @@ class CollectionGenericValueBuilder<T>
       } catch (e) {
         throw BuiltValueNestedFieldError(
             r'CollectionGenericValue', _$failedField, e.toString());
+      }
+      rethrow;
+    }
+    replace(_$result);
+    return _$result;
+  }
+}
+
+class _$NullableCollectionGenericValue<T>
+    extends NullableCollectionGenericValue<T> {
+  @override
+  final BuiltList<T?> values;
+
+  factory _$NullableCollectionGenericValue(
+          [void Function(NullableCollectionGenericValueBuilder<T>)? updates]) =>
+      (NullableCollectionGenericValueBuilder<T>()..update(updates))._build();
+
+  _$NullableCollectionGenericValue._({required this.values}) : super._();
+  @override
+  NullableCollectionGenericValue<T> rebuild(
+          void Function(NullableCollectionGenericValueBuilder<T>) updates) =>
+      (toBuilder()..update(updates)).build();
+
+  @override
+  NullableCollectionGenericValueBuilder<T> toBuilder() =>
+      NullableCollectionGenericValueBuilder<T>()..replace(this);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(other, this)) return true;
+    return other is NullableCollectionGenericValue && values == other.values;
+  }
+
+  @override
+  int get hashCode {
+    var _$hash = 0;
+    _$hash = $jc(_$hash, values.hashCode);
+    _$hash = $jf(_$hash);
+    return _$hash;
+  }
+
+  @override
+  String toString() {
+    return (newBuiltValueToStringHelper(r'NullableCollectionGenericValue')
+          ..add('values', values))
+        .toString();
+  }
+}
+
+class NullableCollectionGenericValueBuilder<T>
+    implements
+        Builder<NullableCollectionGenericValue<T>,
+            NullableCollectionGenericValueBuilder<T>> {
+  _$NullableCollectionGenericValue<T>? _$v;
+
+  ListBuilder<T?>? _values;
+  ListBuilder<T?> get values => _$this._values ??= ListBuilder<T?>();
+  set values(ListBuilder<T?>? values) => _$this._values = values;
+
+  NullableCollectionGenericValueBuilder();
+
+  NullableCollectionGenericValueBuilder<T> get _$this {
+    final $v = _$v;
+    if ($v != null) {
+      _values = $v.values.toBuilder();
+      _$v = null;
+    }
+    return this;
+  }
+
+  @override
+  void replace(NullableCollectionGenericValue<T> other) {
+    _$v = other as _$NullableCollectionGenericValue<T>;
+  }
+
+  @override
+  void update(
+      void Function(NullableCollectionGenericValueBuilder<T>)? updates) {
+    if (updates != null) updates(this);
+  }
+
+  @override
+  NullableCollectionGenericValue<T> build() => _build();
+
+  _$NullableCollectionGenericValue<T> _build() {
+    _$NullableCollectionGenericValue<T> _$result;
+    try {
+      _$result = _$v ??
+          _$NullableCollectionGenericValue<T>._(
+            values: values.build(),
+          );
+    } catch (_) {
+      late String _$failedField;
+      try {
+        _$failedField = 'values';
+        values.build();
+      } catch (e) {
+        throw BuiltValueNestedFieldError(
+            r'NullableCollectionGenericValue', _$failedField, e.toString());
       }
       rethrow;
     }
