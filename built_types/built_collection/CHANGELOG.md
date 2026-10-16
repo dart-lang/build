@@ -11,6 +11,7 @@
 - Bug fix: `BuiltMap.asMap` now preserves the key equality of maps built with
   `withBase`.
 - Clarify the docs of `asList`, `asSet` and `asMap`.
+- Add `of` constructors to `ListBuilder` and `SetBuilder`.
 
 ## 5.1.2
 
