@@ -12,10 +12,18 @@ abstract class SimpleRecordValue
     implements Built<SimpleRecordValue, SimpleRecordValueBuilder> {
   (int, int) get record;
 
+  @memoized
+  (int, int)? get swapped {
+    ++swappedGetterCount;
+    return (record.$2, record.$1);
+  }
+
   factory SimpleRecordValue([void Function(SimpleRecordValueBuilder) updates]) =
       _$SimpleRecordValue;
   SimpleRecordValue._();
 }
+
+int swappedGetterCount = 0;
 
 abstract class ComplexRecordValue
     implements Built<ComplexRecordValue, ComplexRecordValueBuilder> {

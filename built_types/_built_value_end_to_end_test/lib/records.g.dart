@@ -99,12 +99,23 @@ class _$SerializableRecordValueSerializer
 class _$SimpleRecordValue extends SimpleRecordValue {
   @override
   final (int, int) record;
+  (int, int)? __swapped;
+  bool ___swapped = false;
 
   factory _$SimpleRecordValue([
     void Function(SimpleRecordValueBuilder)? updates,
   ]) => (SimpleRecordValueBuilder()..update(updates))._build();
 
   _$SimpleRecordValue._({required this.record}) : super._();
+  @override
+  (int, int)? get swapped {
+    if (!___swapped) {
+      __swapped = super.swapped;
+      ___swapped = true;
+    }
+    return __swapped;
+  }
+
   @override
   SimpleRecordValue rebuild(void Function(SimpleRecordValueBuilder) updates) =>
       (toBuilder()..update(updates)).build();

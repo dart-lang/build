@@ -130,7 +130,11 @@ class DartTypes {
     } else if (dartType is TypeParameterType) {
       return dartType.element.name! + suffix;
     } else if (dartType is RecordType) {
-      return dartType.getDisplayString();
+      final name = dartType.getDisplayString();
+      // The display string of a nullable record type ends with `?`.
+      return dartType.nullabilitySuffix == NullabilitySuffix.question
+          ? '${name.substring(0, name.length - 1)}$suffix'
+          : name;
     } else if (dartType is VoidType) {
       return 'void';
     } else if (dartType.isBottom) {
