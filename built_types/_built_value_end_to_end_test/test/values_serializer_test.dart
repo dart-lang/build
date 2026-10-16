@@ -518,6 +518,32 @@ void main() {
     });
   });
 
+  group('EscapedWireNameValue', () {
+    final data = EscapedWireNameValue(
+      (b) => b
+        ..quote = 1
+        ..backslash = 2
+        ..newline = 3,
+    );
+    final serialized = json.decode(json.encode([
+      r"Escaped'\Value",
+      "it's",
+      1,
+      r'back\slash',
+      2,
+      'new\nline',
+      3,
+    ])) as Object;
+
+    test('can be serialized', () {
+      expect(serializers.serialize(data), serialized);
+    });
+
+    test('can be deserialized', () {
+      expect(serializers.deserialize(serialized), data);
+    });
+  });
+
   group('ValueWithCustomSerializer', () {
     final data = ValueWithCustomSerializer((b) => b..value = 1);
     final serialized =
