@@ -9,6 +9,9 @@
 - Allow `built_collection` 6.x.
 - Migrate to `package:dart_flutter_team_lints`.
 - Fix analysis issues and remove the lint suppressions that hid them.
+- Bug fix: escape quotes, backslashes and newlines in wire names. A wire name
+  containing `'` generated code that didn't parse, and one containing `\`
+  silently serialized under a different name.
 
 ## 8.13.0
 
