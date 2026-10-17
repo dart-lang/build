@@ -65,7 +65,10 @@ Builder ddcBuilder(BuilderOptions options) {
   _ensureSameDdcHotReloadOptions(options);
   _ensureSameDeprecatedJsInteropOptions(options);
   _ensureSameDdcOptions(options);
-  _warnOnceIfDeprecatedJsInteropWithPlatformSdk(options);
+  warnIfDeprecatedJsInteropWithPlatformSdk(
+    readDeprecatedJsInteropOption(options),
+    _readPlatformSdkOption(options),
+  );
 
   final scratchDir = _readScratchSpaceDirOption(options);
   if (scratchDir != null) {
@@ -109,7 +112,10 @@ Builder ddcKernelBuilder(BuilderOptions options) {
   _ensureSameDdcHotReloadOptions(options);
   _ensureSameDeprecatedJsInteropOptions(options);
   _ensureSameDdcOptions(options);
-  _warnOnceIfDeprecatedJsInteropWithPlatformSdk(options);
+  warnIfDeprecatedJsInteropWithPlatformSdk(
+    readDeprecatedJsInteropOption(options),
+    _readPlatformSdkOption(options),
+  );
 
   return KernelBuilder(
     summaryOnly: true,
@@ -284,20 +290,6 @@ void _ensureSameDeprecatedJsInteropOptions(BuilderOptions options) {
   }
 }
 
-/// Warns, at most once, if both `deprecated-js-interop` and `platform-sdk`
-/// are set for the ddc builders.
-///
-/// The ddc builders must have the same configuration, so warning once is
-/// enough.
-void _warnOnceIfDeprecatedJsInteropWithPlatformSdk(BuilderOptions options) {
-  if (_warnedAboutDeprecatedJsInteropWithPlatformSdk) return;
-  _warnedAboutDeprecatedJsInteropWithPlatformSdk = true;
-  warnIfDeprecatedJsInteropWithPlatformSdk(
-    readDeprecatedJsInteropOption(options),
-    _readPlatformSdkOption(options),
-  );
-}
-
 /// Returns [platform] adjusted for the `deprecated-js-interop` option.
 DartPlatform _platformForOptions(
   DartPlatform platform,
@@ -405,7 +397,6 @@ bool? _lastUseUiLibrariesValue;
 /// The first `deprecated-js-interop` value seen, wrapped in a record so that
 /// an unset (`null`) option is distinguishable from no value seen yet.
 (bool?,)? _lastDeprecatedJsInteropValue;
-bool _warnedAboutDeprecatedJsInteropWithPlatformSdk = false;
 const _useIncrementalCompilerOption = 'use-incremental-compiler';
 const _generateFullDillOption = 'generate-full-dill';
 const _emitDebugSymbolsOption = 'emit-debug-symbols';
