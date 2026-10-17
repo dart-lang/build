@@ -65,6 +65,7 @@ Builder ddcBuilder(BuilderOptions options) {
   _ensureSameDdcHotReloadOptions(options);
   _ensureSameDeprecatedJsInteropOptions(options);
   _ensureSameDdcOptions(options);
+  _warnOnceIfDeprecatedJsInteropWithPlatformSdk(options);
 
   final scratchDir = _readScratchSpaceDirOption(options);
   if (scratchDir != null) {
@@ -108,6 +109,7 @@ Builder ddcKernelBuilder(BuilderOptions options) {
   _ensureSameDdcHotReloadOptions(options);
   _ensureSameDeprecatedJsInteropOptions(options);
   _ensureSameDdcOptions(options);
+  _warnOnceIfDeprecatedJsInteropWithPlatformSdk(options);
 
   return KernelBuilder(
     summaryOnly: true,
@@ -258,7 +260,8 @@ void _ensureSamePlatformOptions(BuilderOptions options) {
   }
 }
 
-/// Throws if `deprecated-js-interop` differs between builders.
+/// Throws if `deprecated-js-interop` differs between builders, or if it is
+/// set and the Dart SDK running the build doesn't support it.
 ///
 /// Modules are computed with the same conditional import resolution as the
 /// compilers use, so all of these builders must agree on the option.
@@ -266,6 +269,7 @@ void _ensureSameDeprecatedJsInteropOptions(BuilderOptions options) {
   final deprecatedJsInterop = readDeprecatedJsInteropOption(options);
   final previous = _lastDeprecatedJsInteropValue;
   if (previous == null) {
+    checkDeprecatedJsInteropSdkSupport(deprecatedJsInterop, runningSdkVersion);
     _lastDeprecatedJsInteropValue = (deprecatedJsInterop,);
   } else if (previous.$1 != deprecatedJsInterop) {
     throw ArgumentError(
@@ -278,6 +282,20 @@ void _ensureSameDeprecatedJsInteropOptions(BuilderOptions options) {
       '`build.yaml` or the `--define` flag to set global options.',
     );
   }
+}
+
+/// Warns, at most once, if both `deprecated-js-interop` and `platform-sdk`
+/// are set for the ddc builders.
+///
+/// The ddc builders must have the same configuration, so warning once is
+/// enough.
+void _warnOnceIfDeprecatedJsInteropWithPlatformSdk(BuilderOptions options) {
+  if (_warnedAboutDeprecatedJsInteropWithPlatformSdk) return;
+  _warnedAboutDeprecatedJsInteropWithPlatformSdk = true;
+  warnIfDeprecatedJsInteropWithPlatformSdk(
+    readDeprecatedJsInteropOption(options),
+    _readPlatformSdkOption(options),
+  );
 }
 
 /// Returns [platform] adjusted for the `deprecated-js-interop` option.
@@ -387,6 +405,7 @@ bool? _lastUseUiLibrariesValue;
 /// The first `deprecated-js-interop` value seen, wrapped in a record so that
 /// an unset (`null`) option is distinguishable from no value seen yet.
 (bool?,)? _lastDeprecatedJsInteropValue;
+bool _warnedAboutDeprecatedJsInteropWithPlatformSdk = false;
 const _useIncrementalCompilerOption = 'use-incremental-compiler';
 const _generateFullDillOption = 'generate-full-dill';
 const _emitDebugSymbolsOption = 'emit-debug-symbols';

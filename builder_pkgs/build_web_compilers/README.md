@@ -199,6 +199,11 @@ reject imports of the deprecated JS interop libraries, such as `dart:html`,
 option to `false` to disallow them, or to `true` to allow them explicitly.
 When it is not set, no flag is passed and the SDK default applies.
 
+The option requires Dart SDK 3.14.0-286.0.dev or later, which is the first SDK
+with the flag. Builders throw an error if it is set on an older SDK. Only the
+Dart SDK running the build is checked, so a warning is logged if the
+`platform-sdk` option is also set.
+
 The option must have the same value for all of these builders, so configure
 it in `global_options`:
 
