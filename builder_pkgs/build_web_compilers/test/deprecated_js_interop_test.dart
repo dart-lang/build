@@ -10,6 +10,7 @@ import 'package:build_web_compilers/src/common.dart';
 import 'package:build_web_compilers/src/dart2js_bootstrap.dart';
 import 'package:build_web_compilers/src/platforms.dart';
 import 'package:logging/logging.dart';
+import 'package:pub_semver/pub_semver.dart';
 import 'package:test/test.dart';
 
 import '../bin/fes_manager.dart';
@@ -91,6 +92,110 @@ void main() {
     expect(isDeprecatedJsInteropArg('--no-deprecated-js-interop'), isTrue);
     expect(isDeprecatedJsInteropArg('--deprecated-js-interop=false'), isFalse);
     expect(isDeprecatedJsInteropArg('-O4'), isFalse);
+  });
+
+  group('parseSdkVersion', () {
+    test('parses the leading version', () {
+      expect(
+        parseSdkVersion('3.14.0 (stable) (Tue Nov 1 00:00:00 2026)'),
+        Version(3, 14, 0),
+      );
+      expect(
+        parseSdkVersion('3.14.0-286.0.dev (dev) on "linux_x64"'),
+        Version.parse('3.14.0-286.0.dev'),
+      );
+      expect(
+        parseSdkVersion('3.15.0-edge (main)'),
+        Version.parse('3.15.0-edge'),
+      );
+    });
+
+    test('returns null for an unparsable version', () {
+      expect(parseSdkVersion('unknown'), isNull);
+      expect(parseSdkVersion(''), isNull);
+    });
+
+    test('parses the running SDK version', () {
+      expect(runningSdkVersion, isNotNull);
+    });
+  });
+
+  group('checkDeprecatedJsInteropSdkSupport', () {
+    final tooOld = [Version(3, 13, 0), Version.parse('3.14.0-285.0.dev')];
+    final supported = [
+      minDeprecatedJsInteropSdkVersion,
+      Version.parse('3.14.0-300.0.dev'),
+      Version(3, 14, 0),
+      Version.parse('3.15.0-edge'),
+    ];
+
+    test('throws when the option is set on an older SDK', () {
+      for (final value in [true, false]) {
+        for (final version in tooOld) {
+          expect(
+            () => checkDeprecatedJsInteropSdkSupport(value, version),
+            throwsA(
+              isArgumentError.having(
+                (e) => e.message,
+                'message',
+                allOf(
+                  contains('`deprecated-js-interop`'),
+                  contains('$minDeprecatedJsInteropSdkVersion'),
+                  contains('$version'),
+                ),
+              ),
+            ),
+          );
+        }
+      }
+    });
+
+    test('allows the option on a supported SDK', () {
+      for (final value in [true, false]) {
+        for (final version in supported) {
+          checkDeprecatedJsInteropSdkSupport(value, version);
+        }
+      }
+    });
+
+    test('skips the check if the option or version is unknown', () {
+      for (final version in [...tooOld, null]) {
+        checkDeprecatedJsInteropSdkSupport(null, version);
+      }
+      checkDeprecatedJsInteropSdkSupport(false, null);
+    });
+  });
+
+  group('warnIfDeprecatedJsInteropWithPlatformSdk', () {
+    late List<LogRecord> warnings;
+
+    setUp(() {
+      warnings = [];
+      final subscription = Logger.root.onRecord
+          .where((record) => record.level == Level.WARNING)
+          .listen(warnings.add);
+      addTearDown(subscription.cancel);
+    });
+
+    test('warns when both options are set', () {
+      warnIfDeprecatedJsInteropWithPlatformSdk(false, '/custom/sdk');
+      expect(
+        warnings.single.message,
+        allOf(
+          contains('`deprecated-js-interop`'),
+          contains('`platform-sdk`'),
+          contains('/custom/sdk'),
+          contains('--no-deprecated-js-interop'),
+        ),
+      );
+    });
+
+    test('does not warn unless both options are set', () {
+      warnIfDeprecatedJsInteropWithPlatformSdk(null, '/custom/sdk');
+      warnIfDeprecatedJsInteropWithPlatformSdk(true, null);
+      warnIfDeprecatedJsInteropWithPlatformSdk(null, null);
+      expect(warnings, isEmpty);
+    });
   });
 
   group('validatedDart2JsArgs', () {

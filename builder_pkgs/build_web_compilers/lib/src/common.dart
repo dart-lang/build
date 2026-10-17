@@ -7,6 +7,7 @@ import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
+import 'package:pub_semver/pub_semver.dart';
 import 'package:scratch_space/scratch_space.dart';
 
 const multiRootScheme = 'org-dartlang-app';
@@ -183,6 +184,60 @@ bool? parseDeprecatedJsInteropArg(String arg) => switch (arg) {
 /// Whether [arg] is a `--[no-]deprecated-js-interop` compiler argument.
 bool isDeprecatedJsInteropArg(String arg) =>
     parseDeprecatedJsInteropArg(arg) != null;
+
+/// The first Dart SDK version whose compilers support
+/// `--[no-]deprecated-js-interop`.
+final minDeprecatedJsInteropSdkVersion = Version.parse('3.14.0-286.0.dev');
+
+/// The version of the Dart SDK running the build, or `null` if it can't be
+/// parsed from [Platform.version].
+Version? get runningSdkVersion => parseSdkVersion(Platform.version);
+
+/// Parses the version at the start of a [Platform.version] style string, such
+/// as `3.14.0 (stable) ...`, or returns `null` if it is not a valid version.
+Version? parseSdkVersion(String platformVersion) {
+  try {
+    return Version.parse(platformVersion.split(' ').first);
+  } on FormatException {
+    return null;
+  }
+}
+
+/// Throws if [deprecatedJsInterop] is configured but [sdkVersion] is too old
+/// to support `--[no-]deprecated-js-interop`.
+///
+/// The check is skipped if [deprecatedJsInterop] or [sdkVersion] is `null`.
+void checkDeprecatedJsInteropSdkSupport(
+  bool? deprecatedJsInterop,
+  Version? sdkVersion,
+) {
+  if (deprecatedJsInterop == null || sdkVersion == null) return;
+  if (sdkVersion >= minDeprecatedJsInteropSdkVersion) return;
+  throw ArgumentError(
+    'The `$deprecatedJsInteropOption` option requires Dart SDK '
+    '$minDeprecatedJsInteropSdkVersion or later, but the build is running on '
+    'Dart SDK $sdkVersion. Upgrade the Dart SDK or remove the option.',
+  );
+}
+
+/// Warns if both [deprecatedJsInterop] and [platformSdk] are configured.
+///
+/// [checkDeprecatedJsInteropSdkSupport] only checks the Dart SDK running the
+/// build, whose compilers receive `--[no-]deprecated-js-interop`, so the
+/// platform libraries from a custom [platformSdk] might not match them.
+void warnIfDeprecatedJsInteropWithPlatformSdk(
+  bool? deprecatedJsInterop,
+  String? platformSdk,
+) {
+  if (deprecatedJsInterop == null || platformSdk == null) return;
+  log.warning(
+    'Both the `$deprecatedJsInteropOption` and `platform-sdk` options are '
+    'set. The Dart SDK version is only checked for the SDK running the build, '
+    'not the platform SDK at `$platformSdk`. If they are different versions, '
+    'compilation with `${deprecatedJsInteropArg(deprecatedJsInterop)}` may '
+    'fail or behave unexpectedly.',
+  );
+}
 
 enum ModuleStrategy { fine, coarse }
 
