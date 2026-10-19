@@ -1510,7 +1510,7 @@ void m() {}
         ('empty', "@Requires('')"),
         ('blank', "@Requires('  ')"),
         ('unbalanced', "@Requires('x > (0')"),
-        ('line break in a string', "@Requires('\"a\\nb\".isEmpty')"),
+        ('line break in a string', r"""@Requires('"a\nb".isEmpty')"""),
         ('empty @ThrowEnsures', "@ThrowEnsures(StateError, '')"),
       ]) {
         test('throw FormatException for an $kind clause', () {
@@ -1525,7 +1525,7 @@ void f(int x) {}
 
       test('allow an escaped line break in a string', () {
         const input = r'''
-@Requires('"a\\nb".isNotEmpty')
+@Requires(r'"a\nb".isNotEmpty')
 void f(int x) {}
 ''';
         expect(ContractWeaver().weave(input), contains('Precondition failed'));
