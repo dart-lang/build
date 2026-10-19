@@ -2,14 +2,14 @@
 builders:
 
   copyBuilder:
-    import: "package:example/builder.dart"
+    import: "package:example/src/builder.dart"
     builder_factories: ["copyBuilder"]
     build_extensions: {".txt": [".txt.copy"]}
     build_to: source
     auto_apply: root_package
 
   resolvingBuilder:
-    import: "package:example/builder.dart"
+    import: "package:example/src/builder.dart"
     builder_factories: ["resolvingBuilder"]
     build_extensions: {".dart": [".dart.info"]}
     build_to: source
@@ -21,7 +21,7 @@ builders:
         - web/**
 
   cssBuilder:
-    import: "package:example/builder.dart"
+    import: "package:example/src/builder.dart"
     builder_factories: ["cssBuilder"]
     build_extensions: {"$package$": ["web/generated.css"]}
     # The default, but listed explicitly for illustration purposes, see:
@@ -30,7 +30,7 @@ builders:
     auto_apply: root_package
 
   textBuilder:
-    import: "package:example/builder.dart"
+    import: "package:example/src/builder.dart"
     builder_factories: ["textBuilder"]
     build_extensions: {"^assets/{{}}.json": ["lib/generated/{{}}.dart"]}
     auto_apply: root_package

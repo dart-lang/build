@@ -241,7 +241,7 @@ A builder declares `adds_to_library: true`:
 ```yaml
 builders:
   my_builder:
-    import: "package:my_builder/builder.dart"
+    import: "package:my_builder/src/builder.dart"
     builder_factories: ["myBuilder"]
     # No explicit declared output is needed.
     build_extensions: {".dart": []}
@@ -252,6 +252,12 @@ builders:
 
 A builder that sets `adds_to_library: true` must set `build_to: source`, because
 the shared part is written to source, and cannot be `is_optional: true`.
+
+Placing the builder factory in `lib/src/builder.dart` is recommended so that
+build-script-only factories stay out of the package's public API and
+single-builder packages avoid the `dart pub publish` library-name warning.
+Expose `Builder` classes or factories in `lib/<package>.dart` only when
+programmatic construction is part of the intended public API.
 
 #### 2. Writing code in the builder
 

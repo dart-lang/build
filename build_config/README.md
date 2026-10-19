@@ -117,7 +117,11 @@ This is a map of builder names to configuration. Each builder config may contain
 the following keys:
 
 - **import**: Required. The import uri that should be used to import the library
-  containing the `Builder` class. This should always be a `package:` uri.
+  containing the `Builder` class. This should always be a `package:` uri. Put
+  builder factories under `lib/src/` (for example,
+  `package:my_package/src/builder.dart`) when they are only invoked by
+  `build_runner` to keep them out of the public API and avoid `dart pub publish`
+  warnings on single-builder packages.
 - **builder_factories**: A `List<String>` which contains the names of the
   top-level methods in the imported library which are a function fitting the
   typedef `Builder factoryName(BuilderOptions options)`.
@@ -177,7 +181,7 @@ Example `builders` config:
 ```yaml
 builders:
   my_builder:
-    import: "package:my_package/builder.dart"
+    import: "package:my_package/src/builder.dart"
     builder_factories: ["myBuilder"]
     build_extensions: {".dart": [".my_package.dart"]}
     auto_apply: dependents
@@ -200,7 +204,11 @@ section of the  `build.yaml`. This is a map of builder names to configuration.
 Each post process builder config may contain the following keys:
 
 - **import**: Required. The import uri that should be used to import the library
-  containing the `Builder` class. This should always be a `package:` uri.
+  containing the `Builder` class. This should always be a `package:` uri. Put
+  builder factories under `lib/src/` (for example,
+  `package:my_package/src/builder.dart`) when they are only invoked by
+  `build_runner` to keep them out of the public API and avoid `dart pub publish`
+  warnings on single-builder packages.
 - **builder_factory**: A `String` which contains the name of the top-level
   method in the imported library which is a function fitting the
   typedef `PostProcessBuilder factoryName(BuilderOptions options)`.
@@ -226,7 +234,7 @@ Example config with a normal `builder` which auto-applies a
 builders:
   # The regular builder config, creates `.tar.gz` files.
   regular_builder:
-    import: "package:my_package/builder.dart"
+    import: "package:my_package/src/builder.dart"
     builder_factories: ["myBuilder"]
     build_extensions: {".dart": [".tar.gz"]}
     auto_apply: dependents
@@ -234,7 +242,7 @@ builders:
 post_process_builders:
   # The post process builder config, extracts `.tar.gz` files.
   extract_archive_builder:
-    import: "package:my_package/extract_archive_builder.dart"
+    import: "package:my_package/src/extract_archive_builder.dart"
     builder_factory: "myExtractArchiveBuilder"
     input_extensions: [".tar.gz"]
 ```
@@ -275,7 +283,7 @@ A builder runs only if triggered if the option `run_only_if_triggered` is
 ```yaml
 builders:
   my_builder:
-    import: "package:my_package/builder.dart"
+    import: "package:my_package/src/builder.dart"
     builder_factories: ["myBuilder"]
     build_extensions: {".dart": [".my_package.dart"]}
     defaults:

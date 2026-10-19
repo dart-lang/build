@@ -18,14 +18,17 @@ import 'build_step.dart';
 /// ```yaml
 /// builders:
 ///   my_builder:
-///     import: "package:my_package/builder.dart"
+///     import: "package:my_package/src/builder.dart"
 ///     builder_factories: ["myBuilder"]
 ///     build_extensions: {".dart": [".my_package.dart"]}
 ///     auto_apply: dependents
 /// ```
 ///
 /// This `build.yaml` file says there is a `BuilderFactory` in
-/// `package:my_package/builder.dart` called `myBuilder`.
+/// `package:my_package/src/builder.dart` called `myBuilder`. Placing the
+/// factory in `lib/src/builder.dart` rather than `lib/` is recommended when it
+/// is only used by `build_runner`, keeping it out of the package's public API
+/// and avoiding `dart pub publish` library-name warnings.
 /// `auto_apply: dependents` tells `build_runner` to run the builder on all
 /// packages that depend on `my_package`.
 ///
