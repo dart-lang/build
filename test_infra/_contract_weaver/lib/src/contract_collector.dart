@@ -10,6 +10,7 @@ import 'body_weaver.dart';
 import 'clause_emitter.dart';
 import 'clause_reader.dart';
 import 'constructor_weaver.dart';
+import 'local_function_checker.dart';
 import 'member_contract.dart';
 import 'reserved_name_checker.dart';
 import 'source_edits.dart';
@@ -30,6 +31,7 @@ class ContractCollector extends RecursiveAstVisitor<void> {
 
   @override
   void visitCompilationUnit(CompilationUnit node) {
+    LocalFunctionChecker.check(node, _reader);
     final declaredClasses = {
       for (final declaration in node.declarations.whereType<ClassDeclaration>())
         declaration.namePart.typeName.lexeme,

@@ -27,7 +27,7 @@ class ClauseEmitter {
     }
     if (includeViolation) {
       buffer.writeln(
-        'class ContractViolation implements Exception {\n'
+        'class ContractViolation extends Error {\n'
         '  final String message;\n'
         '  ContractViolation(this.message);\n'
         '  @override\n'

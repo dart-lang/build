@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:built_collection/built_collection.dart';
 
@@ -50,7 +51,7 @@ class ClauseReader {
   List<String> _clauses(NodeList<Annotation> metadata, String name) {
     final clauses = <String>[];
     for (final annotation in metadata) {
-      if (annotation.name.name != name) continue;
+      if (!_isNamed(annotation, name)) continue;
       final args = annotation.arguments?.arguments;
       if (args == null || args.length != 1) {
         throw FormatException(
@@ -58,7 +59,9 @@ class ClauseReader {
           'repeat the annotation for more clauses.',
         );
       }
-      clauses.add(_stringValue(args.single, name));
+      final value = _stringValue(args.single, name);
+      if (name != 'ContractImport') _checkExpression(value, name);
+      clauses.add(value);
     }
     return clauses;
   }
@@ -72,7 +75,7 @@ class ClauseReader {
   List<ThrowClauses> throwClauses(NodeList<Annotation> metadata) {
     final clausesByType = <String, List<String>>{};
     for (final annotation in metadata) {
-      if (annotation.name.name != 'ThrowEnsures') continue;
+      if (!_isNamed(annotation, 'ThrowEnsures')) continue;
       final args = annotation.arguments?.arguments;
       if (args == null || args.length != 2) {
         throw const FormatException(
@@ -82,14 +85,46 @@ class ClauseReader {
         );
       }
       final type = source.substring(args.first.offset, args.first.end);
-      clausesByType
-          .putIfAbsent(type, () => [])
-          .add(_stringValue(args.last, 'ThrowEnsures'));
+      final value = _stringValue(args.last, 'ThrowEnsures');
+      _checkExpression(value, 'ThrowEnsures');
+      clausesByType.putIfAbsent(type, () => []).add(value);
     }
     return [
       for (final entry in clausesByType.entries)
         ThrowClauses.of(type: entry.key, clauses: entry.value),
     ];
+  }
+
+  /// Whether [annotation] is called [name].
+  ///
+  /// Throws if it is called [name] through an import prefix: woven code
+  /// refers to the injected runtime support without a prefix.
+  static bool _isNamed(Annotation annotation, String name) {
+    final identifier = annotation.name;
+    if (identifier is PrefixedIdentifier) {
+      if (identifier.identifier.name != name) return false;
+      throw FormatException(
+        '@${identifier.name} is not supported; import the library that '
+        'declares @$name without a prefix.',
+      );
+    }
+    return identifier.name == name;
+  }
+
+  /// Throws if [clause], from an annotation called [name], is not a single
+  /// Dart expression.
+  ///
+  /// The clause is the value of a string literal, so escapes in it have
+  /// already been processed: `'\\n'` in the annotation is a backslash and an
+  /// `n` in the clause, but `'\n'` is a line break.
+  static void _checkExpression(String clause, String name) {
+    final parsed = parseString(
+      content: 'final _ = ($clause);',
+      throwIfDiagnostics: false,
+    );
+    if (clause.trim().isEmpty || parsed.errors.isNotEmpty) {
+      throw FormatException('@$name clause is not a Dart expression: $clause');
+    }
   }
 
   /// The value of [arg], which must be a string literal with no interpolation.
