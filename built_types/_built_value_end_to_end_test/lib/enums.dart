@@ -90,6 +90,27 @@ class DollarValueEnum extends EnumClass {
   static DollarValueEnum valueOf(String name) => _$dollarValueOf(name);
 }
 
+// Check escaping for quotes, backslashes and newlines in wire names.
+@BuiltValueEnum(wireName: r"Escaped'\Enum")
+class EscapedWireNameEnum extends EnumClass {
+  static Serializer<EscapedWireNameEnum> get serializer =>
+      _$escapedWireNameEnumSerializer;
+
+  @BuiltValueEnumConst(wireName: "it's")
+  static const EscapedWireNameEnum quote = _$escapedQuote;
+
+  @BuiltValueEnumConst(wireName: r'back\slash')
+  static const EscapedWireNameEnum backslash = _$escapedBackslash;
+
+  @BuiltValueEnumConst(wireName: 'new\nline')
+  static const EscapedWireNameEnum newline = _$escapedNewline;
+
+  const EscapedWireNameEnum._(super.name);
+
+  static BuiltSet<EscapedWireNameEnum> get values => _$escapedValues;
+  static EscapedWireNameEnum valueOf(String name) => _$escapedValueOf(name);
+}
+
 class FallbackEnum extends EnumClass {
   static Serializer<FallbackEnum> get serializer => _$fallbackEnumSerializer;
 
