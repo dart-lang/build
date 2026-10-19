@@ -1323,5 +1323,136 @@ abstract class A {
         });
       }
     });
+
+    group('unsupported declarations', () {
+      for (final (kind, open) in [
+        ('mixin', 'mixin M {'),
+        ('enum', 'enum E {\n  a;'),
+        ('extension', 'extension X on int {'),
+        ('extension type', 'extension type T(int v) {'),
+      ]) {
+        test('throws FormatException for contracts in $kind declarations', () {
+          final input =
+              '''
+$open
+  @Requires('x > 0')
+  void f(int x) {}
+}
+''';
+          expect(() => ContractWeaver().weave(input), throwsFormatException);
+        });
+
+        test('throws FormatException for @Invariant on $kind declarations', () {
+          final input =
+              '''
+@Invariant('true')
+$open
+  void f(int x) {}
+}
+''';
+          expect(() => ContractWeaver().weave(input), throwsFormatException);
+        });
+
+        test('skips $kind declarations with no contracts', () {
+          final input =
+              '''
+$open
+  void f(int x) {}
+}
+''';
+          expect(ContractWeaver().weave(input), input);
+        });
+      }
+    });
+
+    group('generators', () {
+      for (final (kind, declaration) in [
+        ('sync* method', 'Iterable<int> f() sync* {}'),
+        ('async* method', 'Stream<int> f() async* {}'),
+      ]) {
+        test('throws FormatException for @Ensures on a $kind', () {
+          final input =
+              '''
+class A {
+  @Ensures('true')
+  $declaration
+}
+''';
+          expect(() => ContractWeaver().weave(input), throwsFormatException);
+        });
+      }
+
+      test('throws FormatException for @Ensures on a top-level generator', () {
+        const input = '''
+@Ensures('true')
+Iterable<int> f() sync* {}
+''';
+        expect(() => ContractWeaver().weave(input), throwsFormatException);
+      });
+
+      test('allows @Requires on a generator', () {
+        const input = '''
+class A {
+  @Requires('x > 0')
+  Iterable<int> f(int x) sync* {}
+}
+''';
+        expect(ContractWeaver().weave(input), contains('Precondition failed'));
+      });
+    });
+
+    group('falling off the end', () {
+      for (final (kind, declaration) in [
+        ('nullable', 'int? f(bool b) {\n    if (b) return 1;\n  }'),
+        ('dynamic', 'dynamic f() {}'),
+        ('async nullable', 'Future<int?> f() async {}'),
+        ('async Null', 'Future<Null> f() async {}'),
+        ('prefixed async nullable', 'async.Future<int?> f() async {}'),
+      ]) {
+        test('checks postconditions of a $kind function', () {
+          final input =
+              '''
+class A {
+  @Ensures('result != null')
+  $declaration
+}
+''';
+          final woven = ContractWeaver().weave(input);
+          final checks = 'Postcondition failed: result != null'
+              .allMatches(woven)
+              .length;
+          expect(checks, kind == 'nullable' ? 2 : 1, reason: woven);
+          expect(woven, contains('(null)'), reason: woven);
+        });
+      }
+
+      test('does not add a return to a function that cannot return null', () {
+        const input = '''
+class A {
+  @Ensures('result > 0')
+  int f(bool b) {
+    if (b) return 1;
+    throw StateError('no');
+  }
+}
+''';
+        final woven = ContractWeaver().weave(input);
+        expect(woven, isNot(contains('(null)')));
+      });
+
+      test('treats prefixed Future<void> as returning nothing', () {
+        const input = '''
+class A {
+  bool done = false;
+  @Ensures('done')
+  async.Future<void> f() async {}
+}
+''';
+        expect(
+          ContractWeaver().weave(input),
+          contains('Postcondition failed: done'),
+        );
+      });
+    });
   });
 }

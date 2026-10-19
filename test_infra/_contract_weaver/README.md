@@ -46,6 +46,12 @@ own. A method's exit check runs however it exits, including by throwing; a
 constructor that throws has no object to check. Getters, `==`, `hashCode`,
 `toString`, private and static members, and generators are not checked.
 
+Contracts are woven into classes and top-level functions. Contracts in mixins,
+enums, extensions and extension types are an error at weave time, as is
+`@Ensures` on a generator, which returns before its body runs; a contract that
+looks checked but is not would be worse. A generator's `@Requires` is checked
+when its body starts, on the first `moveNext` or `listen`, not at the call.
+
 A class that implements `Built`, or is annotated `@immutable` from
 `package:meta`, is taken to be immutable as it declares, so its invariant is
 checked only on construction. That is not sound: both kinds of immutability
