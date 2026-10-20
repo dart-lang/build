@@ -32,6 +32,12 @@ class BuildPackageWatcher {
   Stream<AssetChange> watch() {
     _watcher = _strategy(buildPackage.path);
     final events = _watcher.events;
-    return events.map((e) => AssetChange.fromEvent(buildPackage, e));
+    return events.map((e) {
+      ++watcherEventCount;
+      return AssetChange.fromEvent(buildPackage, e);
+    });
   }
 }
+
+/// DO NOT MERGE: count of watcher events, read by the merged directory probe.
+int watcherEventCount = 0;

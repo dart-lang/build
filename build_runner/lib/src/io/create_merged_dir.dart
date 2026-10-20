@@ -13,6 +13,7 @@ import 'package:pool/pool.dart';
 
 import '../build_plan/build_directory.dart';
 import '../build_plan/build_packages.dart';
+import '../commands/watch/build_package_watcher.dart';
 import '../logging/build_log.dart';
 import '../logging/timed_activities.dart';
 import 'build_output_reader.dart';
@@ -33,6 +34,42 @@ class _Timing {
   int filesDeleted = 0;
   int dirsDeleted = 0;
   int assets = 0;
+  final createUsList = <int>[];
+  final writeUsList = <int>[];
+  final startEvents = watcherEventCount;
+  int inFlight = 0;
+  int maxInFlight = 0;
+
+  // Event loop lag: a 5ms periodic timer that records how late it fires.
+  final _lagClock = Stopwatch()..start();
+  int _lastTick = 0;
+  int maxLagMs = 0;
+  int sumLagMs = 0;
+  int ticks = 0;
+  late final Timer _lagTimer;
+
+  _Timing() {
+    _lagTimer = Timer.periodic(const Duration(milliseconds: 5), (_) {
+      final now = _lagClock.elapsedMilliseconds;
+      final lag = now - _lastTick - 5;
+      _lastTick = now;
+      ++ticks;
+      if (lag > 0) {
+        sumLagMs += lag;
+        if (lag > maxLagMs) maxLagMs = lag;
+      }
+    });
+  }
+
+  void stop() => _lagTimer.cancel();
+
+  static String _percentiles(String name, List<int> us) {
+    if (us.isEmpty) return '${name}_n=0';
+    final sorted = [...us]..sort();
+    int at(double q) => sorted[((sorted.length - 1) * q).round()] ~/ 1000;
+    return '${name}_p50=${at(.5)}ms ${name}_p90=${at(.9)}ms '
+        '${name}_p99=${at(.99)}ms ${name}_max=${at(1)}ms';
+  }
 
   void mark(String name) {
     parts[name] = lap.elapsedMilliseconds;
@@ -45,7 +82,13 @@ class _Timing {
       '${[for (final e in parts.entries) '${e.key}=${e.value}ms'].join(' ')} '
       'sum_read=${readUs ~/ 1000}ms sum_create=${createUs ~/ 1000}ms '
       'sum_write=${writeUs ~/ 1000}ms assets=$assets '
-      'files_deleted=$filesDeleted dirs_deleted=$dirsDeleted';
+      'files_deleted=$filesDeleted dirs_deleted=$dirsDeleted '
+      'pid=$pid at=${DateTime.now().toIso8601String()} '
+      'watcher_events=${watcherEventCount - startEvents} '
+      'max_in_flight=$maxInFlight '
+      'lag_ticks=$ticks lag_max=${maxLagMs}ms lag_sum=${sumLagMs}ms '
+      '${_percentiles('create', createUsList)} '
+      '${_percentiles('write', writeUsList)}';
 }
 
 _Timing? _timing;
@@ -181,6 +224,7 @@ Future<bool> _createMergedOutputDir({
         .join(_manifestSeparator);
     await _writeAsString(outputDir, _manifestName, content);
     timing.mark('links_and_manifest');
+    timing.stop();
     buildLog.info('$timing');
 
     return true;
@@ -282,6 +326,13 @@ Future<String> _writeAsset(
           _filePathFor(outputDir, assetPath),
         ).create(buildOutputReader.pathFor(id), recursive: true);
       } else {
+        final timing = _timing;
+        if (timing != null) {
+          ++timing.inFlight;
+          if (timing.inFlight > timing.maxInFlight) {
+            timing.maxInFlight = timing.inFlight;
+          }
+        }
         final watch = Stopwatch()..start();
         final bytes = (await buildOutputReader.read(id)).bytes;
         _timing?.readUs += watch.elapsedMicroseconds;
@@ -290,9 +341,12 @@ Future<String> _writeAsset(
           _filePathFor(outputDir, assetPath),
         ).create(recursive: true);
         _timing?.createUs += watch.elapsedMicroseconds;
+        _timing?.createUsList.add(watch.elapsedMicroseconds);
         watch.reset();
         await file.writeAsBytes(bytes);
         _timing?.writeUs += watch.elapsedMicroseconds;
+        _timing?.writeUsList.add(watch.elapsedMicroseconds);
+        if (timing != null) --timing.inFlight;
       }
     } on AssetNotFoundException catch (e) {
       if (!p.basename(id.path).startsWith('.')) {
