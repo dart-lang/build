@@ -9,6 +9,8 @@
 - Allow `built_collection` 6.x.
 - Migrate to `package:dart_flutter_team_lints`.
 - Fix analysis issues and remove the lint suppressions that hid them.
+- Bug fix: a nullable `@memoized` getter returning a record generated code
+  that didn't parse.
 - Bug fix: `generateBuilderOnSetField: true` on a class with more than one
   field generated a builder that declared `onSet` once per field and didn't
   compile.
