@@ -9,6 +9,9 @@
 - Allow `built_collection` 6.x.
 - Migrate to `package:dart_flutter_team_lints`.
 - Fix analysis issues and remove the lint suppressions that hid them.
+- Bug fix: `generateBuilderOnSetField: true` on a class with more than one
+  field generated a builder that declared `onSet` once per field and didn't
+  compile.
 - Bug fix: escape quotes, backslashes and newlines in wire names. A wire name
   containing `'` generated code that didn't parse, and one containing `\`
   silently serialized under a different name.
