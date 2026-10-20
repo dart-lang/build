@@ -21,6 +21,34 @@ import 'build_output_reader.dart';
 final _descriptorPool = Pool(32);
 
 const _manifestName = '.build.manifest';
+
+/// DO NOT MERGE: timings for measuring the merged directory on CI.
+class _Timing {
+  final total = Stopwatch()..start();
+  final lap = Stopwatch()..start();
+  final parts = <String, int>{};
+  int readUs = 0;
+  int createUs = 0;
+  int writeUs = 0;
+  int filesDeleted = 0;
+  int dirsDeleted = 0;
+  int assets = 0;
+
+  void mark(String name) {
+    parts[name] = lap.elapsedMilliseconds;
+    lap.reset();
+  }
+
+  @override
+  String toString() =>
+      'MERGED_TIMING total=${total.elapsedMilliseconds}ms '
+      '${[for (final e in parts.entries) '${e.key}=${e.value}ms'].join(' ')} '
+      'sum_read=${readUs ~/ 1000}ms sum_create=${createUs ~/ 1000}ms '
+      'sum_write=${writeUs ~/ 1000}ms assets=$assets '
+      'files_deleted=$filesDeleted dirs_deleted=$dirsDeleted';
+}
+
+_Timing? _timing;
 const _manifestSeparator = '\n';
 
 /// Creates merged output directories for each [OutputLocation].
@@ -83,6 +111,7 @@ Future<bool> _createMergedOutputDir({
   required bool hoist,
   required BuildOutputReader buildOutputReader,
 }) async {
+  final timing = _timing = _Timing();
   try {
     final outputRootPackage = buildPackages[buildPackages.outputRoot]!;
     final absoluteRoot = p.join(outputRootPackage.path, root);
@@ -98,7 +127,10 @@ Future<bool> _createMergedOutputDir({
     if (outputDirExists) {
       if (!await _cleanUpOutputDir(outputDir)) return false;
     }
+    timing.mark('clean');
     final builtAssets = buildOutputReader.allAssets(rootDir: root).toList();
+    timing.assets = builtAssets.length;
+    timing.mark('list');
     if (root != '' &&
         !builtAssets
             .where((id) => id.package == buildPackages.outputRoot)
@@ -131,6 +163,7 @@ Future<bool> _createMergedOutputDir({
         ),
       ]),
     );
+    timing.mark('write');
 
     if (!hoist) {
       for (final dir in _findRootDirs(builtAssets, outputPath)) {
@@ -147,6 +180,8 @@ Future<bool> _createMergedOutputDir({
         .map((path) => path.replaceAll(r'\', '/'))
         .join(_manifestSeparator);
     await _writeAsString(outputDir, _manifestName, content);
+    timing.mark('links_and_manifest');
+    buildLog.info('$timing');
 
     return true;
   } on FileSystemException catch (e) {
@@ -247,11 +282,17 @@ Future<String> _writeAsset(
           _filePathFor(outputDir, assetPath),
         ).create(buildOutputReader.pathFor(id), recursive: true);
       } else {
-        await _writeAsBytes(
-          outputDir,
-          assetPath,
-          (await buildOutputReader.read(id)).bytes,
-        );
+        final watch = Stopwatch()..start();
+        final bytes = (await buildOutputReader.read(id)).bytes;
+        _timing?.readUs += watch.elapsedMicroseconds;
+        watch.reset();
+        final file = await File(
+          _filePathFor(outputDir, assetPath),
+        ).create(recursive: true);
+        _timing?.createUs += watch.elapsedMicroseconds;
+        watch.reset();
+        await file.writeAsBytes(bytes);
+        _timing?.writeUs += watch.elapsedMicroseconds;
       }
     } on AssetNotFoundException catch (e) {
       if (!p.basename(id.path).startsWith('.')) {
@@ -267,9 +308,6 @@ Future<String> _writeAsset(
     return assetPath;
   });
 }
-
-Future<void> _writeAsBytes(Directory outputDir, String path, List<int> bytes) =>
-    _fileFor(outputDir, path).then((file) => file.writeAsBytes(bytes));
 
 Future<void> _writeAsString(
   Directory outputDir,
@@ -306,12 +344,17 @@ Future<bool> _cleanUpOutputDir(Directory outputDir) async {
       _manifestSeparator,
     );
 
+    final watch = Stopwatch()..start();
     for (final path in previousOutputs) {
       final file = File(p.join(outputPath, path));
       if (!_existsResolvedWithin(file, outputPath)) continue;
       file.deleteSync();
+      _timing?.filesDeleted++;
     }
+    _timing?.parts['clean_files'] = watch.elapsedMilliseconds;
+    watch.reset();
     _cleanEmptyDirectories(outputPath, previousOutputs);
+    _timing?.parts['clean_dirs'] = watch.elapsedMilliseconds;
   }
   return true;
 }
@@ -341,6 +384,7 @@ void _deleteUp(String from, String to) {
       return;
     }
     directory.deleteSync();
+    _timing?.dirsDeleted++;
     directoryPath = p.dirname(directoryPath);
   }
 }

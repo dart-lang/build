@@ -164,16 +164,19 @@ targets:
     await watch.kill();
 
     // Now with --output.
+    final timings = <String>[];
     watch = await tester.start(
       'root_pkg',
       'dart run build_runner watch --force-jit --output web:build',
     );
+    timings.add(await watch.expectAndGetLine('MERGED_TIMING'));
     await watch.expect(BuildLog.successPattern);
     expect(tester.read('root_pkg/build/a.txt'), 'updated');
     expect(tester.read('root_pkg/build/a.txt.copy'), 'configured');
 
     // Changed inputs and outputs are written to output directory.
     tester.write('root_pkg/web/a.txt', 'a');
+    timings.add(await watch.expectAndGetLine('MERGED_TIMING'));
     await watch.expect(BuildLog.successPattern);
     expect(tester.read('root_pkg/build/a.txt'), 'a');
     expect(tester.read('root_pkg/build/a.txt.copy'), 'configured');
@@ -189,6 +192,7 @@ builders:
     auto_apply: root_package
     build_to: source
 ''');
+    timings.add(await watch.expectAndGetLine('MERGED_TIMING'));
     await watch.expect(BuildLog.successPattern);
     expect(tester.read('root_pkg/build/a.txt.copy'), 'second_factory');
 
@@ -229,6 +233,10 @@ builders:
     auto_apply: root_package
     build_to: source
 ''');
+    timings.add(await watch.expectAndGetLine('MERGED_TIMING'));
     await watch.expect(BuildLog.successPattern);
-  });
+
+    // DO NOT MERGE: fail on purpose so CI shows the timings.
+    fail('--output timings:\n${timings.join('\n')}');
+  }, timeout: const Timeout.factor(3));
 }
