@@ -227,8 +227,8 @@ class Stager {
     dir.createSync(recursive: true);
   }
 
-  /// Links each entry of [src] into [dest], except hidden entries and names in
-  /// [keep].
+  /// Links each entry of [src] into [dest], except `.dart_tool` and names in
+  /// [keep]. The stage resolves its own packages into its own `.dart_tool`.
   ///
   /// Links pointing elsewhere are replaced, and entries whose source is gone
   /// are removed. A workspace member that was renamed or removed would
@@ -248,7 +248,7 @@ class Stager {
     final linked = <String>{};
     for (final entity in src.listSync()) {
       final name = p.basename(entity.path);
-      if (name.startsWith('.') || keep.contains(name)) continue;
+      if (name == '.dart_tool' || keep.contains(name)) continue;
       linked.add(name);
 
       final linkPath = p.join(dest.path, name);
@@ -273,7 +273,7 @@ class Stager {
 
     for (final entity in dest.listSync(followLinks: false)) {
       final name = p.basename(entity.path);
-      if (name.startsWith('.') ||
+      if (name == '.dart_tool' ||
           keep.contains(name) ||
           linked.contains(name)) {
         continue;

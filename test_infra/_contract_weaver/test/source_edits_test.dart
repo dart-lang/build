@@ -26,13 +26,36 @@ void main() {
       expect(backwards.apply(), '0A34B567CC9');
     });
 
-    test('puts the last of several inserts at one offset first', () {
+    test('keeps several inserts at one offset in the order added', () {
       final edits = SourceEdits('ab');
       for (var i = 0; i < 40; i++) {
         edits.insert(1, '$i,');
       }
-      final inserted = [for (var i = 39; i >= 0; i--) '$i,'].join();
+      final inserted = [for (var i = 0; i < 40; i++) '$i,'].join();
       expect(edits.apply(), 'a${inserted}b');
+    });
+
+    test('puts inserts at the start and end of an empty range in order', () {
+      // An empty block body: the entry goes after `{`, the exit before `}`,
+      // and both offsets are the same.
+      final edits = SourceEdits('{}')
+        ..insert(1, 'entry;')
+        ..insert(1, 'exit;');
+      expect(edits.apply(), '{entry;exit;}');
+    });
+
+    test('puts an insert before a replacement at the same offset', () {
+      final edits = SourceEdits('abc')
+        ..replace(1, 1, 'B')
+        ..insert(1, 'x');
+      expect(edits.apply(), 'axBc');
+    });
+
+    test('throws on overlapping replacements', () {
+      final edits = SourceEdits('abcd')
+        ..replace(0, 2, 'X')
+        ..replace(1, 2, 'Y');
+      expect(edits.apply, throwsStateError);
     });
 
     test('applies an insert at the end', () {

@@ -79,6 +79,21 @@ void main() {
       expect(typeOf('stage/test'), FileSystemEntityType.link);
     });
 
+    test('links hidden entries except .dart_tool', () {
+      write('p/.github/workflows/ci.yaml', '');
+      write('p/.dart_tool/package_config.json', '{}');
+      stager().stage();
+      expect(typeOf('stage/.github'), FileSystemEntityType.link);
+      expect(typeOf('stage/.dart_tool'), FileSystemEntityType.notFound);
+    });
+
+    test('keeps the staged .dart_tool when staging again', () {
+      stager().stage();
+      write('stage/.dart_tool/package_config.json', '{}');
+      stager().stage();
+      expect(read('stage/.dart_tool/package_config.json'), '{}');
+    });
+
     test('copies the pubspec, so resolving cannot write to the original', () {
       stager().stage();
       expect(typeOf('stage/pubspec.yaml'), FileSystemEntityType.file);

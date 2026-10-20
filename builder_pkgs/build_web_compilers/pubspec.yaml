@@ -5,7 +5,7 @@ repository: https://github.com/dart-lang/build/tree/master/builder_pkgs/build_we
 resolution: workspace
 
 environment:
-  sdk: '>=3.14.0-286.0.dev <3.15.0-z'
+  sdk: '>=3.13.0 <3.15.0-z'
 
 dependencies:
   analyzer: '>=13.3.0 <15.0.0'
@@ -23,6 +23,7 @@ dependencies:
   logging: ^1.0.0
   path: ^1.8.0
   pool: ^1.5.0
+  pub_semver: ^2.0.0
   scratch_space: ^1.2.1
   source_maps: ^0.10.10
   source_span: ^1.8.0

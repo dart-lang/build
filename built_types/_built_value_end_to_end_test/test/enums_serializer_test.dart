@@ -50,6 +50,26 @@ void main() {
     });
   });
 
+  group('EscapedWireNameEnum', () {
+    final data = [
+      EscapedWireNameEnum.quote,
+      EscapedWireNameEnum.backslash,
+      EscapedWireNameEnum.newline,
+    ];
+    final serialized = [
+      for (final wireName in ["it's", r'back\slash', 'new\nline'])
+        json.decode(json.encode([r"Escaped'\Enum", wireName])) as Object,
+    ];
+
+    test('can be serialized', () {
+      expect(data.map(serializers.serialize), serialized);
+    });
+
+    test('can be deserialized', () {
+      expect(serialized.map(serializers.deserialize), data);
+    });
+  });
+
   group('WireNumberEnum', () {
     final data = WireNumberEnum.yes;
     final serialized =

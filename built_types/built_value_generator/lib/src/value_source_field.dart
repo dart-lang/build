@@ -28,6 +28,9 @@ const _suggestedTypes = <String, String>{
   'SetMultimap<dynamic, dynamic>': 'BuiltSetMultimap',
 };
 
+/// Methods on generated builders, which fields can't share names with.
+const _builderMethodNames = {'build', 'replace', 'update'};
+
 abstract class ValueSourceField
     with FieldMixin
     implements Built<ValueSourceField, ValueSourceFieldBuilder> {
@@ -347,6 +350,16 @@ abstract class ValueSourceField
       result.add(
         GeneratorError(
           (b) => b..message = 'Make field $name public; remove the underscore.',
+        ),
+      );
+    }
+
+    if (_builderMethodNames.contains(name)) {
+      result.add(
+        GeneratorError(
+          (b) => b
+            ..message = 'Rename field $name; '
+                'it clashes with the generated builder method $name.',
         ),
       );
     }
