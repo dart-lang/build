@@ -59,7 +59,7 @@ class ContractWeaver {
 
     edits.insert(
       _importOffset(unit),
-      [for (final uri in uris) "import '$uri';\n"].join(),
+      [for (final uri in uris) "import '$uri'; "].join(),
     );
   }
 

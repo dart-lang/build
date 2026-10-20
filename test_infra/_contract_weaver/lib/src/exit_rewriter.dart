@@ -40,9 +40,9 @@ class ExitRewriter {
         before: 'return await ($constructor(',
         after:
             ')'
-            '.then((${_parameterType(valueType)}result) {\n'
+            '.then((${_parameterType(valueType)}result) { '
             '$checks'
-            'return result;\n'
+            'return result; '
             '}));',
       );
     }
@@ -52,17 +52,17 @@ class ExitRewriter {
         before: 'return (',
         after:
             ')'
-            '.then((${_parameterType(valueType)}result) {\n'
+            '.then((${_parameterType(valueType)}result) { '
             '$checks'
-            'return result;\n'
+            'return result; '
             '});',
       );
     }
     return (
       before:
-          'return ((${_parameterType(_syncValueType)}result) {\n'
+          'return ((${_parameterType(_syncValueType)}result) { '
           '$checks'
-          'return result;\n'
+          'return result; '
           '})(',
       after: ');',
     );

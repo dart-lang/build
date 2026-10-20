@@ -88,10 +88,10 @@ class BodyWeaver {
         : ClauseEmitter.postconditions(postconditions);
     // In an `async` function, `=> e` waits for `e` if it is a future, so the
     // checks must wait too.
-    if (isVoid) return (before: isAsync ? 'await ' : '', after: ';\n$checks');
-    if (postconditions.isEmpty) return (before: 'return ', after: ';\n');
+    if (isVoid) return (before: isAsync ? 'await ' : '', after: '; $checks');
+    if (postconditions.isEmpty) return (before: 'return ', after: '; ');
     final (:before, :after) = exitRewriter.wrapReturn(checks);
-    return (before: before, after: '$after\n');
+    return (before: before, after: '$after ');
   }
 
   /// Replaces `=> expr` with a block that runs [entry], then [result].
@@ -107,7 +107,7 @@ class BodyWeaver {
       ..replace(
         startOffset,
         expression.offset - startOffset,
-        '{\n$entry${result.before}',
+        '{ $entry${result.before}',
       )
       ..replace(
         expression.end,
@@ -128,7 +128,7 @@ class BodyWeaver {
   }) {
     final block = body.block;
     if (entry.isNotEmpty) {
-      edits.insert(block.leftBracket.end, '\n$entry\n');
+      edits.insert(block.leftBracket.end, ' $entry ');
     }
 
     if (postconditions.isNotEmpty) {
@@ -143,17 +143,19 @@ class BodyWeaver {
         closing.write(ClauseEmitter.postconditions(postconditions));
       } else if (exitRewriter.mayFallOffEnd) {
         // Falling off the end returns `null`; check it like `return null;`.
-        closing.writeln(
-          exitRewriter.returnValue(
-            'null',
-            ClauseEmitter.postconditions(postconditions),
-          ),
-        );
+        closing
+          ..write(
+            exitRewriter.returnValue(
+              'null',
+              ClauseEmitter.postconditions(postconditions),
+            ),
+          )
+          ..write(' ');
       }
     }
     closing.write(ClauseEmitter.guardClose(guard));
     if (closing.isNotEmpty) {
-      edits.insert(block.rightBracket.offset, '\n$closing');
+      edits.insert(block.rightBracket.offset, ' $closing');
     }
   }
 
@@ -173,9 +175,9 @@ class BodyWeaver {
           ..replace(statement.offset, expr.offset - statement.offset, before)
           ..replace(expr.end, statement.end - expr.end, after);
       } else {
-        final buffer = StringBuffer('{\n')
+        final buffer = StringBuffer('{ ')
           ..write(ClauseEmitter.postconditions(postconditions))
-          ..writeln('return;')
+          ..write('return; ')
           ..write('}');
         edits.replace(statement.offset, statement.length, buffer.toString());
       }

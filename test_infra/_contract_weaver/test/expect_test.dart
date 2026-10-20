@@ -11,8 +11,10 @@ import 'package:dart_style/dart_style.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
-/// Weaves each `test/expect/*.dart` and compares the result, formatted so
-/// that it is readable, with the checked-in `.dart.expect` file beside it.
+/// Weaves each `test/expect/*.dart` and compares the result with the
+/// checked-in files beside it: formatted so that it is readable, in
+/// `.dart.expect`, and as woven, with the original line numbers, in
+/// `.dart.unformatted.expect`.
 ///
 /// To update the expectations, run with `UPDATE_EXPECTATIONS=1`.
 void main() {
@@ -24,28 +26,9 @@ void main() {
 
   for (final input in inputs) {
     test(p.basename(input.path), () {
-      final woven = _formatter.format(
-        ContractWeaver().weave(input.readAsStringSync()),
-      );
-      final expectFile = File('${input.path}.expect');
-      if (update) {
-        expectFile.writeAsStringSync(woven);
-        return;
-      }
-      expect(
-        expectFile.existsSync(),
-        isTrue,
-        reason:
-            'Missing ${expectFile.path}; run with UPDATE_EXPECTATIONS=1 '
-            'to create it.',
-      );
-      expect(
-        woven,
-        expectFile.readAsStringSync(),
-        reason:
-            'Woven output differs from ${expectFile.path}; if the change is '
-            'intended, run with UPDATE_EXPECTATIONS=1.',
-      );
+      final woven = ContractWeaver().weave(input.readAsStringSync());
+      _expectOrUpdate(_formatter.format(woven), '${input.path}.expect', update);
+      _expectOrUpdate(woven, '${input.path}.unformatted.expect', update);
     });
 
     test('${p.basename(input.path)} keeps line numbers', () {
@@ -67,6 +50,26 @@ void main() {
       }
     });
   }
+}
+
+void _expectOrUpdate(String woven, String path, bool update) {
+  final expectFile = File(path);
+  if (update) {
+    expectFile.writeAsStringSync(woven);
+    return;
+  }
+  expect(
+    expectFile.existsSync(),
+    isTrue,
+    reason: 'Missing $path; run with UPDATE_EXPECTATIONS=1 to create it.',
+  );
+  expect(
+    woven,
+    expectFile.readAsStringSync(),
+    reason:
+        'Woven output differs from $path; if the change is intended, run with '
+        'UPDATE_EXPECTATIONS=1.',
+  );
 }
 
 final _formatter = DartFormatter(
