@@ -1,6 +1,6 @@
 # Changelog
 
-## 6.0.0-wip
+## 6.0.0
 
 - Breaking change: `BuiltList.asList`, `BuiltMap.asMap`,
   `BuiltListMultimap.asMap` and `BuiltSetMultimap.asMap` now return
