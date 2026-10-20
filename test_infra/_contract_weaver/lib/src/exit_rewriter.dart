@@ -46,6 +46,25 @@ class ExitRewriter {
         '})($expression);';
   }
 
+  /// Whether the function may complete by falling off the end of its body,
+  /// which returns `null`.
+  ///
+  /// Only true when the declared type, or the type a future completes with,
+  /// is written nullable. A missing type may be inferred from an override, so
+  /// it is not trusted.
+  bool get mayFallOffEnd {
+    var type = returnType?.trim();
+    if (type == null) return false;
+    if (isAsync) {
+      final open = type.indexOf('<');
+      if (open == -1 || !type.endsWith('>')) return false;
+      final name = type.substring(type.indexOf('.') + 1, open);
+      if (name != 'Future' && name != 'FutureOr') return false;
+      type = type.substring(open + 1, type.length - 1).trim();
+    }
+    return type.endsWith('?') || type == 'dynamic' || type == 'Null';
+  }
+
   /// The declared return type, or `null` if it carries no information that
   /// inference can use.
   String? get _syncValueType {

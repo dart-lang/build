@@ -44,6 +44,8 @@ Serializer<NamedFactoryValue> _$namedFactoryValueSerializer =
     _$NamedFactoryValueSerializer();
 Serializer<WireNameValue> _$wireNameValueSerializer =
     _$WireNameValueSerializer();
+Serializer<EscapedWireNameValue> _$escapedWireNameValueSerializer =
+    _$EscapedWireNameValueSerializer();
 Serializer<FieldDiscoveryValue> _$fieldDiscoveryValueSerializer =
     _$FieldDiscoveryValueSerializer();
 Serializer<DiscoverableValue> _$discoverableValueSerializer =
@@ -1328,6 +1330,82 @@ class _$WireNameValueSerializer implements StructuredSerializer<WireNameValue> {
       switch (key) {
         case '\$v':
           result.value =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(int),
+                  )!
+                  as int;
+          break;
+      }
+    }
+
+    return result.build();
+  }
+}
+
+class _$EscapedWireNameValueSerializer
+    implements StructuredSerializer<EscapedWireNameValue> {
+  @override
+  final Iterable<Type> types = const [
+    EscapedWireNameValue,
+    _$EscapedWireNameValue,
+  ];
+  @override
+  final String wireName = 'Escaped\'\\Value';
+
+  @override
+  Iterable<Object?> serialize(
+    Serializers serializers,
+    EscapedWireNameValue object, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
+    final result = <Object?>[
+      'it\'s',
+      serializers.serialize(object.quote, specifiedType: const FullType(int)),
+      'back\\slash',
+      serializers.serialize(
+        object.backslash,
+        specifiedType: const FullType(int),
+      ),
+      'new\nline',
+      serializers.serialize(object.newline, specifiedType: const FullType(int)),
+    ];
+
+    return result;
+  }
+
+  @override
+  EscapedWireNameValue deserialize(
+    Serializers serializers,
+    Iterable<Object?> serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
+    final result = EscapedWireNameValueBuilder();
+
+    final iterator = serialized.iterator;
+    while (iterator.moveNext()) {
+      final key = iterator.current! as String;
+      iterator.moveNext();
+      final Object? value = iterator.current;
+      switch (key) {
+        case 'it\'s':
+          result.quote =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(int),
+                  )!
+                  as int;
+          break;
+        case 'back\\slash':
+          result.backslash =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(int),
+                  )!
+                  as int;
+          break;
+        case 'new\nline':
+          result.newline =
               serializers.deserialize(
                     value,
                     specifiedType: const FullType(int),
@@ -5513,6 +5591,128 @@ class WireNameValueBuilder
             value,
             r'WireNameValue',
             'value',
+          ),
+        );
+    replace(_$result);
+    return _$result;
+  }
+}
+
+class _$EscapedWireNameValue extends EscapedWireNameValue {
+  @override
+  final int quote;
+  @override
+  final int backslash;
+  @override
+  final int newline;
+
+  factory _$EscapedWireNameValue([
+    void Function(EscapedWireNameValueBuilder)? updates,
+  ]) => (EscapedWireNameValueBuilder()..update(updates))._build();
+
+  _$EscapedWireNameValue._({
+    required this.quote,
+    required this.backslash,
+    required this.newline,
+  }) : super._();
+  @override
+  EscapedWireNameValue rebuild(
+    void Function(EscapedWireNameValueBuilder) updates,
+  ) => (toBuilder()..update(updates)).build();
+
+  @override
+  EscapedWireNameValueBuilder toBuilder() =>
+      EscapedWireNameValueBuilder()..replace(this);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(other, this)) return true;
+    return other is EscapedWireNameValue &&
+        quote == other.quote &&
+        backslash == other.backslash &&
+        newline == other.newline;
+  }
+
+  @override
+  int get hashCode {
+    var _$hash = 0;
+    _$hash = $jc(_$hash, quote.hashCode);
+    _$hash = $jc(_$hash, backslash.hashCode);
+    _$hash = $jc(_$hash, newline.hashCode);
+    _$hash = $jf(_$hash);
+    return _$hash;
+  }
+
+  @override
+  String toString() {
+    return (newBuiltValueToStringHelper(r'EscapedWireNameValue')
+          ..add('quote', quote)
+          ..add('backslash', backslash)
+          ..add('newline', newline))
+        .toString();
+  }
+}
+
+class EscapedWireNameValueBuilder
+    implements Builder<EscapedWireNameValue, EscapedWireNameValueBuilder> {
+  _$EscapedWireNameValue? _$v;
+
+  int? _quote;
+  int? get quote => _$this._quote;
+  set quote(int? quote) => _$this._quote = quote;
+
+  int? _backslash;
+  int? get backslash => _$this._backslash;
+  set backslash(int? backslash) => _$this._backslash = backslash;
+
+  int? _newline;
+  int? get newline => _$this._newline;
+  set newline(int? newline) => _$this._newline = newline;
+
+  EscapedWireNameValueBuilder();
+
+  EscapedWireNameValueBuilder get _$this {
+    final $v = _$v;
+    if ($v != null) {
+      _quote = $v.quote;
+      _backslash = $v.backslash;
+      _newline = $v.newline;
+      _$v = null;
+    }
+    return this;
+  }
+
+  @override
+  void replace(EscapedWireNameValue other) {
+    _$v = other as _$EscapedWireNameValue;
+  }
+
+  @override
+  void update(void Function(EscapedWireNameValueBuilder)? updates) {
+    if (updates != null) updates(this);
+  }
+
+  @override
+  EscapedWireNameValue build() => _build();
+
+  _$EscapedWireNameValue _build() {
+    final _$result =
+        _$v ??
+        _$EscapedWireNameValue._(
+          quote: BuiltValueNullFieldError.checkNotNull(
+            quote,
+            r'EscapedWireNameValue',
+            'quote',
+          ),
+          backslash: BuiltValueNullFieldError.checkNotNull(
+            backslash,
+            r'EscapedWireNameValue',
+            'backslash',
+          ),
+          newline: BuiltValueNullFieldError.checkNotNull(
+            newline,
+            r'EscapedWireNameValue',
+            'newline',
           ),
         );
     replace(_$result);

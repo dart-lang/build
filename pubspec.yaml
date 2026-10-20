@@ -32,9 +32,7 @@ workspace:
 - test_infra/_contract_weaver
 - tool
 
-# source_gen and json_serializable do not yet allow build 5.0.0, which is the
-# retracted build 4.1.0 republished as a major version. Remove these once they
-# do.
+# json_serializable does not yet allow build 5.0.0, which is the retracted
+# build 4.1.0 republished as a major version. Remove this once it does.
 dependency_overrides:
   json_serializable: ^6.14.1
-  source_gen: ^4.3.0

@@ -117,7 +117,9 @@ This is a map of builder names to configuration. Each builder config may contain
 the following keys:
 
 - **import**: Required. The import uri that should be used to import the library
-  containing the `Builder` class. This should always be a `package:` uri.
+  containing the `Builder` class. This should always be a `package:` uri (such
+  as `package:my_package/builder.dart`, or `package:my_package/src/builder.dart`
+  to keep `build_runner`-only factories out of the public API).
 - **builder_factories**: A `List<String>` which contains the names of the
   top-level methods in the imported library which are a function fitting the
   typedef `Builder factoryName(BuilderOptions options)`.
@@ -200,7 +202,9 @@ section of the  `build.yaml`. This is a map of builder names to configuration.
 Each post process builder config may contain the following keys:
 
 - **import**: Required. The import uri that should be used to import the library
-  containing the `Builder` class. This should always be a `package:` uri.
+  containing the `Builder` class. This should always be a `package:` uri (such
+  as `package:my_package/builder.dart`, or `package:my_package/src/builder.dart`
+  to keep `build_runner`-only factories out of the public API).
 - **builder_factory**: A `String` which contains the name of the top-level
   method in the imported library which is a function fitting the
   typedef `PostProcessBuilder factoryName(BuilderOptions options)`.

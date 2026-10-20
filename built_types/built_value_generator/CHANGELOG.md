@@ -12,6 +12,12 @@
 - Bug fix: `generateBuilderOnSetField: true` on a class with more than one
   field generated a builder that declared `onSet` once per field and didn't
   compile.
+- Bug fix: escape quotes, backslashes and newlines in wire names. A wire name
+  containing `'` generated code that didn't parse, and one containing `\`
+  silently serialized under a different name.
+- Bug fix: report an error for fields named `build`, `replace` or `update`,
+  which clash with methods on the generated builder, instead of generating
+  code that doesn't compile.
 
 ## 8.13.0
 

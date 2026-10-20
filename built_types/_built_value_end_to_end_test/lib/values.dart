@@ -532,6 +532,29 @@ abstract class WireNameValue
   WireNameValue._();
 }
 
+// Check escaping for quotes, backslashes and newlines in wire names.
+@BuiltValue(wireName: r"Escaped'\Value")
+abstract class EscapedWireNameValue
+    implements Built<EscapedWireNameValue, EscapedWireNameValueBuilder> {
+  static Serializer<EscapedWireNameValue> get serializer =>
+      _$escapedWireNameValueSerializer;
+
+  @BuiltValueField(wireName: "it's")
+  int get quote;
+
+  @BuiltValueField(wireName: r'back\slash')
+  int get backslash;
+
+  @BuiltValueField(wireName: 'new\nline')
+  int get newline;
+
+  factory EscapedWireNameValue([
+    void Function(EscapedWireNameValueBuilder) updates,
+  ]) = _$EscapedWireNameValue;
+
+  EscapedWireNameValue._();
+}
+
 // Check discovery of serializable types via fields.
 abstract class FieldDiscoveryValue
     implements Built<FieldDiscoveryValue, FieldDiscoveryValueBuilder> {

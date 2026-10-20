@@ -10,6 +10,8 @@ import 'body_weaver.dart';
 import 'clause_emitter.dart';
 import 'clause_reader.dart';
 import 'constructor_weaver.dart';
+import 'local_function_checker.dart';
+import 'member_contract.dart';
 import 'reserved_name_checker.dart';
 import 'source_edits.dart';
 
@@ -29,6 +31,7 @@ class ContractCollector extends RecursiveAstVisitor<void> {
 
   @override
   void visitCompilationUnit(CompilationUnit node) {
+    LocalFunctionChecker.check(node, _reader);
     final declaredClasses = {
       for (final declaration in node.declarations.whereType<ClassDeclaration>())
         declaration.namePart.typeName.lexeme,
@@ -80,6 +83,67 @@ class ContractCollector extends RecursiveAstVisitor<void> {
     }
   }
 
+  @override
+  void visitMixinDeclaration(MixinDeclaration node) =>
+      _rejectContracts('mixin', node.metadata, node.body.members);
+
+  @override
+  void visitEnumDeclaration(EnumDeclaration node) =>
+      _rejectContracts('enum', node.metadata, node.body.members);
+
+  @override
+  void visitExtensionDeclaration(ExtensionDeclaration node) =>
+      _rejectContracts('extension', node.metadata, node.body.members);
+
+  @override
+  void visitExtensionTypeDeclaration(ExtensionTypeDeclaration node) =>
+      _rejectContracts('extension type', node.metadata, node.body.members);
+
+  /// Throws if a declaration of [kind], with [metadata] and [members], has
+  /// contracts: they are not woven there, and silently ignoring them would
+  /// leave clauses that look checked but are not.
+  void _rejectContracts(
+    String kind,
+    NodeList<Annotation> metadata,
+    NodeList<ClassMember> members,
+  ) {
+    if (_reader.invariants(metadata).isNotEmpty) {
+      throw FormatException(
+        '@Invariant is not supported on $kind declarations.',
+      );
+    }
+    for (final member in members) {
+      if (!_reader.read(member.metadata).isEmpty) {
+        throw FormatException(
+          'Contracts are not supported in $kind declarations: '
+          '${_memberName(member)}.',
+        );
+      }
+    }
+  }
+
+  static String _memberName(ClassMember member) {
+    if (member is MethodDeclaration) return member.name.lexeme;
+    if (member is ConstructorDeclaration) {
+      return member.name?.lexeme ?? 'unnamed constructor';
+    }
+    return member.toSource();
+  }
+
+  /// Throws if [contract] has postconditions on a generator, [name].
+  ///
+  /// A generator returns before its body runs, so there is no point at which
+  /// its postconditions could be checked.
+  static void _rejectGeneratorPostconditions(
+    String name,
+    FunctionBody body,
+    MemberContract contract,
+  ) {
+    if (body.isGenerator && contract.postconditions.isNotEmpty) {
+      throw FormatException('@Ensures is not supported on a generator: $name.');
+    }
+  }
+
   /// Whether [node] declares that its instances are immutable: it is a
   /// `built_value` class, or it is annotated `@immutable` from `package:meta`.
   ///
@@ -111,6 +175,11 @@ class ContractCollector extends RecursiveAstVisitor<void> {
   void visitFunctionDeclaration(FunctionDeclaration node) {
     final contract = _reader.read(node.metadata);
     if (contract.isEmpty) return;
+    _rejectGeneratorPostconditions(
+      node.name.lexeme,
+      node.functionExpression.body,
+      contract,
+    );
     final returnType = node.returnType?.toSource();
     final isVoid = _returnsNothing(returnType, node.functionExpression.body);
     ReservedNameChecker.check(
@@ -144,6 +213,7 @@ class ContractCollector extends RecursiveAstVisitor<void> {
       );
     }
 
+    _rejectGeneratorPostconditions(node.name.lexeme, node.body, contract);
     final returnType = node.returnType?.toSource();
     final isVoid = node.isSetter || _returnsNothing(returnType, node.body);
     ReservedNameChecker.check(
@@ -174,8 +244,12 @@ class ContractCollector extends RecursiveAstVisitor<void> {
   /// end of its body, and do not bind `result`.
   static bool _returnsNothing(String? returnType, FunctionBody body) {
     if (returnType == 'void') return true;
-    if (!body.isAsynchronous || body.isGenerator) return false;
-    return returnType == 'Future<void>' || returnType == 'FutureOr<void>';
+    if (!body.isAsynchronous || body.isGenerator || returnType == null) {
+      return false;
+    }
+    // Drop an import prefix, as in `async.Future<void>`.
+    final unprefixed = returnType.substring(returnType.indexOf('.') + 1);
+    return unprefixed == 'Future<void>' || unprefixed == 'FutureOr<void>';
   }
 
   /// Whether calls to [node] check the invariant of a class that has one.

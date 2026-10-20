@@ -1,3 +1,8 @@
+## 5.0.1-wip
+
+- Document that `build_runner` builder factories may be placed in
+  `lib/src/builder.dart` to keep them out of the public API.
+
 ## 5.0.0
 
 - Republish retracted 4.1.0 as a major version. Its new `BuildStep` member,

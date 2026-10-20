@@ -65,6 +65,10 @@ Builder ddcBuilder(BuilderOptions options) {
   _ensureSameDdcHotReloadOptions(options);
   _ensureSameDeprecatedJsInteropOptions(options);
   _ensureSameDdcOptions(options);
+  warnIfDeprecatedJsInteropWithPlatformSdk(
+    readDeprecatedJsInteropOption(options),
+    _readPlatformSdkOption(options),
+  );
 
   final scratchDir = _readScratchSpaceDirOption(options);
   if (scratchDir != null) {
@@ -108,6 +112,10 @@ Builder ddcKernelBuilder(BuilderOptions options) {
   _ensureSameDdcHotReloadOptions(options);
   _ensureSameDeprecatedJsInteropOptions(options);
   _ensureSameDdcOptions(options);
+  warnIfDeprecatedJsInteropWithPlatformSdk(
+    readDeprecatedJsInteropOption(options),
+    _readPlatformSdkOption(options),
+  );
 
   return KernelBuilder(
     summaryOnly: true,
@@ -258,7 +266,8 @@ void _ensureSamePlatformOptions(BuilderOptions options) {
   }
 }
 
-/// Throws if `deprecated-js-interop` differs between builders.
+/// Throws if `deprecated-js-interop` differs between builders, or if it is
+/// set and the Dart SDK running the build doesn't support it.
 ///
 /// Modules are computed with the same conditional import resolution as the
 /// compilers use, so all of these builders must agree on the option.
@@ -266,6 +275,7 @@ void _ensureSameDeprecatedJsInteropOptions(BuilderOptions options) {
   final deprecatedJsInterop = readDeprecatedJsInteropOption(options);
   final previous = _lastDeprecatedJsInteropValue;
   if (previous == null) {
+    checkDeprecatedJsInteropSdkSupport(deprecatedJsInterop, runningSdkVersion);
     _lastDeprecatedJsInteropValue = (deprecatedJsInterop,);
   } else if (previous.$1 != deprecatedJsInterop) {
     throw ArgumentError(

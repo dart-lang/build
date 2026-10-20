@@ -5,7 +5,8 @@
   `dart2js_modules` and `entrypoint` builders. When set, it passes
   `--[no-]deprecated-js-interop` to dartdevc, dart2js, the kernel worker and
   the Frontend Server, and resolves `dart.library.*` conditional imports the
-  same way the compilers do. It requires a Dart SDK that supports the flag.
+  same way the compilers do. It requires Dart SDK 3.14.0-286.0.dev or later,
+  and builders throw an error if it is set on an older SDK.
 - Report dart2js failures with the compiler output, including the import
   paths that lead to disallowed libraries, instead of a raw dump of the exit
   code, stdout and stderr.

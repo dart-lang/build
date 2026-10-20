@@ -1,5 +1,10 @@
-/// Escapes dollar signs in a string with backslashes.
-String escapeString(String string) => string.replaceAll(r'$', r'\$');
+/// Escapes [string] for use inside a single-quoted string literal.
+String escapeString(String string) => string
+    .replaceAll(r'\', r'\\')
+    .replaceAll(r'$', r'\$')
+    .replaceAll("'", r"\'")
+    .replaceAll('\n', r'\n')
+    .replaceAll('\r', r'\r');
 
 /// Strips off any trailing `?`.
 String stripNullabilitySuffix(String string) =>

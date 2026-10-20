@@ -1,3 +1,8 @@
+## 1.4.1-wip
+
+- Document that `build_runner` builder factories may be placed in
+  `lib/src/builder.dart` to keep them out of the public API.
+
 ## 1.4.0
 
 - Add boolean `adds_to_library` builder configuration that grants access to new

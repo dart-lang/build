@@ -89,7 +89,7 @@ abstract class BuiltSet<E> implements Iterable<E>, BuiltIterable<E> {
   @override
   String toString() => _set.toString();
 
-  /// Returns as an immutable set.
+  /// Returns an unmodifiable [Set] view without copying its elements.
   ///
   /// Useful when producing or using APIs that need the [Set] interface.
   /// Unlike [toSet], which returns a mutable copy, the returned set throws if

@@ -130,6 +130,34 @@ final BuiltSet<DollarValueEnum> _$dollarValues = BuiltSet<DollarValueEnum>(
   const <DollarValueEnum>[_$value$, _$value],
 );
 
+const EscapedWireNameEnum _$escapedQuote = const EscapedWireNameEnum._('quote');
+const EscapedWireNameEnum _$escapedBackslash = const EscapedWireNameEnum._(
+  'backslash',
+);
+const EscapedWireNameEnum _$escapedNewline = const EscapedWireNameEnum._(
+  'newline',
+);
+
+EscapedWireNameEnum _$escapedValueOf(String name) {
+  switch (name) {
+    case 'quote':
+      return _$escapedQuote;
+    case 'backslash':
+      return _$escapedBackslash;
+    case 'newline':
+      return _$escapedNewline;
+    default:
+      throw ArgumentError(name);
+  }
+}
+
+final BuiltSet<EscapedWireNameEnum> _$escapedValues =
+    BuiltSet<EscapedWireNameEnum>(const <EscapedWireNameEnum>[
+      _$escapedQuote,
+      _$escapedBackslash,
+      _$escapedNewline,
+    ]);
+
 const FallbackEnum _$fbYes = const FallbackEnum._('yes');
 const FallbackEnum _$fbNo = const FallbackEnum._('no');
 
@@ -214,6 +242,8 @@ Serializer<WireNumberEnum> _$wireNumberEnumSerializer =
     _$WireNumberEnumSerializer();
 Serializer<DollarValueEnum> _$dollarValueEnumSerializer =
     _$DollarValueEnumSerializer();
+Serializer<EscapedWireNameEnum> _$escapedWireNameEnumSerializer =
+    _$EscapedWireNameEnumSerializer();
 Serializer<FallbackEnum> _$fallbackEnumSerializer = _$FallbackEnumSerializer();
 Serializer<FallbackNumberEnum> _$fallbackNumberEnumSerializer =
     _$FallbackNumberEnumSerializer();
@@ -339,6 +369,41 @@ class _$DollarValueEnumSerializer
     Object serialized, {
     FullType specifiedType = FullType.unspecified,
   }) => DollarValueEnum.valueOf(
+    _fromWire[serialized] ?? (serialized is String ? serialized : ''),
+  );
+}
+
+class _$EscapedWireNameEnumSerializer
+    implements PrimitiveSerializer<EscapedWireNameEnum> {
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'quote': 'it\'s',
+    'backslash': 'back\\slash',
+    'newline': 'new\nline',
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    'it\'s': 'quote',
+    'back\\slash': 'backslash',
+    'new\nline': 'newline',
+  };
+
+  @override
+  final Iterable<Type> types = const <Type>[EscapedWireNameEnum];
+  @override
+  final String wireName = 'Escaped\'\\Enum';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    EscapedWireNameEnum object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => _toWire[object.name] ?? object.name;
+
+  @override
+  EscapedWireNameEnum deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => EscapedWireNameEnum.valueOf(
     _fromWire[serialized] ?? (serialized is String ? serialized : ''),
   );
 }
