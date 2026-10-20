@@ -25,12 +25,13 @@ import 'build_step.dart';
 /// ```
 ///
 /// This `build.yaml` file says there is a `BuilderFactory` in
-/// `package:my_package/builder.dart` called `myBuilder`. You can also place the
-/// factory under `lib/src/` (for example,
-/// `package:my_package/src/builder.dart`) if it is only used by `build_runner`
-/// and you want to keep it out of the package's public API.
+/// `package:my_package/builder.dart` called `myBuilder`.
 /// `auto_apply: dependents` tells `build_runner` to run the builder on all
 /// packages that depend on `my_package`.
+///
+/// A factory that only `build_runner` uses can go under `lib/src/`, for example
+/// `package:my_package/src/builder.dart`, to keep it out of the package's
+/// public API.
 ///
 /// The `build_extensions` should if possible match the value returned by
 /// [Builder.buildExtensions], because the `buildExtensions` in the `build.yaml`
