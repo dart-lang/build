@@ -26,7 +26,6 @@ class Counter {
         Contracts.checking = false;
       }
     }
-
     for (var i = 0; i < limit; i += step) {
       yield i;
     }

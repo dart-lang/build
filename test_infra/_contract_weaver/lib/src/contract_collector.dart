@@ -64,7 +64,7 @@ class ContractCollector extends RecursiveAstVisitor<void> {
         node.namePart.typeParameters,
         invariants,
       );
-      edits.insert(node.end, '\n$extension\n');
+      edits.insert(node.end, ' $extension ');
     }
 
     for (final member in body.members) {

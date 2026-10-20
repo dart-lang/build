@@ -54,34 +54,34 @@ class ClauseEmitter {
     final checks = ReentrancyGuard.wrap(
       _throwIfFalse('Exceptional postcondition', throwClauses.clauses),
     );
-    return 'on ${throwClauses.type} catch (signal) {\n'
+    return 'on ${throwClauses.type} catch (signal) { '
         '$beforeChecks'
         '$checks'
-        'rethrow;\n'
-        '}\n';
+        'rethrow; '
+        '} ';
   }
 
   /// Enters an invariant scope on entry to a method, checking the invariant if
   /// no other scope on the object is open.
-  static const invariantEntry = 'this._enterInvariantScope();\n';
+  static const invariantEntry = 'this._enterInvariantScope(); ';
 
   /// Enters an invariant scope on entry to a constructor body.
   ///
   /// The object is not finished, so the invariant is not checked; the scope
   /// stops public methods called by the constructor from checking it.
-  static const constructorEntry = 'this._enterInvariantScope(check: false);\n';
+  static const constructorEntry = 'this._enterInvariantScope(check: false); ';
 
   /// Leaves the invariant scope opened by [invariantEntry] or
   /// [constructorEntry], checking the invariant if it was the outermost.
-  static const invariantExit = 'this._exitInvariantScope();\n';
+  static const invariantExit = 'this._exitInvariantScope(); ';
 
   /// Opens the region that [guardClose] closes.
   static String guardOpen(BodyGuard guard) {
     if (guard.isEmpty) return '';
     // The exception being unwound is captured so that a violation reported by
     // the invariant check can name the exception it discards.
-    final declaration = guard.checksInvariant ? 'Object? \$inFlight;\n' : '';
-    return '${declaration}try {\n';
+    final declaration = guard.checksInvariant ? 'Object? \$inFlight; ' : '';
+    return '${declaration}try { ';
   }
 
   /// Closes the region that [guardOpen] opens, running the checks of [guard]
@@ -94,18 +94,20 @@ class ClauseEmitter {
       buffer.write(
         exceptionalPostconditions(
           clauses,
-          beforeChecks: checksInvariant ? '\$inFlight = signal;\n' : '',
+          beforeChecks: checksInvariant ? '\$inFlight = signal; ' : '',
         ),
       );
     }
-    if (!checksInvariant) return '}\n$buffer';
+    if (!checksInvariant) return '} $buffer';
 
-    buffer.writeln('catch (\$thrown) {');
-    buffer.writeln(r'$inFlight = $thrown;');
-    buffer.writeln('rethrow;');
-    buffer.writeln('} finally {');
-    buffer.writeln(r'this._exitInvariantScope(during: $inFlight);');
-    buffer.writeln('}');
+    buffer.write(
+      r'catch ($thrown) { '
+      r'$inFlight = $thrown; '
+      'rethrow; '
+      '} finally { '
+      r'this._exitInvariantScope(during: $inFlight); '
+      '} ',
+    );
     return '} $buffer';
   }
 
@@ -145,24 +147,24 @@ class ClauseEmitter {
     // The entry check runs before the scope opens, so that a violation leaves
     // no scope open. The exit check runs after it closes, for the same reason.
     return 'extension ${invariantExtensionName(className)}$parameters '
-        'on $className$arguments {\n'
-        'void _enterInvariantScope({bool check = true}) {\n'
-        'final open = Contracts.openScopes[this] ?? 0;\n'
-        'if (check && open == 0) _checkInvariants();\n'
-        'Contracts.openScopes[this] = open + 1;\n'
-        '}\n'
-        'void _exitInvariantScope({Object? during}) {\n'
-        'final open = Contracts.openScopes[this]! - 1;\n'
-        'Contracts.openScopes[this] = open == 0 ? null : open;\n'
-        'if (open == 0) _checkInvariants(during: during);\n'
-        '}\n'
-        'void _checkInvariants({Object? during}) {\n'
+        'on $className$arguments { '
+        'void _enterInvariantScope({bool check = true}) { '
+        'final open = Contracts.openScopes[this] ?? 0; '
+        'if (check && open == 0) _checkInvariants(); '
+        'Contracts.openScopes[this] = open + 1; '
+        '} '
+        'void _exitInvariantScope({Object? during}) { '
+        'final open = Contracts.openScopes[this]! - 1; '
+        'Contracts.openScopes[this] = open == 0 ? null : open; '
+        'if (open == 0) _checkInvariants(during: during); '
+        '} '
+        'void _checkInvariants({Object? during}) { '
         r"final inFlight = during == null ? '' "
         r": ', thrown while handling $during';"
-        '\n'
+        ' '
         '$guarded'
-        '}\n'
-        '}\n';
+        '} '
+        '} ';
   }
 
   /// Checks that throw if any of [clauses] is false.
@@ -176,9 +178,9 @@ class ClauseEmitter {
   }) {
     final buffer = StringBuffer();
     for (final clause in clauses) {
-      buffer.writeln(
+      buffer.write(
         'if (!($clause)) throw ContractViolation('
-        "'$kind failed: ${_escape(clause)}$during');",
+        "'$kind failed: ${_escape(clause)}$during'); ",
       );
     }
     return buffer.toString();

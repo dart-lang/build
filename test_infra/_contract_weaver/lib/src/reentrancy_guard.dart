@@ -16,13 +16,13 @@ class ReentrancyGuard {
     final condition = when == null
         ? '!Contracts.checking'
         : '!Contracts.checking && $when';
-    return 'if ($condition) {\n'
-        'Contracts.checking = true;\n'
-        'try {\n'
+    return 'if ($condition) { '
+        'Contracts.checking = true; '
+        'try { '
         '$checks'
-        '} finally {\n'
-        'Contracts.checking = false;\n'
-        '}\n'
-        '}\n';
+        '} finally { '
+        'Contracts.checking = false; '
+        '} '
+        '} ';
   }
 }

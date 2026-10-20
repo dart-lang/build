@@ -1204,9 +1204,7 @@ class A {
         final output = ContractWeaver().weave(input);
         expect(
           output,
-          startsWith(
-            "import 'package:p/ext.dart';\n\nimport 'contracts.dart';\n",
-          ),
+          startsWith("import 'package:p/ext.dart'; import 'contracts.dart';\n"),
         );
       });
 
