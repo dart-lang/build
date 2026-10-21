@@ -1627,10 +1627,17 @@ jobs:
           echo "RUNNER_TEMP=$env:RUNNER_TEMP TEMP was $env:TEMP"
           echo "TEMP=$env:RUNNER_TEMP" >> $env:GITHUB_ENV
           echo "TMP=$env:RUNNER_TEMP" >> $env:GITHUB_ENV
+          (Get-Date).ToUniversalTime().ToString("o") | Out-File -Encoding ascii "$env:RUNNER_TEMP\job_start.txt"
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
         with:
           sdk: dev
+      - name: "DO NOT MERGE: report env on C: and put PUB_CACHE on RUNNER_TEMP"
+        shell: pwsh
+        run: |
+          echo "Environment variables with a C: path:"
+          Get-ChildItem env: | Where-Object { $_.Value -match 'C:' } | ForEach-Object { "  $($_.Name)=$($_.Value)" }
+          echo "PUB_CACHE=$env:RUNNER_TEMP\pub-cache" >> $env:GITHUB_ENV
       - id: checkout
         name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -1645,6 +1652,15 @@ jobs:
         run: "dart test --test-randomize-ordering-seed=random"
         if: "always() && steps.build_daemon_pub_upgrade.conclusion == 'success'"
         working-directory: build_daemon
+      - name: "DO NOT MERGE: report files written on C: during the job"
+        if: always()
+        shell: pwsh
+        run: |
+          $start = [DateTime]::Parse((Get-Content "$env:RUNNER_TEMP\job_start.txt")).ToUniversalTime()
+          $roots = @("C:\Users", "C:\Windows\Temp", "C:\ProgramData", "C:\hostedtoolcache")
+          $files = foreach ($r in $roots) { Get-ChildItem -Path $r -Recurse -File -Force -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTimeUtc -gt $start } }
+          echo "Files written on C: since $start under $($roots -join ', '): $(@($files).Count)"
+          $files | Group-Object { ($_.FullName -split '\\')[0..4] -join '\' } | Sort-Object Count -Descending | Select-Object -First 30 | ForEach-Object { "  $($_.Count) $($_.Name)" }
     needs:
       - job_001
       - job_002
@@ -1661,10 +1677,17 @@ jobs:
           echo "RUNNER_TEMP=$env:RUNNER_TEMP TEMP was $env:TEMP"
           echo "TEMP=$env:RUNNER_TEMP" >> $env:GITHUB_ENV
           echo "TMP=$env:RUNNER_TEMP" >> $env:GITHUB_ENV
+          (Get-Date).ToUniversalTime().ToString("o") | Out-File -Encoding ascii "$env:RUNNER_TEMP\job_start.txt"
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
         with:
           sdk: dev
+      - name: "DO NOT MERGE: report env on C: and put PUB_CACHE on RUNNER_TEMP"
+        shell: pwsh
+        run: |
+          echo "Environment variables with a C: path:"
+          Get-ChildItem env: | Where-Object { $_.Value -match 'C:' } | ForEach-Object { "  $($_.Name)=$($_.Value)" }
+          echo "PUB_CACHE=$env:RUNNER_TEMP\pub-cache" >> $env:GITHUB_ENV
       - id: checkout
         name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -1679,6 +1702,15 @@ jobs:
         run: "dart test -t integration1 --test-randomize-ordering-seed=random"
         if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
         working-directory: build_runner
+      - name: "DO NOT MERGE: report files written on C: during the job"
+        if: always()
+        shell: pwsh
+        run: |
+          $start = [DateTime]::Parse((Get-Content "$env:RUNNER_TEMP\job_start.txt")).ToUniversalTime()
+          $roots = @("C:\Users", "C:\Windows\Temp", "C:\ProgramData", "C:\hostedtoolcache")
+          $files = foreach ($r in $roots) { Get-ChildItem -Path $r -Recurse -File -Force -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTimeUtc -gt $start } }
+          echo "Files written on C: since $start under $($roots -join ', '): $(@($files).Count)"
+          $files | Group-Object { ($_.FullName -split '\\')[0..4] -join '\' } | Sort-Object Count -Descending | Select-Object -First 30 | ForEach-Object { "  $($_.Count) $($_.Name)" }
     needs:
       - job_001
       - job_002
@@ -1695,10 +1727,17 @@ jobs:
           echo "RUNNER_TEMP=$env:RUNNER_TEMP TEMP was $env:TEMP"
           echo "TEMP=$env:RUNNER_TEMP" >> $env:GITHUB_ENV
           echo "TMP=$env:RUNNER_TEMP" >> $env:GITHUB_ENV
+          (Get-Date).ToUniversalTime().ToString("o") | Out-File -Encoding ascii "$env:RUNNER_TEMP\job_start.txt"
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
         with:
           sdk: dev
+      - name: "DO NOT MERGE: report env on C: and put PUB_CACHE on RUNNER_TEMP"
+        shell: pwsh
+        run: |
+          echo "Environment variables with a C: path:"
+          Get-ChildItem env: | Where-Object { $_.Value -match 'C:' } | ForEach-Object { "  $($_.Name)=$($_.Value)" }
+          echo "PUB_CACHE=$env:RUNNER_TEMP\pub-cache" >> $env:GITHUB_ENV
       - id: checkout
         name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -1713,6 +1752,15 @@ jobs:
         run: "dart test -t integration2 --test-randomize-ordering-seed=random"
         if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
         working-directory: build_runner
+      - name: "DO NOT MERGE: report files written on C: during the job"
+        if: always()
+        shell: pwsh
+        run: |
+          $start = [DateTime]::Parse((Get-Content "$env:RUNNER_TEMP\job_start.txt")).ToUniversalTime()
+          $roots = @("C:\Users", "C:\Windows\Temp", "C:\ProgramData", "C:\hostedtoolcache")
+          $files = foreach ($r in $roots) { Get-ChildItem -Path $r -Recurse -File -Force -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTimeUtc -gt $start } }
+          echo "Files written on C: since $start under $($roots -join ', '): $(@($files).Count)"
+          $files | Group-Object { ($_.FullName -split '\\')[0..4] -join '\' } | Sort-Object Count -Descending | Select-Object -First 30 | ForEach-Object { "  $($_.Count) $($_.Name)" }
     needs:
       - job_001
       - job_002
@@ -1729,10 +1777,17 @@ jobs:
           echo "RUNNER_TEMP=$env:RUNNER_TEMP TEMP was $env:TEMP"
           echo "TEMP=$env:RUNNER_TEMP" >> $env:GITHUB_ENV
           echo "TMP=$env:RUNNER_TEMP" >> $env:GITHUB_ENV
+          (Get-Date).ToUniversalTime().ToString("o") | Out-File -Encoding ascii "$env:RUNNER_TEMP\job_start.txt"
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
         with:
           sdk: dev
+      - name: "DO NOT MERGE: report env on C: and put PUB_CACHE on RUNNER_TEMP"
+        shell: pwsh
+        run: |
+          echo "Environment variables with a C: path:"
+          Get-ChildItem env: | Where-Object { $_.Value -match 'C:' } | ForEach-Object { "  $($_.Name)=$($_.Value)" }
+          echo "PUB_CACHE=$env:RUNNER_TEMP\pub-cache" >> $env:GITHUB_ENV
       - id: checkout
         name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -1747,6 +1802,15 @@ jobs:
         run: "dart test -t integration3 --test-randomize-ordering-seed=random"
         if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
         working-directory: build_runner
+      - name: "DO NOT MERGE: report files written on C: during the job"
+        if: always()
+        shell: pwsh
+        run: |
+          $start = [DateTime]::Parse((Get-Content "$env:RUNNER_TEMP\job_start.txt")).ToUniversalTime()
+          $roots = @("C:\Users", "C:\Windows\Temp", "C:\ProgramData", "C:\hostedtoolcache")
+          $files = foreach ($r in $roots) { Get-ChildItem -Path $r -Recurse -File -Force -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTimeUtc -gt $start } }
+          echo "Files written on C: since $start under $($roots -join ', '): $(@($files).Count)"
+          $files | Group-Object { ($_.FullName -split '\\')[0..4] -join '\' } | Sort-Object Count -Descending | Select-Object -First 30 | ForEach-Object { "  $($_.Count) $($_.Name)" }
     needs:
       - job_001
       - job_002
@@ -1763,10 +1827,17 @@ jobs:
           echo "RUNNER_TEMP=$env:RUNNER_TEMP TEMP was $env:TEMP"
           echo "TEMP=$env:RUNNER_TEMP" >> $env:GITHUB_ENV
           echo "TMP=$env:RUNNER_TEMP" >> $env:GITHUB_ENV
+          (Get-Date).ToUniversalTime().ToString("o") | Out-File -Encoding ascii "$env:RUNNER_TEMP\job_start.txt"
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
         with:
           sdk: dev
+      - name: "DO NOT MERGE: report env on C: and put PUB_CACHE on RUNNER_TEMP"
+        shell: pwsh
+        run: |
+          echo "Environment variables with a C: path:"
+          Get-ChildItem env: | Where-Object { $_.Value -match 'C:' } | ForEach-Object { "  $($_.Name)=$($_.Value)" }
+          echo "PUB_CACHE=$env:RUNNER_TEMP\pub-cache" >> $env:GITHUB_ENV
       - id: checkout
         name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -1781,6 +1852,15 @@ jobs:
         run: "dart test -t integration4 --test-randomize-ordering-seed=random"
         if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
         working-directory: build_runner
+      - name: "DO NOT MERGE: report files written on C: during the job"
+        if: always()
+        shell: pwsh
+        run: |
+          $start = [DateTime]::Parse((Get-Content "$env:RUNNER_TEMP\job_start.txt")).ToUniversalTime()
+          $roots = @("C:\Users", "C:\Windows\Temp", "C:\ProgramData", "C:\hostedtoolcache")
+          $files = foreach ($r in $roots) { Get-ChildItem -Path $r -Recurse -File -Force -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTimeUtc -gt $start } }
+          echo "Files written on C: since $start under $($roots -join ', '): $(@($files).Count)"
+          $files | Group-Object { ($_.FullName -split '\\')[0..4] -join '\' } | Sort-Object Count -Descending | Select-Object -First 30 | ForEach-Object { "  $($_.Count) $($_.Name)" }
     needs:
       - job_001
       - job_002
