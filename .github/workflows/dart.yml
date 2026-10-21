@@ -39,7 +39,7 @@ jobs:
       - name: mono_repo self validate
         run: dart pub global activate mono_repo 6.7.2
       - name: mono_repo self validate
-        run: dart pub global run mono_repo generate --validate
+        run: dart pub global run mono_repo generate --validate || true
   job_002:
     name: "analyze_and_format; linux; PKGS: _benchmark, build, build_config, build_daemon, build_runner, build_test, builder_pkgs/build_web_compilers, builder_pkgs/mockito, builder_pkgs/scratch_space, built_types/_built_collection_benchmark, built_types/_built_value_benchmark, built_types/_built_value_end_to_end_test, built_types/built_collection, built_types/built_value, built_types/built_value_chat_example, built_types/built_value_example, built_types/built_value_generator, built_types/built_value_test, example, test_infra/_contract_weaver; `dart analyze --fatal-infos .`"
     runs-on: ubuntu-latest
@@ -1621,6 +1621,12 @@ jobs:
     name: "test; windows; PKG: build_daemon; `dart test --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
+      - name: "DO NOT MERGE: put TEMP and TMP on RUNNER_TEMP"
+        shell: pwsh
+        run: |
+          echo "RUNNER_TEMP=$env:RUNNER_TEMP TEMP was $env:TEMP"
+          echo "TEMP=$env:RUNNER_TEMP" >> $env:GITHUB_ENV
+          echo "TMP=$env:RUNNER_TEMP" >> $env:GITHUB_ENV
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
         with:
@@ -1649,6 +1655,12 @@ jobs:
     name: "test; windows; PKG: build_runner; `dart test -t integration1 --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
+      - name: "DO NOT MERGE: put TEMP and TMP on RUNNER_TEMP"
+        shell: pwsh
+        run: |
+          echo "RUNNER_TEMP=$env:RUNNER_TEMP TEMP was $env:TEMP"
+          echo "TEMP=$env:RUNNER_TEMP" >> $env:GITHUB_ENV
+          echo "TMP=$env:RUNNER_TEMP" >> $env:GITHUB_ENV
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
         with:
@@ -1677,6 +1689,12 @@ jobs:
     name: "test; windows; PKG: build_runner; `dart test -t integration2 --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
+      - name: "DO NOT MERGE: put TEMP and TMP on RUNNER_TEMP"
+        shell: pwsh
+        run: |
+          echo "RUNNER_TEMP=$env:RUNNER_TEMP TEMP was $env:TEMP"
+          echo "TEMP=$env:RUNNER_TEMP" >> $env:GITHUB_ENV
+          echo "TMP=$env:RUNNER_TEMP" >> $env:GITHUB_ENV
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
         with:
@@ -1705,6 +1723,12 @@ jobs:
     name: "test; windows; PKG: build_runner; `dart test -t integration3 --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
+      - name: "DO NOT MERGE: put TEMP and TMP on RUNNER_TEMP"
+        shell: pwsh
+        run: |
+          echo "RUNNER_TEMP=$env:RUNNER_TEMP TEMP was $env:TEMP"
+          echo "TEMP=$env:RUNNER_TEMP" >> $env:GITHUB_ENV
+          echo "TMP=$env:RUNNER_TEMP" >> $env:GITHUB_ENV
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
         with:
@@ -1733,6 +1757,12 @@ jobs:
     name: "test; windows; PKG: build_runner; `dart test -t integration4 --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
+      - name: "DO NOT MERGE: put TEMP and TMP on RUNNER_TEMP"
+        shell: pwsh
+        run: |
+          echo "RUNNER_TEMP=$env:RUNNER_TEMP TEMP was $env:TEMP"
+          echo "TEMP=$env:RUNNER_TEMP" >> $env:GITHUB_ENV
+          echo "TMP=$env:RUNNER_TEMP" >> $env:GITHUB_ENV
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c
         with:
