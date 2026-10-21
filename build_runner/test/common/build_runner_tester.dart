@@ -20,17 +20,30 @@ import 'fixture_packages.dart';
 
 /// End to end tester for `build_runner`.
 ///
-/// Creates a workspace under system temp, fills it with Dart packages, and runs
-/// commands in it.
+/// Creates a workspace in a temp directory, fills it with Dart packages, and
+/// runs commands in it.
 class BuildRunnerTester {
   final Pubspecs pubspecs;
   final Directory tempDirectory;
 
   BuildRunnerTester(Pubspecs pubspecs)
-    : this._(
-        pubspecs,
-        Directory.systemTemp.createTempSync('BuildRunnerTester-'),
-      );
+    : this._(pubspecs, _tempParent.createTempSync('BuildRunnerTester-'));
+
+  /// Where test workspaces are created.
+  ///
+  /// Usually this is [Directory.systemTemp], which comes from `TEMP` or `TMP`
+  /// on Windows and `TMPDIR` elsewhere.
+  ///
+  /// On GitHub Actions it is `RUNNER_TEMP` instead. Windows runners set `TEMP`
+  /// to a directory on the C: drive, but `RUNNER_TEMP` is on the D: drive,
+  /// where file creation is several times faster, see
+  /// https://github.com/actions/runner-images/issues/8755. Measured on
+  /// 2026-10-21 in the Windows integration tests: p99 file create time was
+  /// 177-882ms on C: and 18-89ms on D:.
+  static Directory get _tempParent {
+    final runnerTemp = Platform.environment['RUNNER_TEMP'];
+    return runnerTemp == null ? Directory.systemTemp : Directory(runnerTemp);
+  }
 
   BuildRunnerTester._(this.pubspecs, this.tempDirectory) {
     addTearDown(() async {
@@ -52,9 +65,7 @@ class BuildRunnerTester {
   /// Copies the entire workspace, returns a new `BuildRunnerTester` using
   /// the copy.
   BuildRunnerTester copyWorkspace() {
-    final newTemp = Directory.systemTemp.createTempSync(
-      'BuildRunnerTester-copy-',
-    );
+    final newTemp = _tempParent.createTempSync('BuildRunnerTester-copy-');
     copyPathSync(tempDirectory.path, newTemp.path);
     return BuildRunnerTester._(pubspecs, newTemp);
   }

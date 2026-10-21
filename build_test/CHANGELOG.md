@@ -1,3 +1,7 @@
+## 3.5.24-wip
+
+- Use `build_runner` 2.17.2-wip.
+
 ## 3.5.23
 
 - Require `build` 5.0.0.
