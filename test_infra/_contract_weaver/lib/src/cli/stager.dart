@@ -6,6 +6,7 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 
+import '../clause_counter.dart';
 import '../contract_weaver.dart';
 import 'package_layout.dart';
 import 'stage_result.dart';
@@ -138,6 +139,7 @@ class Stager {
 
     var transformedCount = 0;
     var symlinkCount = 0;
+    final clauseCounts = {for (final name in ClauseCounter.names) name: 0};
     final stagedPaths = <String>{};
 
     final sources = srcLib.existsSync()
@@ -153,6 +155,10 @@ class Stager {
       } else if (entity is File) {
         if (_stageFile(entity, targetPath)) {
           transformedCount++;
+          final counts = ClauseCounter.count(entity.readAsStringSync());
+          for (final MapEntry(:key, :value) in counts.entries) {
+            clauseCounts[key] = clauseCounts[key]! + value;
+          }
         } else {
           symlinkCount++;
         }
@@ -163,7 +169,8 @@ class Stager {
     return StageResult(
       (b) => b
         ..transformedCount = transformedCount
-        ..symlinkCount = symlinkCount,
+        ..symlinkCount = symlinkCount
+        ..clauseCounts.replace(clauseCounts),
     );
   }
 

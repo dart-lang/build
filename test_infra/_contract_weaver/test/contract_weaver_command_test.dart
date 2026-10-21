@@ -102,6 +102,13 @@ void main() {
       contains('Staged standalone/lib: 2 transformed, 1 symlinked.'),
     );
     expect(
+      result.stdout,
+      contains(
+        'Woven clauses: 1 @Requires, 0 @Ensures, 0 @ThrowEnsures, '
+        '0 @Invariant.',
+      ),
+    );
+    expect(
       File('${tempDir.path}/stage/lib/data.txt').readAsStringSync(),
       'data',
     );
