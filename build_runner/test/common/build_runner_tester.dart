@@ -31,9 +31,12 @@ class BuildRunnerTester {
 
   /// Where test workspaces are created.
   ///
-  /// On GitHub Actions this is `RUNNER_TEMP`. On Windows runners that is on the
-  /// D: drive, where file creation is several times faster than in the default
-  /// temp directory on C:, see
+  /// Usually this is [Directory.systemTemp], which comes from `TEMP` or `TMP`
+  /// on Windows and `TMPDIR` elsewhere.
+  ///
+  /// On GitHub Actions it is `RUNNER_TEMP` instead. Windows runners set `TEMP`
+  /// to a directory on the C: drive, but `RUNNER_TEMP` is on the D: drive,
+  /// where file creation is several times faster, see
   /// https://github.com/actions/runner-images/issues/8755. Measured on
   /// 2026-10-21 in the Windows integration tests: p99 file create time was
   /// 177-882ms on C: and 18-89ms on D:.
