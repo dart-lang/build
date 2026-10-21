@@ -21,28 +21,45 @@ class SourceEdits {
   /// Inserts [text] at [offset].
   void insert(int offset, String text) => replace(offset, 0, text);
 
-  /// The source text from [offset] to [end].
-  String textAt(int offset, int end) => source.substring(offset, end);
-
   /// [source] with all edits applied.
   ///
-  /// Edits are applied from the end backwards, so that offsets stay valid.
-  /// Edits at the same offset are applied in the order they were added, so
-  /// the text of the last one added comes first.
+  /// Inserts at the same offset keep the order they were added in, and come
+  /// before a replacement at that offset. Throws a [StateError] if two
+  /// replacements overlap.
+  ///
+  /// Every line of [source] keeps its line number, so that stack traces
+  /// through the result point at the original: line breaks in an edit become
+  /// spaces, and the edit ends with as many line breaks as it replaced. An
+  /// insert at the very end of [source] is kept as it is.
   String apply() {
     final order = List.generate(_edits.length, (i) => i)
       ..sort((a, b) {
-        final byOffset = _edits[b].offset.compareTo(_edits[a].offset);
-        return byOffset != 0 ? byOffset : a.compareTo(b);
+        final byOffset = _edits[a].offset.compareTo(_edits[b].offset);
+        if (byOffset != 0) return byOffset;
+        final byLength = _edits[a].length.compareTo(_edits[b].length);
+        if (byLength != 0) return byLength;
+        return a.compareTo(b);
       });
-    var result = source;
+    final result = StringBuffer();
+    var position = 0;
     for (final index in order) {
       final edit = _edits[index];
-      result =
-          result.substring(0, edit.offset) +
-          edit.text +
-          result.substring(edit.offset + edit.length);
+      if (edit.offset < position) {
+        throw StateError('Overlapping edits at offset ${edit.offset}.');
+      }
+      result
+        ..write(source.substring(position, edit.offset))
+        ..write(_keepingLines(edit));
+      position = edit.offset + edit.length;
     }
-    return result;
+    result.write(source.substring(position));
+    return result.toString();
+  }
+
+  String _keepingLines(SourceEdit edit) {
+    if (edit.offset == source.length) return edit.text;
+    final replaced = source.substring(edit.offset, edit.offset + edit.length);
+    final lineBreaks = '\n'.allMatches(replaced).length;
+    return '${edit.text.replaceAll('\n', ' ')}${'\n' * lineBreaks}';
   }
 }

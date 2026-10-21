@@ -253,6 +253,11 @@ builders:
 A builder that sets `adds_to_library: true` must set `build_to: source`, because
 the shared part is written to source, and cannot be `is_optional: true`.
 
+You can also place the builder factory in `lib/src/builder.dart`, with
+`import: "package:my_builder/src/builder.dart"`. That keeps `build_runner`-only
+builder factories out of the package's public API, and avoids the
+`dart pub publish` library-name warning on single-builder packages.
+
 #### 2. Writing code in the builder
 
 Inside `build(BuildStep buildStep)`:

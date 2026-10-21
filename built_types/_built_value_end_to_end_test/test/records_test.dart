@@ -42,6 +42,14 @@ void main() {
   record=(0, 0),
 }''');
     });
+
+    test('caches nullable memoized record', () {
+      final value = SimpleRecordValue((b) => b..record = (1, 2));
+      final count = swappedGetterCount;
+      expect(value.swapped, (2, 1));
+      expect(value.swapped, (2, 1));
+      expect(swappedGetterCount, count + 1);
+    });
   });
 
   group(ComplexRecordValue, () {

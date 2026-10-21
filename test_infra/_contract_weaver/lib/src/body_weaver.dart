@@ -35,7 +35,6 @@ class BodyWeaver {
         body,
         entry: entry,
         result: _expressionResult(
-          edits.textAt(body.expression.offset, body.expression.end),
           isVoid: isVoid,
           isAsync: body.isAsynchronous,
           postconditions: postconditions,
@@ -76,10 +75,9 @@ class BodyWeaver {
     return buffer.toString();
   }
 
-  /// The statements that evaluate [exprSource], check [postconditions] and
-  /// return the result.
-  String _expressionResult(
-    String exprSource, {
+  /// The code before and after the expression of `=> expr` that evaluates
+  /// it, checks [postconditions] and returns the result.
+  ({String before, String after}) _expressionResult({
     required bool isVoid,
     required bool isAsync,
     required Iterable<String> postconditions,
@@ -90,24 +88,32 @@ class BodyWeaver {
         : ClauseEmitter.postconditions(postconditions);
     // In an `async` function, `=> e` waits for `e` if it is a future, so the
     // checks must wait too.
-    if (isVoid) return '${isAsync ? 'await ' : ''}$exprSource;\n$checks';
-    if (postconditions.isEmpty) return 'return $exprSource;\n';
-    return '${exitRewriter.returnValue(exprSource, checks)}\n';
+    if (isVoid) return (before: isAsync ? 'await ' : '', after: '; $checks');
+    if (postconditions.isEmpty) return (before: 'return ', after: '; ');
+    final (:before, :after) = exitRewriter.wrapReturn(checks);
+    return (before: before, after: '$after ');
   }
 
   /// Replaces `=> expr` with a block that runs [entry], then [result].
   void _weaveExpressionBody(
     ExpressionFunctionBody body, {
     required String entry,
-    required String result,
+    required ({String before, String after}) result,
     required BodyGuard guard,
   }) {
     final startOffset = body.functionDefinition.offset;
-    edits.replace(
-      startOffset,
-      body.end - startOffset,
-      '{\n$entry$result${ClauseEmitter.guardClose(guard)}}',
-    );
+    final expression = body.expression;
+    edits
+      ..replace(
+        startOffset,
+        expression.offset - startOffset,
+        '{ $entry${result.before}',
+      )
+      ..replace(
+        expression.end,
+        body.end - expression.end,
+        '${result.after}${ClauseEmitter.guardClose(guard)}}',
+      );
   }
 
   /// Inserts [entry] at the start of the block, checks [postconditions] at
@@ -122,7 +128,7 @@ class BodyWeaver {
   }) {
     final block = body.block;
     if (entry.isNotEmpty) {
-      edits.insert(block.leftBracket.end, '\n$entry\n');
+      edits.insert(block.leftBracket.end, ' $entry ');
     }
 
     if (postconditions.isNotEmpty) {
@@ -132,12 +138,24 @@ class BodyWeaver {
     final closing = StringBuffer();
     final fallsOffEnd =
         block.statements.isEmpty || block.statements.last is! ReturnStatement;
-    if (isVoid && fallsOffEnd && postconditions.isNotEmpty) {
-      closing.write(ClauseEmitter.postconditions(postconditions));
+    if (fallsOffEnd && postconditions.isNotEmpty) {
+      if (isVoid) {
+        closing.write(ClauseEmitter.postconditions(postconditions));
+      } else if (exitRewriter.mayFallOffEnd) {
+        // Falling off the end returns `null`; check it like `return null;`.
+        closing
+          ..write(
+            exitRewriter.returnValue(
+              'null',
+              ClauseEmitter.postconditions(postconditions),
+            ),
+          )
+          ..write(' ');
+      }
     }
     closing.write(ClauseEmitter.guardClose(guard));
     if (closing.isNotEmpty) {
-      edits.insert(block.rightBracket.offset, '\n$closing');
+      edits.insert(block.rightBracket.offset, ' $closing');
     }
   }
 
@@ -150,19 +168,16 @@ class BodyWeaver {
     for (final statement in ReturnStatementCollector.collect(block)) {
       final expr = statement.expression;
       if (expr != null) {
-        final exprSource = edits.textAt(expr.offset, expr.end);
-        edits.replace(
-          statement.offset,
-          statement.length,
-          exitRewriter.returnValue(
-            exprSource,
-            ClauseEmitter.postconditions(postconditions),
-          ),
+        final (:before, :after) = exitRewriter.wrapReturn(
+          ClauseEmitter.postconditions(postconditions),
         );
+        edits
+          ..replace(statement.offset, expr.offset - statement.offset, before)
+          ..replace(expr.end, statement.end - expr.end, after);
       } else {
-        final buffer = StringBuffer('{\n')
+        final buffer = StringBuffer('{ ')
           ..write(ClauseEmitter.postconditions(postconditions))
-          ..writeln('return;')
+          ..write('return; ')
           ..write('}');
         edits.replace(statement.offset, statement.length, buffer.toString());
       }

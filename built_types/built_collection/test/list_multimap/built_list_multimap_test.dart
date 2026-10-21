@@ -95,11 +95,26 @@ void main() {
       );
     });
 
-    test('can be converted to an UnmodifiableMapView', () {
-      final immutableMap = BuiltListMultimap<int, String>().asMap();
-      expect(immutableMap, const TypeMatcher<Map<int, Iterable<String>>>());
-      expect(() => immutableMap[1] = ['Hello'], throwsUnsupportedError);
-      expect(immutableMap, isEmpty);
+    group('can be converted to an UnmodifiableMapView', () {
+      test('is unmodifiable', () {
+        final immutableMap = BuiltListMultimap<int, String>().asMap();
+        expect(immutableMap, const TypeMatcher<Map<int, Iterable<String>>>());
+        expect(() => immutableMap[1] = ['Hello'], throwsUnsupportedError);
+        expect(immutableMap, isEmpty);
+      });
+
+      test('does not change when the builder changes', () {
+        final builder = ListMultimapBuilder<int, String>({
+          1: ['Hello'],
+        });
+        final view = builder.build().asMap();
+        expect(view[1], ['Hello']);
+
+        builder.add(1, 'World');
+
+        expect(view[1], ['Hello']);
+        expect(builder.build().asMap()[1], ['Hello', 'World']);
+      });
     });
 
     test('can be converted to ListMultimapBuilder<K, V>', () {
@@ -669,6 +684,7 @@ class _ListMultimap<K, V> {
   }
 
   Iterable<K> get keys => _map.keys;
+
   Iterable<V> operator [](K key) => _map[key] ?? <V>[];
 
   void clear() => _map.clear();

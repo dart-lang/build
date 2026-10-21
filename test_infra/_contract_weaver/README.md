@@ -46,6 +46,12 @@ own. A method's exit check runs however it exits, including by throwing; a
 constructor that throws has no object to check. Getters, `==`, `hashCode`,
 `toString`, private and static members, and generators are not checked.
 
+Contracts are woven into classes and top-level functions. Contracts in mixins,
+enums, extensions and extension types are an error at weave time, as is
+`@Ensures` on a generator, which returns before its body runs; a contract that
+looks checked but is not would be worse. A generator's `@Requires` is checked
+when its body starts, on the first `moveNext` or `listen`, not at the call.
+
 A class that implements `Built`, or is annotated `@immutable` from
 `package:meta`, is taken to be immutable as it declares, so its invariant is
 checked only on construction. That is not sound: both kinds of immutability
@@ -140,7 +146,11 @@ dart run _contract_weaver [options] [-- test args]
 
 Run it in your package. It weaves contracts into a copy of the package, runs
 `dart test` on the copy with any test args you pass after `--`, and leaves your
-files untouched.
+files untouched. Checks slow tests down, so it passes `--timeout=4x` unless you
+pass a `--timeout` yourself.
+
+A violation throws `ContractViolation`, which extends `Error`, so handlers
+written `on Exception` let it through.
 
 In a pub workspace, run it in a member package, or at the workspace root with
 `--package=DIR`.
@@ -153,6 +163,11 @@ Options:
 | `--stage-dir=PATH` | Where to build the woven copy. Defaults to a directory under the system temp directory. |
 | `--clean` | Delete the stage directory first. |
 | `--analyze-only` | Analyze the woven copy and skip the tests. |
+
+The woven copy is a real package, so it can run more than tests. Weave it into a
+directory you choose with `--stage-dir=DIR --analyze-only`, then run anything
+in `DIR`, or in the member's directory under it for a workspace: a binary, a
+benchmark, a fuzzer.
 
 ## The CI gate
 
@@ -170,6 +185,14 @@ code that nobody reads.
 - Clauses are strings, so the analyzer does not see them until they are woven
   in. A clause naming a renamed parameter fails only during a contracts run.
   See the CI gate above.
+- A clause is the value of its string literal, so escapes are processed before
+  the clause is read as Dart: write `r'x.split("\n").isNotEmpty'`, not
+  `'x.split("\n").isNotEmpty'`, whose `\n` becomes a line break inside the
+  clause. A clause that is not a single expression is an error.
+- The annotations must be imported without a prefix; `@c.Requires` is an
+  error. Contracts on local functions are an error.
+- A class with no explicit generative constructor has no construction check,
+  and the implicit setters of public fields do not check the invariant.
 - No `old()`, so postconditions can state shape but not transition.
 - No `@ThrowEnsures` on constructors. Using it there is an error, not a silent
   omission.

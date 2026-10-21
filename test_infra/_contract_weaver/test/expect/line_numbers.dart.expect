@@ -1,0 +1,247 @@
+// Copyright (c) 2026, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
+// Expressions that span lines, so that woven code must keep every original
+// token on its original line for stack traces to stay accurate.
+import 'contracts.dart';
+
+@Invariant('total >= 0')
+class Ledger {
+  int total = 0;
+
+  @Requires('amount > 0')
+  @Ensures('result == total')
+  int add(int amount) {
+    if (!Contracts.checking) {
+      Contracts.checking = true;
+      try {
+        if (!(amount > 0))
+          throw ContractViolation('Precondition failed: amount > 0');
+      } finally {
+        Contracts.checking = false;
+      }
+    }
+    this._enterInvariantScope();
+    Object? $inFlight;
+    try {
+      total += amount;
+      return ((int result) {
+        if (!Contracts.checking) {
+          Contracts.checking = true;
+          try {
+            if (!(result == total))
+              throw ContractViolation('Postcondition failed: result == total');
+          } finally {
+            Contracts.checking = false;
+          }
+        }
+        return result;
+      })(total + 0);
+    } catch ($thrown) {
+      $inFlight = $thrown;
+      rethrow;
+    } finally {
+      this._exitInvariantScope(during: $inFlight);
+    }
+  }
+
+  @Ensures('result >= 0')
+  int twice(int x) {
+    this._enterInvariantScope();
+    Object? $inFlight;
+    try {
+      return ((int result) {
+        if (!Contracts.checking) {
+          Contracts.checking = true;
+          try {
+            if (!(result >= 0))
+              throw ContractViolation('Postcondition failed: result >= 0');
+          } finally {
+            Contracts.checking = false;
+          }
+        }
+        return result;
+      })(x.abs() + x.abs());
+    } catch ($thrown) {
+      $inFlight = $thrown;
+      rethrow;
+    } finally {
+      this._exitInvariantScope(during: $inFlight);
+    }
+  }
+
+  @Ensures('result.isNotEmpty')
+  Future<String> describe() async {
+    this._enterInvariantScope();
+    Object? $inFlight;
+    try {
+      return await (Future<String>.value(Future.value('total: $total'))
+          .then((String result) {
+            if (!Contracts.checking) {
+              Contracts.checking = true;
+              try {
+                if (!(result.isNotEmpty))
+                  throw ContractViolation(
+                    'Postcondition failed: result.isNotEmpty',
+                  );
+              } finally {
+                Contracts.checking = false;
+              }
+            }
+            return result;
+          }));
+    } catch ($thrown) {
+      $inFlight = $thrown;
+      rethrow;
+    } finally {
+      this._exitInvariantScope(during: $inFlight);
+    }
+  }
+
+  @Ensures('total >= 0')
+  void reset() {
+    this._enterInvariantScope();
+    Object? $inFlight;
+    try {
+      if (total > 100) {
+        total = 0;
+        {
+          if (!Contracts.checking) {
+            Contracts.checking = true;
+            try {
+              if (!(total >= 0))
+                throw ContractViolation('Postcondition failed: total >= 0');
+            } finally {
+              Contracts.checking = false;
+            }
+          }
+          return;
+        }
+      }
+      total = total ~/ 2;
+      if (!Contracts.checking) {
+        Contracts.checking = true;
+        try {
+          if (!(total >= 0))
+            throw ContractViolation('Postcondition failed: total >= 0');
+        } finally {
+          Contracts.checking = false;
+        }
+      }
+    } catch ($thrown) {
+      $inFlight = $thrown;
+      rethrow;
+    } finally {
+      this._exitInvariantScope(during: $inFlight);
+    }
+  }
+
+  @Ensures('result.length == count')
+  Future<List<int>> zeros(int count) {
+    this._enterInvariantScope();
+    Object? $inFlight;
+    try {
+      return (Future.value(List.filled(count, 0))).then((List<int> result) {
+        if (!Contracts.checking) {
+          Contracts.checking = true;
+          try {
+            if (!(result.length == count))
+              throw ContractViolation(
+                'Postcondition failed: result.length == count',
+              );
+          } finally {
+            Contracts.checking = false;
+          }
+        }
+        return result;
+      });
+    } catch ($thrown) {
+      $inFlight = $thrown;
+      rethrow;
+    } finally {
+      this._exitInvariantScope(during: $inFlight);
+    }
+  }
+}
+
+extension _ContractsOn$Ledger on Ledger {
+  void _enterInvariantScope({bool check = true}) {
+    final open = Contracts.openScopes[this] ?? 0;
+    if (check && open == 0) _checkInvariants();
+    Contracts.openScopes[this] = open + 1;
+  }
+
+  void _exitInvariantScope({Object? during}) {
+    final open = Contracts.openScopes[this]! - 1;
+    Contracts.openScopes[this] = open == 0 ? null : open;
+    if (open == 0) _checkInvariants(during: during);
+  }
+
+  void _checkInvariants({Object? during}) {
+    final inFlight = during == null ? '' : ', thrown while handling $during';
+    if (!Contracts.checking) {
+      Contracts.checking = true;
+      try {
+        if (!(total >= 0))
+          throw ContractViolation('Invariant failed: total >= 0$inFlight');
+      } finally {
+        Contracts.checking = false;
+      }
+    }
+  }
+}
+
+@Invariant('width > 0')
+class Box {
+  final int width;
+
+  @Requires('width > 0')
+  Box(this.width) {
+    if (!Contracts.checking) {
+      Contracts.checking = true;
+      try {
+        if (!(width > 0))
+          throw ContractViolation('Precondition failed: width > 0');
+      } finally {
+        Contracts.checking = false;
+      }
+    }
+    this._enterInvariantScope(check: false);
+    if (width > 10) {
+      {
+        this._exitInvariantScope();
+        return;
+      }
+    }
+    print('small');
+    this._exitInvariantScope();
+  }
+}
+
+extension _ContractsOn$Box on Box {
+  void _enterInvariantScope({bool check = true}) {
+    final open = Contracts.openScopes[this] ?? 0;
+    if (check && open == 0) _checkInvariants();
+    Contracts.openScopes[this] = open + 1;
+  }
+
+  void _exitInvariantScope({Object? during}) {
+    final open = Contracts.openScopes[this]! - 1;
+    Contracts.openScopes[this] = open == 0 ? null : open;
+    if (open == 0) _checkInvariants(during: during);
+  }
+
+  void _checkInvariants({Object? during}) {
+    final inFlight = during == null ? '' : ', thrown while handling $during';
+    if (!Contracts.checking) {
+      Contracts.checking = true;
+      try {
+        if (!(width > 0))
+          throw ContractViolation('Invariant failed: width > 0$inFlight');
+      } finally {
+        Contracts.checking = false;
+      }
+    }
+  }
+}

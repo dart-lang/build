@@ -26,6 +26,8 @@ Serializers _$serializers =
           ..add(ConcreteGeneric.serializer)
           ..add(DiscoverableValue.serializer)
           ..add(EnumWithInt.serializer)
+          ..add(EscapedWireNameEnum.serializer)
+          ..add(EscapedWireNameValue.serializer)
           ..add(FallbackEnum.serializer)
           ..add(FallbackNumberEnum.serializer)
           ..add(FieldDiscoveryValue.serializer)

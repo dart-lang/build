@@ -136,7 +136,7 @@ class ConstructorWeaver {
       edits.replace(
         body.semicolon.offset,
         body.semicolon.length,
-        '{\n$entry$exit}',
+        '{ $entry$exit}',
       );
     } else if (body is BlockFunctionBody) {
       _weaveGenerativeBlock(body.block, entry: '$entry', exit: '$exit');
@@ -154,16 +154,16 @@ class ConstructorWeaver {
     required String exit,
   }) {
     if (entry.isNotEmpty) {
-      edits.insert(block.leftBracket.end, '\n$entry\n');
+      edits.insert(block.leftBracket.end, ' $entry ');
     }
     if (exit.isEmpty) return;
     for (final ret in ReturnStatementCollector.collect(block)) {
-      edits.replace(ret.offset, ret.length, '{\n${exit}return;\n}');
+      edits.replace(ret.offset, ret.length, '{ ${exit}return; }');
     }
     final fallsOffEnd =
         block.statements.isEmpty || block.statements.last is! ReturnStatement;
     if (fallsOffEnd) {
-      edits.insert(block.rightBracket.offset, '\n$exit');
+      edits.insert(block.rightBracket.offset, ' $exit');
     }
   }
 }

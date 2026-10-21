@@ -383,6 +383,15 @@ void main() {
       builder.value = 3;
       expect(notified, true);
     });
+
+    test('notifies on sets of each field', () {
+      var notifications = 0;
+      final builder = ValueWithOnSet((b) => b..value = 2).toBuilder();
+      builder.onSet = () => notifications++;
+      builder.value = 3;
+      builder.label = 'x';
+      expect(notifications, 2);
+    });
   });
 
   group(CustomToStringValue, () {

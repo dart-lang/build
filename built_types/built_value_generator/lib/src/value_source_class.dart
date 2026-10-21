@@ -1101,6 +1101,13 @@ abstract class ValueSourceClass
     result.writeln('$implName$_generics? _\$v;');
     result.writeln('');
 
+    final shouldGenerateOnSet =
+        !hasBuilder && settings.generateBuilderOnSetField;
+    if (shouldGenerateOnSet) {
+      result.writeln('void Function() onSet = () {};');
+      result.writeln();
+    }
+
     for (final field in fields) {
       late final String type;
 
@@ -1152,16 +1159,9 @@ abstract class ValueSourceClass
       result.writeln(';');
       if (hasBuilder) result.writeln('}');
 
-      final shouldGenerateOnSet =
-          !hasBuilder && settings.generateBuilderOnSetField;
       // Add `covariant` if we're implementing one or more parent builders.
       final maybeCovariant =
           !hasBuilder && _implementsParentBuilder ? 'covariant ' : '';
-
-      if (shouldGenerateOnSet) {
-        result.writeln('void Function() onSet = () {};');
-        result.writeln();
-      }
 
       final isMultilineSetter = hasBuilder || shouldGenerateOnSet;
       if (hasBuilder) result.writeln('@override');

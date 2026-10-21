@@ -36,6 +36,8 @@ part 'serializers.g.dart';
   CompoundValueNoNesting,
   ConcreteGeneric,
   EnumWithInt,
+  EscapedWireNameEnum,
+  EscapedWireNameValue,
   FallbackEnum,
   FallbackNumberEnum,
   FieldDiscoveryValue,

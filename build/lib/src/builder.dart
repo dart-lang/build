@@ -29,6 +29,10 @@ import 'build_step.dart';
 /// `auto_apply: dependents` tells `build_runner` to run the builder on all
 /// packages that depend on `my_package`.
 ///
+/// A factory that only `build_runner` uses can go under `lib/src/`, for example
+/// `package:my_package/src/builder.dart`, to keep it out of the package's
+/// public API.
+///
 /// The `build_extensions` should if possible match the value returned by
 /// [Builder.buildExtensions], because the `buildExtensions` in the `build.yaml`
 /// is what decides the order in which builders will run. However, a builder
