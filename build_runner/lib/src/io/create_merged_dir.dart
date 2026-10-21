@@ -226,6 +226,13 @@ Future<bool> _createMergedOutputDir({
     timing.mark('links_and_manifest');
     timing.stop();
     buildLog.info('$timing');
+    buildLog.info(
+      await _probeDummyWrites(
+        outputPaths,
+        '${outputDir.path}.probe',
+        Directory.systemTemp.createTempSync('merged_probe_').path,
+      ),
+    );
 
     return true;
   } on FileSystemException catch (e) {
@@ -446,4 +453,45 @@ void _deleteUp(String from, String to) {
 bool _existsResolvedWithin(FileSystemEntity entity, String rootPath) {
   if (!entity.existsSync()) return false;
   return p.isWithin(rootPath, entity.resolveSymbolicLinksSync());
+}
+
+/// DO NOT MERGE: writes a 4 KB dummy file for each of [relativePaths] under
+/// each root, the same way `_writeAsset` writes, and times it, so that the
+/// merged directory write can be compared with plain writes in the same
+/// process at the same moment.
+Future<String> _probeDummyWrites(
+  List<String> relativePaths,
+  String besideRoot,
+  String tempRoot,
+) async {
+  final bytes = List<int>.filled(4096, 42);
+  final result = StringBuffer('MERGED_PROBE pid=$pid');
+  for (final MapEntry(key: name, value: root) in {
+    'beside': besideRoot,
+    'temp': tempRoot,
+  }.entries) {
+    final createUs = <int>[];
+    final writeUs = <int>[];
+    final total = Stopwatch()..start();
+    await Future.wait([
+      for (final path in relativePaths)
+        _descriptorPool.withResource(() async {
+          final watch = Stopwatch()..start();
+          final file = await File(p.join(root, path)).create(recursive: true);
+          createUs.add(watch.elapsedMicroseconds);
+          watch.reset();
+          await file.writeAsBytes(bytes);
+          writeUs.add(watch.elapsedMicroseconds);
+        }),
+    ]);
+    result.write(
+      ' ${name}_total=${total.elapsedMilliseconds}ms '
+      '${_Timing._percentiles('${name}_create', createUs)} '
+      '${_Timing._percentiles('${name}_write', writeUs)}',
+    );
+    total.reset();
+    Directory(root).deleteSync(recursive: true);
+    result.write(' ${name}_delete=${total.elapsedMilliseconds}ms');
+  }
+  return result.toString();
 }
