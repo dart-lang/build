@@ -1759,6 +1759,24 @@ jobs:
         run: dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_runner
+      - name: "DO NOT MERGE: SDK on C: versus a copy on D:, same job"
+        if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
+        shell: pwsh
+        working-directory: build_runner
+        run: |
+          $c = Split-Path (Split-Path (Get-Command dart).Source)
+          $d = "$env:RUNNER_TEMP\dart-sdk"
+          $t = Measure-Command { & "$c\bin\dart.exe" compile kernel bin/build_runner.dart -o "$env:RUNNER_TEMP\sdk_ab_C_0.dill" | Out-Null }
+          echo "SDK_AB round=0 sdk=C compile_kernel_ms=$([int]$t.TotalMilliseconds) exit=$LASTEXITCODE before_copy"
+          $t = Measure-Command { Copy-Item -Recurse $c $d }
+          echo "SDK_AB copy_ms=$([int]$t.TotalMilliseconds) from=$c to=$d"
+          foreach ($i in 1..3) {
+            foreach ($pair in @(@('C', $c), @('D', $d))) {
+              $out = "$env:RUNNER_TEMP\sdk_ab_$($pair[0])_$i.dill"
+              $t = Measure-Command { & "$($pair[1])\bin\dart.exe" compile kernel bin/build_runner.dart -o $out | Out-Null }
+              echo "SDK_AB round=$i sdk=$($pair[0]) compile_kernel_ms=$([int]$t.TotalMilliseconds) exit=$LASTEXITCODE"
+            }
+          }
       - name: "build_runner; dart test -t integration3 --test-randomize-ordering-seed=random"
         run: "dart test -t integration3 --test-randomize-ordering-seed=random"
         if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
