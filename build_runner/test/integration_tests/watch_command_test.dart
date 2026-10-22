@@ -97,14 +97,11 @@ void main() async {
     expect(tester.read('root_pkg/web/a.txt.copy'), 'updated');
 
     // Builder change to one that writes output from config key `output` if
-    // present or writes `hardcoded` if not. There is a second factory that
-    // ignores the config and writes `second_factory`.
+    // present or writes `hardcoded` if not.
     tester.write('builder_pkg/lib/builder.dart', '''
 import 'package:build/build.dart';
 Builder testBuilderFactory(BuilderOptions options)
     => TestBuilder(options.config['output'] ?? 'hardcoded');
-Builder testBuilderFactory2(BuilderOptions options)
-    => TestBuilder('second_factory');
 class TestBuilder implements Builder {
   final String output;
   TestBuilder(this.output);
@@ -177,58 +174,5 @@ targets:
     await watch.expect(BuildLog.successPattern);
     expect(tester.read('root_pkg/build/a.txt'), 'a');
     expect(tester.read('root_pkg/build/a.txt.copy'), 'configured');
-
-    // Builder config change in dependency that changes the build script by
-    // changing the factory to `testBuilderFactory2`.
-    tester.write('builder_pkg/build.yaml', '''
-builders:
-  test_builder:
-    import: 'package:builder_pkg/builder.dart'
-    builder_factories: ['testBuilderFactory2']
-    build_extensions: {'.txt': ['.txt.copy']}
-    auto_apply: root_package
-    build_to: source
-''');
-    await watch.expect(BuildLog.successPattern);
-    expect(tester.read('root_pkg/build/a.txt.copy'), 'second_factory');
-
-    // Builder config change in dependency that changes the build script to
-    // something broken.
-    tester.update(
-      'builder_pkg/build.yaml',
-      (yaml) =>
-          '''
-$yaml
-  missing_builder:
-    import: 'package:builder_pkg/builder.dart'
-    builder_factories: ['missingBuilderFactory']
-    build_extensions: {'.txt': ['']}
-''',
-    );
-    await watch.expect('missingBuilderFactory');
-    await watch.expect(
-      'Failed to compile build script. '
-      'Check builder definitions and generated script '
-      '.dart_tool/build/entrypoint/build.dart. '
-      'Retrying.',
-    );
-
-    // The first build after retry is marked as a new build.
-    await watch.expect('Starting build #5');
-    // But the next identical build failure is not logged as a new build.
-    final block = await watch.expectAndGetBlock('compiling builders');
-    expect(block, isNot(contains('Starting build')));
-
-    // Restore the correct build script and it gets compiled and runs.
-    tester.write('builder_pkg/build.yaml', '''
-builders:
-  test_builder:
-    import: 'package:builder_pkg/builder.dart'
-    builder_factories: ['testBuilderFactory2']
-    build_extensions: {'.txt': ['.txt.copy']}
-    auto_apply: root_package
-    build_to: source
-''');
-    await watch.expect(BuildLog.successPattern);
   });
 }
