@@ -18,6 +18,27 @@ import 'package:test/test.dart';
 
 import 'fixture_packages.dart';
 
+/// DO NOT MERGE: prints a `WTIMING` line for finding what is slow on CI.
+void _timing(String message) => print('WTIMING ${_callerTestFile()} $message');
+
+String _callerTestFile() {
+  final frame = StackTrace.current
+      .toString()
+      .split('\n')
+      .where((l) => l.contains('_test.dart'))
+      .firstOrNull;
+  if (frame == null) return '?';
+  final start = frame.lastIndexOf(RegExp(r'[/\\]')) + 1;
+  final end = frame.indexOf(':', frame.indexOf('_test.dart'));
+  return frame.substring(start, end == -1 ? frame.length : end);
+}
+
+/// Whether [line] of `build_runner` output is worth a `WTIMING` line.
+bool _isTimingLine(String line) =>
+    line.contains(RegExp(r'[0-9]s compiling builders')) ||
+    line.contains(BuildLog.successPattern) ||
+    line.contains('Failed to compile');
+
 /// End to end tester for `build_runner`.
 ///
 /// Creates a workspace in a temp directory, fills it with Dart packages, and
@@ -46,13 +67,19 @@ class BuildRunnerTester {
   }
 
   BuildRunnerTester._(this.pubspecs, this.tempDirectory) {
+    final label = _callerTestFile();
     addTearDown(() async {
       // Temp cleanup can fail on Windows if some process is slow to close,
       // retry for 5s.
       var tries = 0;
+      final stopwatch = Stopwatch()..start();
       while (true) {
         try {
           tempDirectory.deleteSync(recursive: true);
+          print(
+            'WTIMING $label delete_temp ${stopwatch.elapsedMilliseconds}ms '
+            'tries=${tries + 1}',
+          );
           return;
         } on PathAccessException {
           if (++tries == 10) rethrow;
@@ -66,7 +93,9 @@ class BuildRunnerTester {
   /// the copy.
   BuildRunnerTester copyWorkspace() {
     final newTemp = _tempParent.createTempSync('BuildRunnerTester-copy-');
+    final stopwatch = Stopwatch()..start();
     copyPathSync(tempDirectory.path, newTemp.path);
+    _timing('copy_workspace ${stopwatch.elapsedMilliseconds}ms');
     return BuildRunnerTester._(pubspecs, newTemp);
   }
 
@@ -238,6 +267,7 @@ class BuildRunnerTester {
   }) async {
     final args = commandLine.split(' ');
     final command = args.removeAt(0);
+    final stopwatch = Stopwatch()..start();
     final result = await Process.run(
       command,
       args,
@@ -249,6 +279,16 @@ class BuildRunnerTester {
 === $directory: $commandLine
 ${result.stdout}${result.stderr}===
 ''';
+    final details = output
+        .split('\n')
+        .where(_isTimingLine)
+        .map((l) => l.trim())
+        .toSet()
+        .join(' | ');
+    _timing(
+      'run ${stopwatch.elapsedMilliseconds}ms `$commandLine` '
+      'exit=${result.exitCode} $details',
+    );
     printOnFailure(output);
     expect(result.exitCode, expectExitCode);
     return output;
@@ -265,7 +305,10 @@ ${result.stdout}${result.stderr}===
       args,
       workingDirectory: p.join(tempDirectory.path, directory),
     );
-    final result = BuildRunnerProcess(process);
+    final result = BuildRunnerProcess(
+      process,
+      label: '${_callerTestFile()} `$commandLine`',
+    );
     addTearDown(result.kill);
     return result;
   }
@@ -279,8 +322,12 @@ class BuildRunnerProcess {
   int? _port;
   Future<void>? _killResult;
 
-  BuildRunnerProcess(this.process)
-    : _outputs = StreamQueue(
+  final String _label;
+  final Stopwatch _stopwatch = Stopwatch()..start();
+
+  BuildRunnerProcess(this.process, {String label = '?'})
+    : _label = label,
+      _outputs = StreamQueue(
         StreamGroup.merge([
           process.stdout
               .transform(utf8.decoder)
@@ -289,7 +336,17 @@ class BuildRunnerProcess {
               .transform(utf8.decoder)
               .transform(const LineSplitter()),
         ]),
+      ) {
+    print('WTIMING $_label start');
+  }
+
+  void _timingLine(String line) {
+    if (_isTimingLine(line)) {
+      print(
+        'WTIMING $_label +${_stopwatch.elapsedMilliseconds}ms ${line.trim()}',
       );
+    }
+  }
 
   /// Expects nothing new on stdout or stderr for [duration].
   Future<void> expectNoOutput(Duration duration) async {
@@ -357,6 +414,7 @@ class BuildRunnerProcess {
         throw fail('While expecting `$pattern`, process exited.');
       }
       printOnFailure(line);
+      _timingLine(line);
       if (line.contains(pattern)) return line;
       if (line.contains(failOn)) {
         fail('While expecting `$pattern`, got `$failOn`.');
@@ -393,6 +451,7 @@ class BuildRunnerProcess {
         throw fail('While expecting `$pattern`, process exited.');
       }
       printOnFailure(line);
+      _timingLine(line);
       if (line.contains(pattern)) return lines.toString();
       if (line.contains(failOn)) {
         fail('While expecting `$pattern`, got `$failOn`.');
@@ -417,11 +476,18 @@ class BuildRunnerProcess {
   }
 
   Future<void> _kill() async {
+    final stopwatch = Stopwatch()..start();
     process.kill();
     _outputs.rest.listen((line) => printOnFailure('Output after kill: $line'));
     await process.exitCode;
+    final exitMs = stopwatch.elapsedMilliseconds;
     // Wait a few seconds for child process cleanup.
     await Future<void>.delayed(const Duration(seconds: 2));
+    print(
+      'WTIMING $_label kill exit_after=${exitMs}ms '
+      'total=${stopwatch.elapsedMilliseconds}ms '
+      'lifetime=${_stopwatch.elapsedMilliseconds}ms',
+    );
   }
 
   Future<int> get exitCode => process.exitCode;
