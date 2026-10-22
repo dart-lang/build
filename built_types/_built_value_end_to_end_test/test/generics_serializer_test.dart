@@ -259,6 +259,37 @@ void main() {
     });
   });
 
+  group(
+      'NullableCollectionGenericValue with known specifiedType and correct '
+      'builder', () {
+    final data = NullableCollectionGenericValue<int>((b) => b..values.add(1));
+    final specifiedType =
+        const FullType(NullableCollectionGenericValue, [FullType(int)]);
+    final serializersWithBuilder = (serializers.toBuilder()
+          ..addBuilderFactory(
+              specifiedType, () => NullableCollectionGenericValueBuilder<int>())
+          ..addBuilderFactory(const FullType(BuiltList, [FullType(int)]),
+              () => ListBuilder<int?>()))
+        .build();
+    final serialized = json.decode(json.encode([
+      'values',
+      [1],
+    ])) as Object;
+
+    test('can be serialized', () {
+      expect(
+          serializersWithBuilder.serialize(data, specifiedType: specifiedType),
+          serialized);
+    });
+
+    test('can be deserialized', () {
+      expect(
+          serializersWithBuilder.deserialize(serialized,
+              specifiedType: specifiedType),
+          data);
+    });
+  });
+
   group('GenericContainer with known specifiedType', () {
     final data = GenericContainer((b) => b
       ..genericValue.value = '1'

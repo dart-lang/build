@@ -477,7 +477,7 @@ class $serializerImplName implements PrimitiveSerializer<$genericName> {
           (parameter) => fields.any(
             (field) =>
                 field.rawType == parameter ||
-                field.type.contains(RegExp('[<, \n]$parameter[>, \n]')),
+                field.type.contains(RegExp('[<, \n]$parameter[>?, \n]')),
           ),
         ),
       );

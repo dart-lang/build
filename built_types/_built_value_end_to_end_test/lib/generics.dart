@@ -84,6 +84,21 @@ abstract class CollectionGenericValue<T>
   CollectionGenericValue._();
 }
 
+abstract class NullableCollectionGenericValue<T>
+    implements
+        Built<NullableCollectionGenericValue<T>,
+            NullableCollectionGenericValueBuilder<T>> {
+  static Serializer<NullableCollectionGenericValue<Object?>> get serializer =>
+      _$nullableCollectionGenericValueSerializer;
+
+  BuiltList<T?> get values;
+
+  factory NullableCollectionGenericValue(
+          [Function(NullableCollectionGenericValueBuilder<T>) updates]) =
+      _$NullableCollectionGenericValue<T>;
+  NullableCollectionGenericValue._();
+}
+
 abstract class GenericContainer
     implements Built<GenericContainer, GenericContainerBuilder> {
   static Serializer<GenericContainer> get serializer =>
