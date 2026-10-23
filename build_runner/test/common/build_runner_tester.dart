@@ -268,12 +268,14 @@ class BuildRunnerTester {
     final args = commandLine.split(' ');
     final command = args.removeAt(0);
     final stopwatch = Stopwatch()..start();
+    _seedDartdev(directory, commandLine);
     final result = await Process.run(
       command,
       args,
       workingDirectory: p.join(tempDirectory.path, directory),
       environment: environment,
     );
+    _shareDartdev(directory, commandLine);
     final output =
         '''
 === $directory: $commandLine
@@ -300,6 +302,7 @@ ${result.stdout}${result.stderr}===
   Future<BuildRunnerProcess> start(String directory, String commandLine) async {
     final args = commandLine.split(' ');
     final command = args.removeAt(0);
+    _seedDartdev(directory, commandLine);
     final process = await Process.start(
       command,
       args,
@@ -310,6 +313,85 @@ ${result.stdout}${result.stderr}===
       label: '${_callerTestFile()} `$commandLine`',
     );
     addTearDown(result.kill);
+    return result;
+  }
+
+  /// Snapshots of `build_runner` made by `dart run`, shared between workspaces.
+  ///
+  /// `dart run build_runner` in a new workspace spends about 5s compiling
+  /// `build_runner` into `.dart_tool/dartdev`. The snapshot depends only on
+  /// the SDK and on the `build_runner` sources, which are the same for every
+  /// workspace, so it is copied into each new workspace before the first
+  /// run. `dart run` checks the snapshot against its depfile and SDK version
+  /// and recompiles if it is stale; a newer snapshot is then shared again.
+  static final Directory _sharedDartdev = Directory(
+    p.join(_tempParent.path, 'build_runner_tester_dartdev'),
+  );
+
+  /// The `.dart_tool/dartdev` that `dart run` uses in [directory], or `null`
+  /// if `pub get` has not run yet.
+  Directory? _dartdevDirectory(String directory) {
+    var current = p.normalize(p.join(tempDirectory.path, directory));
+    while (p.equals(current, tempDirectory.path) ||
+        p.isWithin(tempDirectory.path, current)) {
+      final dartTool = p.join(current, '.dart_tool');
+      if (File(p.join(dartTool, 'package_config.json')).existsSync()) {
+        return Directory(p.join(dartTool, 'dartdev'));
+      }
+      current = p.dirname(current);
+    }
+    return null;
+  }
+
+  /// Copies [_sharedDartdev] into the workspace if [commandLine] runs
+  /// `build_runner` and the workspace has no snapshot yet.
+  void _seedDartdev(String directory, String commandLine) {
+    if (!commandLine.startsWith('dart run build_runner')) return;
+    final target = _dartdevDirectory(directory);
+    if (target == null || target.existsSync()) return;
+    if (!_sharedDartdev.existsSync()) return;
+    _copyDirectoryAtomically(_sharedDartdev, target);
+  }
+
+  /// Copies the workspace snapshot to [_sharedDartdev] if it is newer.
+  void _shareDartdev(String directory, String commandLine) {
+    if (!commandLine.startsWith('dart run build_runner')) return;
+    final source = _dartdevDirectory(directory);
+    if (source == null || !source.existsSync()) return;
+    if (_sharedDartdev.existsSync() &&
+        !_newestModified(source).isAfter(_newestModified(_sharedDartdev))) {
+      return;
+    }
+    _copyDirectoryAtomically(source, _sharedDartdev);
+  }
+
+  /// Copies [source] to [target] via a temp directory and a rename, so that
+  /// concurrent tests see either the old or the new directory.
+  ///
+  /// The copy is only an optimization: on failure, it is skipped.
+  static void _copyDirectoryAtomically(Directory source, Directory target) {
+    final temp = Directory(
+      '${target.path}.tmp-$pid-${DateTime.now().microsecondsSinceEpoch}',
+    );
+    try {
+      copyPathSync(source.path, temp.path);
+      if (target.existsSync()) target.deleteSync(recursive: true);
+      temp.renameSync(target.path);
+    } on FileSystemException {
+      try {
+        if (temp.existsSync()) temp.deleteSync(recursive: true);
+      } on FileSystemException {
+        // Best effort.
+      }
+    }
+  }
+
+  static DateTime _newestModified(Directory directory) {
+    var result = DateTime.fromMillisecondsSinceEpoch(0);
+    for (final file in directory.listSync(recursive: true).whereType<File>()) {
+      final modified = file.lastModifiedSync();
+      if (modified.isAfter(result)) result = modified;
+    }
     return result;
   }
 }
