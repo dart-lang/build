@@ -329,14 +329,21 @@ ${result.stdout}${result.stderr}===
   );
 
   /// The `.dart_tool/dartdev` that `dart run` uses in [directory], or `null`
-  /// if `pub get` has not run yet.
+  /// if [directory] is not in a package.
+  ///
+  /// That is in the package's own `.dart_tool`, or in the workspace root's
+  /// if the package has `resolution: workspace`. It must be found from the
+  /// pubspecs: before the first `dart run`, there is no `.dart_tool` yet.
   Directory? _dartdevDirectory(String directory) {
     var current = p.normalize(p.join(tempDirectory.path, directory));
     while (p.equals(current, tempDirectory.path) ||
         p.isWithin(tempDirectory.path, current)) {
-      final dartTool = p.join(current, '.dart_tool');
-      if (File(p.join(dartTool, 'package_config.json')).existsSync()) {
-        return Directory(p.join(dartTool, 'dartdev'));
+      final pubspec = File(p.join(current, 'pubspec.yaml'));
+      if (pubspec.existsSync() &&
+          !pubspec.readAsLinesSync().any(
+            (line) => line.trim() == 'resolution: workspace',
+          )) {
+        return Directory(p.join(current, '.dart_tool', 'dartdev'));
       }
       current = p.dirname(current);
     }
