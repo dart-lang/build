@@ -18,6 +18,20 @@ void main() {
       expect(multimap.isNotEmpty, isFalse);
     });
 
+    test('drops keys with empty value lists, matching builder behaviour '
+        '(https://github.com/dart-lang/build/issues/5177)', () {
+      final fromFactory = BuiltSetMultimap<int, String>({1: <String>[]});
+      expect(fromFactory.containsKey(1), isFalse);
+      expect(fromFactory.isEmpty, isTrue);
+
+      final fromBuilder = BuiltSetMultimap<int, String>.build(
+        (b) => b.addValues(1, <String>[]),
+      );
+      expect(fromBuilder.containsKey(1), isFalse);
+
+      expect(fromFactory, fromBuilder);
+    });
+
     test('allows <dynamic, dynamic>', () {
       BuiltSetMultimap<dynamic, dynamic>();
     });
