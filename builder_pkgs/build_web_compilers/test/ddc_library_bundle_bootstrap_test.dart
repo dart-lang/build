@@ -125,6 +125,11 @@ void main() {
                 contains('"id": "dart_sdk"'),
                 isNot(contains('lib/a')),
                 contains('loadConfig.isWindows = false;'),
+                // Failed hot restart requests reject with the module and URL.
+                contains('el.onerror = function()'),
+                contains('Failed to load module "\${module}" from "\${src}".'),
+                // Failed prerequisite loads reject with the URL.
+                contains(r'Failed to load script from "${resolvedUrl}".'),
               ]),
             ),
             'a|web/index.digests': decodedMatches(contains('packages/')),
