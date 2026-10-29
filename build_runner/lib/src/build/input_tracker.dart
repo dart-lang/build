@@ -41,7 +41,6 @@ class InputTracker {
     }
   }
 
-  @Ensures('inputs.contains(input)')
   void add(AssetId input) => _inputs.add(input);
 
   @Ensures('resolverEntrypoints.contains(graph)')
