@@ -74,10 +74,10 @@ class SharedPartAccumulator {
   ///
   /// Before reading at phase `p`, all contributions at or before `p` must
   /// have been added.
-  @Requires('phase >= -1')
   @Ensures('result == null || contributions.keys.any((p) => p <= phase)')
   @Ensures('result != null || contributions.keys.every((p) => p > phase)')
   AssetContent? contentAt(int phase) {
+    assert(phase >= -1);
     if (_contributions.build().keys.every((p) => p > phase)) return null;
     return _contentsByPhase.putIfAbsent(phase, () {
       final content = const SharedPartAccumulatorCodec().encode(
