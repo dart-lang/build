@@ -164,12 +164,12 @@ class BuilderFilesystem {
   /// If [catchInvalidInputs] is set to true and [checkInvalidInput] throws an
   /// [InvalidInputException], this method will return `false` instead of
   /// throwing.
-  @Requires('phase >= 0')
   Future<bool> isReadable(
     AssetId id,
     int phase, {
     bool catchInvalidInputs = false,
   }) async {
+    assert(phase >= 0);
     try {
       checkInvalidInput(id);
     } on InvalidInputException {
