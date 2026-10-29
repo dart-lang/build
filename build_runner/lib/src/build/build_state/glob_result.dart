@@ -8,12 +8,9 @@ import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 import 'package:crypto/crypto.dart';
 
-import '../../contracts.dart';
-
 part '../../../_br_/src/build/build_state/glob_result.part.dart';
 
 /// Execution results and dependency tracking for a glob evaluation.
-@Invariant('results.every((id) => inputs.contains(id))')
 abstract class GlobResult implements Built<GlobResult, GlobResultBuilder> {
   static Serializer<GlobResult> get serializer => _$globResultSerializer;
 
@@ -32,5 +29,7 @@ abstract class GlobResult implements Built<GlobResult, GlobResultBuilder> {
 
   factory GlobResult([void Function(GlobResultBuilder)? updates]) =
       _$GlobResult;
-  GlobResult._();
+  GlobResult._() {
+    assert(results.every(inputs.contains));
+  }
 }
