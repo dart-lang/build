@@ -61,7 +61,6 @@ class BuilderFilesystem {
   }
 
   /// Records the result and contents of [step] and notifies update listener.
-  @Requires('step.phaseNumber >= 0')
   @Requires('step.phaseNumber < buildStepPlan.buildPhases.inBuildPhases.length')
   void addBuildStepResult({
     required BuildStepId step,

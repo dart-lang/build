@@ -278,7 +278,6 @@ class BuildState {
   ///
   /// Throws if [contents] does not have keys matching outputs of [result],
   /// or if [step] has already been recorded.
-  @Requires('step.phaseNumber >= 0')
   @Ensures('result.outputs.every((id) => buildStepPlan.isDeclaredOutput(id))')
   @Ensures('contents.keys.every((id) => _contents.containsKey(id))')
   @ThrowEnsures(StateError, 'stepResultOrNull(step) != null')
