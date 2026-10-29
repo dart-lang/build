@@ -182,9 +182,10 @@ abstract class BuildStepPlan
   bool isDeclaredOutput(AssetId id) =>
       buildStepsByDeclaredOutput.containsKey(id);
 
-  @Requires('isDeclaredOutput(id)')
-  BuildStepId stepForDeclaredOutput(AssetId id) =>
-      buildStepsByDeclaredOutput[id]!;
+  BuildStepId stepForDeclaredOutput(AssetId id) {
+    assert(isDeclaredOutput(id));
+    return buildStepsByDeclaredOutput[id]!;
+  }
 
   BuildStepId? stepForDeclaredOutputOrNull(AssetId id) =>
       buildStepsByDeclaredOutput[id];
