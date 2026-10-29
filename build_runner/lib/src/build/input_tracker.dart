@@ -6,7 +6,6 @@ import 'dart:collection';
 
 import 'package:build/build.dart';
 
-import '../contracts.dart';
 import '../io/filesystem.dart';
 import 'build_state/glob_id.dart';
 
@@ -51,9 +50,6 @@ class InputTracker {
   Set<AssetId> get resolverEntrypoints => _resolverEntrypoints;
   Set<GlobId> get globsEvaluated => _globsEvaluated;
 
-  @Ensures('inputs.isEmpty')
-  @Ensures('resolverEntrypoints.isEmpty')
-  @Ensures('globsEvaluated.isEmpty')
   void clear() {
     _inputs.clear();
     _resolverEntrypoints.clear();
