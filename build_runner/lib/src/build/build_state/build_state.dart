@@ -354,14 +354,14 @@ class BuildState {
   ///
   /// The contribution supersedes whatever the previous build wrote, so the
   /// part is marked rebuilt.
-  @Requires('libraryId.sharedPartId != null')
-  @Requires('phase >= 0')
   void addPartContribution({
     required AssetId libraryId,
     required int phase,
     required PartContribution contribution,
     required String? languageVersion,
   }) {
+    assert(libraryId.sharedPartId != null);
+    assert(phase >= 0);
     markPartRebuilt(libraryId);
     _partDataFor(
       libraryId,
