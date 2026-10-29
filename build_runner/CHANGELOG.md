@@ -1,5 +1,8 @@
 ## 2.17.2-wip
 
+- Performance: don't format the generated build script. This saves about
+  200ms on every build, including no-op builds.
+
 ## 2.17.1
 
 - Require `build` 5.0.0, which is the retracted `build` 4.1.0 republished as a
