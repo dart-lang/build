@@ -28,7 +28,6 @@ import 'asset_ids.dart';
 ///
 /// During the build, set [phase] to change the phase that the files are viewed
 /// at.
-@Invariant('_phase >= 0')
 class AnalysisDriverFilesystem
     implements UriResolver, ResourceProvider, FileContentCache {
   late BuilderFilesystem _builderFilesystem;
@@ -49,12 +48,10 @@ class AnalysisDriverFilesystem
   /// A generated file is only visible if it was generated at an earlier phase.
   ///
   /// Records changes due to the phase change in [changedPaths].
-  @Requires('phase >= 0')
-  @Requires(
-    'phase <= _builderFilesystem.buildStepPlan.buildStepsByPhase.length',
-  )
   @Ensures('_phase == phase')
   set phase(int phase) {
+    assert(phase >= 0);
+    assert(phase <= _builderFilesystem.buildStepPlan.buildStepsByPhase.length);
     if (phase == _phase) return;
     final previousPhase = _phase;
     _phase = phase;
