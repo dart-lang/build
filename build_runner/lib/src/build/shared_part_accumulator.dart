@@ -45,9 +45,9 @@ class SharedPartAccumulator {
     : assert(libraryId.sharedPartId != null),
       assert(languageVersion == null || languageVersion.isNotEmpty);
 
-  @Requires('phase >= 0')
-  @Requires('contributions.keys.every((p) => p <= phase)')
   void addContribution(int phase, PartContribution contribution) {
+    assert(phase >= 0);
+    assert(contributions.keys.every((p) => p <= phase));
     if (_contributions[phase] != null) {
       throw StateError('Contribution for phase $phase already added.');
     }
