@@ -10,7 +10,6 @@ import '../build_plan/build_configs.dart';
 import '../build_plan/build_packages.dart';
 import '../build_plan/build_step_plan.dart';
 import '../build_plan/placeholders.dart';
-import '../contracts.dart';
 import '../io/reader_writer.dart';
 import 'asset_content.dart';
 import 'br_outputs.dart';
@@ -259,8 +258,8 @@ class BuilderFilesystem {
   /// a [PhasedValue.generated] specifying both when it was generated and
   /// its content. Note that generation might output nothing, in which case an
   /// empty string is returned for its content.
-  @Requires('phase >= 0')
   Future<PhasedValue<String>> readPhased(int phase, AssetId id) async {
+    assert(phase >= 0);
     if (!buildState.isKnownAsset(id)) {
       return PhasedValue.fixed('');
     }
