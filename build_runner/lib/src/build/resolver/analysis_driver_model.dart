@@ -41,7 +41,6 @@ class AnalysisDriverModel {
   /// Starts a build with [builderFilesystem].
   ///
   /// If another build has the lock, waits for it to finish.
-  @Ensures('_lock != null')
   Future<void> takeLockAndStartBuild({
     required BuilderFilesystem builderFilesystem,
     required BuildInputs buildInputs,
