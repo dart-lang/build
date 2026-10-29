@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import 'dart:math' as math;
+
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart' as analyzer;
 import 'package:analyzer/dart/element/type_system.dart';
@@ -28,7 +30,45 @@ typedef JsTypeReferenceResolver =
       bool overrideVoid,
     });
 
-Reference _referImported(String symbol, String? url) => Reference(symbol, url);
+typedef _JsOrderedBranch<E extends ExecutableElement> =
+    ({_JsOverloadCandidate<E> candidate, List<_JsDispatchClause> clauses});
+
+typedef _JsSetterMultiplexer =
+    ({String jsName, List<_JsOrderedBranch<SetterElement>> branches});
+
+typedef _JsMethodMultiplexer =
+    ({
+      String jsName,
+      List<_JsOrderedBranch<MethodElement>> branches,
+      int minRequired,
+      int maxArgs,
+      bool allSameReturn,
+    });
+
+final _nonIdentifierRegExp = RegExp(r'[^a-zA-Z0-9_]');
+
+const _sdkPrimitiveSymbols = {
+  'JSString',
+  'JSBoolean',
+  'JSNumber',
+  'JSBigInt',
+  'JSSymbol',
+};
+
+const _typedArrayJsNames = {
+  'Int8Array',
+  'Uint8Array',
+  'Uint8ClampedArray',
+  'Int16Array',
+  'Uint16Array',
+  'Int32Array',
+  'Uint32Array',
+  'BigInt64Array',
+  'BigUint64Array',
+  'Float16Array',
+  'Float32Array',
+  'Float64Array',
+};
 
 Reference _refer(String symbol) => Reference(symbol);
 
@@ -66,7 +106,7 @@ String _disambiguatedExportKey(ExecutableElement member) => switch (member) {
 };
 
 String _safeJsIdentifier(String name) => name.replaceAllMapped(
-  RegExp(r'[^a-zA-Z0-9_]'),
+  _nonIdentifierRegExp,
   (m) => '\$u${m[0]!.codeUnitAt(0).toRadixString(16)}_',
 );
 
@@ -97,26 +137,41 @@ enum _JsCheckCategory {
   nominalObject,
   broadObject,
   top,
-  nullOnly,
   cannotMultiplex,
 }
 
 final class _JsParamSpec {
   final analyzer.DartType originalType;
   final _JsCheckCategory category;
-  final String tag;
+  final String jsName;
   final String? sdkCheckSymbol;
   final bool isNullable;
   final bool canEmitIsA;
 
-  const _JsParamSpec({
-    required this.originalType,
-    required this.category,
-    required this.tag,
+  const _JsParamSpec.uncheckable(
+    this.originalType,
+    this.category, {
     required this.isNullable,
-    required this.canEmitIsA,
-    this.sdkCheckSymbol,
-  });
+  }) : jsName = '',
+       sdkCheckSymbol = null,
+       canEmitIsA = false;
+
+  const _JsParamSpec.sdk(
+    this.originalType,
+    this.category,
+    String symbol, {
+    required this.isNullable,
+  }) : jsName = symbol,
+       sdkCheckSymbol = symbol,
+       canEmitIsA = true;
+
+  const _JsParamSpec.nominal(
+    this.originalType,
+    this.category,
+    this.jsName, {
+    required this.isNullable,
+  }) : sdkCheckSymbol = null,
+       canEmitIsA = true;
 
   int get specificityRank => switch (category) {
     _JsCheckCategory.primitive => 1,
@@ -131,50 +186,26 @@ final class _JsParamSpec {
       category == _JsCheckCategory.nominalObject ||
       category == _JsCheckCategory.broadObject;
 
-  bool isDisjointFrom(_JsParamSpec other, TypeSystem typeSystem) {
-    if (category == _JsCheckCategory.primitive) {
-      if (other.category == _JsCheckCategory.primitive) {
-        return tag != other.tag;
-      }
-      return other._isObjectCategory;
-    }
-    if (other.category == _JsCheckCategory.primitive) {
-      return _isObjectCategory;
-    }
-    if (category == _JsCheckCategory.builtinObject &&
-        other.category == _JsCheckCategory.builtinObject) {
-      return tag != other.tag;
-    }
-    if (category == _JsCheckCategory.builtinObject &&
-        other.category == _JsCheckCategory.nominalObject) {
-      return _isBuiltinDisjointFromNominal(this, other, typeSystem);
-    }
-    if (category == _JsCheckCategory.nominalObject &&
-        other.category == _JsCheckCategory.builtinObject) {
-      return _isBuiltinDisjointFromNominal(other, this, typeSystem);
-    }
-    if (category == _JsCheckCategory.nominalObject &&
-        other.category == _JsCheckCategory.nominalObject) {
-      return _areNominalDisjoint(this, other, typeSystem);
-    }
-    return false;
-  }
+  bool isDisjointFrom(_JsParamSpec other, TypeSystem typeSystem) => switch ((
+    category,
+    other.category,
+  )) {
+    (_JsCheckCategory.primitive, _JsCheckCategory.primitive) ||
+    (
+      _JsCheckCategory.builtinObject,
+      _JsCheckCategory.builtinObject,
+    ) => jsName != other.jsName,
+    (_JsCheckCategory.primitive, _) => other._isObjectCategory,
+    (_, _JsCheckCategory.primitive) => _isObjectCategory,
+    (_JsCheckCategory.builtinObject, _JsCheckCategory.nominalObject) =>
+      _isBuiltinDisjointFromNominal(this, other, typeSystem),
+    (_JsCheckCategory.nominalObject, _JsCheckCategory.builtinObject) =>
+      _isBuiltinDisjointFromNominal(other, this, typeSystem),
+    (_JsCheckCategory.nominalObject, _JsCheckCategory.nominalObject) =>
+      _areNominalDisjoint(this, other, typeSystem),
+    _ => false,
+  };
 }
-
-const _typedArrayInstanceOfTags = {
-  'instanceof:Int8Array',
-  'instanceof:Uint8Array',
-  'instanceof:Uint8ClampedArray',
-  'instanceof:Int16Array',
-  'instanceof:Uint16Array',
-  'instanceof:Int32Array',
-  'instanceof:Uint32Array',
-  'instanceof:BigInt64Array',
-  'instanceof:BigUint64Array',
-  'instanceof:Float16Array',
-  'instanceof:Float32Array',
-  'instanceof:Float64Array',
-};
 
 bool _isBuiltinDisjointFromNominal(
   _JsParamSpec builtin,
@@ -182,15 +213,16 @@ bool _isBuiltinDisjointFromNominal(
   TypeSystem typeSystem,
 ) {
   final nominalNonNull = typeSystem.promoteToNonNull(nominal.originalType);
+  final jsName = nominal.jsName;
   return switch (builtin.sdkCheckSymbol) {
     'JSArray' =>
-      nominal.tag != 'instanceof:Array' &&
+      jsName != 'Array' &&
           !_wrapsOrImplementsSdkType(nominalNonNull, 'JSArray'),
     'JSTypedArray' =>
-      !_typedArrayInstanceOfTags.contains(nominal.tag) &&
+      !_typedArrayJsNames.contains(jsName) &&
           !_wrapsOrImplementsSdkType(nominalNonNull, 'JSTypedArray'),
     'JSExportedDartFunction' =>
-      nominal.tag != 'instanceof:Function' &&
+      jsName != 'Function' &&
           !_wrapsOrImplementsSdkType(nominalNonNull, 'JSFunction'),
     'JSBoxedDartObject' =>
       !_wrapsOrImplementsSdkType(nominalNonNull, 'JSBoxedDartObject'),
@@ -203,7 +235,7 @@ bool _areNominalDisjoint(
   _JsParamSpec b,
   TypeSystem typeSystem,
 ) {
-  if (a.tag == b.tag) return false;
+  if (a.jsName == b.jsName) return false;
   final aNonNull = typeSystem.promoteToNonNull(a.originalType);
   final bNonNull = typeSystem.promoteToNonNull(b.originalType);
   if (typeSystem.isSubtypeOf(aNonNull, bNonNull) ||
@@ -219,60 +251,55 @@ bool _isSdkJsInteropType(Element? element, String name) =>
     element.name == name &&
     element.library?.uri.toString() == 'dart:js_interop';
 
+bool _implementsSdkType(analyzer.InterfaceType type, String sdkName) =>
+    _isSdkJsInteropType(type.element, sdkName) ||
+    type.allSupertypes.any((s) => _isSdkJsInteropType(s.element, sdkName));
+
 bool _wrapsExtensionElement(analyzer.DartType type, Element? target) {
-  if (target == null) return false;
-  var current = type.element?.baseElement;
+  final element = type.element;
+  if (target == null || element is! ExtensionTypeElement) return false;
   final targetBase = target.baseElement;
-  while (current is ExtensionTypeElement) {
-    if (current == targetBase) return true;
-    current = current.representation.type.element?.baseElement;
-  }
-  return false;
+  return element._representationChain.any((e) => e.baseElement == targetBase);
 }
 
 bool _wrapsOrImplementsSdkType(analyzer.DartType type, String sdkName) {
   if (type is! analyzer.InterfaceType) return false;
-  if (_isSdkJsInteropType(type.element, sdkName)) return true;
-  if (type.allSupertypes.any((s) => _isSdkJsInteropType(s.element, sdkName))) {
-    return true;
-  }
-  Element? current = type.element;
-  while (current is ExtensionTypeElement) {
-    if (_isSdkJsInteropType(current, sdkName)) return true;
-    if (current.thisType.allSupertypes.any(
-      (s) => _isSdkJsInteropType(s.element, sdkName),
-    )) {
-      return true;
-    }
-    current = current.representation.type.element;
-  }
-  return false;
+  if (_implementsSdkType(type, sdkName)) return true;
+  final element = type.element;
+  return element is ExtensionTypeElement &&
+      element._representationChain.any(
+        (e) => _implementsSdkType(e.thisType, sdkName),
+      );
 }
 
-bool _implementsJsAny(analyzer.DartType type) {
-  if (type.isDartCoreNull) return true;
-  if (type is analyzer.TypeParameterType) {
-    return _implementsJsAny(type.bound);
-  }
-  return _wrapsDirectOrSuperSdkJsAny(type);
-}
+bool _implementsJsAny(analyzer.DartType type) => switch (type) {
+  _ when type.isDartCoreNull => true,
+  analyzer.TypeParameterType(:final bound) => _implementsJsAny(bound),
+  final analyzer.InterfaceType iface => _implementsSdkType(iface, 'JSAny'),
+  _ => false,
+};
 
-bool _wrapsDirectOrSuperSdkJsAny(analyzer.DartType type) {
-  if (type is! analyzer.InterfaceType) return false;
-  if (_isSdkJsInteropType(type.element, 'JSAny')) return true;
-  return type.allSupertypes.any((s) => _isSdkJsInteropType(s.element, 'JSAny'));
-}
+bool _erasesToJsObject(analyzer.DartType? type) => switch (type) {
+  null => false,
+  analyzer.TypeParameterType(:final bound) => _erasesToJsObject(bound),
+  _ => _wrapsOrImplementsSdkType(type, 'JSObject'),
+};
 
-bool _erasesToJsObject(analyzer.DartType? type) {
-  if (type == null) return false;
-  if (type is analyzer.TypeParameterType) {
-    return _erasesToJsObject(type.bound);
-  }
-  return _wrapsOrImplementsSdkType(type, 'JSObject');
-}
+String? _corePrimitiveSymbol(analyzer.DartType type) => switch (type) {
+  _ when type.isDartCoreString => 'String',
+  _ when type.isDartCoreBool => 'bool',
+  _ when type.isDartCoreInt => 'int',
+  _ when type.isDartCoreDouble => 'double',
+  _ when type.isDartCoreNum => 'num',
+  _ => null,
+};
 
-analyzer.DartType _unwrapNonJsExtensionType(analyzer.DartType type) {
+(analyzer.DartType, {bool isNullable}) _unwrapNonJsExtensionType(
+  analyzer.DartType type,
+  TypeSystem typeSystem,
+) {
   var current = type;
+  var isNullable = typeSystem.isNullable(current);
   while (current is analyzer.InterfaceType &&
       current.element is ExtensionTypeElement &&
       !(current.element as ExtensionTypeElement).isJSInteropType) {
@@ -280,13 +307,13 @@ analyzer.DartType _unwrapNonJsExtensionType(analyzer.DartType type) {
     current = Substitution.fromInterfaceType(
       current,
     ).substituteType(ext.representation.type);
+    if (typeSystem.isNullable(current)) isNullable = true;
   }
-  return current;
+  return (current, isNullable: isNullable);
 }
 
 _JsParamSpec _classifyJsParam(analyzer.DartType type, TypeSystem typeSystem) {
-  final coreType = _unwrapNonJsExtensionType(type);
-  final isNullable = typeSystem.isNullable(type);
+  final (coreType, :isNullable) = _unwrapNonJsExtensionType(type, typeSystem);
   return _classifyCoreOrTypeParamJsType(
         coreType,
         type,
@@ -300,102 +327,70 @@ _JsParamSpec? _classifyCoreOrTypeParamJsType(
   analyzer.DartType originalType, {
   required bool isNullable,
 }) {
-  if (coreType is analyzer.DynamicType || coreType is analyzer.InvalidType) {
-    return _cannotMultiplexSpec(originalType, isNullable: isNullable);
-  }
   if (coreType.isDartCoreNull) {
-    return _JsParamSpec(
-      originalType: originalType,
-      category: _JsCheckCategory.nullOnly,
-      tag: 'null',
+    return _JsParamSpec.uncheckable(
+      originalType,
+      _JsCheckCategory.top,
       isNullable: true,
-      canEmitIsA: false,
     );
   }
-  if (coreType.isDartCoreString) {
-    return _primitiveJsSpec(originalType, 'string', 'JSString', isNullable);
-  }
-  if (coreType.isDartCoreBool) {
-    return _primitiveJsSpec(originalType, 'boolean', 'JSBoolean', isNullable);
-  }
-  if (coreType.isDartCoreInt ||
-      coreType.isDartCoreDouble ||
-      coreType.isDartCoreNum) {
-    return _primitiveJsSpec(originalType, 'number', 'JSNumber', isNullable);
+  final sdkPrimitive = switch (_corePrimitiveSymbol(coreType)) {
+    'String' => 'JSString',
+    'bool' => 'JSBoolean',
+    'int' || 'double' || 'num' => 'JSNumber',
+    _ => null,
+  };
+  if (sdkPrimitive != null) {
+    return _JsParamSpec.sdk(
+      originalType,
+      _JsCheckCategory.primitive,
+      sdkPrimitive,
+      isNullable: isNullable,
+    );
   }
   if (coreType is analyzer.TypeParameterType) {
-    return _JsParamSpec(
-      originalType: originalType,
-      category:
-          _erasesToJsObject(coreType.bound)
-              ? _JsCheckCategory.broadObject
-              : _JsCheckCategory.top,
-      tag: 'typeparam:${coreType.element.name}',
+    final category =
+        _erasesToJsObject(coreType.bound)
+            ? _JsCheckCategory.broadObject
+            : _JsCheckCategory.top;
+    return _JsParamSpec.uncheckable(
+      originalType,
+      category,
       isNullable: isNullable,
-      canEmitIsA: false,
     );
   }
   return null;
 }
-
-_JsParamSpec _primitiveJsSpec(
-  analyzer.DartType originalType,
-  String typeofTag,
-  String sdkSymbol,
-  bool isNullable,
-) => _JsParamSpec(
-  originalType: originalType,
-  category: _JsCheckCategory.primitive,
-  tag: 'typeof:$typeofTag',
-  sdkCheckSymbol: sdkSymbol,
-  isNullable: isNullable,
-  canEmitIsA: true,
-);
-
-_JsParamSpec _cannotMultiplexSpec(
-  analyzer.DartType originalType, {
-  required bool isNullable,
-}) => _JsParamSpec(
-  originalType: originalType,
-  category: _JsCheckCategory.cannotMultiplex,
-  tag: 'invalid',
-  isNullable: isNullable,
-  canEmitIsA: false,
-);
 
 _JsParamSpec _classifyInterfaceJsType(
   analyzer.DartType coreType,
   analyzer.DartType originalType, {
   required bool isNullable,
 }) {
-  if (coreType is! analyzer.InterfaceType) {
-    return _cannotMultiplexSpec(originalType, isNullable: isNullable);
-  }
-  final element = coreType.element;
-  if (_isSdkJsInteropType(element, 'ExternalDartReference') ||
-      element is! ExtensionTypeElement ||
-      !element.isJSInteropType) {
-    return _cannotMultiplexSpec(originalType, isNullable: isNullable);
-  }
-  final primitive = _classifySdkPrimitiveWrapper(
-    element,
-    originalType,
-    isNullable: isNullable,
-  );
-  if (primitive != null) return primitive;
-  final directSdk = _classifyDirectSdkExtension(
-    element,
-    originalType,
-    isNullable: isNullable,
-  );
-  if (directSdk != null) return directSdk;
-  if (!_erasesToJsObject(coreType)) {
-    return _JsParamSpec(
-      originalType: originalType,
-      category: _JsCheckCategory.top,
-      tag: 'top:${element.name}',
+  if (coreType is! analyzer.InterfaceType ||
+      _wrapsOrImplementsSdkType(coreType, 'ExternalDartReference') ||
+      coreType.element is! ExtensionTypeElement ||
+      !(coreType.element as ExtensionTypeElement).isJSInteropType) {
+    return _JsParamSpec.uncheckable(
+      originalType,
+      _JsCheckCategory.cannotMultiplex,
       isNullable: isNullable,
-      canEmitIsA: false,
+    );
+  }
+  final element = coreType.element as ExtensionTypeElement;
+  if (_classifySdkPrimitiveOrBuiltin(
+        element,
+        originalType,
+        isNullable: isNullable,
+      )
+      case final sdkSpec?) {
+    return sdkSpec;
+  }
+  if (!_erasesToJsObject(coreType)) {
+    return _JsParamSpec.uncheckable(
+      originalType,
+      _JsCheckCategory.top,
+      isNullable: isNullable,
     );
   }
   return _classifyNominalOrObjectLiteral(
@@ -405,86 +400,44 @@ _JsParamSpec _classifyInterfaceJsType(
   );
 }
 
-_JsParamSpec? _classifySdkPrimitiveWrapper(
+_JsParamSpec? _classifySdkPrimitiveOrBuiltin(
   ExtensionTypeElement element,
   analyzer.DartType originalType, {
   required bool isNullable,
 }) {
-  Element? current = element;
-  while (current is ExtensionTypeElement) {
-    if (current.library.uri.toString() == 'dart:js_interop') {
-      return switch (current.name) {
-        'JSString' => _primitiveJsSpec(
-          originalType,
-          'string',
-          'JSString',
-          isNullable,
-        ),
-        'JSBoolean' => _primitiveJsSpec(
-          originalType,
-          'boolean',
-          'JSBoolean',
-          isNullable,
-        ),
-        'JSNumber' => _primitiveJsSpec(
-          originalType,
-          'number',
-          'JSNumber',
-          isNullable,
-        ),
-        'JSBigInt' => _primitiveJsSpec(
-          originalType,
-          'bigint',
-          'JSBigInt',
-          isNullable,
-        ),
-        'JSSymbol' => _primitiveJsSpec(
-          originalType,
-          'symbol',
-          'JSSymbol',
-          isNullable,
-        ),
-        _ => null,
-      };
+  for (final ext in element._representationChain) {
+    if (ext.library.uri.toString() == 'dart:js_interop' &&
+        _sdkPrimitiveSymbols.contains(ext.name)) {
+      return _JsParamSpec.sdk(
+        originalType,
+        _JsCheckCategory.primitive,
+        ext.name!,
+        isNullable: isNullable,
+      );
     }
-    current = current.representation.type.element;
   }
-  return null;
-}
-
-_JsParamSpec? _classifyDirectSdkExtension(
-  ExtensionTypeElement element,
-  analyzer.DartType originalType, {
-  required bool isNullable,
-}) {
   if (element.library.uri.toString() != 'dart:js_interop') return null;
   final name = element.name;
   return switch (name) {
-    'JSAny' => _JsParamSpec(
-      originalType: originalType,
-      category: _JsCheckCategory.top,
-      tag: 'top:JSAny',
+    'JSAny' => _JsParamSpec.uncheckable(
+      originalType,
+      _JsCheckCategory.top,
       isNullable: isNullable,
-      canEmitIsA: false,
     ),
-    'JSObject' => _JsParamSpec(
-      originalType: originalType,
-      category: _JsCheckCategory.broadObject,
-      tag: 'broad:JSObject',
-      sdkCheckSymbol: 'JSObject',
+    'JSObject' => _JsParamSpec.sdk(
+      originalType,
+      _JsCheckCategory.broadObject,
+      'JSObject',
       isNullable: isNullable,
-      canEmitIsA: true,
     ),
     'JSArray' ||
     'JSTypedArray' ||
     'JSExportedDartFunction' ||
-    'JSBoxedDartObject' => _JsParamSpec(
-      originalType: originalType,
-      category: _JsCheckCategory.builtinObject,
-      tag: 'builtin:$name',
-      sdkCheckSymbol: name,
+    'JSBoxedDartObject' => _JsParamSpec.sdk(
+      originalType,
+      _JsCheckCategory.builtinObject,
+      name!,
       isNullable: isNullable,
-      canEmitIsA: true,
     ),
     _ => null,
   };
@@ -499,64 +452,51 @@ _JsParamSpec _classifyNominalOrObjectLiteral(
     (c) => c.isExternal && c.formalParameters.any((p) => p.isNamed),
   );
   if (hasObjectLiteralConstructor) {
-    return _JsParamSpec(
-      originalType: originalType,
-      category: _JsCheckCategory.broadObject,
-      tag: 'literal:${element.name}',
+    return _JsParamSpec.uncheckable(
+      originalType,
+      _JsCheckCategory.broadObject,
       isNullable: isNullable,
-      canEmitIsA: false,
     );
   }
   final typeJsName = jsInteropAnnotationName(element) ?? element.name!;
   final libJsName = jsInteropAnnotationName(element.library);
-  final instanceOfName =
-      libJsName == null ? typeJsName : '$libJsName.$typeJsName';
-  if (instanceOfName == 'Object') {
-    return _JsParamSpec(
-      originalType: originalType,
-      category: _JsCheckCategory.broadObject,
-      tag: 'broad:Object',
-      isNullable: isNullable,
-      canEmitIsA: true,
-    );
-  }
-  return _JsParamSpec(
-    originalType: originalType,
-    category: _JsCheckCategory.nominalObject,
-    tag: 'instanceof:$instanceOfName',
+  final jsName = libJsName == null ? typeJsName : '$libJsName.$typeJsName';
+  final category =
+      jsName == 'Object'
+          ? _JsCheckCategory.broadObject
+          : _JsCheckCategory.nominalObject;
+  return _JsParamSpec.nominal(
+    originalType,
+    category,
+    jsName,
     isNullable: isNullable,
-    canEmitIsA: true,
   );
 }
 
-sealed class _JsDispatchClause {
+final class _JsDispatchClause {
   final int paramIndex;
-  String get dedupeKey;
+  final _JsParamSpec? spec;
+  final bool flag;
 
-  const _JsDispatchClause(this.paramIndex);
-}
+  const _JsDispatchClause.nullCheck(this.paramIndex, {required bool expectNull})
+    : spec = null,
+      flag = expectNull;
 
-final class _JsParamNullClause extends _JsDispatchClause {
-  final bool expectNull;
+  const _JsDispatchClause.typeCheck(
+    this.paramIndex,
+    _JsParamSpec this.spec, {
+    required bool allowNull,
+  }) : flag = allowNull;
 
-  const _JsParamNullClause(super.paramIndex, {required this.expectNull});
-
-  @override
-  String get dedupeKey => 'null:$paramIndex:$expectNull';
-}
-
-final class _JsParamTypeClause extends _JsDispatchClause {
-  final _JsParamSpec spec;
-  final bool allowNull;
-
-  const _JsParamTypeClause(
-    super.paramIndex,
-    this.spec, {
-    required this.allowNull,
-  });
-
-  @override
-  String get dedupeKey => 'type:$paramIndex:$allowNull:${spec.tag}';
+  String get dedupeKey {
+    final s = spec;
+    if (s == null) return 'null:$paramIndex:$flag';
+    final kind =
+        s.sdkCheckSymbol != null
+            ? 'sdk:${s.sdkCheckSymbol}'
+            : 'nom:${s.jsName}';
+    return 'type:$paramIndex:$flag:$kind';
+  }
 }
 
 final class _JsOverloadCandidate<E extends ExecutableElement> {
@@ -578,27 +518,19 @@ final class _JsOverloadCandidate<E extends ExecutableElement> {
       index >= minRequired || params[index].isNullable;
 }
 
-final class _JsOrderedBranch<E extends ExecutableElement> {
-  final _JsOverloadCandidate<E> candidate;
-  final List<_JsDispatchClause> clauses;
-
-  const _JsOrderedBranch(this.candidate, this.clauses);
-}
-
 List<_JsOrderedBranch<E>>? _orderOverloadBranches<E extends ExecutableElement>(
   List<_JsOverloadCandidate<E>> candidates,
   TypeSystem typeSystem,
 ) {
-  for (final candidate in candidates) {
-    if (candidate.params.any(
-      (p) => p.category == _JsCheckCategory.cannotMultiplex,
-    )) {
-      return null;
-    }
+  if (candidates.any(
+    (c) => c.params.any((p) => p.category == _JsCheckCategory.cannotMultiplex),
+  )) {
+    return null;
   }
-  if (!_areAllPairsDistinguishable(candidates, typeSystem)) return null;
-
-  final remaining = candidates.toList();
+  final remaining = [
+    ...candidates.where((c) => c.isPrimary),
+    ...candidates.where((c) => !c.isPrimary),
+  ];
   final ordered = <_JsOrderedBranch<E>>[];
   while (remaining.length > 1) {
     final next = _selectNextBranch(remaining, typeSystem);
@@ -606,40 +538,8 @@ List<_JsOrderedBranch<E>>? _orderOverloadBranches<E extends ExecutableElement>(
     ordered.add(next);
     remaining.remove(next.candidate);
   }
-  ordered.add(_JsOrderedBranch(remaining.single, const []));
+  ordered.add((candidate: remaining.single, clauses: const []));
   return ordered;
-}
-
-bool _areAllPairsDistinguishable<E extends ExecutableElement>(
-  List<_JsOverloadCandidate<E>> candidates,
-  TypeSystem typeSystem,
-) {
-  for (var i = 0; i < candidates.length; i++) {
-    for (var j = i + 1; j < candidates.length; j++) {
-      if (!_pairIsDistinguishable(candidates[i], candidates[j], typeSystem)) {
-        return false;
-      }
-    }
-  }
-  return true;
-}
-
-bool _pairIsDistinguishable<E extends ExecutableElement>(
-  _JsOverloadCandidate<E> a,
-  _JsOverloadCandidate<E> b,
-  TypeSystem typeSystem,
-) {
-  if (_nonNullRequiredIndexBetween(b.maxArgs, a.minRequired, a) != null ||
-      _nonNullRequiredIndexBetween(a.maxArgs, b.minRequired, b) != null) {
-    return true;
-  }
-  final maxShared = a.maxArgs < b.maxArgs ? a.maxArgs : b.maxArgs;
-  final firstOptional =
-      a.minRequired < b.minRequired ? a.minRequired : b.minRequired;
-  for (var i = 0; i <= firstOptional && i < maxShared; i++) {
-    if (a.params[i].isDisjointFrom(b.params[i], typeSystem)) return true;
-  }
-  return false;
 }
 
 int? _nonNullRequiredIndexBetween<E extends ExecutableElement>(
@@ -669,20 +569,14 @@ _JsOrderedBranch<E>? _selectNextBranch<E extends ExecutableElement>(
     );
     if (evaluated == null) continue;
     final (worstRank, clauses) = evaluated;
-    final isBetter =
-        bestCandidate == null ||
-        worstRank < bestWorstRank ||
-        (worstRank == bestWorstRank &&
-            candidate.isPrimary &&
-            !bestCandidate.isPrimary);
-    if (isBetter) {
+    if (bestCandidate == null || worstRank < bestWorstRank) {
       bestCandidate = candidate;
       bestClauses = clauses;
       bestWorstRank = worstRank;
     }
   }
   if (bestCandidate == null || bestClauses == null) return null;
-  return _JsOrderedBranch(bestCandidate, bestClauses);
+  return (candidate: bestCandidate, clauses: bestClauses);
 }
 
 (int, List<_JsDispatchClause>)?
@@ -711,102 +605,67 @@ _evaluateCandidateAgainstRest<E extends ExecutableElement>(
   _JsOverloadCandidate<E> other,
   TypeSystem typeSystem,
 ) {
-  final extraNonNull = _nonNullRequiredIndexBetween(
-    other.maxArgs,
-    candidate.minRequired,
-    candidate,
-  );
-  if (extraNonNull != null) {
-    return (0, [_JsParamNullClause(extraNonNull, expectNull: false)]);
+  if (_nonNullRequiredIndexBetween(
+        other.maxArgs,
+        candidate.minRequired,
+        candidate,
+      )
+      case final extraNonNull?) {
+    return (0, [_JsDispatchClause.nullCheck(extraNonNull, expectNull: false)]);
   }
-  final missingNonNull = _nonNullRequiredIndexBetween(
-    candidate.maxArgs,
-    other.minRequired,
-    other,
-  );
-  if (missingNonNull != null) {
-    return (0, [_JsParamNullClause(missingNonNull, expectNull: true)]);
+  if (_nonNullRequiredIndexBetween(candidate.maxArgs, other.minRequired, other)
+      case final missingNonNull?) {
+    return (0, [_JsDispatchClause.nullCheck(missingNonNull, expectNull: true)]);
   }
-  return _typeClausesForPair(candidate, other, typeSystem);
+  return _requiredTypeClause(candidate, other, typeSystem) ??
+      _optionalTypeClauses(candidate, other, typeSystem);
 }
 
 (int, List<_JsDispatchClause>)?
-_typeClausesForPair<E extends ExecutableElement>(
+_requiredTypeClause<E extends ExecutableElement>(
   _JsOverloadCandidate<E> candidate,
   _JsOverloadCandidate<E> other,
   TypeSystem typeSystem,
 ) {
-  final firstOptional =
-      candidate.minRequired < other.minRequired
-          ? candidate.minRequired
-          : other.minRequired;
-  final maxShared =
-      candidate.maxArgs < other.maxArgs ? candidate.maxArgs : other.maxArgs;
-
-  final requiredClause = _bestRequiredTypeClause(
-    candidate,
-    other,
-    firstOptional,
-    typeSystem,
-  );
-  if (requiredClause != null) return requiredClause;
-
-  if (firstOptional >= maxShared) return null;
-  final firstParam = candidate.params[firstOptional];
-  if (!firstParam.canEmitIsA ||
-      !firstParam.isDisjointFrom(other.params[firstOptional], typeSystem)) {
-    return null;
-  }
-  return _optionalTypeClauses(
-    candidate,
-    other,
-    firstOptional,
-    maxShared,
-    typeSystem,
-  );
-}
-
-(int, List<_JsDispatchClause>)?
-_bestRequiredTypeClause<E extends ExecutableElement>(
-  _JsOverloadCandidate<E> candidate,
-  _JsOverloadCandidate<E> other,
-  int firstOptional,
-  TypeSystem typeSystem,
-) {
+  final firstOptional = math.min(candidate.minRequired, other.minRequired);
   int? bestIndex;
   var bestRank = 999;
   for (var i = 0; i < firstOptional; i++) {
     final spec = candidate.params[i];
-    if (!spec.canEmitIsA || !spec.isDisjointFrom(other.params[i], typeSystem)) {
-      continue;
-    }
-    if (spec.specificityRank < bestRank) {
+    if (spec.canEmitIsA &&
+        spec.isDisjointFrom(other.params[i], typeSystem) &&
+        spec.specificityRank < bestRank) {
       bestRank = spec.specificityRank;
       bestIndex = i;
     }
   }
   if (bestIndex == null) return null;
-  final allowNull = _shouldAllowNullAt(candidate, other, bestIndex);
   return (
     bestRank,
     [
-      _JsParamTypeClause(
+      _JsDispatchClause.typeCheck(
         bestIndex,
         candidate.params[bestIndex],
-        allowNull: allowNull,
+        allowNull: _shouldAllowNullAt(candidate, other, bestIndex),
       ),
     ],
   );
 }
 
-(int, List<_JsDispatchClause>)
+(int, List<_JsDispatchClause>)?
 _optionalTypeClauses<E extends ExecutableElement>(
   _JsOverloadCandidate<E> candidate,
   _JsOverloadCandidate<E> other,
-  int firstOptional,
-  int maxShared,
   TypeSystem typeSystem,
 ) {
+  final firstOptional = math.min(candidate.minRequired, other.minRequired);
+  final maxShared = math.min(candidate.maxArgs, other.maxArgs);
+  if (firstOptional >= maxShared) return null;
+  final firstSpec = candidate.params[firstOptional];
+  if (!firstSpec.canEmitIsA ||
+      !firstSpec.isDisjointFrom(other.params[firstOptional], typeSystem)) {
+    return null;
+  }
   var worstRank = 0;
   final clauses = <_JsDispatchClause>[];
   for (var i = firstOptional; i < maxShared; i++) {
@@ -816,8 +675,10 @@ _optionalTypeClauses<E extends ExecutableElement>(
     }
     if (spec.specificityRank > worstRank) worstRank = spec.specificityRank;
     final allowNull =
-        i > firstOptional || _shouldAllowNullAt(candidate, other, i);
-    clauses.add(_JsParamTypeClause(i, spec, allowNull: allowNull));
+        i == firstOptional
+            ? _shouldAllowNullAt(candidate, other, i)
+            : candidate.acceptsNullAt(i);
+    clauses.add(_JsDispatchClause.typeCheck(i, spec, allowNull: allowNull));
   }
   return (worstRank, clauses);
 }
@@ -829,32 +690,7 @@ bool _shouldAllowNullAt<E extends ExecutableElement>(
 ) {
   final cNull = candidate.acceptsNullAt(index);
   final oNull = other.acceptsNullAt(index);
-  if (cNull && !oNull) return true;
-  if (!cNull && oNull) return false;
-  return candidate.isPrimary;
-}
-
-final class _JsSetterMultiplexer {
-  final String jsName;
-  final List<_JsOrderedBranch<SetterElement>> branches;
-
-  const _JsSetterMultiplexer({required this.jsName, required this.branches});
-}
-
-final class _JsMethodMultiplexer {
-  final String jsName;
-  final List<_JsOrderedBranch<MethodElement>> branches;
-  final int minRequired;
-  final int maxArgs;
-  final bool allSameReturn;
-
-  const _JsMethodMultiplexer({
-    required this.jsName,
-    required this.branches,
-    required this.minRequired,
-    required this.maxArgs,
-    required this.allSameReturn,
-  });
+  return cNull != oNull ? cNull : candidate.isPrimary;
 }
 
 final class _JsExportBucket {
@@ -862,22 +698,9 @@ final class _JsExportBucket {
   final getters = <GetterElement>[];
   final setters = <SetterElement>[];
   final methods = <MethodElement>[];
+  final unsupported = <ExecutableElement>[];
 
   _JsExportBucket(this.jsName);
-}
-
-final class _JsBucketPlan {
-  final Map<ExecutableElement, String> disambiguatedExports;
-  final _JsSetterMultiplexer? setterMultiplexer;
-  final _JsMethodMultiplexer? methodMultiplexer;
-  final List<String> errors;
-
-  const _JsBucketPlan({
-    this.disambiguatedExports = const {},
-    this.setterMultiplexer,
-    this.methodMultiplexer,
-    this.errors = const [],
-  });
 }
 
 /// Planned `@JSExport` key disambiguations, multiplexer members, and collision
@@ -906,43 +729,42 @@ final class JsExportPlan {
     required Map<String, ExecutableElement> fallbackGenerators,
     required TypeSystem typeSystem,
   }) {
-    final disambiguated = <ExecutableElement, String>{};
     final buckets = <String, _JsExportBucket>{};
-
     for (final member in members) {
       if (!isExportableJsInteropMember(member)) continue;
+      final jsName = _effectiveJsExportName(member);
+      final bucket = buckets.putIfAbsent(jsName, () => _JsExportBucket(jsName));
       final unsupportedKey = _memberUnsupportedKey(member);
       if (unsupportedMembers.contains(unsupportedKey) &&
           !fallbackGenerators.containsKey(unsupportedKey)) {
-        disambiguated[member] = _disambiguatedExportKey(member);
-        continue;
-      }
-      final jsName = _effectiveJsExportName(member);
-      final bucket = buckets.putIfAbsent(jsName, () => _JsExportBucket(jsName));
-      switch (member) {
-        case GetterElement():
-          bucket.getters.add(member);
-        case SetterElement():
-          bucket.setters.add(member);
-        case MethodElement():
-          bucket.methods.add(member);
+        bucket.unsupported.add(member);
+      } else {
+        switch (member) {
+          case GetterElement():
+            bucket.getters.add(member);
+          case SetterElement():
+            bucket.setters.add(member);
+          case MethodElement():
+            bucket.methods.add(member);
+        }
       }
     }
 
+    final disambiguated = <ExecutableElement, String>{};
     final setterMuxes = <_JsSetterMultiplexer>[];
     final methodMuxes = <_JsMethodMultiplexer>[];
     final errors = <String>[];
 
     for (final bucket in buckets.values) {
-      final bucketPlan = _analyzeBucket(bucket, typeSystem, interfaceName);
-      disambiguated.addAll(bucketPlan.disambiguatedExports);
-      if (bucketPlan.setterMultiplexer case final setterMux?) {
-        setterMuxes.add(setterMux);
-      }
-      if (bucketPlan.methodMultiplexer case final methodMux?) {
-        methodMuxes.add(methodMux);
-      }
-      errors.addAll(bucketPlan.errors);
+      _analyzeBucket(
+        bucket,
+        typeSystem: typeSystem,
+        interfaceName: interfaceName,
+        disambiguated: disambiguated,
+        setterMuxes: setterMuxes,
+        methodMuxes: methodMuxes,
+        errors: errors,
+      );
     }
 
     return JsExportPlan._(
@@ -963,21 +785,23 @@ final class JsExportPlan {
       );
 }
 
-_JsBucketPlan _analyzeBucket(
-  _JsExportBucket bucket,
-  TypeSystem typeSystem,
-  String interfaceName,
-) {
-  final mixedError = _checkMethodAccessorConflict(bucket, interfaceName);
-  if (mixedError != null) {
-    return _JsBucketPlan(errors: [mixedError]);
+void _analyzeBucket(
+  _JsExportBucket bucket, {
+  required TypeSystem typeSystem,
+  required String interfaceName,
+  required Map<ExecutableElement, String> disambiguated,
+  required List<_JsSetterMultiplexer> setterMuxes,
+  required List<_JsMethodMultiplexer> methodMuxes,
+  required List<String> errors,
+}) {
+  if (_checkMethodAccessorConflict(bucket, interfaceName)
+      case final mixedError?) {
+    errors.add(mixedError);
+    return;
   }
-
-  final errors = <String>[
-    if (_checkGetterConflict(bucket, interfaceName) case final getterError?)
-      getterError,
-  ];
-  final disambiguated = <ExecutableElement, String>{};
+  if (_checkGetterConflict(bucket, interfaceName) case final getterError?) {
+    errors.add(getterError);
+  }
 
   final (setterMux, setterError) = _planBucketSetters(
     bucket,
@@ -987,6 +811,7 @@ _JsBucketPlan _analyzeBucket(
   if (setterError != null) {
     errors.add(setterError);
   } else if (setterMux != null) {
+    setterMuxes.add(setterMux);
     for (final setter in bucket.setters) {
       disambiguated[setter] = _disambiguatedExportKey(setter);
     }
@@ -1000,17 +825,57 @@ _JsBucketPlan _analyzeBucket(
   if (methodError != null) {
     errors.add(methodError);
   } else if (methodMux != null) {
+    methodMuxes.add(methodMux);
     for (final method in bucket.methods) {
       disambiguated[method] = _disambiguatedExportKey(method);
     }
   }
 
-  return _JsBucketPlan(
-    disambiguatedExports: disambiguated,
-    setterMultiplexer: setterMux,
-    methodMultiplexer: methodMux,
-    errors: errors,
-  );
+  _disambiguateUnsupportedInBucket(bucket, disambiguated);
+}
+
+void _disambiguateUnsupportedInBucket(
+  _JsExportBucket bucket,
+  Map<ExecutableElement, String> disambiguated,
+) {
+  if (bucket.unsupported.isEmpty) return;
+  var hasGetter = bucket.getters.isNotEmpty;
+  var hasSetter = bucket.setters.isNotEmpty;
+  var hasMethod = bucket.methods.isNotEmpty;
+  final ordered = [
+    ...bucket.unsupported.where((m) => m.displayName == bucket.jsName),
+    ...bucket.unsupported.where((m) => m.displayName != bucket.jsName),
+  ];
+  for (final member in ordered) {
+    final canKeepJsName = switch (member) {
+      GetterElement() => !hasGetter && !hasMethod,
+      SetterElement() => !hasSetter && !hasMethod,
+      _ => !hasMethod && !hasGetter && !hasSetter,
+    };
+    if (!canKeepJsName) {
+      disambiguated[member] = _disambiguatedExportKey(member);
+      continue;
+    }
+    switch (member) {
+      case GetterElement():
+        hasGetter = true;
+      case SetterElement():
+        hasSetter = true;
+      default:
+        hasMethod = true;
+    }
+  }
+}
+
+String _formatBucketConflict(
+  List<ExecutableElement> members,
+  String Function(String names) describeConflict, {
+  String action = 'Exclude all but one',
+}) {
+  final names = members.map((m) => "'${m.displayName}'").join(', ');
+  final symbols = members.skip(1).map(_memberSymbolLiteral).join(', ');
+  return '${describeConflict(names)} '
+      '$action using MockSpec(unsupportedMembers: {$symbols}).';
 }
 
 String? _checkMethodAccessorConflict(
@@ -1021,26 +886,23 @@ String? _checkMethodAccessorConflict(
       (bucket.getters.isEmpty && bucket.setters.isEmpty)) {
     return null;
   }
-  final all = <ExecutableElement>[
-    ...bucket.getters,
-    ...bucket.setters,
-    ...bucket.methods,
-  ];
-  final names = all.map((m) => "'${m.displayName}'").join(', ');
-  final symbols = all.skip(1).map(_memberSymbolLiteral).join(', ');
-  return "The external members $names on '$interfaceName' export the same JS "
-      "property '${bucket.jsName}' as both a method and a property accessor. "
-      'Exclude conflicting members using '
-      'MockSpec(unsupportedMembers: {$symbols}).';
+  return _formatBucketConflict(
+    [...bucket.getters, ...bucket.setters, ...bucket.methods],
+    (names) =>
+        "The external members $names on '$interfaceName' export the same JS "
+        "property '${bucket.jsName}' as both a method and a property accessor.",
+    action: 'Exclude conflicting members',
+  );
 }
 
 String? _checkGetterConflict(_JsExportBucket bucket, String interfaceName) {
   if (bucket.getters.length <= 1) return null;
-  final names = bucket.getters.map((g) => "'${g.displayName}'").join(', ');
-  final symbols = bucket.getters.skip(1).map(_memberSymbolLiteral).join(', ');
-  return "The external getters $names on '$interfaceName' export the same JS "
-      "property '${bucket.jsName}' and cannot both be mocked. "
-      'Exclude all but one using MockSpec(unsupportedMembers: {$symbols}).';
+  return _formatBucketConflict(
+    bucket.getters,
+    (names) =>
+        "The external getters $names on '$interfaceName' export the same JS "
+        "property '${bucket.jsName}' and cannot both be mocked.",
+  );
 }
 
 (_JsSetterMultiplexer?, String?) _planBucketSetters(
@@ -1049,42 +911,6 @@ String? _checkGetterConflict(_JsExportBucket bucket, String interfaceName) {
   String interfaceName,
 ) {
   if (bucket.setters.length <= 1) return (null, null);
-  final mux = _analyzeSetterOverloads(bucket, typeSystem);
-  if (mux != null) return (mux, null);
-  final names = bucket.setters.map((s) => "'${s.displayName}'").join(', ');
-  final symbols = bucket.setters.skip(1).map(_memberSymbolLiteral).join(', ');
-  return (
-    null,
-    "The external setters $names on '$interfaceName' export the same JS "
-        "property '${bucket.jsName}' with parameter types that cannot be "
-        'distinguished at runtime. Exclude all but one using '
-        'MockSpec(unsupportedMembers: {$symbols}).',
-  );
-}
-
-(_JsMethodMultiplexer?, String?) _planBucketMethods(
-  _JsExportBucket bucket,
-  TypeSystem typeSystem,
-  String interfaceName,
-) {
-  if (bucket.methods.length <= 1) return (null, null);
-  final mux = _analyzeMethodOverloads(bucket, typeSystem);
-  if (mux != null) return (mux, null);
-  final names = bucket.methods.map((m) => "'${m.displayName}'").join(', ');
-  final symbols = bucket.methods.skip(1).map(_memberSymbolLiteral).join(', ');
-  return (
-    null,
-    "The external methods $names on '$interfaceName' export the same JS "
-        "property '${bucket.jsName}' with signatures that cannot be "
-        'distinguished at runtime. Exclude conflicting overloads using '
-        'MockSpec(unsupportedMembers: {$symbols}).',
-  );
-}
-
-_JsSetterMultiplexer? _analyzeSetterOverloads(
-  _JsExportBucket bucket,
-  TypeSystem typeSystem,
-) {
   final candidates = [
     for (final setter in bucket.setters)
       _JsOverloadCandidate<SetterElement>(
@@ -1097,8 +923,40 @@ _JsSetterMultiplexer? _analyzeSetterOverloads(
       ),
   ];
   final branches = _orderOverloadBranches(candidates, typeSystem);
-  if (branches == null) return null;
-  return _JsSetterMultiplexer(jsName: bucket.jsName, branches: branches);
+  if (branches != null) {
+    return ((jsName: bucket.jsName, branches: branches), null);
+  }
+  return (
+    null,
+    _formatBucketConflict(
+      bucket.setters,
+      (names) =>
+          "The external setters $names on '$interfaceName' export the same JS "
+          "property '${bucket.jsName}' with parameter types that cannot be "
+          'distinguished at runtime.',
+    ),
+  );
+}
+
+(_JsMethodMultiplexer?, String?) _planBucketMethods(
+  _JsExportBucket bucket,
+  TypeSystem typeSystem,
+  String interfaceName,
+) {
+  if (bucket.methods.length <= 1) return (null, null);
+  final mux = _analyzeMethodOverloads(bucket, typeSystem);
+  if (mux != null) return (mux, null);
+  return (
+    null,
+    _formatBucketConflict(
+      bucket.methods,
+      (names) =>
+          "The external methods $names on '$interfaceName' export the same JS "
+          "property '${bucket.jsName}' with signatures that cannot be "
+          'distinguished at runtime.',
+      action: 'Exclude conflicting overloads',
+    ),
+  );
 }
 
 _JsMethodMultiplexer? _analyzeMethodOverloads(
@@ -1108,9 +966,12 @@ _JsMethodMultiplexer? _analyzeMethodOverloads(
   if (bucket.methods.any((m) => m.formalParameters.any((p) => p.isNamed))) {
     return null;
   }
-  final allSameReturn = _haveIdenticalReturnType(bucket.methods, typeSystem);
+  final firstReturn = bucket.methods.first.returnType;
+  final allSameReturn = bucket.methods.every(
+    (m) => m.returnType == firstReturn,
+  );
   if (!allSameReturn &&
-      bucket.methods.any((m) => !_canBoxJsReturn(m.returnType))) {
+      bucket.methods.any((m) => !_canBoxJsReturn(m.returnType, typeSystem))) {
     return null;
   }
   final candidates = [
@@ -1132,10 +993,10 @@ _JsMethodMultiplexer? _analyzeMethodOverloads(
   var minReq = candidates.first.minRequired;
   var maxPos = candidates.first.maxArgs;
   for (final c in candidates.skip(1)) {
-    if (c.minRequired < minReq) minReq = c.minRequired;
-    if (c.maxArgs > maxPos) maxPos = c.maxArgs;
+    minReq = math.min(minReq, c.minRequired);
+    maxPos = math.max(maxPos, c.maxArgs);
   }
-  return _JsMethodMultiplexer(
+  return (
     jsName: bucket.jsName,
     branches: branches,
     minRequired: minReq,
@@ -1144,46 +1005,20 @@ _JsMethodMultiplexer? _analyzeMethodOverloads(
   );
 }
 
-bool _haveIdenticalReturnType(
-  List<MethodElement> methods,
-  TypeSystem typeSystem,
-) {
-  final first = methods.first.returnType;
-  final firstIsVoid = first is analyzer.VoidType;
-  for (final m in methods.skip(1)) {
-    final current = m.returnType;
-    final currentIsVoid = current is analyzer.VoidType;
-    if (firstIsVoid != currentIsVoid) return false;
-    if (firstIsVoid) continue;
-    if (!typeSystem.isSubtypeOf(first, current) ||
-        !typeSystem.isSubtypeOf(current, first)) {
-      return false;
-    }
+bool _canBoxJsReturn(analyzer.DartType type, TypeSystem typeSystem) {
+  var (coreType, isNullable: _) = _unwrapNonJsExtensionType(type, typeSystem);
+  while (coreType is analyzer.TypeParameterType) {
+    coreType = coreType.bound;
   }
-  return true;
-}
-
-bool _canBoxJsReturn(analyzer.DartType type) {
-  if (type is analyzer.VoidType || type.isDartCoreNull) return true;
-  if (type.isDartCoreString ||
-      type.isDartCoreBool ||
-      type.isDartCoreInt ||
-      type.isDartCoreDouble ||
-      type.isDartCoreNum) {
+  if (coreType is analyzer.VoidType ||
+      coreType.isDartCoreNull ||
+      _corePrimitiveSymbol(coreType) != null) {
     return true;
   }
-  if (type is analyzer.TypeParameterType) {
-    final bound = type.bound;
-    return _implementsJsAny(bound) || _erasesToJsObject(bound);
-  }
-  if (type is analyzer.InterfaceType) {
-    if (_isSdkJsInteropType(type.element, 'ExternalDartReference')) {
-      return false;
-    }
-    final element = type.element;
-    return element is ExtensionTypeElement && element.isJSInteropType;
-  }
-  return false;
+  return coreType is analyzer.InterfaceType &&
+      !_wrapsOrImplementsSdkType(coreType, 'ExternalDartReference') &&
+      coreType.element is ExtensionTypeElement &&
+      (coreType.element as ExtensionTypeElement).isJSInteropType;
 }
 
 final class _JsMultiplexerBuilder {
@@ -1204,27 +1039,28 @@ final class _JsMultiplexerBuilder {
     }
   }
 
-  TypeReference _nullableJsAnyRef() => TypeReference(
-    (b) =>
-        b
-          ..symbol = 'JSAny'
-          ..url = 'dart:js_interop'
-          ..isNullable = true,
-  );
+  TypeReference _sdkInteropTypeRef(String symbol, {required bool isNullable}) =>
+      TypeReference(
+        (b) =>
+            b
+              ..symbol = symbol
+              ..url = 'dart:js_interop'
+              ..isNullable = isNullable,
+      );
+
+  TypeReference _nullableJsAnyRef() =>
+      _sdkInteropTypeRef('JSAny', isNullable: true);
+
+  Expression _jsExportAnnotation(String jsName) =>
+      Reference('JSExport', 'dart:js_interop').call([jsExportLiteral(jsName)]);
 
   Method _buildSetterMultiplexer(_JsSetterMultiplexer mux) {
-    final safeName = _safeJsIdentifier(mux.jsName);
     const paramName = '_value';
     return Method((mBuilder) {
       mBuilder
-        ..name = '\$jsExport\$set\$$safeName'
+        ..name = '\$jsExport\$set\$${_safeJsIdentifier(mux.jsName)}'
         ..type = MethodType.setter
-        ..annotations.add(
-          _referImported(
-            'JSExport',
-            'dart:js_interop',
-          ).call([jsExportLiteral(mux.jsName)]),
-        )
+        ..annotations.add(_jsExportAnnotation(mux.jsName))
         ..requiredParameters.add(
           Parameter(
             (p) =>
@@ -1247,18 +1083,12 @@ final class _JsMultiplexerBuilder {
   }
 
   Method _buildMethodMultiplexer(_JsMethodMultiplexer mux) {
-    final safeName = _safeJsIdentifier(mux.jsName);
     final paramNames = [for (var i = 0; i < mux.maxArgs; i++) '_p$i'];
     final firstReturn = mux.branches.first.candidate.element.returnType;
     return Method((mBuilder) {
       mBuilder
-        ..name = '\$jsExport\$method\$$safeName'
-        ..annotations.add(
-          _referImported(
-            'JSExport',
-            'dart:js_interop',
-          ).call([jsExportLiteral(mux.jsName)]),
-        )
+        ..name = '\$jsExport\$method\$${_safeJsIdentifier(mux.jsName)}'
+        ..annotations.add(_jsExportAnnotation(mux.jsName))
         ..returns =
             mux.allSameReturn
                 ? _typeReference(firstReturn)
@@ -1294,32 +1124,43 @@ final class _JsMultiplexerBuilder {
     required bool allSameReturn,
   }) {
     final method = candidate.element;
-    final args = [
+    final callExpr = _refer(method.displayName).call([
       for (var i = 0; i < candidate.params.length; i++)
         _convertArgExpression(paramNames[i], candidate.params[i]),
-    ];
-    final callExpr = _refer(method.displayName).call(args);
+    ]);
     final returnType = method.returnType;
     if (allSameReturn) {
       return returnType is analyzer.VoidType
           ? callExpr.statement
           : callExpr.returned.statement;
     }
-    if (returnType is analyzer.VoidType) {
+    final (coreReturn, :isNullable) = _unwrapNonJsExtensionType(
+      returnType,
+      typeSystem,
+    );
+    if (coreReturn is analyzer.VoidType || coreReturn.isDartCoreNull) {
       return Block.of([callExpr.statement, literalNull.returned.statement]);
     }
-    if (returnType.isDartCoreString ||
-        returnType.isDartCoreBool ||
-        returnType.isDartCoreInt ||
-        returnType.isDartCoreDouble ||
-        returnType.isDartCoreNum) {
+    if (_corePrimitiveSymbol(coreReturn) case final coreSymbol?) {
+      final primitiveExpr =
+          identical(coreReturn, returnType)
+              ? callExpr
+              : callExpr.asA(
+                TypeReference(
+                  (b) =>
+                      b
+                        ..symbol = coreSymbol
+                        ..url = 'dart:core'
+                        ..isNullable = isNullable,
+                ),
+              );
       final boxed =
-          typeSystem.isNullable(returnType)
-              ? callExpr.nullSafeProperty('toJS')
-              : callExpr.property('toJS');
+          isNullable
+              ? primitiveExpr.nullSafeProperty('toJS')
+              : primitiveExpr.property('toJS');
       return boxed.returned.statement;
     }
-    if (_implementsJsAny(returnType)) {
+    if (identical(coreReturn, returnType) && _implementsJsAny(returnType)) {
       return callExpr.returned.statement;
     }
     return callExpr.asA(_nullableJsAnyRef()).returned.statement;
@@ -1333,16 +1174,9 @@ final class _JsMultiplexerBuilder {
     final parts = <Code>[];
     for (var i = 0; i < branches.length; i++) {
       final branch = branches[i];
-      if (i == 0) {
+      if (i < branches.length - 1) {
         parts
-          ..add(const Code('if ('))
-          ..add(_emitCondition(branch.clauses, paramNames).code)
-          ..add(const Code(') {\n'))
-          ..add(buildLeaf(branch.candidate))
-          ..add(const Code('\n}'));
-      } else if (i < branches.length - 1) {
-        parts
-          ..add(const Code(' else if ('))
+          ..add(Code(i == 0 ? 'if (' : ' else if ('))
           ..add(_emitCondition(branch.clauses, paramNames).code)
           ..add(const Code(') {\n'))
           ..add(buildLeaf(branch.candidate))
@@ -1373,68 +1207,58 @@ final class _JsMultiplexerBuilder {
     List<String> paramNames,
   ) {
     final paramRef = _refer(paramNames[clause.paramIndex]);
-    switch (clause) {
-      case _JsParamNullClause(:final expectNull):
-        return expectNull
-            ? paramRef.equalTo(literalNull)
-            : paramRef.notEqualTo(literalNull);
-      case _JsParamTypeClause(:final spec, :final allowNull):
-        final checkTypeRef =
-            spec.sdkCheckSymbol != null
-                ? TypeReference(
-                  (b) =>
-                      b
-                        ..symbol = spec.sdkCheckSymbol!
-                        ..url = 'dart:js_interop'
-                        ..isNullable = allowNull,
-                )
-                : _typeReference(
-                  typeSystem.promoteToNonNull(spec.originalType),
-                  forceNullable: allowNull,
-                );
-        return paramRef.property('isA').call([], const {}, [checkTypeRef]);
+    final spec = clause.spec;
+    if (spec == null) {
+      return clause.flag
+          ? paramRef.equalTo(literalNull)
+          : paramRef.notEqualTo(literalNull);
     }
+    final checkTypeRef =
+        spec.sdkCheckSymbol != null
+            ? _sdkInteropTypeRef(spec.sdkCheckSymbol!, isNullable: clause.flag)
+            : _typeReference(
+              typeSystem.promoteToNonNull(spec.originalType),
+              forceNullable: clause.flag,
+            );
+    return paramRef.property('isA').call([], const {}, [checkTypeRef]);
   }
 
   Expression _convertArgExpression(String paramName, _JsParamSpec spec) {
     final paramRef = _refer(paramName);
     final targetType = spec.originalType;
-    final coreType = _unwrapNonJsExtensionType(targetType);
-    if (coreType.isDartCoreString) {
-      return _unboxSdkPrimitive(paramRef, 'JSString', 'toDart');
+    final (coreType, isNullable: _) = _unwrapNonJsExtensionType(
+      targetType,
+      typeSystem,
+    );
+    if (_unboxCorePrimitive(paramRef, coreType) case final unboxed?) {
+      return identical(coreType, targetType)
+          ? unboxed
+          : unboxed.asA(
+            _typeReference(targetType, forceNullable: true, overrideVoid: true),
+          );
     }
-    if (coreType.isDartCoreBool) {
-      return _unboxSdkPrimitive(paramRef, 'JSBoolean', 'toDart');
-    }
-    if (coreType.isDartCoreInt) {
-      return _unboxSdkPrimitive(paramRef, 'JSNumber', 'toDartInt');
-    }
-    if (coreType.isDartCoreDouble || coreType.isDartCoreNum) {
-      return _unboxSdkPrimitive(paramRef, 'JSNumber', 'toDartDouble');
-    }
-    if (_isSdkJsInteropType(targetType.element, 'JSAny')) {
-      return paramRef;
-    }
+    if (_isSdkJsInteropType(targetType.element, 'JSAny')) return paramRef;
     return paramRef.asA(
       _typeReference(targetType, forceNullable: true, overrideVoid: true),
     );
   }
 
-  Expression _unboxSdkPrimitive(
-    Expression paramRef,
-    String sdkSymbol,
-    String getterName,
-  ) => paramRef
-      .asA(
-        TypeReference(
-          (b) =>
-              b
-                ..symbol = sdkSymbol
-                ..url = 'dart:js_interop'
-                ..isNullable = true,
-        ),
-      )
-      .nullSafeProperty(getterName);
+  Expression? _unboxCorePrimitive(Expression paramRef, analyzer.DartType type) {
+    final (sdkSymbol, getter) = switch (type) {
+      _ when type.isDartCoreString => ('JSString', 'toDart'),
+      _ when type.isDartCoreBool => ('JSBoolean', 'toDart'),
+      _ when type.isDartCoreInt => ('JSNumber', 'toDartInt'),
+      _ when type.isDartCoreDouble || type.isDartCoreNum => (
+        'JSNumber',
+        'toDartDouble',
+      ),
+      _ => (null, null),
+    };
+    if (sdkSymbol == null || getter == null) return null;
+    return paramRef
+        .asA(_sdkInteropTypeRef(sdkSymbol, isNullable: true))
+        .nullSafeProperty(getter);
+  }
 }
 
 /// JS interop classification helpers for analyzer [ExtensionTypeElement]s.
@@ -1444,12 +1268,14 @@ extension JsInteropExtensionTypeElement on ExtensionTypeElement {
     return uri == 'dart:js_interop' || uri == 'dart:js_interop_unsafe';
   }
 
-  bool get isJSInteropType {
-    Element? element = this;
-    while (element is ExtensionTypeElement) {
-      if (element.isSdkJSInteropType) return true;
-      element = element.representation.type.element;
+  bool get isJSInteropType =>
+      _representationChain.any((e) => e.isSdkJSInteropType);
+
+  Iterable<ExtensionTypeElement> get _representationChain sync* {
+    Element? current = this;
+    while (current is ExtensionTypeElement) {
+      yield current;
+      current = current.representation.type.element;
     }
-    return false;
   }
 }

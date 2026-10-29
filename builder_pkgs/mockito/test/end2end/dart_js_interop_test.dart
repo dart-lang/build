@@ -60,7 +60,16 @@ class CustomOverloadedTarget extends MockOverloadedJSInteropTarget {
 @GenerateMocks(
   [UsesJSInterop, OverloadedJSInterop],
   customMocks: [
-    MockSpec<IndistinguishableJSInterop>(unsupportedMembers: {#configureB}),
+    MockSpec<IndistinguishableJSInterop>(
+      unsupportedMembers: {
+        #configureB,
+        #soloUnsupported,
+        #renamedSolo,
+        Symbol('readOnlyPropOpts='),
+        #badA,
+        #badB,
+      },
+    ),
   ],
 )
 void main() {
@@ -141,6 +150,11 @@ void main() {
     verify(target.nullableValue = null).called(1);
     verify(target.nullableValue = 'some').called(1);
     verify(target.nullableValueTrusted = trusted).called(1);
+
+    mock.distance = const Meters(12);
+    mock.distanceLabel = '12m';
+    verify(mock.distance = const Meters(12)).called(1);
+    verify(mock.distanceLabel = '12m').called(1);
   });
 
   test('mocks overloaded @JS methods across arity, optional params, nominal '
@@ -190,6 +204,29 @@ void main() {
     expect(mock.format('item'), 'item');
     expect(mock.formatWithCount('item', 5), 'item:5');
 
+    when(mock.measureMeters('km')).thenReturn(const Meters(1000));
+    when(mock.measureLabel(0)).thenReturn(const NullableLabel('origin'));
+    when(mock.measureLabel(1)).thenReturn(const NullableLabel(null));
+    expect(mock.measureMeters('km'), const Meters(1000));
+    expect(mock.measureLabel(0), const NullableLabel('origin'));
+    expect(mock.measureLabel(1), const NullableLabel(null));
+    mock.measureReset(true);
+    verify(mock.measureReset(true)).called(1);
+
+    when(mock.computeDouble(1.5)).thenReturn(3.0);
+    when(mock.computeBool(false)).thenReturn(true);
+    expect(mock.computeDouble(1.5), 3.0);
+    expect(mock.computeBool(false), isTrue);
+
+    mock.writeOpt();
+    mock.writeOpt(trusted1);
+    mock.writeOpt(trusted1, 'ok');
+    mock.writeCoords(3, 4);
+    verify(mock.writeOpt()).called(1);
+    verify(mock.writeOpt(trusted1)).called(1);
+    verify(mock.writeOpt(trusted1, 'ok')).called(1);
+    verify(mock.writeCoords(3, 4)).called(1);
+
     final customMock = MockOverloadedJSInterop(
       target: CustomOverloadedTarget(),
     );
@@ -204,13 +241,22 @@ void main() {
       final target = MockIndistinguishableJSInteropTarget();
       final mock = MockIndistinguishableJSInterop(target: target);
       final optsA = AnonymousOptionsA(a: 1);
+      final optsB = AnonymousOptionsB(b: 'x');
 
       when(mock.configure(optsA)).thenReturn('configured');
       expect(mock.configure(optsA), 'configured');
-      expect(
-        () => target.configureB(AnonymousOptionsB(b: 'x')),
-        throwsUnsupportedError,
-      );
+      expect(() => target.configureB(optsB), throwsUnsupportedError);
+
+      expect(() => mock.soloUnsupported(7), throwsUnsupportedError);
+      // ignore: unnecessary_lambdas
+      expect(() => mock.renamedSolo(), throwsUnsupportedError);
+
+      when(mock.readOnlyProp).thenReturn('ok');
+      expect(mock.readOnlyProp, 'ok');
+      expect(() => mock.readOnlyPropOpts = optsA, throwsUnsupportedError);
+
+      expect(() => mock.badA(optsA), throwsUnsupportedError);
+      expect(() => mock.badB(optsB), throwsUnsupportedError);
     },
   );
 }

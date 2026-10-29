@@ -353,6 +353,18 @@ class MockOverloadedJSInteropTarget extends _i2.Mock {
     returnValueForMissingStub: null,
   );
 
+  @_i1.JSExport(r'$mockito$set$distance')
+  set distance(_i3.Meters? v) => super.noSuchMethod(
+    Invocation.setter(#distance, v),
+    returnValueForMissingStub: null,
+  );
+
+  @_i1.JSExport(r'$mockito$set$distanceLabel')
+  set distanceLabel(String? v) => super.noSuchMethod(
+    Invocation.setter(#distanceLabel, v),
+    returnValueForMissingStub: null,
+  );
+
   @_i1.JSExport(r'$mockito$method$setAttr')
   void setAttr(String? name, String? value) => super.noSuchMethod(
     Invocation.method(#setAttr, [name, value]),
@@ -475,6 +487,56 @@ class MockOverloadedJSInteropTarget extends _i2.Mock {
           )
           as String);
 
+  @_i1.JSExport(r'$mockito$method$measureMeters')
+  _i3.Meters measureMeters(String? unit) =>
+      (super.noSuchMethod(
+            Invocation.method(#measureMeters, [unit]),
+            returnValue: (0 as _i3.Meters),
+          )
+          as _i3.Meters);
+
+  @_i1.JSExport(r'$mockito$method$measureLabel')
+  _i3.NullableLabel measureLabel(int? index) =>
+      (super.noSuchMethod(
+            Invocation.method(#measureLabel, [index]),
+            returnValue: (null as _i3.NullableLabel),
+          )
+          as _i3.NullableLabel);
+
+  @_i1.JSExport(r'$mockito$method$measureReset')
+  void measureReset(bool? hard) => super.noSuchMethod(
+    Invocation.method(#measureReset, [hard]),
+    returnValueForMissingStub: null,
+  );
+
+  @_i1.JSExport(r'$mockito$method$computeDouble')
+  double computeDouble(double? x) =>
+      (super.noSuchMethod(
+            Invocation.method(#computeDouble, [x]),
+            returnValue: 0.0,
+          )
+          as double);
+
+  @_i1.JSExport(r'$mockito$method$computeBool')
+  bool computeBool(bool? flag) =>
+      (super.noSuchMethod(
+            Invocation.method(#computeBool, [flag]),
+            returnValue: false,
+          )
+          as bool);
+
+  @_i1.JSExport(r'$mockito$method$writeOpt')
+  void writeOpt([_i3.TrustedValue? a, String? b]) => super.noSuchMethod(
+    Invocation.method(#writeOpt, [a, b]),
+    returnValueForMissingStub: null,
+  );
+
+  @_i1.JSExport(r'$mockito$method$writeCoords')
+  void writeCoords(int? x, int? y) => super.noSuchMethod(
+    Invocation.method(#writeCoords, [x, y]),
+    returnValueForMissingStub: null,
+  );
+
   @_i1.JSExport('value')
   set $jsExport$set$value(_i1.JSAny? _value) {
     if (_value.isA<_i1.JSString?>()) {
@@ -490,6 +552,15 @@ class MockOverloadedJSInteropTarget extends _i2.Mock {
       nullableValue = (_value as _i1.JSString?)?.toDart;
     } else {
       nullableValueTrusted = (_value as _i3.TrustedValue?);
+    }
+  }
+
+  @_i1.JSExport('distance')
+  set $jsExport$set$distance(_i1.JSAny? _value) {
+    if (_value.isA<_i1.JSNumber?>()) {
+      distance = ((_value as _i1.JSNumber?)?.toDartInt as _i3.Meters?);
+    } else {
+      distanceLabel = (_value as _i1.JSString?)?.toDart;
     }
   }
 
@@ -560,6 +631,39 @@ class MockOverloadedJSInteropTarget extends _i2.Mock {
       return sendFloats((_p0 as _i1.JSFloat32Array?));
     }
   }
+
+  @_i1.JSExport('measure')
+  _i1.JSAny? $jsExport$method$measure(_i1.JSAny? _p0) {
+    if (_p0.isA<_i1.JSString>()) {
+      return (measureMeters((_p0 as _i1.JSString?)?.toDart) as int).toJS;
+    } else if (_p0.isA<_i1.JSNumber>()) {
+      return (measureLabel((_p0 as _i1.JSNumber?)?.toDartInt) as String?)?.toJS;
+    } else {
+      measureReset((_p0 as _i1.JSBoolean?)?.toDart);
+      return null;
+    }
+  }
+
+  @_i1.JSExport('compute')
+  _i1.JSAny? $jsExport$method$compute(_i1.JSAny? _p0) {
+    if (_p0.isA<_i1.JSNumber>()) {
+      return computeDouble((_p0 as _i1.JSNumber?)?.toDartDouble).toJS;
+    } else {
+      return computeBool((_p0 as _i1.JSBoolean?)?.toDart).toJS;
+    }
+  }
+
+  @_i1.JSExport('writeOpt')
+  void $jsExport$method$writeOpt([_i1.JSAny? _p0, _i1.JSAny? _p1]) {
+    if (_p0.isA<_i1.JSNumber>() && _p1.isA<_i1.JSNumber>()) {
+      writeCoords(
+        (_p0 as _i1.JSNumber?)?.toDartInt,
+        (_p1 as _i1.JSNumber?)?.toDartInt,
+      );
+    } else {
+      writeOpt((_p0 as _i3.TrustedValue?), (_p1 as _i1.JSString?)?.toDart);
+    }
+  }
 }
 
 /// An extension type mock which implements [OverloadedJSInterop].
@@ -585,6 +689,22 @@ extension type MockOverloadedJSInterop._(_i1.JSObject _)
 /// See the documentation for Mockito's code generation for more information.
 @_i1.JSExport()
 class MockIndistinguishableJSInteropTarget extends _i2.Mock {
+  String get readOnlyProp =>
+      (super.noSuchMethod(
+            Invocation.getter(#readOnlyProp),
+            returnValue: _i4.dummyValue<String>(
+              this,
+              Invocation.getter(#readOnlyProp),
+            ),
+          )
+          as String);
+
+  @_i1.JSExport('readOnlyProp')
+  set readOnlyPropOpts(_i3.AnonymousOptionsA? value) =>
+      throw UnsupportedError(
+        r'"readOnlyPropOpts=" cannot be used without a mockito fallback generator.',
+      );
+
   String configure(_i3.AnonymousOptionsA? options) =>
       (super.noSuchMethod(
             Invocation.method(#configure, [options]),
@@ -599,6 +719,29 @@ class MockIndistinguishableJSInteropTarget extends _i2.Mock {
   String configureB(_i3.AnonymousOptionsB? options) =>
       throw UnsupportedError(
         r'"configureB" cannot be used without a mockito fallback generator.',
+      );
+
+  String soloUnsupported(int? x) =>
+      throw UnsupportedError(
+        r'"soloUnsupported" cannot be used without a mockito fallback generator.',
+      );
+
+  @_i1.JSExport('renamedUnsupported')
+  String renamedSolo() =>
+      throw UnsupportedError(
+        r'"renamedSolo" cannot be used without a mockito fallback generator.',
+      );
+
+  @_i1.JSExport('bothUnsupported')
+  void badA(_i3.AnonymousOptionsA? a) =>
+      throw UnsupportedError(
+        r'"badA" cannot be used without a mockito fallback generator.',
+      );
+
+  @_i1.JSExport(r'$mockito$method$badB')
+  void badB(_i3.AnonymousOptionsB? b) =>
+      throw UnsupportedError(
+        r'"badB" cannot be used without a mockito fallback generator.',
       );
 }
 

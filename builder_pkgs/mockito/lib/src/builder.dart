@@ -503,6 +503,9 @@ class _MockTarget {
   /// instead of `MockSpec<Foo>`.
   final bool hasExplicitTypeArguments;
 
+  List<ExecutableElement>? _jsInteropMembers;
+  JsExportPlan? _jsExportPlan;
+
   _MockTarget(
     this.classType, {
     required this.mixins,
@@ -516,6 +519,42 @@ class _MockTarget {
            'Mock${classType.alias?.element.name ?? classType.element.name}';
 
   InterfaceElement get interfaceElement => classType.element;
+
+  (List<ExecutableElement>, JsExportPlan) resolveJsExportPlan(
+    InheritanceManager3 inheritanceManager,
+    TypeSystem typeSystem,
+  ) {
+    if (_jsExportPlan case final existing?) {
+      return (_jsInteropMembers!, existing);
+    }
+    final instantiatedAlias = classType.alias;
+    final aliasElement = instantiatedAlias?.element;
+    final aliasedType = aliasElement?.aliasedType as analyzer.InterfaceType?;
+    final typeToMock = aliasedType ?? classType;
+    final classToMock = interfaceElement;
+    final substitution = Substitution.fromPairs2(
+      [...classToMock.typeParameters, ...?aliasElement?.typeParameters],
+      [...typeToMock.typeArguments, ...?instantiatedAlias?.typeArguments],
+    );
+    final members =
+        inheritanceManager
+            .getInterface(classToMock)
+            .map
+            .values
+            .map((member) => member.substitute(substitution))
+            .where((m) => m.isExternal)
+            .toList();
+    final plan = JsExportPlan.analyze(
+      interfaceName: aliasElement?.name ?? classToMock.name!,
+      members: members,
+      unsupportedMembers: unsupportedMembers,
+      fallbackGenerators: fallbackGenerators,
+      typeSystem: typeSystem,
+    );
+    _jsInteropMembers = members;
+    _jsExportPlan = plan;
+    return (members, plan);
+  }
 }
 
 /// This class gathers and verifies mock targets referenced in `GenerateMocks`
@@ -1057,17 +1096,11 @@ class _MockTargetGatherer {
           }
         }).toList();
     if (interfaceElement is ExtensionTypeElement) {
-      final targetName =
-          mockTarget.classType.alias?.element.name ?? interfaceElement.name!;
-      unstubbableErrorMessages.addAll(
-        JsExportPlan.analyze(
-          interfaceName: targetName,
-          members: relevantMembers,
-          unsupportedMembers: mockTarget.unsupportedMembers,
-          fallbackGenerators: mockTarget.fallbackGenerators,
-          typeSystem: _entryLib.typeSystem,
-        ).errorMessages,
+      final (_, exportPlan) = mockTarget.resolveJsExportPlan(
+        _inheritanceManager,
+        _entryLib.typeSystem,
       );
+      unstubbableErrorMessages.addAll(exportPlan.errorMessages);
     }
 
     if (unstubbableErrorMessages.isNotEmpty) {
@@ -1366,10 +1399,7 @@ class _MockClassInfo {
   Class _buildMockJsInteropTargetClass() {
     assert(_isExtensionType);
 
-    final instantiatedAlias = mockTarget.classType.alias;
-    final aliasElement = instantiatedAlias?.element;
-    final aliasedType = aliasElement?.aliasedType as analyzer.InterfaceType?;
-    final typeToMock = aliasedType ?? mockTarget.classType;
+    final aliasElement = mockTarget.classType.alias?.element;
     final classToMock = mockTarget.interfaceElement;
     final className = aliasElement?.name ?? classToMock.name;
 
@@ -1404,25 +1434,9 @@ class _MockClassInfo {
         (typeParamsWithBounds, typeParams) {
           cBuilder.types.addAll(typeParamsWithBounds);
 
-          final substitution = Substitution.fromPairs2(
-            [...classToMock.typeParameters, ...?aliasElement?.typeParameters],
-            [...typeToMock.typeArguments, ...?instantiatedAlias?.typeArguments],
-          );
-          final members =
-              inheritanceManager
-                  .getInterface(classToMock)
-                  .map
-                  .values
-                  .map((member) => member.substitute(substitution))
-                  .where((m) => m.isExternal)
-                  .toList();
-
-          final exportPlan = JsExportPlan.analyze(
-            interfaceName: className!,
-            members: members,
-            unsupportedMembers: mockTarget.unsupportedMembers,
-            fallbackGenerators: mockTarget.fallbackGenerators,
-            typeSystem: typeSystem,
+          final (members, exportPlan) = mockTarget.resolveJsExportPlan(
+            inheritanceManager,
+            typeSystem,
           );
           _disambiguatedJsExports = exportPlan.disambiguatedExports;
 

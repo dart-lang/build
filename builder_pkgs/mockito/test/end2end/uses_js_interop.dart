@@ -26,6 +26,10 @@ extension type UserInteropTypeNested(JSObject _) implements JSObject {}
 
 extension type TrustedValue(JSObject _) implements JSObject {}
 
+extension type const Meters(int value) {}
+
+extension type const NullableLabel(String? text) {}
+
 extension type AnonymousOptionsA._(JSObject _) implements JSObject {
   external factory AnonymousOptionsA({int a});
 }
@@ -73,12 +77,46 @@ extension type OverloadedJSInterop(JSObject _) implements JSObject {
   external String sendBytes(JSUint8Array bytes);
   @JS('send')
   external String sendFloats(JSFloat32Array floats);
+
+  external set distance(Meters v);
+  @JS('distance')
+  external set distanceLabel(String v);
+
+  @JS('measure')
+  external Meters measureMeters(String unit);
+  @JS('measure')
+  external NullableLabel measureLabel(int index);
+  @JS('measure')
+  external void measureReset(bool hard);
+
+  @JS('compute')
+  external double computeDouble(double x);
+  @JS('compute')
+  external bool computeBool(bool flag);
+
+  external void writeOpt([TrustedValue a, String b]);
+  @JS('writeOpt')
+  external void writeCoords(int x, int y);
 }
 
 extension type IndistinguishableJSInterop(JSObject _) implements JSObject {
   external String configure(AnonymousOptionsA options);
   @JS('configure')
   external String configureB(AnonymousOptionsB options);
+
+  external String soloUnsupported(int x);
+
+  @JS('renamedUnsupported')
+  external String renamedSolo();
+
+  external String get readOnlyProp;
+  @JS('readOnlyProp')
+  external set readOnlyPropOpts(AnonymousOptionsA value);
+
+  @JS('bothUnsupported')
+  external void badA(AnonymousOptionsA a);
+  @JS('bothUnsupported')
+  external void badB(AnonymousOptionsB b);
 }
 
 class UsesJSInterop<T extends JSAny> {

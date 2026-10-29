@@ -2265,9 +2265,11 @@ void main() {
       );
       expect(
         mocksContent,
-        contains(
-          "@_i1.JSExport(r'\$mockito\$set\$innerHTMLTrusted')\n"
-          '  set innerHTMLTrusted(_i4.TrustedHTML? v) =>',
+        matches(
+          RegExp(
+            r"@_i1\.JSExport\(r'\$mockito\$set\$innerHTMLTrusted'\)\n"
+            r'  set innerHTMLTrusted\(_i\d+\.TrustedHTML\? v\) =>',
+          ),
         ),
       );
       expect(
@@ -2461,16 +2463,20 @@ void main() {
       );
       expect(
         mocksContent,
-        contains(
-          "@_i1.JSExport(r'\$mockito\$method\$configure')\n"
-          '  void configure(_i3.OptsA? a) => throw UnsupportedError(',
+        matches(
+          RegExp(
+            r"@_i1\.JSExport\(r'\$mockito\$method\$configure'\)\n"
+            r'  void configure\(_i\d+\.OptsA\? a\) => throw UnsupportedError\(',
+          ),
         ),
       );
       expect(
         mocksContent,
-        contains(
-          "@_i1.JSExport('configure')\n"
-          '  void configureB(_i3.OptsB? b) =>',
+        matches(
+          RegExp(
+            r"@_i1\.JSExport\('configure'\)\n"
+            r'  void configureB\(_i\d+\.OptsB\? b\) =>',
+          ),
         ),
       );
     },
