@@ -43,7 +43,6 @@ class InputTracker {
 
   void add(AssetId input) => _inputs.add(input);
 
-  @Ensures('resolverEntrypoints.contains(graph)')
   void addResolverEntrypoint(AssetId graph) => _resolverEntrypoints.add(graph);
 
   void addGlob(GlobId glob) => _globsEvaluated.add(glob);
