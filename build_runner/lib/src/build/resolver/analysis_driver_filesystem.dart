@@ -15,7 +15,6 @@ import 'package:build/build.dart' hide Resource;
 import 'package:path/path.dart' as p;
 
 import '../../build_plan/build_inputs.dart';
-import '../../contracts.dart';
 import '../asset_content.dart';
 import '../br_outputs.dart';
 import '../builder_filesystem.dart';
@@ -259,7 +258,6 @@ class AnalysisDriverFilesystem
   /// /<package>/lib/<rest> --> package:<package>/<rest>
   /// /<package>/<rest> --> asset:<package>/<rest>
   /// ```
-  @Ensures('result.isScheme("package") || result.isScheme("asset")')
   @override
   Uri pathToUri(String path) {
     if (!path.startsWith('/')) {
