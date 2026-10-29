@@ -141,10 +141,10 @@ class LibraryCycleGraphLoader {
   /// Throws if not [_hasIdToLoad] at [upToPhase].
   ///
   /// When done loading call [_removeIdToLoad] with the phase and ID.
-  @Requires('upToPhase >= 0')
   @Ensures(r'result.$1 <= upToPhase')
   @Ensures(r'_idsToLoad[result.$1]!.contains(result.$2)')
   (int, AssetId) _nextIdToLoad({required int upToPhase}) {
+    assert(upToPhase >= 0);
     final first = _idsToLoad.entries.first;
     if (first.key > upToPhase) {
       // Entries are sorted, so all further entries are also too high phase.
