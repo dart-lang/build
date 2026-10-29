@@ -111,9 +111,9 @@ class LibraryCycleGraphLoader {
   /// Marks asset with [id] for loading at [phase].
   ///
   /// Any [_load] running at that phase or later will load it.
-  @Requires('phase >= 0')
   @Ensures('_idsToLoad[phase]!.contains(id)')
   void _loadAtPhase(int phase, AssetId id) {
+    assert(phase >= 0);
     (_idsToLoad[phase] ??= []).add(id);
   }
 
