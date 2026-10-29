@@ -191,8 +191,8 @@ class BuilderFilesystem {
   /// Checks whether [id] can be read by this step.
   ///
   /// If it's a declared output from an earlier phase, wait for it to be built.
-  @Requires('phase >= 0')
   Future<bool> isReadableId(AssetId id, int phase) async {
+    assert(phase >= 0);
     if (buildState.isActualPostOutput(id)) {
       // Post process outputs are not readable until after the build.
       return false;
