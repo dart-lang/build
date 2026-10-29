@@ -498,9 +498,9 @@ class BuildState {
   // -- Testing.
 
   @visibleForTesting
-  @Requires('!buildStepPlan.isDeclaredOutput(id)')
-  @Requires('!id.isBrOutput')
   void addSourceForTest(AssetId id, {AssetContent? content}) {
+    assert(!buildStepPlan.isDeclaredOutput(id));
+    assert(!id.isBrOutput);
     _sources.add(id);
     if (content != null) {
       _contents[id] = content;
