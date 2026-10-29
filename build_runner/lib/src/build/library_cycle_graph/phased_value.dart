@@ -120,8 +120,8 @@ abstract class PhasedValue<T>
   ///
   /// Throws `StateError` if the value has expired at [phase], meaning the value
   /// is not known.
-  @Requires('phase >= 0')
   ExpiringValue<T> expiringValueAt({required int phase}) {
+    assert(phase >= 0);
     for (final value in values) {
       if (value.expiresAfter == null || value.expiresAfter! >= phase) {
         return value;
