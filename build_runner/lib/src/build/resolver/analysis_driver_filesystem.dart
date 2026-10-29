@@ -264,7 +264,6 @@ class AnalysisDriverFilesystem
   /// /<package>/lib/<rest> --> package:<package>/<rest>
   /// /<package>/<rest> --> asset:<package>/<rest>
   /// ```
-  @Requires('path.startsWith("/")')
   @Ensures('result.isScheme("package") || result.isScheme("asset")')
   @override
   Uri pathToUri(String path) {
