@@ -93,7 +93,6 @@ class BuilderFilesystem {
   }
 
   /// Records the result and contents of [step] and notifies update listener.
-  @Requires('step.actionNumber >= 0')
   @Requires(
     'step.actionNumber < '
     'buildStepPlan.buildPhases.postBuildPhase.builderActions.length',

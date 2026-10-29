@@ -425,7 +425,6 @@ class BuildState {
   ///
   /// Throws if [contents] does not have keys matching outputs of [result],
   /// or if [step] has already been recorded.
-  @Requires('step.actionNumber >= 0')
   @Ensures(
     'result.outputs.every((id) => '
     '!isSource(id) && !buildStepPlan.isDeclaredOutput(id))',
