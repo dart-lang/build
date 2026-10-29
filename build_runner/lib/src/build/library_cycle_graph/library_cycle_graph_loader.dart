@@ -269,9 +269,9 @@ class LibraryCycleGraphLoader {
   /// Graphs which are still not complete--they have one or more assets that
   /// expire after [upToPhase]--are added to [_graphsToComputeByPhase] at
   /// the appropirate phase to be completed later.
-  @Requires('upToPhase >= 0')
   @Ensures('_graphsToComputeByPhase.keys.every((p) => p > upToPhase)')
   void _buildCycles(int upToPhase) {
+    assert(upToPhase >= 0);
     // Process phases that have work to do in ascending order.
     while (true) {
       int phase;
