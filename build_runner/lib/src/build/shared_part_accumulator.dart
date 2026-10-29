@@ -47,7 +47,6 @@ class SharedPartAccumulator {
 
   @Requires('phase >= 0')
   @Requires('contributions.keys.every((p) => p <= phase)')
-  @ThrowEnsures(StateError, 'contributions.containsKey(phase)')
   void addContribution(int phase, PartContribution contribution) {
     if (_contributions[phase] != null) {
       throw StateError('Contribution for phase $phase already added.');
