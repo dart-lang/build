@@ -111,9 +111,9 @@ class LibraryCycleGraphLoader {
   /// Marks asset with [id] for loading at [phase].
   ///
   /// Any [_load] running at that phase or later will load it.
-  @Requires('phase >= 0')
   @Ensures('_idsToLoad[phase]!.contains(id)')
   void _loadAtPhase(int phase, AssetId id) {
+    assert(phase >= 0);
     (_idsToLoad[phase] ??= []).add(id);
   }
 
@@ -123,8 +123,8 @@ class LibraryCycleGraphLoader {
   }
 
   /// Whether there are assets to load before or at [upToPhase].
-  @Requires('upToPhase >= 0')
   bool _hasIdToLoad({required int upToPhase}) {
+    assert(upToPhase >= 0);
     final first = _idsToLoad.keys.firstOrNull;
     if (first == null) return false;
     if (first > upToPhase) {
@@ -141,10 +141,10 @@ class LibraryCycleGraphLoader {
   /// Throws if not [_hasIdToLoad] at [upToPhase].
   ///
   /// When done loading call [_removeIdToLoad] with the phase and ID.
-  @Requires('upToPhase >= 0')
   @Ensures(r'result.$1 <= upToPhase')
   @Ensures(r'_idsToLoad[result.$1]!.contains(result.$2)')
   (int, AssetId) _nextIdToLoad({required int upToPhase}) {
+    assert(upToPhase >= 0);
     final first = _idsToLoad.entries.first;
     if (first.key > upToPhase) {
       // Entries are sorted, so all further entries are also too high phase.
@@ -269,9 +269,9 @@ class LibraryCycleGraphLoader {
   /// Graphs which are still not complete--they have one or more assets that
   /// expire after [upToPhase]--are added to [_graphsToComputeByPhase] at
   /// the appropirate phase to be completed later.
-  @Requires('upToPhase >= 0')
   @Ensures('_graphsToComputeByPhase.keys.every((p) => p > upToPhase)')
   void _buildCycles(int upToPhase) {
+    assert(upToPhase >= 0);
     // Process phases that have work to do in ascending order.
     while (true) {
       int phase;
@@ -365,13 +365,12 @@ class LibraryCycleGraphLoader {
   /// cycles in that order.
   ///
   /// A [_graphs] entry will be created for each ID in [newCycles].
-  @Requires('phase >= 0')
-  @Requires('newCycles.every((cycle) => cycle.ids.isNotEmpty)')
   @Ensures(
     'newCycles.every((cycle) => '
     'cycle.ids.every((id) => _graphs.containsKey(id)))',
   )
   void _buildGraphs(int phase, {required List<LibraryCycle> newCycles}) {
+    assert(phase >= 0);
     // Cycles by ID at the current phase.
     final cycleById = <AssetId, LibraryCycle>{};
     for (final cycle in newCycles) {

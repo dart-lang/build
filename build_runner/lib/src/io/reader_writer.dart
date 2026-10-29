@@ -15,7 +15,6 @@ import 'package:path/path.dart' as path;
 import '../build_plan/asset_file.dart';
 import '../build_plan/build_package.dart';
 import '../build_plan/build_packages.dart';
-import '../contracts.dart';
 import '../logging/timed_activities.dart';
 import 'asset_finder.dart';
 import 'asset_path_provider.dart';
@@ -59,8 +58,6 @@ class ReaderWriter implements AssetReader, AssetWriter {
     this.forceToPackagePathsForTesting = false,
   });
 
-  @Requires('id.package.isNotEmpty && id.path.isNotEmpty')
-  @Ensures('result.isNotEmpty')
   String _pathFor(
     AssetId id, {
     bool inArtifactTree = false,
@@ -74,7 +71,6 @@ class ReaderWriter implements AssetReader, AssetWriter {
   }
 
   @override
-  @Requires('id.package.isNotEmpty && id.path.isNotEmpty')
   Future<bool> canRead(AssetId id, {bool inArtifactTree = false}) {
     return Future.value(
       TimedActivity.read.run(() {
@@ -85,7 +81,6 @@ class ReaderWriter implements AssetReader, AssetWriter {
   }
 
   @override
-  @Requires('id.package.isNotEmpty && id.path.isNotEmpty')
   Future<List<int>> readAsBytes(AssetId id, {bool inArtifactTree = false}) {
     return Future.value(
       TimedActivity.read.run(() {
@@ -99,7 +94,6 @@ class ReaderWriter implements AssetReader, AssetWriter {
   }
 
   @override
-  @Requires('id.package.isNotEmpty && id.path.isNotEmpty')
   Future<String> readAsString(
     AssetId id, {
     Encoding encoding = utf8,
@@ -119,7 +113,6 @@ class ReaderWriter implements AssetReader, AssetWriter {
   // [AssetWriter] methods.
 
   @override
-  @Requires('id.package.isNotEmpty && id.path.isNotEmpty')
   Future<void> writeAsBytes(
     AssetId id,
     List<int> bytes, {
@@ -137,7 +130,6 @@ class ReaderWriter implements AssetReader, AssetWriter {
   }
 
   @override
-  @Requires('id.package.isNotEmpty && id.path.isNotEmpty')
   Future<void> writeAsString(
     AssetId id,
     String contents, {
@@ -156,7 +148,6 @@ class ReaderWriter implements AssetReader, AssetWriter {
   }
 
   @override
-  @Requires('id.package.isNotEmpty && id.path.isNotEmpty')
   Future<Digest> digest(AssetId id, {bool inArtifactTree = false}) async {
     final digestSink = AccumulatorSink<Digest>();
     md5.startChunkedConversion(digestSink)
@@ -166,7 +157,6 @@ class ReaderWriter implements AssetReader, AssetWriter {
     return digestSink.events.first;
   }
 
-  @Requires('file.id.package.isNotEmpty && file.id.path.isNotEmpty')
   Future<void> delete(AssetFile file) {
     TimedActivity.write.run(() {
       final path = _pathFor(
@@ -179,7 +169,6 @@ class ReaderWriter implements AssetReader, AssetWriter {
     return Future.value();
   }
 
-  @Requires('id.package.isNotEmpty && id.path.isNotEmpty')
   Future<void> deleteDirectory(AssetId id, {bool inArtifactTree = false}) {
     TimedActivity.write.run(() {
       final path = _pathFor(
@@ -224,8 +213,6 @@ class BuildPackagesAssetFinder implements AssetFinder {
   }
 
   /// Creates an [AssetId] for [file], which is a part of [packageNode].
-  @Requires('packageNode.name.isNotEmpty')
-  @Ensures('result.package.isNotEmpty && result.path.isNotEmpty')
   static AssetId _fileToAssetId(File file, BuildPackage packageNode) {
     final filePath = path.normalize(file.absolute.path);
     final relativePath = path.relative(filePath, from: packageNode.path);

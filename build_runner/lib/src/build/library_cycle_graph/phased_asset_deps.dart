@@ -7,7 +7,6 @@ import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
-import '../../contracts.dart';
 import 'asset_deps.dart';
 import 'phased_value.dart';
 
@@ -17,9 +16,6 @@ part '../../../_br_/src/build/library_cycle_graph/phased_asset_deps.part.dart';
 ///
 /// Pass to `AssetDepsLoader.fromDeps` then use that to create a
 /// `LibraryCycleGraphLoader`.
-@Invariant(
-  'assetDeps.keys.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)',
-)
 abstract class PhasedAssetDeps
     implements Built<PhasedAssetDeps, PhasedAssetDepsBuilder> {
   static Serializer<PhasedAssetDeps> get serializer =>

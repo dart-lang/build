@@ -7,8 +7,6 @@ import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
-import '../../contracts.dart';
-
 part '../../../_br_/src/build/library_cycle_graph/asset_deps.part.dart';
 
 /// Dependencies of a Dart source asset.
@@ -18,7 +16,6 @@ part '../../../_br_/src/build/library_cycle_graph/asset_deps.part.dart';
 ///
 /// Missing or not-yet-generated sources can be represented by this class: they
 /// have no deps.
-@Invariant('deps.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)')
 abstract class AssetDeps implements Built<AssetDeps, AssetDepsBuilder> {
   static Serializer<AssetDeps> get serializer => _$assetDepsSerializer;
 
