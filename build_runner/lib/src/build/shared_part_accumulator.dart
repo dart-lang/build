@@ -46,7 +46,6 @@ class SharedPartAccumulator {
   SharedPartAccumulator(this.libraryId, this.languageVersion);
 
   @Requires('phase >= 0')
-  @Requires('contribution.builderKey.isNotEmpty')
   @Requires('contributions.keys.every((p) => p <= phase)')
   @ThrowEnsures(StateError, 'contributions.containsKey(phase)')
   void addContribution(int phase, PartContribution contribution) {

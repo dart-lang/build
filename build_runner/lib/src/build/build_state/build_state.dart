@@ -359,7 +359,6 @@ class BuildState {
   /// part is marked rebuilt.
   @Requires('libraryId.sharedPartId != null')
   @Requires('phase >= 0')
-  @Requires('contribution.builderKey.isNotEmpty')
   void addPartContribution({
     required AssetId libraryId,
     required int phase,
