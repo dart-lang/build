@@ -360,8 +360,6 @@ class AnalysisDriverFilesystem
   Folder? getStateLocation(String pluginId) => throw UnimplementedError();
 }
 
-@Invariant('path.startsWith("/")')
-@Invariant('exists || (content.isEmpty && contentHash.isEmpty && phase == -1)')
 class BuildRunnerFileContent implements FileContent {
   @override
   final String path;
@@ -380,7 +378,10 @@ class BuildRunnerFileContent implements FileContent {
     required this.content,
     required this.contentHash,
     required this.phase,
-  });
+  }) : assert(path.startsWith('/')),
+       assert(
+         exists || (content.isEmpty && contentHash.isEmpty && phase == -1),
+       );
 
   static BuildRunnerFileContent missing(String path) => BuildRunnerFileContent(
     path: path,
