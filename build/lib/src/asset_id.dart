@@ -143,6 +143,9 @@ class AssetId implements Comparable<AssetId> {
 }
 
 String _normalizePath(String path) {
+  if (path.isEmpty) {
+    throw ArgumentError.value(path, 'Asset paths must not be empty.');
+  }
   final normalized = path.replaceAll(r'\', '/');
   final result = p.posix.normalize(normalized);
 
@@ -166,4 +169,4 @@ Uri _constructUri(AssetId id) {
   return Uri(scheme: scheme, pathSegments: [id.package, ...pathSegments]);
 }
 
-final _packageRegExp = RegExp(r'^([a-zA-Z0-9_$-]+(\.[a-zA-Z0-9_$-]+)*)?$');
+final _packageRegExp = RegExp(r'^[a-zA-Z0-9_$-]+(\.[a-zA-Z0-9_$-]+)*$');

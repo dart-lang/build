@@ -15,12 +15,6 @@ part '../../../_br_/src/build/build_state/build_step_result.part.dart';
 /// Execution results and dependency tracking for a build step.
 @Invariant('hasRun || (outputs.isEmpty && errors.isEmpty)')
 @Invariant('!succeeded || errors.isEmpty')
-@Invariant('outputs.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)')
-@Invariant('inputs.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)')
-@Invariant(
-  'resolverEntrypoints.every('
-  '(id) => id.package.isNotEmpty && id.path.isNotEmpty)',
-)
 abstract class BuildStepResult
     implements Built<BuildStepResult, BuildStepResultBuilder> {
   static Serializer<BuildStepResult> get serializer =>

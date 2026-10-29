@@ -12,8 +12,6 @@ part '../../../_br_/src/build/build_state/post_process_build_step_id.part.dart';
 
 /// Identifies a `PostProcessBuildStep` within a build: the application of a
 /// `PostProcessBuilder` to one input.
-@Invariant('input.package.isNotEmpty')
-@Invariant('input.path.isNotEmpty')
 @Invariant('actionNumber >= 0')
 abstract class PostProcessBuildStepId
     implements Built<PostProcessBuildStepId, PostProcessBuildStepIdBuilder> {

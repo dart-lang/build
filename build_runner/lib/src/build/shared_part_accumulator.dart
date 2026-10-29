@@ -14,8 +14,6 @@ import 'shared_part_accumulator_codec.dart';
 
 /// Accumulates part file contributions and imports across build phases.
 @ContractImport('package:build_runner/src/build/br_outputs.dart')
-@Invariant('libraryId.package.isNotEmpty')
-@Invariant('libraryId.path.isNotEmpty')
 @Invariant('libraryId.sharedPartId != null')
 @Invariant('languageVersion == null || languageVersion!.isNotEmpty')
 // Every recorded phase must survive a write and read of the shared part

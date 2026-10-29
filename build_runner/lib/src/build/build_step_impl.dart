@@ -26,16 +26,8 @@ import 'resolver/delegating_resolver.dart';
 ///
 /// This represents a single input and its expected and real outputs. It also
 /// handles tracking of dependencies.
-@Invariant('inputId.package.isNotEmpty')
-@Invariant('inputId.path.isNotEmpty')
 @Invariant('phase >= 0')
-@Invariant(
-  'allowedOutputs.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)',
-)
 @Invariant('outputs.keys.every((id) => allowedOutputs.contains(id))')
-@Invariant(
-  'outputs.keys.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)',
-)
 class BuildStepImpl implements BuildStep {
   final Resolvers? _resolvers;
 
@@ -156,8 +148,6 @@ class BuildStepImpl implements BuildStep {
     );
   }
 
-  @Requires('id.package.isNotEmpty')
-  @Requires('id.path.isNotEmpty')
   @Ensures('!outputs.containsKey(id.normalize()) || result == true')
   @override
   Future<bool> canRead(AssetId id, {bool track = true}) async {
@@ -183,8 +173,6 @@ class BuildStepImpl implements BuildStep {
     return _resourceManager.fetch(resource);
   }
 
-  @Requires('id.package.isNotEmpty')
-  @Requires('id.path.isNotEmpty')
   @override
   Future<List<int>> readAsBytes(AssetId id) async {
     if (_isComplete) throw BuildStepCompletedException();
@@ -200,8 +188,6 @@ class BuildStepImpl implements BuildStep {
     return content.bytes;
   }
 
-  @Requires('id.package.isNotEmpty')
-  @Requires('id.path.isNotEmpty')
   @override
   Future<String> readAsString(
     AssetId id, {
@@ -232,8 +218,6 @@ class BuildStepImpl implements BuildStep {
     );
   }
 
-  @Requires('id.package.isNotEmpty')
-  @Requires('id.path.isNotEmpty')
   @override
   Future<void> writeAsBytes(AssetId id, FutureOr<List<int>> bytes) async {
     if (_isComplete) throw BuildStepCompletedException();
@@ -242,8 +226,6 @@ class BuildStepImpl implements BuildStep {
     outputs[id] = AssetContent.bytes(await bytes);
   }
 
-  @Requires('id.package.isNotEmpty')
-  @Requires('id.path.isNotEmpty')
   @override
   Future<void> writeAsString(
     AssetId id,
@@ -256,8 +238,6 @@ class BuildStepImpl implements BuildStep {
     outputs[id] = AssetContent.string(await content, encoding: encoding);
   }
 
-  @Requires('id.package.isNotEmpty')
-  @Requires('id.path.isNotEmpty')
   @override
   Future<Digest> digest(AssetId id, {bool track = true}) async {
     if (_isComplete) throw BuildStepCompletedException();

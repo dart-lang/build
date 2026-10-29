@@ -14,8 +14,6 @@ part '../../../_br_/src/build/build_state/glob_result.part.dart';
 
 /// Execution results and dependency tracking for a glob evaluation.
 @Invariant('results.every((id) => inputs.contains(id))')
-@Invariant('inputs.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)')
-@Invariant('results.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)')
 abstract class GlobResult implements Built<GlobResult, GlobResultBuilder> {
   static Serializer<GlobResult> get serializer => _$globResultSerializer;
 

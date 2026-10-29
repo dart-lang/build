@@ -14,7 +14,6 @@ part '../../../_br_/src/build/library_cycle_graph/library_cycle.part.dart';
 ///
 /// This means they have to be compiled as a single unit.
 @Invariant('ids.isNotEmpty')
-@Invariant('ids.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)')
 abstract class LibraryCycle
     implements Built<LibraryCycle, LibraryCycleBuilder> {
   BuiltSet<AssetId> get ids;

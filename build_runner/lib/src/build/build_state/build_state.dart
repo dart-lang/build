@@ -33,14 +33,7 @@ import 'post_process_build_step_result.dart';
 /// - Glob results.
 /// - Build step results.
 /// - Post process build step results.
-@Invariant(
-  '_partData.keys.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)',
-)
 @Invariant('_partData.keys.every((id) => id.sharedPartId != null)')
-@Invariant(
-  '_librariesWithRebuiltPart.every('
-  '(id) => id.package.isNotEmpty && id.path.isNotEmpty)',
-)
 class BuildState {
   /// The planned build steps for this build.
   final BuildStepPlan buildStepPlan;
@@ -365,8 +358,6 @@ class BuildState {
   ///
   /// The contribution supersedes whatever the previous build wrote, so the
   /// part is marked rebuilt.
-  @Requires('libraryId.package.isNotEmpty')
-  @Requires('libraryId.path.isNotEmpty')
   @Requires('libraryId.sharedPartId != null')
   @Requires('phase >= 0')
   @Requires('contribution.builderKey.isNotEmpty')
@@ -394,8 +385,6 @@ class BuildState {
   /// still correct and is kept rather than written again. Marking it rebuilt
   /// would report the part as an output of this build.
   @Requires('phase >= 0')
-  @Requires('fromPart == null || libraryId.package.isNotEmpty')
-  @Requires('fromPart == null || libraryId.path.isNotEmpty')
   @Requires('fromPart == null || libraryId.sharedPartId != null')
   void copyPartContribution({
     required FinishedSharedPart? fromPart,
@@ -516,8 +505,6 @@ class BuildState {
   // -- Testing.
 
   @visibleForTesting
-  @Requires('id.package.isNotEmpty')
-  @Requires('id.path.isNotEmpty')
   @Requires('!buildStepPlan.isDeclaredOutput(id)')
   @Requires('!id.isBrOutput')
   void addSourceForTest(AssetId id, {AssetContent? content}) {

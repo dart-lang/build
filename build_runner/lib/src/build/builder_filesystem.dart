@@ -63,8 +63,6 @@ class BuilderFilesystem {
   /// Records the result and contents of [step] and notifies update listener.
   @Requires('step.phaseNumber >= 0')
   @Requires('step.phaseNumber < buildStepPlan.buildPhases.inBuildPhases.length')
-  @Requires('step.primaryInput.package.isNotEmpty')
-  @Requires('step.primaryInput.path.isNotEmpty')
   void addBuildStepResult({
     required BuildStepId step,
     required BuildStepResult result,
@@ -101,8 +99,6 @@ class BuilderFilesystem {
     'step.actionNumber < '
     'buildStepPlan.buildPhases.postBuildPhase.builderActions.length',
   )
-  @Requires('step.input.package.isNotEmpty')
-  @Requires('step.input.path.isNotEmpty')
   void addPostProcessBuildStepResult({
     required PostProcessBuildStepId step,
     required PostProcessBuildStepResult result,
@@ -119,8 +115,6 @@ class BuilderFilesystem {
     }
   }
 
-  @Requires('id.package.isNotEmpty')
-  @Requires('id.path.isNotEmpty')
   void checkInvalidInput(AssetId id) {
     final package = buildPackages[id.package];
     if (package == null) {
@@ -141,8 +135,6 @@ class BuilderFilesystem {
   ///
   /// If it's an unread source it will be read from the filesystem and stored in
   /// memory.
-  @Requires('id.package.isNotEmpty')
-  @Requires('id.path.isNotEmpty')
   Future<AssetContent> contentOf(AssetId id) async {
     final maybeResult = buildState.contentOf(id);
     if (maybeResult != null) return maybeResult;
@@ -174,8 +166,6 @@ class BuilderFilesystem {
   /// If [catchInvalidInputs] is set to true and [checkInvalidInput] throws an
   /// [InvalidInputException], this method will return `false` instead of
   /// throwing.
-  @Requires('id.package.isNotEmpty')
-  @Requires('id.path.isNotEmpty')
   @Requires('phase >= 0')
   Future<bool> isReadable(
     AssetId id,
@@ -203,8 +193,6 @@ class BuilderFilesystem {
   /// Checks whether [id] can be read by this step.
   ///
   /// If it's a declared output from an earlier phase, wait for it to be built.
-  @Requires('id.package.isNotEmpty')
-  @Requires('id.path.isNotEmpty')
   @Requires('phase >= 0')
   Future<bool> isReadableId(AssetId id, int phase) async {
     if (buildState.isActualPostOutput(id)) {
@@ -274,8 +262,6 @@ class BuilderFilesystem {
   /// its content. Note that generation might output nothing, in which case an
   /// empty string is returned for its content.
   @Requires('phase >= 0')
-  @Requires('id.package.isNotEmpty')
-  @Requires('id.path.isNotEmpty')
   Future<PhasedValue<String>> readPhased(int phase, AssetId id) async {
     if (!buildState.isKnownAsset(id)) {
       return PhasedValue.fixed('');
