@@ -111,8 +111,8 @@ abstract class PhasedValue<T>
 
   /// Whether this value has expired at the specified [phase], meaning the
   /// actual value is not known.
-  @Requires('phase >= 0')
   bool isExpiredAt({required int phase}) {
+    assert(phase >= 0);
     return expiresAfter != null && expiresAfter! < phase;
   }
 
