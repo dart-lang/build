@@ -221,14 +221,14 @@ class BuilderFilesystem {
   /// Returns all readable assets matching [glob] under [package].
   ///
   /// Throws if a build is not running.
-  @Requires('package.isNotEmpty')
-  @Requires('phase >= 0')
   Stream<AssetId> findAssets(
     Glob glob, {
     required String package,
     required int phase,
     void Function(GlobId)? trackGlob,
   }) {
+    assert(package.isNotEmpty);
+    assert(phase >= 0);
     final streamCompleter = StreamCompleter<AssetId>();
     final globId = GlobId(
       package: package,
