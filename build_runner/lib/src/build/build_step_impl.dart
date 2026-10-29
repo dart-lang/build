@@ -26,7 +26,6 @@ import 'resolver/delegating_resolver.dart';
 ///
 /// This represents a single input and its expected and real outputs. It also
 /// handles tracking of dependencies.
-@Invariant('phase >= 0')
 @Invariant('outputs.keys.every((id) => allowedOutputs.contains(id))')
 class BuildStepImpl implements BuildStep {
   final Resolvers? _resolvers;
@@ -107,7 +106,8 @@ class BuildStepImpl implements BuildStep {
     required Resolvers resolvers,
     required ResourceManager resourceManager,
     void Function(Iterable<AssetId>)? reportUnusedAssets,
-  }) : allowedOutputs = UnmodifiableSetView(expectedOutputs.toSet()),
+  }) : assert(phase >= 0),
+       allowedOutputs = UnmodifiableSetView(expectedOutputs.toSet()),
        _resolvers = resolvers,
        _resourceManager = resourceManager,
        _reportUnusedAssets = reportUnusedAssets;
