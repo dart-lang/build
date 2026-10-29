@@ -11,7 +11,6 @@ import '../io/filesystem.dart';
 import 'build_state/glob_id.dart';
 
 /// Records inputs for a `BuildStep`.
-@Invariant('builderLabel == null || builderLabel!.isNotEmpty')
 class InputTracker {
   /// If set, when an `InputTracker` is instantiated it is stored in
   /// `inputTrackers`.
@@ -35,7 +34,8 @@ class InputTracker {
   /// [filesystem] is used to distinguish input trackers for testing, because
   /// each test case creates a new in-memory filesystem. It's not used
   /// otherwise.
-  InputTracker(Filesystem filesystem, {this.primaryInput, this.builderLabel}) {
+  InputTracker(Filesystem filesystem, {this.primaryInput, this.builderLabel})
+    : assert(builderLabel == null || builderLabel.isNotEmpty) {
     if (captureInputTrackersForTesting) {
       inputTrackersForTesting.putIfAbsent(filesystem, () => []).add(this);
     }
