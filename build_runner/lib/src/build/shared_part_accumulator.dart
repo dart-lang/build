@@ -8,14 +8,12 @@ import 'package:dart_style/dart_style.dart';
 
 import '../contracts.dart';
 import 'asset_content.dart';
+import 'br_outputs.dart';
 import 'finished_shared_part.dart';
 import 'part_contribution.dart';
 import 'shared_part_accumulator_codec.dart';
 
 /// Accumulates part file contributions and imports across build phases.
-@ContractImport('package:build_runner/src/build/br_outputs.dart')
-@Invariant('libraryId.sharedPartId != null')
-@Invariant('languageVersion == null || languageVersion!.isNotEmpty')
 // Every recorded phase must survive a write and read of the shared part
 // file. A phase with neither imports nor a contribution writes nothing, so
 // reading the file back loses it, and `contentAt` then returns null where it
@@ -43,7 +41,9 @@ class SharedPartAccumulator {
   final Map<int, AssetContent> _contentsByPhase = {};
   AssetContent? _finalContent;
 
-  SharedPartAccumulator(this.libraryId, this.languageVersion);
+  SharedPartAccumulator(this.libraryId, this.languageVersion)
+    : assert(libraryId.sharedPartId != null),
+      assert(languageVersion == null || languageVersion.isNotEmpty);
 
   @Requires('phase >= 0')
   @Requires('contributions.keys.every((p) => p <= phase)')
