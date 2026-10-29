@@ -12,11 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-part of 'builder.dart';
+import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/type.dart' as analyzer;
+import 'package:analyzer/dart/element/type_system.dart';
+// ignore: implementation_imports
+import 'package:analyzer/src/dart/element/type_algebra.dart' show Substitution;
+import 'package:code_builder/code_builder.dart' hide refer;
+
+/// Resolves an analyzer [analyzer.DartType] to a `code_builder` [Reference]
+/// within the generated mock library's import and type-parameter scope.
+typedef JsTypeReferenceResolver =
+    Reference Function(
+      analyzer.DartType type, {
+      bool forceNullable,
+      bool overrideVoid,
+    });
+
+Reference _referImported(String symbol, String? url) => Reference(symbol, url);
+
+Reference _refer(String symbol) => Reference(symbol);
 
 /// Returns the non-empty string value from the `dart:js_interop` `@JS()`
 /// annotation on [element], if present.
-String? _jsInteropAnnotationName(Element element) {
+String? jsInteropAnnotationName(Element element) {
   for (final annotation in element.baseElement.metadata.annotations) {
     final annotationElement = annotation.element;
     if (annotationElement is ConstructorElement &&
@@ -31,7 +49,7 @@ String? _jsInteropAnnotationName(Element element) {
 }
 
 String _effectiveJsExportName(ExecutableElement member) =>
-    _jsInteropAnnotationName(member) ?? member.displayName;
+    jsInteropAnnotationName(member) ?? member.displayName;
 
 String _memberUnsupportedKey(ExecutableElement member) =>
     member is SetterElement ? '${member.name}=' : member.name!;
@@ -52,14 +70,15 @@ String _safeJsIdentifier(String name) => name.replaceAllMapped(
   (m) => '\$u${m[0]!.codeUnitAt(0).toRadixString(16)}_',
 );
 
-Expression _jsExportLiteral(String value) =>
+/// Builds a `code_builder` string literal suitable for `@JSExport(...)`.
+Expression jsExportLiteral(String value) =>
     value.contains("'")
         ? literalString(value.replaceAll(r'$', r'\$'))
         : literalString(value, raw: value.contains(r'$'));
 
 /// Whether [member] is emitted onto `Mock*Target` as a concrete member that
 /// `dart:js_interop` `@JSExport()` can export.
-bool _isExportableJsInteropMember(ExecutableElement member) {
+bool isExportableJsInteropMember(ExecutableElement member) {
   if (!member.isExternal || member.isPrivate || member.isStatic) return false;
   if (member is PropertyAccessorElement) {
     return member.name != 'hashCode' && member.name != 'runtimeType';
@@ -488,8 +507,8 @@ _JsParamSpec _classifyNominalOrObjectLiteral(
       canEmitIsA: false,
     );
   }
-  final typeJsName = _jsInteropAnnotationName(element) ?? element.name!;
-  final libJsName = _jsInteropAnnotationName(element.library);
+  final typeJsName = jsInteropAnnotationName(element) ?? element.name!;
+  final libJsName = jsInteropAnnotationName(element.library);
   final instanceOfName =
       libJsName == null ? typeJsName : '$libJsName.$typeJsName';
   if (instanceOfName == 'Object') {
@@ -861,32 +880,40 @@ final class _JsBucketPlan {
   });
 }
 
-final class _JsExportPlan {
+/// Planned `@JSExport` key disambiguations, multiplexer members, and collision
+/// diagnostics for a mocked JS interop extension type.
+final class JsExportPlan {
   final Map<ExecutableElement, String> disambiguatedExports;
-  final List<_JsSetterMultiplexer> setterMultiplexers;
-  final List<_JsMethodMultiplexer> methodMultiplexers;
   final List<String> errorMessages;
+  final List<_JsSetterMultiplexer> _setterMultiplexers;
+  final List<_JsMethodMultiplexer> _methodMultiplexers;
+  final TypeSystem _typeSystem;
 
-  const _JsExportPlan._({
+  const JsExportPlan._({
     required this.disambiguatedExports,
-    required this.setterMultiplexers,
-    required this.methodMultiplexers,
     required this.errorMessages,
-  });
+    required List<_JsSetterMultiplexer> setterMultiplexers,
+    required List<_JsMethodMultiplexer> methodMultiplexers,
+    required TypeSystem typeSystem,
+  }) : _setterMultiplexers = setterMultiplexers,
+       _methodMultiplexers = methodMultiplexers,
+       _typeSystem = typeSystem;
 
-  factory _JsExportPlan.analyze(
-    _MockTarget mockTarget,
-    Iterable<ExecutableElement> members,
-    TypeSystem typeSystem,
-  ) {
+  factory JsExportPlan.analyze({
+    required String interfaceName,
+    required Iterable<ExecutableElement> members,
+    required Set<String> unsupportedMembers,
+    required Map<String, ExecutableElement> fallbackGenerators,
+    required TypeSystem typeSystem,
+  }) {
     final disambiguated = <ExecutableElement, String>{};
     final buckets = <String, _JsExportBucket>{};
 
     for (final member in members) {
-      if (!_isExportableJsInteropMember(member)) continue;
+      if (!isExportableJsInteropMember(member)) continue;
       final unsupportedKey = _memberUnsupportedKey(member);
-      if (mockTarget.unsupportedMembers.contains(unsupportedKey) &&
-          !mockTarget.fallbackGenerators.containsKey(unsupportedKey)) {
+      if (unsupportedMembers.contains(unsupportedKey) &&
+          !fallbackGenerators.containsKey(unsupportedKey)) {
         disambiguated[member] = _disambiguatedExportKey(member);
         continue;
       }
@@ -902,9 +929,6 @@ final class _JsExportPlan {
       }
     }
 
-    final interfaceName =
-        mockTarget.classType.alias?.element.name ??
-        mockTarget.interfaceElement.name!;
     final setterMuxes = <_JsSetterMultiplexer>[];
     final methodMuxes = <_JsMethodMultiplexer>[];
     final errors = <String>[];
@@ -921,13 +945,22 @@ final class _JsExportPlan {
       errors.addAll(bucketPlan.errors);
     }
 
-    return _JsExportPlan._(
+    return JsExportPlan._(
       disambiguatedExports: disambiguated,
+      errorMessages: errors,
       setterMultiplexers: setterMuxes,
       methodMultiplexers: methodMuxes,
-      errorMessages: errors,
+      typeSystem: typeSystem,
     );
   }
+
+  /// Generates `@JSExport` setter and method multiplexers for colliding
+  /// overloads using [typeReference] to resolve types in the target library.
+  Iterable<Method> buildMultiplexers(JsTypeReferenceResolver typeReference) =>
+      _JsMultiplexerBuilder(_typeSystem, typeReference).buildAll(
+        setterMultiplexers: _setterMultiplexers,
+        methodMultiplexers: _methodMultiplexers,
+      );
 }
 
 _JsBucketPlan _analyzeBucket(
@@ -1153,24 +1186,20 @@ bool _canBoxJsReturn(analyzer.DartType type) {
   return false;
 }
 
-extension _JsInteropTargetGathererExtension on _MockTargetGatherer {
-  List<String> _checkJsInteropOverloads(
-    _MockTarget mockTarget,
-    Iterable<ExecutableElement> members,
-  ) =>
-      _JsExportPlan.analyze(
-        mockTarget,
-        members,
-        _entryLib.typeSystem,
-      ).errorMessages;
-}
+final class _JsMultiplexerBuilder {
+  final TypeSystem typeSystem;
+  final JsTypeReferenceResolver _typeReference;
 
-extension _JsInteropMockClassExtension on _MockClassInfo {
-  Iterable<Method> _buildJsExportMultiplexers(_JsExportPlan plan) sync* {
-    for (final mux in plan.setterMultiplexers) {
+  const _JsMultiplexerBuilder(this.typeSystem, this._typeReference);
+
+  Iterable<Method> buildAll({
+    required List<_JsSetterMultiplexer> setterMultiplexers,
+    required List<_JsMethodMultiplexer> methodMultiplexers,
+  }) sync* {
+    for (final mux in setterMultiplexers) {
       yield _buildSetterMultiplexer(mux);
     }
-    for (final mux in plan.methodMultiplexers) {
+    for (final mux in methodMultiplexers) {
       yield _buildMethodMultiplexer(mux);
     }
   }
@@ -1191,10 +1220,10 @@ extension _JsInteropMockClassExtension on _MockClassInfo {
         ..name = '\$jsExport\$set\$$safeName'
         ..type = MethodType.setter
         ..annotations.add(
-          _MockClassInfo.referImported(
+          _referImported(
             'JSExport',
             'dart:js_interop',
-          ).call([_jsExportLiteral(mux.jsName)]),
+          ).call([jsExportLiteral(mux.jsName)]),
         )
         ..requiredParameters.add(
           Parameter(
@@ -1208,7 +1237,7 @@ extension _JsInteropMockClassExtension on _MockClassInfo {
           mux.branches,
           const [paramName],
           (candidate) =>
-              _MockClassInfo.refer(candidate.element.displayName)
+              _refer(candidate.element.displayName)
                   .assign(
                     _convertArgExpression(paramName, candidate.params.single),
                   )
@@ -1225,10 +1254,10 @@ extension _JsInteropMockClassExtension on _MockClassInfo {
       mBuilder
         ..name = '\$jsExport\$method\$$safeName'
         ..annotations.add(
-          _MockClassInfo.referImported(
+          _referImported(
             'JSExport',
             'dart:js_interop',
-          ).call([_jsExportLiteral(mux.jsName)]),
+          ).call([jsExportLiteral(mux.jsName)]),
         )
         ..returns =
             mux.allSameReturn
@@ -1269,7 +1298,7 @@ extension _JsInteropMockClassExtension on _MockClassInfo {
       for (var i = 0; i < candidate.params.length; i++)
         _convertArgExpression(paramNames[i], candidate.params[i]),
     ];
-    final callExpr = _MockClassInfo.refer(method.displayName).call(args);
+    final callExpr = _refer(method.displayName).call(args);
     final returnType = method.returnType;
     if (allSameReturn) {
       return returnType is analyzer.VoidType
@@ -1343,7 +1372,7 @@ extension _JsInteropMockClassExtension on _MockClassInfo {
     _JsDispatchClause clause,
     List<String> paramNames,
   ) {
-    final paramRef = _MockClassInfo.refer(paramNames[clause.paramIndex]);
+    final paramRef = _refer(paramNames[clause.paramIndex]);
     switch (clause) {
       case _JsParamNullClause(:final expectNull):
         return expectNull
@@ -1368,7 +1397,7 @@ extension _JsInteropMockClassExtension on _MockClassInfo {
   }
 
   Expression _convertArgExpression(String paramName, _JsParamSpec spec) {
-    final paramRef = _MockClassInfo.refer(paramName);
+    final paramRef = _refer(paramName);
     final targetType = spec.originalType;
     final coreType = _unwrapNonJsExtensionType(targetType);
     if (coreType.isDartCoreString) {
@@ -1406,4 +1435,21 @@ extension _JsInteropMockClassExtension on _MockClassInfo {
         ),
       )
       .nullSafeProperty(getterName);
+}
+
+/// JS interop classification helpers for analyzer [ExtensionTypeElement]s.
+extension JsInteropExtensionTypeElement on ExtensionTypeElement {
+  bool get isSdkJSInteropType {
+    final uri = library.uri.toString();
+    return uri == 'dart:js_interop' || uri == 'dart:js_interop_unsafe';
+  }
+
+  bool get isJSInteropType {
+    Element? element = this;
+    while (element is ExtensionTypeElement) {
+      if (element.isSdkJSInteropType) return true;
+      element = element.representation.type.element;
+    }
+    return false;
+  }
 }

@@ -44,8 +44,7 @@ import 'package:path/path.dart' as p;
 import 'package:source_gen/source_gen.dart';
 
 import '../annotations.dart';
-
-part 'js_interop_overloads.dart';
+import 'js_interop_overloads.dart';
 
 /// For a source Dart library, generate the mocks referenced therein.
 ///
@@ -1058,8 +1057,16 @@ class _MockTargetGatherer {
           }
         }).toList();
     if (interfaceElement is ExtensionTypeElement) {
+      final targetName =
+          mockTarget.classType.alias?.element.name ?? interfaceElement.name!;
       unstubbableErrorMessages.addAll(
-        _checkJsInteropOverloads(mockTarget, relevantMembers),
+        JsExportPlan.analyze(
+          interfaceName: targetName,
+          members: relevantMembers,
+          unsupportedMembers: mockTarget.unsupportedMembers,
+          fallbackGenerators: mockTarget.fallbackGenerators,
+          typeSystem: _entryLib.typeSystem,
+        ).errorMessages,
       );
     }
 
@@ -1410,10 +1417,12 @@ class _MockClassInfo {
                   .where((m) => m.isExternal)
                   .toList();
 
-          final exportPlan = _JsExportPlan.analyze(
-            mockTarget,
-            members,
-            typeSystem,
+          final exportPlan = JsExportPlan.analyze(
+            interfaceName: className!,
+            members: members,
+            unsupportedMembers: mockTarget.unsupportedMembers,
+            fallbackGenerators: mockTarget.fallbackGenerators,
+            typeSystem: typeSystem,
           );
           _disambiguatedJsExports = exportPlan.disambiguatedExports;
 
@@ -1429,7 +1438,7 @@ class _MockClassInfo {
               includeNullables: true,
             ),
           );
-          cBuilder.methods.addAll(_buildJsExportMultiplexers(exportPlan));
+          cBuilder.methods.addAll(exportPlan.buildMultiplexers(_typeReference));
         },
       );
     });
@@ -1758,15 +1767,15 @@ class _MockClassInfo {
   ) {
     final isJSInteropMember = _isExtensionType && member.isExternal;
     if (isJSInteropMember) {
-      if (!_isExportableJsInteropMember(member)) return;
+      if (!isExportableJsInteropMember(member)) return;
       final jsName =
-          _disambiguatedJsExports[member] ?? _jsInteropAnnotationName(member);
+          _disambiguatedJsExports[member] ?? jsInteropAnnotationName(member);
       if (jsName != null) {
         builder.annotations.add(
           referImported(
             'JSExport',
             'dart:js_interop',
-          ).call([_jsExportLiteral(jsName)]),
+          ).call([jsExportLiteral(jsName)]),
         );
       }
     } else {
@@ -3184,21 +3193,5 @@ extension NamedTypeExtension on ast.NamedType {
       return '${importPrefix.name.lexeme}.${name.lexeme}';
     }
     return name.lexeme;
-  }
-}
-
-extension on ExtensionTypeElement {
-  bool get isSdkJSInteropType {
-    final uri = library.uri.toString();
-    return uri == 'dart:js_interop' || uri == 'dart:js_interop_unsafe';
-  }
-
-  bool get isJSInteropType {
-    Element? element = this;
-    while (element is ExtensionTypeElement) {
-      if (element.isSdkJSInteropType) return true;
-      element = element.representation.type.element;
-    }
-    return false;
   }
 }
