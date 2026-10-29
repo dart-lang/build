@@ -366,7 +366,6 @@ class LibraryCycleGraphLoader {
   ///
   /// A [_graphs] entry will be created for each ID in [newCycles].
   @Requires('phase >= 0')
-  @Requires('newCycles.every((cycle) => cycle.ids.isNotEmpty)')
   @Ensures(
     'newCycles.every((cycle) => '
     'cycle.ids.every((id) => _graphs.containsKey(id)))',
