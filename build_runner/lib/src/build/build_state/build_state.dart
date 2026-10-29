@@ -70,7 +70,6 @@ class BuildState {
   /// what this build writes.
   final Set<AssetId> _librariesWithRebuiltPart = {};
 
-  @Ensures('_sources.every((id) => !buildStepPlan.isDeclaredOutput(id))')
   @Ensures(
     '_sources.every((id) => '
     '!id.isBrOutput || '
