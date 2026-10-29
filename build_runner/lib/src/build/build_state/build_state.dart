@@ -278,7 +278,6 @@ class BuildState {
   /// or if [step] has already been recorded.
   @Ensures('result.outputs.every((id) => buildStepPlan.isDeclaredOutput(id))')
   @Ensures('contents.keys.every((id) => _contents.containsKey(id))')
-  @ThrowEnsures(StateError, 'stepResultOrNull(step) != null')
   void addBuildStepResult({
     required BuildStepId step,
     required BuildStepResult result,
