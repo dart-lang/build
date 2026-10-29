@@ -379,14 +379,14 @@ class BuildState {
   /// reproduces what the previous build already wrote, so that content is
   /// still correct and is kept rather than written again. Marking it rebuilt
   /// would report the part as an output of this build.
-  @Requires('phase >= 0')
-  @Requires('fromPart == null || libraryId.sharedPartId != null')
   void copyPartContribution({
     required FinishedSharedPart? fromPart,
     required AssetId libraryId,
     required int phase,
     required String? languageVersion,
   }) {
+    assert(phase >= 0);
+    assert(fromPart == null || libraryId.sharedPartId != null);
     if (fromPart == null) return;
     final contribution = fromPart.contributions[phase];
     if (contribution == null) return;
