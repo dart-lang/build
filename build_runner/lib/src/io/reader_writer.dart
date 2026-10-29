@@ -215,7 +215,6 @@ class BuildPackagesAssetFinder implements AssetFinder {
   }
 
   /// Creates an [AssetId] for [file], which is a part of [packageNode].
-  @Requires('packageNode.name.isNotEmpty')
   static AssetId _fileToAssetId(File file, BuildPackage packageNode) {
     final filePath = path.normalize(file.absolute.path);
     final relativePath = path.relative(filePath, from: packageNode.path);
