@@ -49,8 +49,6 @@ class LibrarySourceSinkImpl implements LibrarySourceSink {
   }
 
   @Requires('uri.isNotEmpty')
-  @Requires('as.isNotEmpty')
-  @Requires('as.startsWith(importPrefix)')
   @override
   void addImport(
     String uri, {
