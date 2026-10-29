@@ -14,8 +14,6 @@ export 'prefix_for_phase.dart';
 /// The language experiment that allows a part to have imports.
 const String _enhancedParts = 'enhanced-parts';
 
-@Invariant('importPrefix.isNotEmpty')
-@Invariant('languageVersion == null || languageVersion!.isNotEmpty')
 class LibrarySourceSinkImpl implements LibrarySourceSink {
   final BuildStepImpl _buildStep;
   @override
@@ -30,7 +28,8 @@ class LibrarySourceSinkImpl implements LibrarySourceSink {
     this._buildStep,
     this.importPrefix,
     this.languageVersion,
-  );
+  ) : assert(importPrefix.isNotEmpty),
+      assert(languageVersion == null || languageVersion.isNotEmpty);
 
   String get contribution => _buffer.toString();
   BuiltList<String> get imports => _imports.build();
