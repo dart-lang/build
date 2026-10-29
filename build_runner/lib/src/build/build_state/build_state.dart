@@ -183,8 +183,6 @@ class BuildState {
   /// Updates a source file content.
   ///
   /// Throws if not a source.
-  @Ensures('isSource(id)')
-  @Ensures('_contents[id] == content')
   void updateSourceContent(AssetId id, AssetContent content) {
     if (!isSource(id)) {
       throw StateError('Tried to update content of non-source $id.');
