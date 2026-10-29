@@ -48,7 +48,6 @@ class AnalysisDriverFilesystem
   /// A generated file is only visible if it was generated at an earlier phase.
   ///
   /// Records changes due to the phase change in [changedPaths].
-  @Ensures('_phase == phase')
   set phase(int phase) {
     assert(phase >= 0);
     assert(phase <= _builderFilesystem.buildStepPlan.buildStepsByPhase.length);
