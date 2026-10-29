@@ -61,12 +61,12 @@ class BuilderFilesystem {
   }
 
   /// Records the result and contents of [step] and notifies update listener.
-  @Requires('step.phaseNumber < buildStepPlan.buildPhases.inBuildPhases.length')
   void addBuildStepResult({
     required BuildStepId step,
     required BuildStepResult result,
     Map<AssetId, AssetContent> contents = const {},
   }) {
+    assert(step.phaseNumber < buildStepPlan.buildPhases.inBuildPhases.length);
     buildState.addBuildStepResult(
       step: step,
       result: result,
