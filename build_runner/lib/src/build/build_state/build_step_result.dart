@@ -7,14 +7,11 @@ import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
-import '../../contracts.dart';
 import 'glob_id.dart';
 
 part '../../../_br_/src/build/build_state/build_step_result.part.dart';
 
 /// Execution results and dependency tracking for a build step.
-@Invariant('hasRun || (outputs.isEmpty && errors.isEmpty)')
-@Invariant('!succeeded || errors.isEmpty')
 abstract class BuildStepResult
     implements Built<BuildStepResult, BuildStepResultBuilder> {
   static Serializer<BuildStepResult> get serializer =>
@@ -47,7 +44,10 @@ abstract class BuildStepResult
 
   factory BuildStepResult([void Function(BuildStepResultBuilder)? updates]) =
       _$BuildStepResult;
-  BuildStepResult._();
+  BuildStepResult._() {
+    assert(hasRun || (outputs.isEmpty && errors.isEmpty));
+    assert(!succeeded || errors.isEmpty);
+  }
 
   /// Whether the build step ran, either in the previous build or in this build.
   bool get hasRun => result != null;
