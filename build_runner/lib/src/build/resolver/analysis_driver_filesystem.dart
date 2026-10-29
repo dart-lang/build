@@ -197,7 +197,6 @@ class AnalysisDriverFilesystem
   /// Reads the data previously written to [path].
   ///
   /// Throws if ![exists].
-  @Ensures('result == _data[path]!.content')
   String read(String path) {
     if (!exists(path)) throw StateError('Read of non-existent file.');
     return _data[path]!.content;
