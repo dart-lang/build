@@ -426,7 +426,6 @@ class BuildState {
     '!isSource(id) && !buildStepPlan.isDeclaredOutput(id))',
   )
   @Ensures('contents.keys.every((id) => _contents.containsKey(id))')
-  @ThrowEnsures(StateError, 'postProcessBuildStepResultFor(step) != null')
   void addPostProcessBuildStepResult({
     required PostProcessBuildStepId step,
     required PostProcessBuildStepResult result,
