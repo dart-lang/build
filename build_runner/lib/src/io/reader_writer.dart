@@ -15,7 +15,6 @@ import 'package:path/path.dart' as path;
 import '../build_plan/asset_file.dart';
 import '../build_plan/build_package.dart';
 import '../build_plan/build_packages.dart';
-import '../contracts.dart';
 import '../logging/timed_activities.dart';
 import 'asset_finder.dart';
 import 'asset_path_provider.dart';
@@ -59,7 +58,6 @@ class ReaderWriter implements AssetReader, AssetWriter {
     this.forceToPackagePathsForTesting = false,
   });
 
-  @Ensures('result.isNotEmpty')
   String _pathFor(
     AssetId id, {
     bool inArtifactTree = false,
