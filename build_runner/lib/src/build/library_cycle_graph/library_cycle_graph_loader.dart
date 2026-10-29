@@ -123,8 +123,8 @@ class LibraryCycleGraphLoader {
   }
 
   /// Whether there are assets to load before or at [upToPhase].
-  @Requires('upToPhase >= 0')
   bool _hasIdToLoad({required int upToPhase}) {
+    assert(upToPhase >= 0);
     final first = _idsToLoad.keys.firstOrNull;
     if (first == null) return false;
     if (first > upToPhase) {
