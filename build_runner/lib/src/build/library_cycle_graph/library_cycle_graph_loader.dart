@@ -365,12 +365,12 @@ class LibraryCycleGraphLoader {
   /// cycles in that order.
   ///
   /// A [_graphs] entry will be created for each ID in [newCycles].
-  @Requires('phase >= 0')
   @Ensures(
     'newCycles.every((cycle) => '
     'cycle.ids.every((id) => _graphs.containsKey(id)))',
   )
   void _buildGraphs(int phase, {required List<LibraryCycle> newCycles}) {
+    assert(phase >= 0);
     // Cycles by ID at the current phase.
     final cycleById = <AssetId, LibraryCycle>{};
     for (final cycle in newCycles) {
