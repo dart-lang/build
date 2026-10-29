@@ -2219,6 +2219,262 @@ void main() {
       expect(mocksContent, matches(RegExp(r'implements _i\d+\.E<_i\d+\.A>')));
     },
   );
+
+  test(
+    'generates multiplexers for overloaded @JS setters and methods',
+    () async {
+      final mocksContent = await buildWithNonNullable({
+        ...annotationsAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        import 'dart:js_interop';
+        extension type TrustedHTML(JSObject _) implements JSObject {}
+        extension type E(JSObject o) {
+          external String get innerHTML;
+          external set innerHTML(String v);
+          @JS('innerHTML')
+          external set innerHTMLTrusted(TrustedHTML v);
+
+          @JS('aria-label')
+          external void setAria(String v);
+          @JS('aria-label')
+          external void setAriaTrusted(TrustedHTML v);
+
+          @JS('inspect')
+          external int inspectBytes(JSUint8Array bytes);
+          @JS('inspect')
+          external String inspectFloats(JSFloat32Array floats);
+
+          @JS('at')
+          external int operator [](int index);
+        }
+        '''),
+        'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+        @GenerateMocks([E])
+        void main() {}
+        ''',
+      });
+      expect(mocksContent, contains('String get innerHTML =>'));
+      expect(
+        mocksContent,
+        contains(
+          "@_i1.JSExport(r'\$mockito\$set\$innerHTML')\n"
+          '  set innerHTML(String? v) =>',
+        ),
+      );
+      expect(
+        mocksContent,
+        contains(
+          "@_i1.JSExport(r'\$mockito\$set\$innerHTMLTrusted')\n"
+          '  set innerHTMLTrusted(_i4.TrustedHTML? v) =>',
+        ),
+      );
+      expect(
+        mocksContent,
+        contains(
+          "@_i1.JSExport('innerHTML')\n"
+          '  set \$jsExport\$set\$innerHTML(_i1.JSAny? _value) {\n'
+          '    if (_value.isA<_i1.JSString?>()) {',
+        ),
+      );
+      expect(
+        mocksContent,
+        contains(
+          "@_i1.JSExport('aria-label')\n"
+          '  void \$jsExport\$method\$aria\$u2d_label(_i1.JSAny? _p0) {\n'
+          '    if (_p0.isA<_i1.JSString>()) {',
+        ),
+      );
+      expect(
+        mocksContent,
+        contains(
+          "@_i1.JSExport('inspect')\n"
+          '  _i1.JSAny? \$jsExport\$method\$inspect(_i1.JSAny? _p0) {\n'
+          '    if (_p0.isA<_i1.JSUint8Array>()) {',
+        ),
+      );
+      expect(mocksContent, isNot(contains("@_i1.JSExport('at')")));
+      expect(mocksContent, contains('int operator [](int? index) =>'));
+    },
+  );
+
+  test('throws when colliding @JS getters cannot be distinguished', () async {
+    await _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        'foo|lib/foo.dart': dedent(r'''
+          import 'dart:js_interop';
+          extension type E(JSObject o) {
+            external String get value;
+            @JS('value')
+            external JSAny? get rawValue;
+          }
+          '''),
+        'foo|test/foo_test.dart': '''
+          import 'package:foo/foo.dart';
+          import 'package:mockito/annotations.dart';
+          @GenerateMocks([E])
+          void main() {}
+          ''',
+      },
+      message: allOf(
+        contains("The external getters 'value', 'rawValue' on 'E'"),
+        contains('MockSpec(unsupportedMembers: {#rawValue})'),
+      ),
+    );
+  });
+
+  test('throws when @JS method collides with @JS property accessor', () async {
+    await _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        'foo|lib/foo.dart': dedent(r'''
+          import 'dart:js_interop';
+          extension type E(JSObject o) {
+            external String get action;
+            @JS('action')
+            external void runAction();
+          }
+          '''),
+        'foo|test/foo_test.dart': '''
+          import 'package:foo/foo.dart';
+          import 'package:mockito/annotations.dart';
+          @GenerateMocks([E])
+          void main() {}
+          ''',
+      },
+      message: allOf(
+        contains("export the same JS property 'action' as both a method"),
+        contains('MockSpec(unsupportedMembers: {#runAction})'),
+      ),
+    );
+  });
+
+  test(
+    'throws when colliding @JS setters have indistinguishable runtime types',
+    () async {
+      await _expectBuilderThrows(
+        assets: {
+          ...annotationsAsset,
+          'foo|lib/foo.dart': dedent(r'''
+          import 'dart:js_interop';
+          extension type E(JSObject o) {
+            external set count(int v);
+            @JS('count')
+            external set countDouble(double v);
+          }
+          '''),
+          'foo|test/foo_test.dart': '''
+          import 'package:foo/foo.dart';
+          import 'package:mockito/annotations.dart';
+          @GenerateMocks([E])
+          void main() {}
+          ''',
+        },
+        message: allOf(
+          contains("The external setters 'count', 'countDouble' on 'E'"),
+          contains("MockSpec(unsupportedMembers: {Symbol('countDouble=')})"),
+        ),
+      );
+    },
+  );
+
+  test(
+    'throws when colliding @JS methods take object-literal extension types',
+    () async {
+      await _expectBuilderThrows(
+        assets: {
+          ...annotationsAsset,
+          'foo|lib/foo.dart': dedent(r'''
+          import 'dart:js_interop';
+          extension type OptsA._(JSObject _) implements JSObject {
+            external factory OptsA({int a});
+          }
+          extension type OptsB._(JSObject _) implements JSObject {
+            external factory OptsB({String b});
+          }
+          extension type E(JSObject o) {
+            external void configure(OptsA a);
+            @JS('configure')
+            external void configureB(OptsB b);
+          }
+          '''),
+          'foo|test/foo_test.dart': '''
+          import 'package:foo/foo.dart';
+          import 'package:mockito/annotations.dart';
+          @GenerateMocks([E])
+          void main() {}
+          ''',
+        },
+        message: allOf(
+          contains("The external methods 'configure', 'configureB' on 'E'"),
+          contains('MockSpec(unsupportedMembers: {#configureB})'),
+        ),
+      );
+    },
+  );
+
+  test(
+    'disambiguates indistinguishable @JS collisions via unsupportedMembers',
+    () async {
+      final mocksContent = await buildWithNonNullable({
+        ...annotationsAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        import 'dart:js_interop';
+        extension type OptsA._(JSObject _) implements JSObject {
+          external factory OptsA({int a});
+        }
+        extension type OptsB._(JSObject _) implements JSObject {
+          external factory OptsB({String b});
+        }
+        extension type E(JSObject o) {
+          external set count(int v);
+          @JS('count')
+          external set countDouble(double v);
+          external void configure(OptsA a);
+          @JS('configure')
+          external void configureB(OptsB b);
+        }
+        '''),
+        'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+        @GenerateMocks(
+          [],
+          customMocks: [
+            MockSpec<E>(
+              unsupportedMembers: {Symbol('countDouble='), #configure},
+            ),
+          ],
+        )
+        void main() {}
+        ''',
+      });
+      expect(mocksContent, contains('set count(int? v) =>'));
+      expect(
+        mocksContent,
+        contains(
+          "@_i1.JSExport(r'\$mockito\$set\$countDouble')\n"
+          '  set countDouble(double? v) => throw UnsupportedError(',
+        ),
+      );
+      expect(
+        mocksContent,
+        contains(
+          "@_i1.JSExport(r'\$mockito\$method\$configure')\n"
+          '  void configure(_i3.OptsA? a) => throw UnsupportedError(',
+        ),
+      );
+      expect(
+        mocksContent,
+        contains(
+          "@_i1.JSExport('configure')\n"
+          '  void configureB(_i3.OptsB? b) =>',
+        ),
+      );
+    },
+  );
 }
 
 /// Expect that [testBuilder], given [assets], throws an

@@ -24,6 +24,63 @@ extension type UserInteropType(JSObject _) implements JSObject {}
 
 extension type UserInteropTypeNested(JSObject _) implements JSObject {}
 
+extension type TrustedValue(JSObject _) implements JSObject {}
+
+extension type AnonymousOptionsA._(JSObject _) implements JSObject {
+  external factory AnonymousOptionsA({int a});
+}
+
+extension type AnonymousOptionsB._(JSObject _) implements JSObject {
+  external factory AnonymousOptionsB({String b});
+}
+
+extension type OverloadedJSInterop(JSObject _) implements JSObject {
+  external String get label;
+
+  external String get value;
+  external set value(String v);
+  @JS('value')
+  external set valueTrusted(TrustedValue v);
+
+  external String? get nullableValue;
+  external set nullableValue(String? v);
+  @JS('nullableValue')
+  external set nullableValueTrusted(TrustedValue? v);
+
+  external void setAttr(String name, String value);
+  @JS('setAttr')
+  external void setAttrTrusted(String name, TrustedValue value);
+
+  external void write([String a, String b]);
+  @JS('write')
+  external void writeTrusted([TrustedValue a, TrustedValue b]);
+
+  external String parse(String input, String mimeType);
+  @JS('parse')
+  external String parseTrusted(TrustedValue input, String mimeType);
+
+  @JS('inspect')
+  external int inspectBytes(JSUint8Array bytes);
+  @JS('inspect')
+  external String inspectFloats(JSFloat32Array floats);
+
+  external String format(String prefix);
+  @JS('format')
+  external String formatWithCount(String prefix, int count);
+
+  external String send(String text);
+  @JS('send')
+  external String sendBytes(JSUint8Array bytes);
+  @JS('send')
+  external String sendFloats(JSFloat32Array floats);
+}
+
+extension type IndistinguishableJSInterop(JSObject _) implements JSObject {
+  external String configure(AnonymousOptionsA options);
+  @JS('configure')
+  external String configureB(AnonymousOptionsB options);
+}
+
 class UsesJSInterop<T extends JSAny> {
   final JSAny jsAny;
   final JSString jsString;

@@ -51,7 +51,18 @@ final mockUserInteropTypeNested = UserInteropTypeNested(
 );
 final mockT = mockJSArray;
 
-@GenerateMocks([UsesJSInterop])
+@JSExport()
+class CustomOverloadedTarget extends MockOverloadedJSInteropTarget {
+  @override
+  String get label => 'custom';
+}
+
+@GenerateMocks(
+  [UsesJSInterop, OverloadedJSInterop],
+  customMocks: [
+    MockSpec<IndistinguishableJSInterop>(unsupportedMembers: {#configureB}),
+  ],
+)
 void main() {
   test('mock class that has JS interop members', () {
     final mockFoo = MockUsesJSInterop<JSObject>();
@@ -107,4 +118,99 @@ void main() {
     expect(mockFoo.userInteropTypeNested, mockUserInteropTypeNested);
     expect(mockFoo.t, mockT);
   });
+
+  test('mocks overloaded @JS setters and paired getters', () {
+    final target = MockOverloadedJSInteropTarget();
+    final mock = MockOverloadedJSInterop(target: target);
+    final trusted = TrustedValue(JSObject());
+
+    when(mock.value).thenReturn('current');
+    expect(mock.value, 'current');
+
+    mock.value = 'plain';
+    mock.valueTrusted = trusted;
+
+    verify(mock.value = 'plain').called(1);
+    verify(mock.valueTrusted = trusted).called(1);
+    verifyNever(mock.value = 'other');
+
+    mock.nullableValue = null;
+    mock.nullableValue = 'some';
+    mock.nullableValueTrusted = trusted;
+
+    verify(target.nullableValue = null).called(1);
+    verify(target.nullableValue = 'some').called(1);
+    verify(target.nullableValueTrusted = trusted).called(1);
+  });
+
+  test('mocks overloaded @JS methods across arity, optional params, nominal '
+      'types, and mixed return types', () {
+    final target = MockOverloadedJSInteropTarget();
+    final mock = MockOverloadedJSInterop(target: target);
+    final trusted1 = TrustedValue(JSObject());
+    final trusted2 = TrustedValue(JSObject());
+    final bytes = JSUint8Array.withLength(2);
+    final floats = JSFloat32Array.withLength(3);
+
+    mock.setAttr('id', 'main');
+    mock.setAttrTrusted('id', trusted1);
+    verify(mock.setAttr('id', 'main')).called(1);
+    verify(mock.setAttrTrusted('id', trusted1)).called(1);
+
+    mock.write();
+    mock.write('a');
+    mock.write('a', 'b');
+    mock.writeTrusted(trusted1);
+    mock.writeTrusted(trusted1, trusted2);
+    verify(mock.write()).called(1);
+    verify(mock.write('a')).called(1);
+    verify(mock.write('a', 'b')).called(1);
+    verify(mock.writeTrusted(trusted1)).called(1);
+    verify(mock.writeTrusted(trusted1, trusted2)).called(1);
+
+    when(mock.parse('<b>', 'text/html')).thenReturn('from-string');
+    when(mock.parseTrusted(trusted1, 'text/html')).thenReturn('from-trusted');
+    expect(mock.parse('<b>', 'text/html'), 'from-string');
+    expect(mock.parseTrusted(trusted1, 'text/html'), 'from-trusted');
+
+    when(mock.inspectBytes(bytes)).thenReturn(2);
+    when(mock.inspectFloats(floats)).thenReturn('3-floats');
+    expect(mock.inspectBytes(bytes), 2);
+    expect(mock.inspectFloats(floats), '3-floats');
+
+    when(mock.send('hello')).thenReturn('sent-text');
+    when(mock.sendBytes(bytes)).thenReturn('sent-bytes');
+    when(mock.sendFloats(floats)).thenReturn('sent-floats');
+    expect(mock.send('hello'), 'sent-text');
+    expect(mock.sendBytes(bytes), 'sent-bytes');
+    expect(mock.sendFloats(floats), 'sent-floats');
+
+    when(mock.format('item')).thenReturn('item');
+    when(mock.formatWithCount('item', 5)).thenReturn('item:5');
+    expect(mock.format('item'), 'item');
+    expect(mock.formatWithCount('item', 5), 'item:5');
+
+    final customMock = MockOverloadedJSInterop(
+      target: CustomOverloadedTarget(),
+    );
+    expect(customMock.label, 'custom');
+    when(customMock.parse('x', 'text/plain')).thenReturn('custom-parsed');
+    expect(customMock.parse('x', 'text/plain'), 'custom-parsed');
+  });
+
+  test(
+    'mocks JS interop extension type with unsupportedMembers disambiguation',
+    () {
+      final target = MockIndistinguishableJSInteropTarget();
+      final mock = MockIndistinguishableJSInterop(target: target);
+      final optsA = AnonymousOptionsA(a: 1);
+
+      when(mock.configure(optsA)).thenReturn('configured');
+      expect(mock.configure(optsA), 'configured');
+      expect(
+        () => target.configureB(AnonymousOptionsB(b: 'x')),
+        throwsUnsupportedError,
+      );
+    },
+  );
 }

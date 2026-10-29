@@ -7,6 +7,9 @@
   GeneratedMessage subclasses from the protobuf package.
 * Add dummies for more platform value types. 
 * Provide dummy values for `Int32` and `Int64` from `package:fixnum`.
+* Support mocking JS interop extension types with overloaded `@JS` setters and
+  methods, and report an error when colliding `@JS` exports cannot be
+  distinguished at runtime.
 
 ## 5.8.1
 

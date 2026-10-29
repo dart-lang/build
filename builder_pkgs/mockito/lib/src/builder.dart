@@ -45,6 +45,8 @@ import 'package:source_gen/source_gen.dart';
 
 import '../annotations.dart';
 
+part 'js_interop_overloads.dart';
+
 /// For a source Dart library, generate the mocks referenced therein.
 ///
 /// Given an input library, 'foo.dart', this builder will search the top-level
@@ -1023,12 +1025,14 @@ class _MockTargetGatherer {
     final interfaceElement = mockTarget.interfaceElement;
     final className = interfaceElement.name;
     final substitution = Substitution.fromInterfaceType(mockTarget.classType);
-    final relevantMembers = _inheritanceManager
-        .getInterface(interfaceElement)
-        .map
-        .values
-        .where((m) => !m.isPrivate && !m.isStatic)
-        .map((member) => member.substitute(substitution));
+    final relevantMembers =
+        _inheritanceManager
+            .getInterface(interfaceElement)
+            .map
+            .values
+            .where((m) => !m.isPrivate && !m.isStatic)
+            .map((member) => member.substitute(substitution))
+            .toList();
     final unstubbableErrorMessages =
         relevantMembers.expand((member) {
           final nameWithEquals =
@@ -1050,9 +1054,14 @@ class _MockTargetGatherer {
           } else {
             // Mockito is not going to override this method, so the types do not
             // need to be checked.
-            return [];
+            return <String>[];
           }
         }).toList();
+    if (interfaceElement is ExtensionTypeElement) {
+      unstubbableErrorMessages.addAll(
+        _checkJsInteropOverloads(mockTarget, relevantMembers),
+      );
+    }
 
     if (unstubbableErrorMessages.isNotEmpty) {
       final joinedMessages = unstubbableErrorMessages
@@ -1328,6 +1337,8 @@ class _MockClassInfo {
 
   final InheritanceManager3 inheritanceManager;
 
+  Map<ExecutableElement, String> _disambiguatedJsExports = const {};
+
   _MockClassInfo({
     required this.mockTarget,
     required this.sourceLibIsNonNullable,
@@ -1399,6 +1410,13 @@ class _MockClassInfo {
                   .where((m) => m.isExternal)
                   .toList();
 
+          final exportPlan = _JsExportPlan.analyze(
+            mockTarget,
+            members,
+            typeSystem,
+          );
+          _disambiguatedJsExports = exportPlan.disambiguatedExports;
+
           cBuilder.methods.addAll(
             fieldOverrides(
               members.whereType<PropertyAccessorElement>(),
@@ -1411,6 +1429,7 @@ class _MockClassInfo {
               includeNullables: true,
             ),
           );
+          cBuilder.methods.addAll(_buildJsExportMultiplexers(exportPlan));
         },
       );
     });
@@ -1739,37 +1758,20 @@ class _MockClassInfo {
   ) {
     final isJSInteropMember = _isExtensionType && member.isExternal;
     if (isJSInteropMember) {
-      final jsName = _getJSName(member);
+      if (!_isExportableJsInteropMember(member)) return;
+      final jsName =
+          _disambiguatedJsExports[member] ?? _jsInteropAnnotationName(member);
       if (jsName != null) {
         builder.annotations.add(
           referImported(
             'JSExport',
             'dart:js_interop',
-          ).call([literalString(jsName)]),
+          ).call([_jsExportLiteral(jsName)]),
         );
       }
     } else {
       builder.annotations.add(referImported('override', 'dart:core'));
     }
-  }
-
-  /// Returns the string value from the `dart:js_interop` `@JS()` annotation on
-  /// [element] if it exists and is non-empty.
-  String? _getJSName(Element element) {
-    for (final annotation in element.metadata.annotations) {
-      final annotationElement = annotation.element;
-      if (annotationElement is ConstructorElement &&
-          annotationElement.enclosingElement.name == 'JS' &&
-          annotationElement.library.uri.toString() == 'dart:js_interop') {
-        final value =
-            annotation
-                .computeConstantValue()
-                ?.getField('name')
-                ?.toStringValue();
-        if (value != null && value.isNotEmpty) return value;
-      }
-    }
-    return null;
   }
 
   /// Build a method which overrides [method], with all non-nullable
@@ -1859,7 +1861,10 @@ class _MockClassInfo {
         );
         final throwsUnsupported =
             fallbackGenerator == null &&
-            (returnType.containsPrivateName || parametersContainPrivateName);
+            (returnType.containsPrivateName ||
+                parametersContainPrivateName ||
+                (_isExtensionType &&
+                    mockTarget.unsupportedMembers.contains(name)));
 
         if (throwsUnsupported) {
           if (!mockTarget.unsupportedMembers.contains(name)) {
@@ -2579,7 +2584,10 @@ class _MockClassInfo {
     final returnType = getter.returnType;
     final fallbackGenerator = fallbackGenerators[getter.name];
     final throwsUnsupported =
-        fallbackGenerator == null && (getter.returnType.containsPrivateName);
+        fallbackGenerator == null &&
+        (getter.returnType.containsPrivateName ||
+            (_isExtensionType &&
+                mockTarget.unsupportedMembers.contains(getter.name)));
     if (throwsUnsupported) {
       if (!mockTarget.unsupportedMembers.contains(getter.name)) {
         // We shouldn't get here as this is guarded against in
@@ -2663,7 +2671,11 @@ class _MockClassInfo {
       }),
     );
 
-    if (parameter.type.containsPrivateName) {
+    final throwsUnsupported =
+        parameter.type.containsPrivateName ||
+        (_isExtensionType &&
+            mockTarget.unsupportedMembers.contains(nameWithEquals));
+    if (throwsUnsupported) {
       if (!mockTarget.unsupportedMembers.contains(nameWithEquals)) {
         // We shouldn't get here as this is guarded against in
         // [_MockTargetGatherer._checkFunction].

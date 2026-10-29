@@ -298,3 +298,322 @@ class MockUsesJSInterop<T extends _i1.JSAny> extends _i2.Mock
           )
           as T);
 }
+
+/// A class which mocks [OverloadedJSInterop] for JS interop.
+///
+/// This class is meant to be passed to createJSInteropWrapper.
+/// It will only contain external members of the mocked type.
+/// See the documentation for Mockito's code generation for more information.
+@_i1.JSExport()
+class MockOverloadedJSInteropTarget extends _i2.Mock {
+  String get label =>
+      (super.noSuchMethod(
+            Invocation.getter(#label),
+            returnValue: _i4.dummyValue<String>(
+              this,
+              Invocation.getter(#label),
+            ),
+          )
+          as String);
+
+  String get value =>
+      (super.noSuchMethod(
+            Invocation.getter(#value),
+            returnValue: _i4.dummyValue<String>(
+              this,
+              Invocation.getter(#value),
+            ),
+          )
+          as String);
+
+  String? get nullableValue =>
+      (super.noSuchMethod(Invocation.getter(#nullableValue)) as String?);
+
+  @_i1.JSExport(r'$mockito$set$value')
+  set value(String? v) => super.noSuchMethod(
+    Invocation.setter(#value, v),
+    returnValueForMissingStub: null,
+  );
+
+  @_i1.JSExport(r'$mockito$set$valueTrusted')
+  set valueTrusted(_i3.TrustedValue? v) => super.noSuchMethod(
+    Invocation.setter(#valueTrusted, v),
+    returnValueForMissingStub: null,
+  );
+
+  @_i1.JSExport(r'$mockito$set$nullableValue')
+  set nullableValue(String? v) => super.noSuchMethod(
+    Invocation.setter(#nullableValue, v),
+    returnValueForMissingStub: null,
+  );
+
+  @_i1.JSExport(r'$mockito$set$nullableValueTrusted')
+  set nullableValueTrusted(_i3.TrustedValue? v) => super.noSuchMethod(
+    Invocation.setter(#nullableValueTrusted, v),
+    returnValueForMissingStub: null,
+  );
+
+  @_i1.JSExport(r'$mockito$method$setAttr')
+  void setAttr(String? name, String? value) => super.noSuchMethod(
+    Invocation.method(#setAttr, [name, value]),
+    returnValueForMissingStub: null,
+  );
+
+  @_i1.JSExport(r'$mockito$method$setAttrTrusted')
+  void setAttrTrusted(String? name, _i3.TrustedValue? value) =>
+      super.noSuchMethod(
+        Invocation.method(#setAttrTrusted, [name, value]),
+        returnValueForMissingStub: null,
+      );
+
+  @_i1.JSExport(r'$mockito$method$write')
+  void write([String? a, String? b]) => super.noSuchMethod(
+    Invocation.method(#write, [a, b]),
+    returnValueForMissingStub: null,
+  );
+
+  @_i1.JSExport(r'$mockito$method$writeTrusted')
+  void writeTrusted([_i3.TrustedValue? a, _i3.TrustedValue? b]) =>
+      super.noSuchMethod(
+        Invocation.method(#writeTrusted, [a, b]),
+        returnValueForMissingStub: null,
+      );
+
+  @_i1.JSExport(r'$mockito$method$parse')
+  String parse(String? input, String? mimeType) =>
+      (super.noSuchMethod(
+            Invocation.method(#parse, [input, mimeType]),
+            returnValue: _i4.dummyValue<String>(
+              this,
+              Invocation.method(#parse, [input, mimeType]),
+            ),
+          )
+          as String);
+
+  @_i1.JSExport(r'$mockito$method$parseTrusted')
+  String parseTrusted(_i3.TrustedValue? input, String? mimeType) =>
+      (super.noSuchMethod(
+            Invocation.method(#parseTrusted, [input, mimeType]),
+            returnValue: _i4.dummyValue<String>(
+              this,
+              Invocation.method(#parseTrusted, [input, mimeType]),
+            ),
+          )
+          as String);
+
+  @_i1.JSExport(r'$mockito$method$inspectBytes')
+  int inspectBytes(_i1.JSUint8Array? bytes) =>
+      (super.noSuchMethod(
+            Invocation.method(#inspectBytes, [bytes]),
+            returnValue: 0,
+          )
+          as int);
+
+  @_i1.JSExport(r'$mockito$method$inspectFloats')
+  String inspectFloats(_i1.JSFloat32Array? floats) =>
+      (super.noSuchMethod(
+            Invocation.method(#inspectFloats, [floats]),
+            returnValue: _i4.dummyValue<String>(
+              this,
+              Invocation.method(#inspectFloats, [floats]),
+            ),
+          )
+          as String);
+
+  @_i1.JSExport(r'$mockito$method$format')
+  String format(String? prefix) =>
+      (super.noSuchMethod(
+            Invocation.method(#format, [prefix]),
+            returnValue: _i4.dummyValue<String>(
+              this,
+              Invocation.method(#format, [prefix]),
+            ),
+          )
+          as String);
+
+  @_i1.JSExport(r'$mockito$method$formatWithCount')
+  String formatWithCount(String? prefix, int? count) =>
+      (super.noSuchMethod(
+            Invocation.method(#formatWithCount, [prefix, count]),
+            returnValue: _i4.dummyValue<String>(
+              this,
+              Invocation.method(#formatWithCount, [prefix, count]),
+            ),
+          )
+          as String);
+
+  @_i1.JSExport(r'$mockito$method$send')
+  String send(String? text) =>
+      (super.noSuchMethod(
+            Invocation.method(#send, [text]),
+            returnValue: _i4.dummyValue<String>(
+              this,
+              Invocation.method(#send, [text]),
+            ),
+          )
+          as String);
+
+  @_i1.JSExport(r'$mockito$method$sendBytes')
+  String sendBytes(_i1.JSUint8Array? bytes) =>
+      (super.noSuchMethod(
+            Invocation.method(#sendBytes, [bytes]),
+            returnValue: _i4.dummyValue<String>(
+              this,
+              Invocation.method(#sendBytes, [bytes]),
+            ),
+          )
+          as String);
+
+  @_i1.JSExport(r'$mockito$method$sendFloats')
+  String sendFloats(_i1.JSFloat32Array? floats) =>
+      (super.noSuchMethod(
+            Invocation.method(#sendFloats, [floats]),
+            returnValue: _i4.dummyValue<String>(
+              this,
+              Invocation.method(#sendFloats, [floats]),
+            ),
+          )
+          as String);
+
+  @_i1.JSExport('value')
+  set $jsExport$set$value(_i1.JSAny? _value) {
+    if (_value.isA<_i1.JSString?>()) {
+      value = (_value as _i1.JSString?)?.toDart;
+    } else {
+      valueTrusted = (_value as _i3.TrustedValue?);
+    }
+  }
+
+  @_i1.JSExport('nullableValue')
+  set $jsExport$set$nullableValue(_i1.JSAny? _value) {
+    if (_value.isA<_i1.JSString?>()) {
+      nullableValue = (_value as _i1.JSString?)?.toDart;
+    } else {
+      nullableValueTrusted = (_value as _i3.TrustedValue?);
+    }
+  }
+
+  @_i1.JSExport('setAttr')
+  void $jsExport$method$setAttr(_i1.JSAny? _p0, _i1.JSAny? _p1) {
+    if (_p1.isA<_i1.JSString?>()) {
+      setAttr((_p0 as _i1.JSString?)?.toDart, (_p1 as _i1.JSString?)?.toDart);
+    } else {
+      setAttrTrusted(
+        (_p0 as _i1.JSString?)?.toDart,
+        (_p1 as _i3.TrustedValue?),
+      );
+    }
+  }
+
+  @_i1.JSExport('write')
+  void $jsExport$method$write([_i1.JSAny? _p0, _i1.JSAny? _p1]) {
+    if (_p0.isA<_i1.JSString?>() && _p1.isA<_i1.JSString?>()) {
+      write((_p0 as _i1.JSString?)?.toDart, (_p1 as _i1.JSString?)?.toDart);
+    } else {
+      writeTrusted((_p0 as _i3.TrustedValue?), (_p1 as _i3.TrustedValue?));
+    }
+  }
+
+  @_i1.JSExport('parse')
+  String $jsExport$method$parse(_i1.JSAny? _p0, _i1.JSAny? _p1) {
+    if (_p0.isA<_i1.JSString?>()) {
+      return parse(
+        (_p0 as _i1.JSString?)?.toDart,
+        (_p1 as _i1.JSString?)?.toDart,
+      );
+    } else {
+      return parseTrusted(
+        (_p0 as _i3.TrustedValue?),
+        (_p1 as _i1.JSString?)?.toDart,
+      );
+    }
+  }
+
+  @_i1.JSExport('inspect')
+  _i1.JSAny? $jsExport$method$inspect(_i1.JSAny? _p0) {
+    if (_p0.isA<_i1.JSUint8Array>()) {
+      return inspectBytes((_p0 as _i1.JSUint8Array?)).toJS;
+    } else {
+      return inspectFloats((_p0 as _i1.JSFloat32Array?)).toJS;
+    }
+  }
+
+  @_i1.JSExport('format')
+  String $jsExport$method$format(_i1.JSAny? _p0, [_i1.JSAny? _p1]) {
+    if (_p1 == null) {
+      return format((_p0 as _i1.JSString?)?.toDart);
+    } else {
+      return formatWithCount(
+        (_p0 as _i1.JSString?)?.toDart,
+        (_p1 as _i1.JSNumber?)?.toDartInt,
+      );
+    }
+  }
+
+  @_i1.JSExport('send')
+  String $jsExport$method$send(_i1.JSAny? _p0) {
+    if (_p0.isA<_i1.JSString?>()) {
+      return send((_p0 as _i1.JSString?)?.toDart);
+    } else if (_p0.isA<_i1.JSUint8Array>()) {
+      return sendBytes((_p0 as _i1.JSUint8Array?));
+    } else {
+      return sendFloats((_p0 as _i1.JSFloat32Array?));
+    }
+  }
+}
+
+/// An extension type mock which implements [OverloadedJSInterop].
+///
+/// See the documentation for Mockito's code generation for more information.
+extension type MockOverloadedJSInterop._(_i1.JSObject _)
+    implements _i3.OverloadedJSInterop {
+  factory MockOverloadedJSInterop({
+    _i1.JSObject? prototype,
+    MockOverloadedJSInteropTarget? target,
+  }) => MockOverloadedJSInterop._(
+    _i1.createJSInteropWrapper(
+      target ?? MockOverloadedJSInteropTarget(),
+      prototype,
+    ),
+  );
+}
+
+/// A class which mocks [IndistinguishableJSInterop] for JS interop.
+///
+/// This class is meant to be passed to createJSInteropWrapper.
+/// It will only contain external members of the mocked type.
+/// See the documentation for Mockito's code generation for more information.
+@_i1.JSExport()
+class MockIndistinguishableJSInteropTarget extends _i2.Mock {
+  String configure(_i3.AnonymousOptionsA? options) =>
+      (super.noSuchMethod(
+            Invocation.method(#configure, [options]),
+            returnValue: _i4.dummyValue<String>(
+              this,
+              Invocation.method(#configure, [options]),
+            ),
+          )
+          as String);
+
+  @_i1.JSExport(r'$mockito$method$configureB')
+  String configureB(_i3.AnonymousOptionsB? options) =>
+      throw UnsupportedError(
+        r'"configureB" cannot be used without a mockito fallback generator.',
+      );
+}
+
+/// An extension type mock which implements [IndistinguishableJSInterop].
+///
+/// See the documentation for Mockito's code generation for more information.
+extension type MockIndistinguishableJSInterop._(_i1.JSObject _)
+    implements _i3.IndistinguishableJSInterop {
+  factory MockIndistinguishableJSInterop({
+    _i1.JSObject? prototype,
+    MockIndistinguishableJSInteropTarget? target,
+  }) => MockIndistinguishableJSInterop._(
+    _i1.createJSInteropWrapper(
+      target ?? MockIndistinguishableJSInteropTarget(),
+      prototype,
+    ),
+  );
+}
