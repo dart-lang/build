@@ -13,6 +13,7 @@ jobs:
     with:
       checks: "changelog,do-not-submit,publish"
       fail_on: "changelog,do-not-submit,publish"
+      warn_on: "license,coverage,breaking,leaking,unused-dependencies"
       ignore_license: "**.g.dart"
       sdk: dev
     permissions:
