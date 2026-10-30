@@ -4,14 +4,16 @@ permissions:
 
 on:
   pull_request:
-    branches: [ master ]
+    branches: [ master, element1-backports ]
     types: [opened, synchronize, reopened, labeled, unlabeled]
 
 jobs:
   health:
-    uses: dart-lang/ecosystem/.github/workflows/health.yaml@16dca7ae5d3ff896a4db47e1ed6cd50f7ebbf115
+    uses: dart-lang/ecosystem/.github/workflows/health.yaml@0bfa654e652c27987d614c54675ff32becf5b574
     with:
-      checks: "version,changelog,do-not-submit"
+      checks: "changelog,do-not-submit,publish"
+      fail_on: "changelog,do-not-submit,publish"
+      warn_on: "license,coverage,breaking,leaking,unused-dependencies"
       ignore_license: "**.g.dart"
       sdk: dev
     permissions:
