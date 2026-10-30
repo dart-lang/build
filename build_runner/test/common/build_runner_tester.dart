@@ -16,6 +16,7 @@ import 'package:path/path.dart' as p;
 import 'package:test/test.dart' as test;
 import 'package:test/test.dart';
 
+import 'dartdev.dart';
 import 'fixture_packages.dart';
 
 /// End to end tester for `build_runner`.
@@ -44,6 +45,11 @@ class BuildRunnerTester {
     final runnerTemp = Platform.environment['RUNNER_TEMP'];
     return runnerTemp == null ? Directory.systemTemp : Directory(runnerTemp);
   }
+
+  late final Dartdev _dartdev = Dartdev(
+    workspace: tempDirectory,
+    shared: Directory(p.join(_tempParent.path, 'build_runner_tester_dartdev')),
+  );
 
   BuildRunnerTester._(this.pubspecs, this.tempDirectory) {
     addTearDown(() async {
@@ -238,12 +244,14 @@ class BuildRunnerTester {
   }) async {
     final args = commandLine.split(' ');
     final command = args.removeAt(0);
+    _dartdev.seed(directory, commandLine);
     final result = await Process.run(
       command,
       args,
       workingDirectory: p.join(tempDirectory.path, directory),
       environment: environment,
     );
+    _dartdev.share(directory, commandLine);
     final output =
         '''
 === $directory: $commandLine
@@ -260,6 +268,7 @@ ${result.stdout}${result.stderr}===
   Future<BuildRunnerProcess> start(String directory, String commandLine) async {
     final args = commandLine.split(' ');
     final command = args.removeAt(0);
+    _dartdev.seed(directory, commandLine);
     final process = await Process.start(
       command,
       args,
