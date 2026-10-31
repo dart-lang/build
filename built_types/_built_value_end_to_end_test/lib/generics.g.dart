@@ -776,13 +776,13 @@ class GenericValueBuilder<T>
   GenericValue<T> build() => _build();
 
   _$GenericValue<T> _build() {
-    final _$result = _$v ??
+    final __$result = _$v ??
         _$GenericValue<T>._(
           value: BuiltValueNullFieldError.checkNotNull(
               value, r'GenericValue', 'value'),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -862,13 +862,13 @@ class InitializeGenericValueBuilder<T>
   InitializeGenericValue<T> build() => _build();
 
   _$InitializeGenericValue<T> _build() {
-    final _$result = _$v ??
+    final __$result = _$v ??
         _$InitializeGenericValue<T>._(
           value: BuiltValueNullFieldError.checkNotNull(
               value, r'InitializeGenericValue', 'value'),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -956,14 +956,14 @@ class BoundGenericValueBuilder<T extends num>
   BoundGenericValue<T> build() => _build();
 
   _$BoundGenericValue<T> _build() {
-    final _$result = _$v ??
+    final __$result = _$v ??
         _$BoundGenericValue<T>._(
           value: BuiltValueNullFieldError.checkNotNull(
               value, r'BoundGenericValue', 'value'),
           nullableValue: nullableValue,
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -1055,7 +1055,7 @@ class BoundNullableGenericValueBuilder<T extends num?>
   BoundNullableGenericValue<T> build() => _build();
 
   _$BoundNullableGenericValue<T> _build() {
-    final _$result = _$v ??
+    final __$result = _$v ??
         _$BoundNullableGenericValue<T>._(
           value: null is T
               ? value as T
@@ -1063,8 +1063,8 @@ class BoundNullableGenericValueBuilder<T extends num?>
                   value, r'BoundNullableGenericValue', 'value'),
           nullableValue: nullableValue,
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -1142,25 +1142,25 @@ class CollectionGenericValueBuilder<T>
   CollectionGenericValue<T> build() => _build();
 
   _$CollectionGenericValue<T> _build() {
-    _$CollectionGenericValue<T> _$result;
+    _$CollectionGenericValue<T> __$result;
     try {
-      _$result = _$v ??
+      __$result = _$v ??
           _$CollectionGenericValue<T>._(
             values: values.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'values';
+        __$failedField = 'values';
         values.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'CollectionGenericValue', _$failedField, e.toString());
+            r'CollectionGenericValue', __$failedField, e.toString());
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -1241,25 +1241,25 @@ class NullableCollectionGenericValueBuilder<T>
   NullableCollectionGenericValue<T> build() => _build();
 
   _$NullableCollectionGenericValue<T> _build() {
-    _$NullableCollectionGenericValue<T> _$result;
+    _$NullableCollectionGenericValue<T> __$result;
     try {
-      _$result = _$v ??
+      __$result = _$v ??
           _$NullableCollectionGenericValue<T>._(
             values: values.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'values';
+        __$failedField = 'values';
         values.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'NullableCollectionGenericValue', _$failedField, e.toString());
+            r'NullableCollectionGenericValue', __$failedField, e.toString());
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -1368,31 +1368,31 @@ class GenericContainerBuilder
   GenericContainer build() => _build();
 
   _$GenericContainer _build() {
-    _$GenericContainer _$result;
+    _$GenericContainer __$result;
     try {
-      _$result = _$v ??
+      __$result = _$v ??
           _$GenericContainer._(
             genericValue: genericValue.build(),
             boundGenericValue: boundGenericValue.build(),
             collectionGenericValue: collectionGenericValue.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'genericValue';
+        __$failedField = 'genericValue';
         genericValue.build();
-        _$failedField = 'boundGenericValue';
+        __$failedField = 'boundGenericValue';
         boundGenericValue.build();
-        _$failedField = 'collectionGenericValue';
+        __$failedField = 'collectionGenericValue';
         collectionGenericValue.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'GenericContainer', _$failedField, e.toString());
+            r'GenericContainer', __$failedField, e.toString());
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -1470,13 +1470,13 @@ class DynamicGenericContainerBuilder
   DynamicGenericContainer build() => _build();
 
   _$DynamicGenericContainer _build() {
-    final _$result = _$v ??
+    final __$result = _$v ??
         _$DynamicGenericContainer._(
           foo: BuiltValueNullFieldError.checkNotNull(
               foo, r'DynamicGenericContainer', 'foo'),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -1573,28 +1573,28 @@ class PassthroughGenericContainerBuilder<T>
   PassthroughGenericContainer<T> build() => _build();
 
   _$PassthroughGenericContainer<T> _build() {
-    _$PassthroughGenericContainer<T> _$result;
+    _$PassthroughGenericContainer<T> __$result;
     try {
-      _$result = _$v ??
+      __$result = _$v ??
           _$PassthroughGenericContainer<T>._(
             genericValue: genericValue.build(),
             collectionGenericValue: collectionGenericValue.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'genericValue';
+        __$failedField = 'genericValue';
         genericValue.build();
-        _$failedField = 'collectionGenericValue';
+        __$failedField = 'collectionGenericValue';
         collectionGenericValue.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'PassthroughGenericContainer', _$failedField, e.toString());
+            r'PassthroughGenericContainer', __$failedField, e.toString());
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -1672,25 +1672,25 @@ class NestedGenericContainerBuilder
   NestedGenericContainer build() => _build();
 
   _$NestedGenericContainer _build() {
-    _$NestedGenericContainer _$result;
+    _$NestedGenericContainer __$result;
     try {
-      _$result = _$v ??
+      __$result = _$v ??
           _$NestedGenericContainer._(
             map: map.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'map';
+        __$failedField = 'map';
         map.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'NestedGenericContainer', _$failedField, e.toString());
+            r'NestedGenericContainer', __$failedField, e.toString());
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -1776,13 +1776,13 @@ class _$CustomBuilderGenericValueBuilder<T>
   CustomBuilderGenericValue<T> build() => _build();
 
   _$CustomBuilderGenericValue<T> _build() {
-    final _$result = _$v ??
+    final __$result = _$v ??
         _$CustomBuilderGenericValue<T>._(
           value: BuiltValueNullFieldError.checkNotNull(
               value, r'CustomBuilderGenericValue', 'value'),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -1856,13 +1856,13 @@ class ConcreteGenericBuilder
   ConcreteGeneric build() => _build();
 
   _$ConcreteGeneric _build() {
-    final _$result = _$v ??
+    final __$result = _$v ??
         _$ConcreteGeneric._(
           value: BuiltValueNullFieldError.checkNotNull(
               value, r'ConcreteGeneric', 'value'),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -1940,13 +1940,13 @@ class GenericFunctionBuilder<T>
   GenericFunction<T> build() => _build();
 
   _$GenericFunction<T> _build() {
-    final _$result = _$v ??
+    final __$result = _$v ??
         _$GenericFunction<T>._(
           function: BuiltValueNullFieldError.checkNotNull(
               function, r'GenericFunction', 'function'),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -2020,13 +2020,13 @@ class NonBuiltGenericBuilder
   NonBuiltGeneric build() => _build();
 
   _$NonBuiltGeneric _build() {
-    final _$result = _$v ??
+    final __$result = _$v ??
         _$NonBuiltGeneric._(
           value: BuiltValueNullFieldError.checkNotNull(
               value, r'NonBuiltGeneric', 'value'),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -2081,9 +2081,9 @@ class EmptyGenericBuilder<K, V>
   EmptyGeneric<K, V> build() => _build();
 
   _$EmptyGeneric<K, V> _build() {
-    final _$result = _$v ?? _$EmptyGeneric<K, V>._();
-    replace(_$result);
-    return _$result;
+    final __$result = _$v ?? _$EmptyGeneric<K, V>._();
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -2159,25 +2159,25 @@ class ConstAndGenericBuilder<T>
   ConstAndGeneric<T> build() => _build();
 
   _$ConstAndGeneric<T> _build() {
-    _$ConstAndGeneric<T> _$result;
+    _$ConstAndGeneric<T> __$result;
     try {
-      _$result = _$v ??
+      __$result = _$v ??
           _$ConstAndGeneric<T>._(
             map: map.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'map';
+        __$failedField = 'map';
         map.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'ConstAndGeneric', _$failedField, e.toString());
+            r'ConstAndGeneric', __$failedField, e.toString());
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

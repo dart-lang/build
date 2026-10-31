@@ -22,6 +22,8 @@
 - Bug fix: report an error for fields named `build`, `replace` or `update`,
   which clash with methods on the generated builder, instead of generating
   code that doesn't compile.
+- Bug fix: nullable nested-builder fields named `$result` or `$failedField`
+  clashed with locals in the generated `_build()` and didn't compile.
 
 ## 8.13.0
 

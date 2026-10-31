@@ -2716,7 +2716,7 @@ class SimpleValueBuilder implements Builder<SimpleValue, SimpleValueBuilder> {
   SimpleValue build() => _build();
 
   _$SimpleValue _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$SimpleValue._(
           anInt: BuiltValueNullFieldError.checkNotNull(
@@ -2727,8 +2727,8 @@ class SimpleValueBuilder implements Builder<SimpleValue, SimpleValueBuilder> {
           aString: aString,
           $mustBeEscaped: $mustBeEscaped,
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -2818,32 +2818,153 @@ class CompoundValueBuilder
   CompoundValue build() => _build();
 
   _$CompoundValue _build() {
-    _$CompoundValue _$result;
+    _$CompoundValue __$result;
     try {
-      _$result =
+      __$result =
           _$v ??
           _$CompoundValue._(
             simpleValue: simpleValue.build(),
             validatedValue: _validatedValue?.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'simpleValue';
+        __$failedField = 'simpleValue';
         simpleValue.build();
-        _$failedField = 'validatedValue';
+        __$failedField = 'validatedValue';
         _validatedValue?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'CompoundValue',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
+  }
+}
+
+class _$CompoundValueWithBuildLocalNames
+    extends CompoundValueWithBuildLocalNames {
+  @override
+  final SimpleValue? $result;
+  @override
+  final SimpleValue? $failedField;
+
+  factory _$CompoundValueWithBuildLocalNames([
+    void Function(CompoundValueWithBuildLocalNamesBuilder)? updates,
+  ]) => (CompoundValueWithBuildLocalNamesBuilder()..update(updates))._build();
+
+  _$CompoundValueWithBuildLocalNames._({this.$result, this.$failedField})
+    : super._();
+  @override
+  CompoundValueWithBuildLocalNames rebuild(
+    void Function(CompoundValueWithBuildLocalNamesBuilder) updates,
+  ) => (toBuilder()..update(updates)).build();
+
+  @override
+  CompoundValueWithBuildLocalNamesBuilder toBuilder() =>
+      CompoundValueWithBuildLocalNamesBuilder()..replace(this);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(other, this)) return true;
+    return other is CompoundValueWithBuildLocalNames &&
+        $result == other.$result &&
+        $failedField == other.$failedField;
+  }
+
+  @override
+  int get hashCode {
+    var _$hash = 0;
+    _$hash = $jc(_$hash, $result.hashCode);
+    _$hash = $jc(_$hash, $failedField.hashCode);
+    _$hash = $jf(_$hash);
+    return _$hash;
+  }
+
+  @override
+  String toString() {
+    return (newBuiltValueToStringHelper(r'CompoundValueWithBuildLocalNames')
+          ..add('\$result', $result)
+          ..add('\$failedField', $failedField))
+        .toString();
+  }
+}
+
+class CompoundValueWithBuildLocalNamesBuilder
+    implements
+        Builder<
+          CompoundValueWithBuildLocalNames,
+          CompoundValueWithBuildLocalNamesBuilder
+        > {
+  _$CompoundValueWithBuildLocalNames? _$v;
+
+  SimpleValueBuilder? _$result;
+  SimpleValueBuilder get $result => _$this._$result ??= SimpleValueBuilder();
+  set $result(SimpleValueBuilder? $result) => _$this._$result = $result;
+
+  SimpleValueBuilder? _$failedField;
+  SimpleValueBuilder get $failedField =>
+      _$this._$failedField ??= SimpleValueBuilder();
+  set $failedField(SimpleValueBuilder? $failedField) =>
+      _$this._$failedField = $failedField;
+
+  CompoundValueWithBuildLocalNamesBuilder();
+
+  CompoundValueWithBuildLocalNamesBuilder get _$this {
+    final $v = _$v;
+    if ($v != null) {
+      _$result = $v.$result?.toBuilder();
+      _$failedField = $v.$failedField?.toBuilder();
+      _$v = null;
+    }
+    return this;
+  }
+
+  @override
+  void replace(CompoundValueWithBuildLocalNames other) {
+    _$v = other as _$CompoundValueWithBuildLocalNames;
+  }
+
+  @override
+  void update(void Function(CompoundValueWithBuildLocalNamesBuilder)? updates) {
+    if (updates != null) updates(this);
+  }
+
+  @override
+  CompoundValueWithBuildLocalNames build() => _build();
+
+  _$CompoundValueWithBuildLocalNames _build() {
+    _$CompoundValueWithBuildLocalNames __$result;
+    try {
+      __$result =
+          _$v ??
+          _$CompoundValueWithBuildLocalNames._(
+            $result: _$result?.build(),
+            $failedField: _$failedField?.build(),
+          );
+    } catch (_) {
+      late String __$failedField;
+      try {
+        __$failedField = '\$result';
+        _$result?.build();
+        __$failedField = '\$failedField';
+        _$failedField?.build();
+      } catch (e) {
+        throw BuiltValueNestedFieldError(
+          r'CompoundValueWithBuildLocalNames',
+          __$failedField,
+          e.toString(),
+        );
+      }
+      rethrow;
+    }
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -2934,7 +3055,7 @@ class CompoundValueNoNestingBuilder
   CompoundValueNoNesting build() => _build();
 
   _$CompoundValueNoNesting _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$CompoundValueNoNesting._(
           simpleValue: BuiltValueNullFieldError.checkNotNull(
@@ -2944,8 +3065,8 @@ class CompoundValueNoNestingBuilder
           ),
           validatedValue: validatedValue,
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -3023,9 +3144,9 @@ class CompoundValueNoAutoNestingBuilder
   CompoundValueNoAutoNesting build() => _build();
 
   _$CompoundValueNoAutoNesting _build() {
-    _$CompoundValueNoAutoNesting _$result;
+    _$CompoundValueNoAutoNesting __$result;
     try {
-      _$result =
+      __$result =
           _$v ??
           _$CompoundValueNoAutoNesting._(
             value: BuiltValueNullFieldError.checkNotNull(
@@ -3035,21 +3156,21 @@ class CompoundValueNoAutoNestingBuilder
             ),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'value';
+        __$failedField = 'value';
         _value?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'CompoundValueNoAutoNesting',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -3147,7 +3268,7 @@ class CompoundValueComparableBuildersBuilder
   CompoundValueComparableBuilders build() => _build();
 
   _$CompoundValueComparableBuilders _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$CompoundValueComparableBuilders._(
           simpleValue: BuiltValueNullFieldError.checkNotNull(
@@ -3157,8 +3278,8 @@ class CompoundValueComparableBuildersBuilder
           ),
           validatedValue: validatedValue,
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 
   @override
@@ -3299,9 +3420,9 @@ class CompoundValueNoNestingFieldBuilder
   CompoundValueNoNestingField build() => _build();
 
   _$CompoundValueNoNestingField _build() {
-    _$CompoundValueNoNestingField _$result;
+    _$CompoundValueNoNestingField __$result;
     try {
-      _$result =
+      __$result =
           _$v ??
           _$CompoundValueNoNestingField._(
             simpleValue: BuiltValueNullFieldError.checkNotNull(
@@ -3314,23 +3435,23 @@ class CompoundValueNoNestingFieldBuilder
             validatedValueWithNested: _validatedValueWithNested?.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'simpleValueWithNested';
+        __$failedField = 'simpleValueWithNested';
         simpleValueWithNested.build();
-        _$failedField = 'validatedValueWithNested';
+        __$failedField = 'validatedValueWithNested';
         _validatedValueWithNested?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'CompoundValueNoNestingField',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -3451,9 +3572,9 @@ class CompoundValueNestingFieldBuilder
   CompoundValueNestingField build() => _build();
 
   _$CompoundValueNestingField _build() {
-    _$CompoundValueNestingField _$result;
+    _$CompoundValueNestingField __$result;
     try {
-      _$result =
+      __$result =
           _$v ??
           _$CompoundValueNestingField._(
             simpleValue: BuiltValueNullFieldError.checkNotNull(
@@ -3466,23 +3587,23 @@ class CompoundValueNestingFieldBuilder
             validatedValueWithNested: _validatedValueWithNested?.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'simpleValueWithNested';
+        __$failedField = 'simpleValueWithNested';
         simpleValueWithNested.build();
-        _$failedField = 'validatedValueWithNested';
+        __$failedField = 'validatedValueWithNested';
         _validatedValueWithNested?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'CompoundValueNestingField',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -3580,9 +3701,9 @@ class CompoundValueNoAutoNestingFieldBuilder
   CompoundValueNoAutoNestingField build() => _build();
 
   _$CompoundValueNoAutoNestingField _build() {
-    _$CompoundValueNoAutoNestingField _$result;
+    _$CompoundValueNoAutoNestingField __$result;
     try {
-      _$result =
+      __$result =
           _$v ??
           _$CompoundValueNoAutoNestingField._(
             value: BuiltValueNullFieldError.checkNotNull(
@@ -3593,23 +3714,23 @@ class CompoundValueNoAutoNestingFieldBuilder
             valueWithAutoCreate: valueWithAutoCreate.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'value';
+        __$failedField = 'value';
         _value?.build();
-        _$failedField = 'valueWithAutoCreate';
+        __$failedField = 'valueWithAutoCreate';
         valueWithAutoCreate.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'CompoundValueNoAutoNestingField',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -3706,32 +3827,32 @@ class CompoundValueAutoNestingFieldBuilder
   CompoundValueAutoNestingField build() => _build();
 
   _$CompoundValueAutoNestingField _build() {
-    _$CompoundValueAutoNestingField _$result;
+    _$CompoundValueAutoNestingField __$result;
     try {
-      _$result =
+      __$result =
           _$v ??
           _$CompoundValueAutoNestingField._(
             value: value.build(),
             valueWithAutoCreate: valueWithAutoCreate.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'value';
+        __$failedField = 'value';
         value.build();
-        _$failedField = 'valueWithAutoCreate';
+        __$failedField = 'valueWithAutoCreate';
         valueWithAutoCreate.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'CompoundValueAutoNestingField',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -3840,30 +3961,30 @@ class _$CompoundValueExplicitNoNestingBuilder
   CompoundValueExplicitNoNesting build() => _build();
 
   _$CompoundValueExplicitNoNesting _build() {
-    _$CompoundValueExplicitNoNesting _$result;
+    _$CompoundValueExplicitNoNesting __$result;
     try {
-      _$result =
+      __$result =
           _$v ??
           _$CompoundValueExplicitNoNesting._(
             simpleValue: simpleValue.build(),
             validatedValue: validatedValue,
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'simpleValue';
+        __$failedField = 'simpleValue';
         simpleValue.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'CompoundValueExplicitNoNesting',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -3949,25 +4070,25 @@ class _$ExplicitNestedListBuilder extends ExplicitNestedListBuilder {
   ExplicitNestedList build() => _build();
 
   _$ExplicitNestedList _build() {
-    _$ExplicitNestedList _$result;
+    _$ExplicitNestedList __$result;
     try {
-      _$result = _$v ?? _$ExplicitNestedList._(nestedList: nestedList.build());
+      __$result = _$v ?? _$ExplicitNestedList._(nestedList: nestedList.build());
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'nestedList';
+        __$failedField = 'nestedList';
         nestedList.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'ExplicitNestedList',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -4059,29 +4180,29 @@ class _$ExplicitNonNullBuilderNullableSetterBuilder
   ExplicitNonNullBuilderNullableSetter build() => _build();
 
   _$ExplicitNonNullBuilderNullableSetter _build() {
-    _$ExplicitNonNullBuilderNullableSetter _$result;
+    _$ExplicitNonNullBuilderNullableSetter __$result;
     try {
-      _$result =
+      __$result =
           _$v ??
           _$ExplicitNonNullBuilderNullableSetter._(
             simpleValue: _simpleValue?.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'simpleValue';
+        __$failedField = 'simpleValue';
         _simpleValue?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'ExplicitNonNullBuilderNullableSetter',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -4172,29 +4293,29 @@ class _$ExplicitNonNullBuilderNullableFieldBuilder
   ExplicitNonNullBuilderNullableField build() => _build();
 
   _$ExplicitNonNullBuilderNullableField _build() {
-    _$ExplicitNonNullBuilderNullableField _$result;
+    _$ExplicitNonNullBuilderNullableField __$result;
     try {
-      _$result =
+      __$result =
           _$v ??
           _$ExplicitNonNullBuilderNullableField._(
             simpleValue: super.simpleValue?.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'simpleValue';
+        __$failedField = 'simpleValue';
         super.simpleValue?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'ExplicitNonNullBuilderNullableField',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -4287,7 +4408,7 @@ class DerivedValueBuilder
   DerivedValue build() => _build();
 
   _$DerivedValue _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$DerivedValue._(
           anInt: BuiltValueNullFieldError.checkNotNull(
@@ -4296,8 +4417,8 @@ class DerivedValueBuilder
             'anInt',
           ),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -4382,7 +4503,7 @@ class ValueWithCodeBuilder
   ValueWithCode build() => _build();
 
   _$ValueWithCode _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$ValueWithCode._(
           anInt: BuiltValueNullFieldError.checkNotNull(
@@ -4392,8 +4513,8 @@ class ValueWithCodeBuilder
           ),
           aString: aString,
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -4519,9 +4640,9 @@ class _$ValueWithDefaultsBuilder extends ValueWithDefaultsBuilder {
   ValueWithDefaults build() => _build();
 
   _$ValueWithDefaults _build() {
-    _$ValueWithDefaults _$result;
+    _$ValueWithDefaults __$result;
     try {
-      _$result =
+      __$result =
           _$v ??
           _$ValueWithDefaults._(
             anInt: BuiltValueNullFieldError.checkNotNull(
@@ -4533,21 +4654,21 @@ class _$ValueWithDefaultsBuilder extends ValueWithDefaultsBuilder {
             value: value.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'value';
+        __$failedField = 'value';
         value.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'ValueWithDefaults',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -4633,7 +4754,7 @@ class _$ValueWithBuilderSmartsBuilder extends ValueWithBuilderSmartsBuilder {
   ValueWithBuilderSmarts build() => _build();
 
   _$ValueWithBuilderSmarts _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$ValueWithBuilderSmarts._(
           value: BuiltValueNullFieldError.checkNotNull(
@@ -4642,8 +4763,8 @@ class _$ValueWithBuilderSmartsBuilder extends ValueWithBuilderSmartsBuilder {
             'value',
           ),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -4728,7 +4849,7 @@ class ValidatedValueBuilder
   ValidatedValue build() => _build();
 
   _$ValidatedValue _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$ValidatedValue._(
           anInt: BuiltValueNullFieldError.checkNotNull(
@@ -4738,8 +4859,8 @@ class ValidatedValueBuilder
           ),
           aString: aString,
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -4828,7 +4949,7 @@ class ValueUsingImportAsBuilder
   ValueUsingImportAs build() => _build();
 
   _$ValueUsingImportAs _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$ValueUsingImportAs._(
           value: BuiltValueNullFieldError.checkNotNull(
@@ -4838,8 +4959,8 @@ class ValueUsingImportAsBuilder
           ),
           nullableValue: nullableValue,
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -4892,9 +5013,9 @@ class NoFieldsValueBuilder
   NoFieldsValue build() => _build();
 
   _$NoFieldsValue _build() {
-    final _$result = _$v ?? _$NoFieldsValue._();
-    replace(_$result);
-    return _$result;
+    final __$result = _$v ?? _$NoFieldsValue._();
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -5081,7 +5202,7 @@ class PrimitivesValueBuilder
   PrimitivesValue build() => _build();
 
   _$PrimitivesValue _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$PrimitivesValue._(
           boolean: BuiltValueNullFieldError.checkNotNull(
@@ -5140,8 +5261,8 @@ class PrimitivesValueBuilder
             'bigInt',
           ),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -5215,7 +5336,7 @@ class FunctionValueBuilder
   FunctionValue build() => _build();
 
   _$FunctionValue _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$FunctionValue._(
           function: BuiltValueNullFieldError.checkNotNull(
@@ -5224,8 +5345,8 @@ class FunctionValueBuilder
             'function',
           ),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -5304,25 +5425,25 @@ class ListOfFunctionValueBuilder
   ListOfFunctionValue build() => _build();
 
   _$ListOfFunctionValue _build() {
-    _$ListOfFunctionValue _$result;
+    _$ListOfFunctionValue __$result;
     try {
-      _$result = _$v ?? _$ListOfFunctionValue._(functions: functions.build());
+      __$result = _$v ?? _$ListOfFunctionValue._(functions: functions.build());
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'functions';
+        __$failedField = 'functions';
         functions.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'ListOfFunctionValue',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -5413,7 +5534,7 @@ class PartiallySerializableValueBuilder
   PartiallySerializableValue build() => _build();
 
   _$PartiallySerializableValue _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$PartiallySerializableValue._(
           value: BuiltValueNullFieldError.checkNotNull(
@@ -5423,8 +5544,8 @@ class PartiallySerializableValueBuilder
           ),
           transientValue: transientValue,
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -5500,7 +5621,7 @@ class NamedFactoryValueBuilder
   NamedFactoryValue build() => _build();
 
   _$NamedFactoryValue _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$NamedFactoryValue._(
           value: BuiltValueNullFieldError.checkNotNull(
@@ -5509,8 +5630,8 @@ class NamedFactoryValueBuilder
             'value',
           ),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -5584,7 +5705,7 @@ class WireNameValueBuilder
   WireNameValue build() => _build();
 
   _$WireNameValue _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$WireNameValue._(
           value: BuiltValueNullFieldError.checkNotNull(
@@ -5593,8 +5714,8 @@ class WireNameValueBuilder
             'value',
           ),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -5696,7 +5817,7 @@ class EscapedWireNameValueBuilder
   EscapedWireNameValue build() => _build();
 
   _$EscapedWireNameValue _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$EscapedWireNameValue._(
           quote: BuiltValueNullFieldError.checkNotNull(
@@ -5715,8 +5836,8 @@ class EscapedWireNameValueBuilder
             'newline',
           ),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -5823,9 +5944,9 @@ class FieldDiscoveryValueBuilder
   FieldDiscoveryValue build() => _build();
 
   _$FieldDiscoveryValue _build() {
-    _$FieldDiscoveryValue _$result;
+    _$FieldDiscoveryValue __$result;
     try {
-      _$result =
+      __$result =
           _$v ??
           _$FieldDiscoveryValue._(
             value: value.build(),
@@ -5833,25 +5954,25 @@ class FieldDiscoveryValueBuilder
             recursiveValue: _recursiveValue?.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'value';
+        __$failedField = 'value';
         value.build();
-        _$failedField = 'values';
+        __$failedField = 'values';
         values.build();
-        _$failedField = 'recursiveValue';
+        __$failedField = 'recursiveValue';
         _recursiveValue?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'FieldDiscoveryValue',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -5928,25 +6049,25 @@ class DiscoverableValueBuilder
   DiscoverableValue build() => _build();
 
   _$DiscoverableValue _build() {
-    _$DiscoverableValue _$result;
+    _$DiscoverableValue __$result;
     try {
-      _$result = _$v ?? _$DiscoverableValue._(value: value.build());
+      __$result = _$v ?? _$DiscoverableValue._(value: value.build());
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'value';
+        __$failedField = 'value';
         value.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'DiscoverableValue',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -6024,7 +6145,7 @@ class SecondDiscoverableValueBuilder
   SecondDiscoverableValue build() => _build();
 
   _$SecondDiscoverableValue _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$SecondDiscoverableValue._(
           value: BuiltValueNullFieldError.checkNotNull(
@@ -6033,8 +6154,8 @@ class SecondDiscoverableValueBuilder
             'value',
           ),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -6111,7 +6232,7 @@ class ThirdDiscoverableValueBuilder
   ThirdDiscoverableValue build() => _build();
 
   _$ThirdDiscoverableValue _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$ThirdDiscoverableValue._(
           value: BuiltValueNullFieldError.checkNotNull(
@@ -6120,8 +6241,8 @@ class ThirdDiscoverableValueBuilder
             'value',
           ),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -6196,25 +6317,25 @@ class RecursiveValueABuilder
   RecursiveValueA build() => _build();
 
   _$RecursiveValueA _build() {
-    _$RecursiveValueA _$result;
+    _$RecursiveValueA __$result;
     try {
-      _$result = _$v ?? _$RecursiveValueA._(value: value.build());
+      __$result = _$v ?? _$RecursiveValueA._(value: value.build());
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'value';
+        __$failedField = 'value';
         value.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'RecursiveValueA',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -6289,25 +6410,25 @@ class RecursiveValueBBuilder
   RecursiveValueB build() => _build();
 
   _$RecursiveValueB _build() {
-    _$RecursiveValueB _$result;
+    _$RecursiveValueB __$result;
     try {
-      _$result = _$v ?? _$RecursiveValueB._(value: value.build());
+      __$result = _$v ?? _$RecursiveValueB._(value: value.build());
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'value';
+        __$failedField = 'value';
         value.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'RecursiveValueB',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -6385,7 +6506,7 @@ class ValueWithCustomSerializerBuilder
   ValueWithCustomSerializer build() => _build();
 
   _$ValueWithCustomSerializer _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$ValueWithCustomSerializer._(
           value: BuiltValueNullFieldError.checkNotNull(
@@ -6394,8 +6515,8 @@ class ValueWithCustomSerializerBuilder
             'value',
           ),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -6488,7 +6609,7 @@ class ValueWithOnSetBuilder
   ValueWithOnSet build() => _build();
 
   _$ValueWithOnSet _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$ValueWithOnSet._(
           value: BuiltValueNullFieldError.checkNotNull(
@@ -6498,8 +6619,8 @@ class ValueWithOnSetBuilder
           ),
           label: label,
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -6550,9 +6671,9 @@ class CustomToStringValueBuilder
   CustomToStringValue build() => _build();
 
   _$CustomToStringValue _build() {
-    final _$result = _$v ?? _$CustomToStringValue._();
-    replace(_$result);
-    return _$result;
+    final __$result = _$v ?? _$CustomToStringValue._();
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -6625,7 +6746,7 @@ class OtherValueBuilder implements Builder<OtherValue, OtherValueBuilder> {
   OtherValue build() => _build();
 
   _$OtherValue _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$OtherValue._(
           other: BuiltValueNullFieldError.checkNotNull(
@@ -6634,8 +6755,8 @@ class OtherValueBuilder implements Builder<OtherValue, OtherValueBuilder> {
             'other',
           ),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -6736,7 +6857,7 @@ class DefaultsForFieldSettingsValueBuilder
   DefaultsForFieldSettingsValue build() => _build();
 
   _$DefaultsForFieldSettingsValue _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$DefaultsForFieldSettingsValue._(
           ignored: BuiltValueNullFieldError.checkNotNull(
@@ -6755,8 +6876,8 @@ class DefaultsForFieldSettingsValueBuilder
             'serialized',
           ),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -6934,9 +7055,9 @@ class ValueWithBuilderInitializerBuilder
   ValueWithBuilderInitializer build() => _build();
 
   _$ValueWithBuilderInitializer _build() {
-    _$ValueWithBuilderInitializer _$result;
+    _$ValueWithBuilderInitializer __$result;
     try {
-      _$result =
+      __$result =
           _$v ??
           _$ValueWithBuilderInitializer._(
             anInt: BuiltValueNullFieldError.checkNotNull(
@@ -6958,27 +7079,27 @@ class ValueWithBuilderInitializerBuilder
                 ?.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'nestedValue';
+        __$failedField = 'nestedValue';
         nestedValue.build();
-        _$failedField = 'nestedValueWithDefault';
+        __$failedField = 'nestedValueWithDefault';
         nestedValueWithDefault.build();
-        _$failedField = 'nullableNestedValue';
+        __$failedField = 'nullableNestedValue';
         _nullableNestedValue?.build();
-        _$failedField = 'nullableNestedValueWithDefault';
+        __$failedField = 'nullableNestedValueWithDefault';
         _nullableNestedValueWithDefault?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'ValueWithBuilderInitializer',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -7057,7 +7178,7 @@ class ValueWithBuilderFinalizerBuilder
 
   _$ValueWithBuilderFinalizer _build() {
     ValueWithBuilderFinalizer._finalizeBuilder(this);
-    final _$result =
+    final __$result =
         _$v ??
         _$ValueWithBuilderFinalizer._(
           anInt: BuiltValueNullFieldError.checkNotNull(
@@ -7066,8 +7187,8 @@ class ValueWithBuilderFinalizerBuilder
             'anInt',
           ),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -7154,10 +7275,10 @@ class ValueWithGenericBuilderInitializerBuilder<T>
   ValueWithGenericBuilderInitializer<T> build() => _build();
 
   _$ValueWithGenericBuilderInitializer<T> _build() {
-    final _$result =
+    final __$result =
         _$v ?? _$ValueWithGenericBuilderInitializer<T>._(value: value);
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -7240,14 +7361,14 @@ class HashcodeValueBuilder
   HashcodeValue build() => _build();
 
   _$HashcodeValue _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$HashcodeValue._(
           x: BuiltValueNullFieldError.checkNotNull(x, r'HashcodeValue', 'x'),
           y: BuiltValueNullFieldError.checkNotNull(y, r'HashcodeValue', 'y'),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -7335,7 +7456,7 @@ class MemoizedHashcodeValueBuilder
   MemoizedHashcodeValue build() => _build();
 
   _$MemoizedHashcodeValue _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$MemoizedHashcodeValue._(
           x: BuiltValueNullFieldError.checkNotNull(
@@ -7349,8 +7470,8 @@ class MemoizedHashcodeValueBuilder
             'y',
           ),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -7403,9 +7524,9 @@ class _PrivateValueBuilder
   _PrivateValue build() => _build();
 
   _$PrivateValue _build() {
-    final _$result = _$v ?? _$PrivateValue._();
-    replace(_$result);
-    return _$result;
+    final __$result = _$v ?? _$PrivateValue._();
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -7482,9 +7603,9 @@ class SerializesNullsValueBuilder
   SerializesNullsValue build() => _build();
 
   _$SerializesNullsValue _build() {
-    final _$result = _$v ?? _$SerializesNullsValue._(value: value);
-    replace(_$result);
-    return _$result;
+    final __$result = _$v ?? _$SerializesNullsValue._(value: value);
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -7561,9 +7682,9 @@ class NullableObjectValueBuilder
   NullableObjectValue build() => _build();
 
   _$NullableObjectValue _build() {
-    final _$result = _$v ?? _$NullableObjectValue._(value: value);
-    replace(_$result);
-    return _$result;
+    final __$result = _$v ?? _$NullableObjectValue._(value: value);
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -7675,9 +7796,9 @@ class ValueWithHooksBuilder
     ValueWithHooks.both(this);
     ValueWithHooks.moreJustFinalize(this);
     ValueWithHooks.moreBoth(this);
-    _$ValueWithHooks _$result;
+    _$ValueWithHooks __$result;
     try {
-      _$result =
+      __$result =
           _$v ??
           _$ValueWithHooks._(
             hook1Count: BuiltValueNullFieldError.checkNotNull(
@@ -7693,21 +7814,21 @@ class ValueWithHooksBuilder
             hookOrdering: hookOrdering.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'hookOrdering';
+        __$failedField = 'hookOrdering';
         hookOrdering.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'ValueWithHooks',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -7842,9 +7963,9 @@ class $ValueSpecialBuilder
   $ValueSpecial build() => _build();
 
   _$$ValueSpecial _build() {
-    _$$ValueSpecial _$result;
+    _$$ValueSpecial __$result;
     try {
-      _$result =
+      __$result =
           _$v ??
           _$$ValueSpecial._(
             anInt: BuiltValueNullFieldError.checkNotNull(
@@ -7859,25 +7980,25 @@ class $ValueSpecialBuilder
             $10: _$10?.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = '\$mustAlsoEscaped';
+        __$failedField = '\$mustAlsoEscaped';
         _$mustAlsoEscaped?.build();
-        _$failedField = '\$assert';
+        __$failedField = '\$assert';
         _$assert?.build();
-        _$failedField = '\$10';
+        __$failedField = '\$10';
         _$10?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'$ValueSpecial',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -8024,9 +8145,9 @@ class _$ValueWithAwkwardNestedBuilderBuilder
   ValueWithAwkwardNestedBuilder build() => _build();
 
   _$ValueWithAwkwardNestedBuilder _build() {
-    _$ValueWithAwkwardNestedBuilder _$result;
+    _$ValueWithAwkwardNestedBuilder __$result;
     try {
-      _$result =
+      __$result =
           _$v ??
           _$ValueWithAwkwardNestedBuilder._(
             value1: super.value1?.build(),
@@ -8035,27 +8156,27 @@ class _$ValueWithAwkwardNestedBuilderBuilder
             map: map.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'value1';
+        __$failedField = 'value1';
         super.value1?.build();
-        _$failedField = 'value2';
+        __$failedField = 'value2';
         super.value2?.build();
-        _$failedField = 'values';
+        __$failedField = 'values';
         values.build();
-        _$failedField = 'map';
+        __$failedField = 'map';
         map.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'ValueWithAwkwardNestedBuilder',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -8294,7 +8415,7 @@ class VariousFunctionsValueBuilder
   VariousFunctionsValue build() => _build();
 
   _$VariousFunctionsValue _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$VariousFunctionsValue._(
           bareFunction: BuiltValueNullFieldError.checkNotNull(
@@ -8358,8 +8479,8 @@ class VariousFunctionsValueBuilder
             'mixinRequiredNamedFunction',
           ),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -8445,7 +8566,7 @@ class _$NewConstructorValueBuilder extends NewConstructorValueBuilder {
   NewConstructorValue build() => _build();
 
   _$NewConstructorValue _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$NewConstructorValue._(
           anInt: BuiltValueNullFieldError.checkNotNull(
@@ -8454,8 +8575,8 @@ class _$NewConstructorValueBuilder extends NewConstructorValueBuilder {
             'anInt',
           ),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

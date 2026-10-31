@@ -376,7 +376,7 @@ class GenericValueBuilder<T>
   GenericValue<T> build() => _build();
 
   _$GenericValue<T> _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$GenericValue<T>._(
           value: BuiltValueNullFieldError.checkNotNull(
@@ -385,8 +385,8 @@ class GenericValueBuilder<T>
             'value',
           ),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -463,7 +463,7 @@ class BoundGenericValueBuilder<T extends num>
   BoundGenericValue<T> build() => _build();
 
   _$BoundGenericValue<T> _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$BoundGenericValue<T>._(
           value: BuiltValueNullFieldError.checkNotNull(
@@ -472,8 +472,8 @@ class BoundGenericValueBuilder<T extends num>
             'value',
           ),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -551,25 +551,25 @@ class CollectionGenericValueBuilder<T>
   CollectionGenericValue<T> build() => _build();
 
   _$CollectionGenericValue<T> _build() {
-    _$CollectionGenericValue<T> _$result;
+    _$CollectionGenericValue<T> __$result;
     try {
-      _$result = _$v ?? _$CollectionGenericValue<T>._(values: values.build());
+      __$result = _$v ?? _$CollectionGenericValue<T>._(values: values.build());
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'values';
+        __$failedField = 'values';
         values.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'CollectionGenericValue',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -678,9 +678,9 @@ class GenericContainerBuilder
   GenericContainer build() => _build();
 
   _$GenericContainer _build() {
-    _$GenericContainer _$result;
+    _$GenericContainer __$result;
     try {
-      _$result =
+      __$result =
           _$v ??
           _$GenericContainer._(
             genericValue: genericValue.build(),
@@ -688,25 +688,25 @@ class GenericContainerBuilder
             collectionGenericValue: collectionGenericValue.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'genericValue';
+        __$failedField = 'genericValue';
         genericValue.build();
-        _$failedField = 'boundGenericValue';
+        __$failedField = 'boundGenericValue';
         boundGenericValue.build();
-        _$failedField = 'collectionGenericValue';
+        __$failedField = 'collectionGenericValue';
         collectionGenericValue.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'GenericContainer',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

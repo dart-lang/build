@@ -515,9 +515,9 @@ class CollectionsBuilder implements Builder<Collections, CollectionsBuilder> {
   Collections build() => _build();
 
   _$Collections _build() {
-    _$Collections _$result;
+    _$Collections __$result;
     try {
-      _$result = _$v ??
+      __$result = _$v ??
           _$Collections._(
             list: list.build(),
             set: set.build(),
@@ -538,50 +538,50 @@ class CollectionsBuilder implements Builder<Collections, CollectionsBuilder> {
             nestedNullablesList: nestedNullablesList.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'list';
+        __$failedField = 'list';
         list.build();
-        _$failedField = 'set';
+        __$failedField = 'set';
         set.build();
-        _$failedField = 'map';
+        __$failedField = 'map';
         map.build();
-        _$failedField = 'listMultimap';
+        __$failedField = 'listMultimap';
         listMultimap.build();
-        _$failedField = 'setMultimap';
+        __$failedField = 'setMultimap';
         setMultimap.build();
-        _$failedField = 'nullsInList';
+        __$failedField = 'nullsInList';
         nullsInList.build();
-        _$failedField = 'nullsInSet';
+        __$failedField = 'nullsInSet';
         nullsInSet.build();
-        _$failedField = 'nullsInMap';
+        __$failedField = 'nullsInMap';
         nullsInMap.build();
-        _$failedField = 'nullsInListMultimap';
+        __$failedField = 'nullsInListMultimap';
         nullsInListMultimap.build();
-        _$failedField = 'nullsInSetMultimap';
+        __$failedField = 'nullsInSetMultimap';
         nullsInSetMultimap.build();
-        _$failedField = 'nullableList';
+        __$failedField = 'nullableList';
         _nullableList?.build();
-        _$failedField = 'nullableSet';
+        __$failedField = 'nullableSet';
         _nullableSet?.build();
-        _$failedField = 'nullableMap';
+        __$failedField = 'nullableMap';
         _nullableMap?.build();
-        _$failedField = 'nullableListMultimap';
+        __$failedField = 'nullableListMultimap';
         _nullableListMultimap?.build();
-        _$failedField = 'nullableSetMultimap';
+        __$failedField = 'nullableSetMultimap';
         _nullableSetMultimap?.build();
-        _$failedField = 'nullableInGenericsList';
+        __$failedField = 'nullableInGenericsList';
         nullableInGenericsList.build();
-        _$failedField = 'nestedNullablesList';
+        __$failedField = 'nestedNullablesList';
         nestedNullablesList.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'Collections', _$failedField, e.toString());
+            r'Collections', __$failedField, e.toString());
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

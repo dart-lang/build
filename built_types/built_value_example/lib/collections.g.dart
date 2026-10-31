@@ -446,9 +446,9 @@ class CollectionsBuilder implements Builder<Collections, CollectionsBuilder> {
   Collections build() => _build();
 
   _$Collections _build() {
-    _$Collections _$result;
+    _$Collections __$result;
     try {
-      _$result =
+      __$result =
           _$v ??
           _$Collections._(
             list: list.build(),
@@ -463,39 +463,39 @@ class CollectionsBuilder implements Builder<Collections, CollectionsBuilder> {
             nullableSetMultimap: _nullableSetMultimap?.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'list';
+        __$failedField = 'list';
         list.build();
-        _$failedField = 'set';
+        __$failedField = 'set';
         set.build();
-        _$failedField = 'map';
+        __$failedField = 'map';
         map.build();
-        _$failedField = 'listMultimap';
+        __$failedField = 'listMultimap';
         listMultimap.build();
-        _$failedField = 'setMultimap';
+        __$failedField = 'setMultimap';
         setMultimap.build();
-        _$failedField = 'nullableList';
+        __$failedField = 'nullableList';
         _nullableList?.build();
-        _$failedField = 'nullableSet';
+        __$failedField = 'nullableSet';
         _nullableSet?.build();
-        _$failedField = 'nullableMap';
+        __$failedField = 'nullableMap';
         _nullableMap?.build();
-        _$failedField = 'nullableListMultimap';
+        __$failedField = 'nullableListMultimap';
         _nullableListMultimap?.build();
-        _$failedField = 'nullableSetMultimap';
+        __$failedField = 'nullableSetMultimap';
         _nullableSetMultimap?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'Collections',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

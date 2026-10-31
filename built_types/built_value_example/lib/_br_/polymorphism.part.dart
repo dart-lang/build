@@ -208,14 +208,14 @@ class CatBuilder implements Builder<Cat, CatBuilder>, AnimalBuilder {
   Cat build() => _build();
 
   _$Cat _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$Cat._(
           tail: BuiltValueNullFieldError.checkNotNull(tail, r'Cat', 'tail'),
           legs: BuiltValueNullFieldError.checkNotNull(legs, r'Cat', 'legs'),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -297,14 +297,14 @@ class FishBuilder implements Builder<Fish, FishBuilder>, AnimalBuilder {
   Fish build() => _build();
 
   _$Fish _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$Fish._(
           fins: BuiltValueNullFieldError.checkNotNull(fins, r'Fish', 'fins'),
           legs: BuiltValueNullFieldError.checkNotNull(legs, r'Fish', 'legs'),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

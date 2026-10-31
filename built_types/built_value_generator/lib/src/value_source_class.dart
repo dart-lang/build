@@ -1308,12 +1308,12 @@ abstract class ValueSourceClass
     );
 
     if (needsTryCatchOnBuild) {
-      result.writeln('$implName$_generics _\$result;');
+      result.writeln('$implName$_generics __\$result;');
       result.writeln('try {');
     } else {
       result.write('final ');
     }
-    result.writeln('_\$result = _\$v ?? ');
+    result.writeln('__\$result = _\$v ?? ');
     result.writeln('$implName$_generics._(');
     result.write(
       fieldBuilders.keys
@@ -1341,20 +1341,20 @@ abstract class ValueSourceClass
       // in a nested builder then throw with more information. Otherwise,
       // just rethrow.
       result.writeln('} catch (_) {');
-      result.writeln('late String _\$failedField;');
+      result.writeln('late String __\$failedField;');
       result.writeln('try {');
       result.write(
         fieldBuilders.keys.map((field) {
           final fieldBuilder = fieldBuilders[field];
           if (fieldBuilder == field) return '';
-          return "_\$failedField = '${escapeString(field)}'; $fieldBuilder;";
+          return "__\$failedField = '${escapeString(field)}'; $fieldBuilder;";
         }).join('\n'),
       );
 
       result.writeln('} catch (e) {');
       result.writeln(
         'throw BuiltValueNestedFieldError('
-        "r'$name', _\$failedField, e.toString());",
+        "r'$name', __\$failedField, e.toString());",
       );
       result.writeln('}');
       result.writeln('rethrow;');
@@ -1362,8 +1362,8 @@ abstract class ValueSourceClass
     }
 
     // Set _$v to the built value, so it will be lazily copied if needed.
-    result.writeln('replace(_\$result);');
-    result.writeln('return _\$result;');
+    result.writeln('replace(__\$result);');
+    result.writeln('return __\$result;');
     result.writeln('}');
 
     if (settings.comparableBuilders) {

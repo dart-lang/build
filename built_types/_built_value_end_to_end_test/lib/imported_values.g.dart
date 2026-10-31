@@ -266,28 +266,28 @@ class ImportedValueBuilder
   ImportedValue build() => _build();
 
   _$ImportedValue _build() {
-    _$ImportedValue _$result;
+    _$ImportedValue __$result;
     try {
-      _$result = _$v ??
+      __$result = _$v ??
           _$ImportedValue._(
             simpleValue: simpleValue.build(),
             simpleValues: simpleValues.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'simpleValue';
+        __$failedField = 'simpleValue';
         simpleValue.build();
-        _$failedField = 'simpleValues';
+        __$failedField = 'simpleValues';
         simpleValues.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'ImportedValue', _$failedField, e.toString());
+            r'ImportedValue', __$failedField, e.toString());
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -393,15 +393,15 @@ class _$ImportedCustomValueBuilder extends ImportedCustomValueBuilder {
   ImportedCustomValue build() => _build();
 
   _$ImportedCustomValue _build() {
-    final _$result = _$v ??
+    final __$result = _$v ??
         _$ImportedCustomValue._(
           simpleValue: BuiltValueNullFieldError.checkNotNull(
               simpleValue, r'ImportedCustomValue', 'simpleValue'),
           simpleValues: BuiltValueNullFieldError.checkNotNull(
               simpleValues, r'ImportedCustomValue', 'simpleValues'),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -508,28 +508,28 @@ class _$ImportedCustomNestedValueBuilder
   ImportedCustomNestedValue build() => _build();
 
   _$ImportedCustomNestedValue _build() {
-    _$ImportedCustomNestedValue _$result;
+    _$ImportedCustomNestedValue __$result;
     try {
-      _$result = _$v ??
+      __$result = _$v ??
           _$ImportedCustomNestedValue._(
             simpleValue: simpleValue.build(),
             simpleValues: simpleValues.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'simpleValue';
+        __$failedField = 'simpleValue';
         simpleValue.build();
-        _$failedField = 'simpleValues';
+        __$failedField = 'simpleValues';
         simpleValues.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'ImportedCustomNestedValue', _$failedField, e.toString());
+            r'ImportedCustomNestedValue', __$failedField, e.toString());
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

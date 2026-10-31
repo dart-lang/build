@@ -200,7 +200,7 @@ class _$ValueWithIntBuilder extends ValueWithIntBuilder {
   ValueWithInt build() => _build();
 
   _$ValueWithInt _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$ValueWithInt._(
           anInt: BuiltValueNullFieldError.checkNotNull(
@@ -214,8 +214,8 @@ class _$ValueWithIntBuilder extends ValueWithIntBuilder {
             'note',
           ),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

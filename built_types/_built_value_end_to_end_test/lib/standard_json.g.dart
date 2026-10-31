@@ -458,9 +458,9 @@ class StandardJsonValueBuilder
   StandardJsonValue build() => _build();
 
   _$StandardJsonValue _build() {
-    _$StandardJsonValue _$result;
+    _$StandardJsonValue __$result;
     try {
-      _$result = _$v ??
+      __$result = _$v ??
           _$StandardJsonValue._(
             number: BuiltValueNullFieldError.checkNotNull(
                 number, r'StandardJsonValue', 'number'),
@@ -478,35 +478,35 @@ class StandardJsonValueBuilder
             objects: objects.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'value';
+        __$failedField = 'value';
         value.build();
-        _$failedField = 'keyValues';
+        __$failedField = 'keyValues';
         keyValues.build();
-        _$failedField = 'zoo';
+        __$failedField = 'zoo';
         zoo.build();
-        _$failedField = 'uniqueZoo';
+        __$failedField = 'uniqueZoo';
         uniqueZoo.build();
-        _$failedField = 'strings';
+        __$failedField = 'strings';
         _strings?.build();
-        _$failedField = 'nullsInList';
+        __$failedField = 'nullsInList';
         nullsInList.build();
-        _$failedField = 'nullsInSet';
+        __$failedField = 'nullsInSet';
         nullsInSet.build();
-        _$failedField = 'nullsInMap';
+        __$failedField = 'nullsInMap';
         nullsInMap.build();
 
-        _$failedField = 'objects';
+        __$failedField = 'objects';
         objects.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'StandardJsonValue', _$failedField, e.toString());
+            r'StandardJsonValue', __$failedField, e.toString());
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -644,9 +644,9 @@ class ComplexValueBuilder
   ComplexValue build() => _build();
 
   _$ComplexValue _build() {
-    _$ComplexValue _$result;
+    _$ComplexValue __$result;
     try {
-      _$result = _$v ??
+      __$result = _$v ??
           _$ComplexValue._(
             primitive: BuiltValueNullFieldError.checkNotNull(
                 primitive, r'ComplexValue', 'primitive'),
@@ -657,22 +657,22 @@ class ComplexValueBuilder
             nullableValueDoNotUse: _nullableValueDoNotUse?.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'value';
+        __$failedField = 'value';
         value.build();
-        _$failedField = 'nullableValue';
+        __$failedField = 'nullableValue';
         _nullableValue?.build();
-        _$failedField = 'nullableValueDoNotUse';
+        __$failedField = 'nullableValueDoNotUse';
         _nullableValueDoNotUse?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'ComplexValue', _$failedField, e.toString());
+            r'ComplexValue', __$failedField, e.toString());
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

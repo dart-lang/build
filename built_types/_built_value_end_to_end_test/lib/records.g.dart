@@ -179,7 +179,7 @@ class SimpleRecordValueBuilder
   SimpleRecordValue build() => _build();
 
   _$SimpleRecordValue _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$SimpleRecordValue._(
           record: BuiltValueNullFieldError.checkNotNull(
@@ -188,8 +188,8 @@ class SimpleRecordValueBuilder
             'record',
           ),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -428,7 +428,7 @@ class ComplexRecordValueBuilder
   ComplexRecordValue build() => _build();
 
   _$ComplexRecordValue _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$ComplexRecordValue._(
           record2: BuiltValueNullFieldError.checkNotNull(
@@ -487,8 +487,8 @@ class ComplexRecordValueBuilder
           ),
           record6n: record6n,
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -591,7 +591,7 @@ class SerializableRecordValueBuilder
   SerializableRecordValue build() => _build();
 
   _$SerializableRecordValue _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$SerializableRecordValue._(
           value: BuiltValueNullFieldError.checkNotNull(
@@ -602,8 +602,8 @@ class SerializableRecordValueBuilder
           record: record,
           intOrList: intOrList,
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

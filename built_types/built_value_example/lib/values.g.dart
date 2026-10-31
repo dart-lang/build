@@ -478,7 +478,7 @@ class SimpleValueBuilder implements Builder<SimpleValue, SimpleValueBuilder> {
   SimpleValue build() => _build();
 
   _$SimpleValue _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$SimpleValue._(
           anInt: BuiltValueNullFieldError.checkNotNull(
@@ -488,8 +488,8 @@ class SimpleValueBuilder implements Builder<SimpleValue, SimpleValueBuilder> {
           ),
           aString: aString,
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -563,7 +563,7 @@ class VerySimpleValueBuilder
   VerySimpleValue build() => _build();
 
   _$VerySimpleValue _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$VerySimpleValue._(
           value: BuiltValueNullFieldError.checkNotNull(
@@ -572,8 +572,8 @@ class VerySimpleValueBuilder
             'value',
           ),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -663,32 +663,32 @@ class CompoundValueBuilder
   CompoundValue build() => _build();
 
   _$CompoundValue _build() {
-    _$CompoundValue _$result;
+    _$CompoundValue __$result;
     try {
-      _$result =
+      __$result =
           _$v ??
           _$CompoundValue._(
             simpleValue: simpleValue.build(),
             validatedValue: _validatedValue?.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'simpleValue';
+        __$failedField = 'simpleValue';
         simpleValue.build();
-        _$failedField = 'validatedValue';
+        __$failedField = 'validatedValue';
         _validatedValue?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'CompoundValue',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -773,7 +773,7 @@ class ValidatedValueBuilder
   ValidatedValue build() => _build();
 
   _$ValidatedValue _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$ValidatedValue._(
           anInt: BuiltValueNullFieldError.checkNotNull(
@@ -783,8 +783,8 @@ class ValidatedValueBuilder
           ),
           aString: aString,
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -869,7 +869,7 @@ class ValueWithCodeBuilder
   ValueWithCode build() => _build();
 
   _$ValueWithCode _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$ValueWithCode._(
           anInt: BuiltValueNullFieldError.checkNotNull(
@@ -879,8 +879,8 @@ class ValueWithCodeBuilder
           ),
           aString: aString,
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -984,7 +984,7 @@ class _$ValueWithDefaultsBuilder extends ValueWithDefaultsBuilder {
   ValueWithDefaults build() => _build();
 
   _$ValueWithDefaults _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$ValueWithDefaults._(
           anInt: BuiltValueNullFieldError.checkNotNull(
@@ -994,8 +994,8 @@ class _$ValueWithDefaultsBuilder extends ValueWithDefaultsBuilder {
           ),
           aString: aString,
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -1077,7 +1077,7 @@ class DerivedValueBuilder
   DerivedValue build() => _build();
 
   _$DerivedValue _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$DerivedValue._(
           anInt: BuiltValueNullFieldError.checkNotNull(
@@ -1086,8 +1086,8 @@ class DerivedValueBuilder
             'anInt',
           ),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -1184,9 +1184,9 @@ class AccountBuilder implements Builder<Account, AccountBuilder> {
   Account build() => _build();
 
   _$Account _build() {
-    _$Account _$result;
+    _$Account __$result;
     try {
-      _$result =
+      __$result =
           _$v ??
           _$Account._(
             id: BuiltValueNullFieldError.checkNotNull(id, r'Account', 'id'),
@@ -1198,21 +1198,21 @@ class AccountBuilder implements Builder<Account, AccountBuilder> {
             keyValues: keyValues.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'keyValues';
+        __$failedField = 'keyValues';
         keyValues.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'Account',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -1286,7 +1286,7 @@ class WireNameValueBuilder
   WireNameValue build() => _build();
 
   _$WireNameValue _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$WireNameValue._(
           value: BuiltValueNullFieldError.checkNotNull(
@@ -1295,8 +1295,8 @@ class WireNameValueBuilder
             'value',
           ),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
