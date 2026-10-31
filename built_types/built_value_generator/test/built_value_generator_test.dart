@@ -803,6 +803,25 @@ abstract class Value implements Built<Value, ValueBuilder> {
         });
       }
 
+      for (final name in [r'$v', r'$this']) {
+        test('value fields must not be named $name', () async {
+          expect(
+            await generate('''library value;
+import 'package:built_value/built_value.dart';
+part 'value.g.dart';
+abstract class Value implements Built<Value, ValueBuilder> {
+  Value._();
+  int get $name;
+  factory Value([void Function(ValueBuilder) updates]) = _\$Value;
+}'''),
+            contains(
+              '1. Rename field $name; '
+              'it clashes with the generated builder field _$name.',
+            ),
+          );
+        });
+      }
+
       test('builder fields must be normal fields or getter/setter pairs',
           () async {
         expect(
