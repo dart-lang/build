@@ -31,6 +31,9 @@ const _suggestedTypes = <String, String>{
 /// Methods on generated builders, which fields can't share names with.
 const _builderMethodNames = {'build', 'replace', 'update'};
 
+/// Field names whose builder field `_$name` is already a generated member.
+const _builderFieldNames = {r'$v', r'$this'};
+
 abstract class ValueSourceField
     with FieldMixin
     implements Built<ValueSourceField, ValueSourceFieldBuilder> {
@@ -360,6 +363,16 @@ abstract class ValueSourceField
           (b) => b
             ..message = 'Rename field $name; '
                 'it clashes with the generated builder method $name.',
+        ),
+      );
+    }
+
+    if (_builderFieldNames.contains(name)) {
+      result.add(
+        GeneratorError(
+          (b) => b
+            ..message = 'Rename field $name; '
+                'it clashes with the generated builder field _$name.',
         ),
       );
     }

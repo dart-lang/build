@@ -22,6 +22,9 @@
 - Bug fix: report an error for fields named `build`, `replace` or `update`,
   which clash with methods on the generated builder, instead of generating
   code that doesn't compile.
+- Bug fix: report an error for fields named `$v` or `$this`, which clash with
+  fields on the generated builder, instead of generating code that doesn't
+  compile.
 
 ## 8.13.0
 
