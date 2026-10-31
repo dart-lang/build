@@ -37,6 +37,23 @@ abstract class CompoundValue
   CompoundValue._();
 }
 
+/// Nested builder fields whose builder fields are named like the locals in
+/// the generated `_build`.
+abstract class CompoundValueWithBuildLocalNames
+    implements
+        Built<
+          CompoundValueWithBuildLocalNames,
+          CompoundValueWithBuildLocalNamesBuilder
+        > {
+  SimpleValue? get $result;
+  SimpleValue? get $failedField;
+
+  factory CompoundValueWithBuildLocalNames([
+    void Function(CompoundValueWithBuildLocalNamesBuilder) updates,
+  ]) = _$CompoundValueWithBuildLocalNames;
+  CompoundValueWithBuildLocalNames._();
+}
+
 @BuiltValue(nestedBuilders: false)
 abstract class CompoundValueNoNesting
     implements Built<CompoundValueNoNesting, CompoundValueNoNestingBuilder> {

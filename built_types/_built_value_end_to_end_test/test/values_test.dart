@@ -130,6 +130,29 @@ void main() {
     });
   });
 
+  group('CompoundValueWithBuildLocalNames', () {
+    test('builds nested fields', () {
+      final value = CompoundValueWithBuildLocalNames(
+        (b) => b
+          ..$result.anInt = 1
+          ..$failedField.anInt = 2,
+      );
+      expect(value.$result!.anInt, 1);
+      expect(value.$failedField!.anInt, 2);
+    });
+
+    test('names the failed nested field', () {
+      expect(
+        () => CompoundValueWithBuildLocalNames(
+          (b) => b
+            ..$result.anInt = 1
+            ..$failedField.aString = 'no anInt',
+        ),
+        throwsA(isErrorContaining(r'"$failedField"')),
+      );
+    });
+  });
+
   group('CompoundValue', () {
     test('can be instantiated', () {
       CompoundValue((b) => b..simpleValue.anInt = 1);
