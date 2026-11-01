@@ -191,13 +191,7 @@ abstract class ValueSourceField
     if (result == null || result == 'dynamic') {
       // Go via AST to allow use of unresolvable types not yet generated;
       // this includes generated Builder types.
-      result = parsedLibrary
-          .getFragmentDeclaration(builderElement!.firstFragment)
-          ?.node
-          .parent
-          ?.childEntities
-          .first
-          .toString();
+      result = builderFieldDeclaredType;
     }
 
     if (result == null || result == 'dynamic') {
