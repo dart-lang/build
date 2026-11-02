@@ -1,7 +1,8 @@
 ## 2.17.2-wip
 
 - Performance: don't format the generated build script. This saves about
-  200ms on every build, including no-op builds.
+  200ms on every build, including no-op builds. The script is marked
+  `// dart format off` so that formatting it explicitly leaves it unchanged.
 
 ## 2.17.1
 
