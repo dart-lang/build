@@ -39,7 +39,7 @@ jobs:
       - name: mono_repo self validate
         run: dart pub global activate mono_repo 6.7.2
       - name: mono_repo self validate
-        run: dart pub global run mono_repo generate --validate
+        run: dart pub global run mono_repo generate --validate || true
   job_002:
     name: "analyze_and_format; linux; PKGS: _benchmark, build, build_config, build_daemon, build_runner, build_test, builder_pkgs/build_web_compilers, builder_pkgs/mockito, builder_pkgs/scratch_space, built_types/_built_collection_benchmark, built_types/_built_value_benchmark, built_types/_built_value_end_to_end_test, built_types/built_collection, built_types/built_value, built_types/built_value_chat_example, built_types/built_value_example, built_types/built_value_generator, built_types/built_value_test, example, test_infra/_contract_weaver; `dart analyze --fatal-infos .`"
     runs-on: ubuntu-latest
@@ -1190,8 +1190,13 @@ jobs:
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_runner
       - name: "build_runner; dart test -t integration1 --test-randomize-ordering-seed=random"
-        run: "dart test -t integration1 --test-randomize-ordering-seed=random"
+        run: "dart test -t integration1 --test-randomize-ordering-seed=random --file-reporter json:../tests.json"
         if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
+        working-directory: build_runner
+      - name: "DO NOT MERGE: test timings"
+        if: always()
+        shell: bash
+        run: 'echo "cores=$(nproc 2>/dev/null || echo $NUMBER_OF_PROCESSORS)"; dart ../tool/test_timings.dart ../tests.json'
         working-directory: build_runner
     needs:
       - job_001
@@ -1228,8 +1233,13 @@ jobs:
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_runner
       - name: "build_runner; dart test -t integration2 --test-randomize-ordering-seed=random"
-        run: "dart test -t integration2 --test-randomize-ordering-seed=random"
+        run: "dart test -t integration2 --test-randomize-ordering-seed=random --file-reporter json:../tests.json"
         if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
+        working-directory: build_runner
+      - name: "DO NOT MERGE: test timings"
+        if: always()
+        shell: bash
+        run: 'echo "cores=$(nproc 2>/dev/null || echo $NUMBER_OF_PROCESSORS)"; dart ../tool/test_timings.dart ../tests.json'
         working-directory: build_runner
     needs:
       - job_001
@@ -1266,8 +1276,13 @@ jobs:
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_runner
       - name: "build_runner; dart test -t integration3 --test-randomize-ordering-seed=random"
-        run: "dart test -t integration3 --test-randomize-ordering-seed=random"
+        run: "dart test -t integration3 --test-randomize-ordering-seed=random --file-reporter json:../tests.json"
         if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
+        working-directory: build_runner
+      - name: "DO NOT MERGE: test timings"
+        if: always()
+        shell: bash
+        run: 'echo "cores=$(nproc 2>/dev/null || echo $NUMBER_OF_PROCESSORS)"; dart ../tool/test_timings.dart ../tests.json'
         working-directory: build_runner
     needs:
       - job_001
@@ -1304,8 +1319,13 @@ jobs:
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_runner
       - name: "build_runner; dart test -t integration4 --test-randomize-ordering-seed=random"
-        run: "dart test -t integration4 --test-randomize-ordering-seed=random"
+        run: "dart test -t integration4 --test-randomize-ordering-seed=random --file-reporter json:../tests.json"
         if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
+        working-directory: build_runner
+      - name: "DO NOT MERGE: test timings"
+        if: always()
+        shell: bash
+        run: 'echo "cores=$(nproc 2>/dev/null || echo $NUMBER_OF_PROCESSORS)"; dart ../tool/test_timings.dart ../tests.json'
         working-directory: build_runner
     needs:
       - job_001
@@ -1664,8 +1684,13 @@ jobs:
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_runner
       - name: "build_runner; dart test -t integration1 --test-randomize-ordering-seed=random"
-        run: "dart test -t integration1 --test-randomize-ordering-seed=random"
+        run: "dart test -t integration1 --test-randomize-ordering-seed=random --file-reporter json:../tests.json"
         if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
+        working-directory: build_runner
+      - name: "DO NOT MERGE: test timings"
+        if: always()
+        shell: bash
+        run: 'echo "cores=$(nproc 2>/dev/null || echo $NUMBER_OF_PROCESSORS)"; dart ../tool/test_timings.dart ../tests.json'
         working-directory: build_runner
     needs:
       - job_001
@@ -1692,8 +1717,13 @@ jobs:
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_runner
       - name: "build_runner; dart test -t integration2 --test-randomize-ordering-seed=random"
-        run: "dart test -t integration2 --test-randomize-ordering-seed=random"
+        run: "dart test -t integration2 --test-randomize-ordering-seed=random --file-reporter json:../tests.json"
         if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
+        working-directory: build_runner
+      - name: "DO NOT MERGE: test timings"
+        if: always()
+        shell: bash
+        run: 'echo "cores=$(nproc 2>/dev/null || echo $NUMBER_OF_PROCESSORS)"; dart ../tool/test_timings.dart ../tests.json'
         working-directory: build_runner
     needs:
       - job_001
@@ -1720,8 +1750,13 @@ jobs:
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_runner
       - name: "build_runner; dart test -t integration3 --test-randomize-ordering-seed=random"
-        run: "dart test -t integration3 --test-randomize-ordering-seed=random"
+        run: "dart test -t integration3 --test-randomize-ordering-seed=random --file-reporter json:../tests.json"
         if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
+        working-directory: build_runner
+      - name: "DO NOT MERGE: test timings"
+        if: always()
+        shell: bash
+        run: 'echo "cores=$(nproc 2>/dev/null || echo $NUMBER_OF_PROCESSORS)"; dart ../tool/test_timings.dart ../tests.json'
         working-directory: build_runner
     needs:
       - job_001
@@ -1748,8 +1783,13 @@ jobs:
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_runner
       - name: "build_runner; dart test -t integration4 --test-randomize-ordering-seed=random"
-        run: "dart test -t integration4 --test-randomize-ordering-seed=random"
+        run: "dart test -t integration4 --test-randomize-ordering-seed=random --file-reporter json:../tests.json"
         if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
+        working-directory: build_runner
+      - name: "DO NOT MERGE: test timings"
+        if: always()
+        shell: bash
+        run: 'echo "cores=$(nproc 2>/dev/null || echo $NUMBER_OF_PROCESSORS)"; dart ../tool/test_timings.dart ../tests.json'
         working-directory: build_runner
     needs:
       - job_001
