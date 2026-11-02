@@ -13,14 +13,13 @@ import 'phased_asset_deps.dart';
 import 'phased_value.dart';
 
 /// Loads Dart source assets to [PhasedValue]s of [AssetDeps].
-@Invariant('phase >= 0')
 class AssetDepsLoader {
   static const _ignoredSchemes = ['dart', 'dart-ext'];
 
   final BuilderFilesystem _buildFilesystem;
   final int phase;
 
-  AssetDepsLoader(this._buildFilesystem, this.phase);
+  AssetDepsLoader(this._buildFilesystem, this.phase) : assert(phase >= 0);
   factory AssetDepsLoader.fromDeps(PhasedAssetDeps deps) =>
       _InMemoryAssetDepsLoader(deps);
 

@@ -8,11 +8,8 @@ import 'package:build/build.dart';
 import 'package:crypto/crypto.dart';
 
 import '../build/asset_content.dart';
-import '../contracts.dart';
 
 /// The result of reading an asset from a `BuildOutputReader`.
-@Invariant('canRead == (unreadableReason == null)')
-@Invariant('canRead == (_content != null)')
 class BuildOutputReadResult {
   final AssetId id;
   final UnreadableReason? unreadableReason;
@@ -21,11 +18,17 @@ class BuildOutputReadResult {
   BuildOutputReadResult.unreadable(
     this.id,
     UnreadableReason this.unreadableReason,
-  ) : _content = null;
+  ) : _content = null {
+    assert(canRead == (unreadableReason == null));
+    assert(canRead == (_content != null));
+  }
 
   BuildOutputReadResult.available(this.id, AssetContent content)
     : unreadableReason = null,
-      _content = content;
+      _content = content {
+    assert(canRead == (unreadableReason == null));
+    assert(canRead == (_content != null));
+  }
 
   /// Whether the asset can be read.
   bool get canRead => unreadableReason == null;

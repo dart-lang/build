@@ -6,7 +6,6 @@ import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:built_collection/built_collection.dart';
 
-import '../contracts.dart';
 import 'build_step_impl.dart';
 
 export 'prefix_for_phase.dart';
@@ -14,8 +13,6 @@ export 'prefix_for_phase.dart';
 /// The language experiment that allows a part to have imports.
 const String _enhancedParts = 'enhanced-parts';
 
-@Invariant('importPrefix.isNotEmpty')
-@Invariant('languageVersion == null || languageVersion!.isNotEmpty')
 class LibrarySourceSinkImpl implements LibrarySourceSink {
   final BuildStepImpl _buildStep;
   @override
@@ -30,7 +27,8 @@ class LibrarySourceSinkImpl implements LibrarySourceSink {
     this._buildStep,
     this.importPrefix,
     this.languageVersion,
-  );
+  ) : assert(importPrefix.isNotEmpty),
+      assert(languageVersion == null || languageVersion.isNotEmpty);
 
   String get contribution => _buffer.toString();
   BuiltList<String> get imports => _imports.build();
@@ -48,9 +46,6 @@ class LibrarySourceSinkImpl implements LibrarySourceSink {
     if (_buildStep.isComplete) throw BuildStepCompletedException();
   }
 
-  @Requires('uri.isNotEmpty')
-  @Requires('as.isNotEmpty')
-  @Requires('as.startsWith(importPrefix)')
   @override
   void addImport(
     String uri, {
@@ -58,6 +53,7 @@ class LibrarySourceSinkImpl implements LibrarySourceSink {
     Iterable<String>? show,
     Iterable<String>? hide,
   }) {
+    assert(uri.isNotEmpty);
     _checkCanWrite();
     if (!as.startsWith(importPrefix)) {
       throw ArgumentError.value(as, 'as', 'must start with $importPrefix');

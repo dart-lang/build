@@ -47,10 +47,6 @@ part '../../_br_/src/build_plan/previous_build.part.dart';
   'postBuildOptionsChangedList.length == '
   'buildStepPlan!.buildPhases.postBuildPhase.builderActions.length',
 )
-@Invariant(
-  'incompatibleBuildOutputsToDelete.every('
-  '(id) => id.package.isNotEmpty && id.path.isNotEmpty)',
-)
 abstract class PreviousBuild
     implements Built<PreviousBuild, PreviousBuildBuilder> {
   /// The `IncrementalBuildState` of the previous build, or null if it was

@@ -19,7 +19,9 @@ abstract class PartContribution
   /// Source to add to the part.
   String get contribution;
 
-  PartContribution._();
+  PartContribution._() {
+    assert(builderKey.isNotEmpty);
+  }
   factory PartContribution([void Function(PartContributionBuilder) updates]) =
       _$PartContribution;
 

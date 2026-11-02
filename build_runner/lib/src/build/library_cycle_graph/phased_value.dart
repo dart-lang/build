@@ -47,9 +47,6 @@ part '../../../_br_/src/build/library_cycle_graph/phased_value.part.dart';
 /// cases, fixed or changing exactly once, as different implementation types.
 @Invariant('values.isNotEmpty')
 @Invariant(
-  'values.every((v) => v.expiresAfter == null || v.expiresAfter! >= 0)',
-)
-@Invariant(
   'values.length <= 1 || '
   'values.take(values.length - 1).every((v) => v.expiresAfter != null)',
 )
@@ -114,8 +111,8 @@ abstract class PhasedValue<T>
 
   /// Whether this value has expired at the specified [phase], meaning the
   /// actual value is not known.
-  @Requires('phase >= 0')
   bool isExpiredAt({required int phase}) {
+    assert(phase >= 0);
     return expiresAfter != null && expiresAfter! < phase;
   }
 
@@ -123,8 +120,8 @@ abstract class PhasedValue<T>
   ///
   /// Throws `StateError` if the value has expired at [phase], meaning the value
   /// is not known.
-  @Requires('phase >= 0')
   ExpiringValue<T> expiringValueAt({required int phase}) {
+    assert(phase >= 0);
     for (final value in values) {
       if (value.expiresAfter == null || value.expiresAfter! >= phase) {
         return value;
@@ -137,8 +134,10 @@ abstract class PhasedValue<T>
   ///
   /// Throws `StateError` if the value has expired at [phase], meaning the value
   /// is not known.
-  @Requires('phase >= 0')
-  T valueAt({required int phase}) => expiringValueAt(phase: phase).value;
+  T valueAt({required int phase}) {
+    assert(phase >= 0);
+    return expiringValueAt(phase: phase).value;
+  }
 
   /// The value after all changes have happened.
   ///
@@ -184,7 +183,6 @@ abstract class PhasedValue<T>
 ///
 /// If [expiresAfter] is set, the value expires after that phase, taking a new
 /// value in the next phase.
-@Invariant('expiresAfter == null || expiresAfter! >= 0')
 abstract class ExpiringValue<T>
     implements Built<ExpiringValue<T>, ExpiringValueBuilder<T>> {
   static Serializer<ExpiringValue> get serializer => _$expiringValueSerializer;
@@ -194,7 +192,9 @@ abstract class ExpiringValue<T>
 
   factory ExpiringValue(T value, {int? expiresAfter}) =>
       _$ExpiringValue<T>._(value: value, expiresAfter: expiresAfter);
-  ExpiringValue._();
+  ExpiringValue._() {
+    assert(expiresAfter == null || expiresAfter! >= 0);
+  }
 }
 
 /// Returns the earliest of two nullable phases [a] and [b].

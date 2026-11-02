@@ -70,8 +70,6 @@ class BuildOutputReader {
     required this.buildState,
   });
 
-  @Requires('id.package.isNotEmpty')
-  @Requires('id.path.isNotEmpty')
   String pathFor(AssetId id) {
     return readerWriter.assetPathProvider.pathFor(
       id,
@@ -124,8 +122,6 @@ class BuildOutputReader {
   }
 
   /// Reads [id] from the build output, returning a [BuildOutputReadResult].
-  @Requires('id.package.isNotEmpty')
-  @Requires('id.path.isNotEmpty')
   Future<BuildOutputReadResult> read(AssetId id) async {
     final reason = await _unreadableReason(id);
     if (reason != null) {
@@ -146,8 +142,6 @@ class BuildOutputReader {
     return BuildOutputReadResult.available(id, AssetContent.bytes(bytes));
   }
 
-  @Requires('id.package.isNotEmpty')
-  @Requires('id.path.isNotEmpty')
   Future<bool> canRead(AssetId id) async =>
       (await _unreadableReason(id)) == null;
 

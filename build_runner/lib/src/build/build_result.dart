@@ -6,24 +6,12 @@ import 'package:build/build.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:crypto/crypto.dart';
 
-import '../contracts.dart';
 import '../io/build_output_reader.dart';
 import 'build_state/finished_build_state.dart';
 import 'library_cycle_graph/phased_asset_deps.dart';
 
 /// The result of an individual build, this may be an incremental build or
 /// a full build.
-@Invariant(
-  'status == BuildStatus.failure ? failureType != null : failureType == null',
-)
-@Invariant('status != BuildStatus.success || buildOutputReader != null')
-@Invariant(
-  'buildState == null || '
-  'outputs.every((id) => '
-  'buildState!.isActualOutput(id) || '
-  'buildState!.isActualPostOutput(id) || '
-  'buildState!.hasSharedPart(id))',
-)
 class BuildResult {
   /// The status of this build.
   final BuildStatus status;
@@ -71,7 +59,8 @@ class BuildResult {
     FailureType? failureType,
     BuiltMap<AssetId, Digest>? librariesMissingPartDirective,
     BuiltMap<AssetId, Digest>? librariesWithUnusedPartDirective,
-  }) : failureType = failureType == null && status == BuildStatus.failure
+  }) : assert(status != BuildStatus.success || buildOutputReader != null),
+       failureType = failureType == null && status == BuildStatus.failure
            ? FailureType.general
            : failureType,
        errors = errors ?? BuiltList(),
@@ -80,7 +69,22 @@ class BuildResult {
        librariesMissingPartDirective =
            librariesMissingPartDirective ?? BuiltMap(),
        librariesWithUnusedPartDirective =
-           librariesWithUnusedPartDirective ?? BuiltMap();
+           librariesWithUnusedPartDirective ?? BuiltMap() {
+    assert(
+      status == BuildStatus.failure
+          ? this.failureType != null
+          : this.failureType == null,
+    );
+    assert(
+      buildState == null ||
+          this.outputs.every(
+            (id) =>
+                buildState!.isActualOutput(id) ||
+                buildState!.isActualPostOutput(id) ||
+                buildState!.hasSharedPart(id),
+          ),
+    );
+  }
 
   BuildResult copyWith({
     BuildStatus? status,
