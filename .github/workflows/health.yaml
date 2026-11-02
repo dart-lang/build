@@ -9,7 +9,7 @@ on:
 
 jobs:
   health:
-    uses: dart-lang/ecosystem/.github/workflows/health.yaml@0bfa654e652c27987d614c54675ff32becf5b574
+    uses: dart-lang/ecosystem/.github/workflows/health.yaml@27c2fc841818cce349e1f424af51cca9ea381f47
     with:
       checks: "changelog,do-not-submit,publish"
       fail_on: "changelog,do-not-submit,publish"
