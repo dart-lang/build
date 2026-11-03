@@ -803,6 +803,40 @@ abstract class Value implements Built<Value, ValueBuilder> {
         });
       }
 
+      for (final field in [
+        'SimpleValueBuilder simpleValue = SimpleValueBuilder();',
+        'late SimpleValueBuilder simpleValue;',
+        'late SimpleValueBuilder? simpleValue;',
+        'late final SimpleValueBuilder simpleValue;',
+        'late SimpleValueBuilder simpleValue = SimpleValueBuilder();',
+      ]) {
+        test('nested builder field can be declared as: $field', () async {
+          expect(
+            await generate('''library value;
+import 'package:built_value/built_value.dart';
+part 'value.g.dart';
+abstract class SimpleValue implements Built<SimpleValue, SimpleValueBuilder> {
+  int get anInt;
+  factory SimpleValue([void Function(SimpleValueBuilder) updates]) =
+      _\$SimpleValue;
+  SimpleValue._();
+}
+abstract class Value implements Built<Value, ValueBuilder> {
+  SimpleValue get simpleValue;
+  factory Value([void Function(ValueBuilder) updates]) = _\$Value;
+  Value._();
+}
+abstract class ValueBuilder implements Builder<Value, ValueBuilder> {
+  $field
+  factory ValueBuilder() = _\$ValueBuilder;
+  ValueBuilder._();
+}
+'''),
+            isNot(contains('Please make the following changes')),
+          );
+        });
+      }
+
       test('builder fields must be normal fields or getter/setter pairs',
           () async {
         expect(
