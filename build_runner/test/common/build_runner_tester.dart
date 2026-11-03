@@ -278,6 +278,7 @@ class BuildRunnerProcess {
   late final HttpClient _client = HttpClient();
   int? _port;
   Future<void>? _killResult;
+  bool _exited = false;
 
   BuildRunnerProcess(this.process)
     : _outputs = StreamQueue(
@@ -289,7 +290,9 @@ class BuildRunnerProcess {
               .transform(utf8.decoder)
               .transform(const LineSplitter()),
         ]),
-      );
+      ) {
+    process.exitCode.then((_) => _exited = true).ignore();
+  }
 
   /// Expects nothing new on stdout or stderr for [duration].
   Future<void> expectNoOutput(Duration duration) async {
@@ -417,10 +420,14 @@ class BuildRunnerProcess {
   }
 
   Future<void> _kill() async {
+    final alreadyExited = _exited;
     process.kill();
     _outputs.rest.listen((line) => printOnFailure('Output after kill: $line'));
     await process.exitCode;
-    // Wait a few seconds for child process cleanup.
+    // A process that exited by itself normally awaited its child processes
+    // first, see `ParentProcess`. A killed process did not: wait a few seconds
+    // for the reaper to kill its children.
+    if (alreadyExited) return;
     await Future<void>.delayed(const Duration(seconds: 2));
   }
 
