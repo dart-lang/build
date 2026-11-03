@@ -6,6 +6,11 @@
 - Warn when `runs_before` in a builder definition names an unknown builder in
   a package that has builders in the build.
   [#2123](https://github.com/dart-lang/build/issues/2123)
+- Builders can read generated `_br_` shared parts through `BuildStep`, seeing
+  what earlier phases contributed, so builders that copy sources for an
+  external compiler, such as DDC, see the parts. For ordering, an
+  `adds_to_library` builder counts as writing `.part.dart`, so builders with
+  `required_inputs: ['.dart']` run after it.
 
 ## 2.17.1
 

@@ -673,6 +673,9 @@ class Build {
         Uri.parse(directive.uri.stringValue!),
         from: id,
       );
+      // Track the part even if it's not readable: a shared part can become
+      // readable when an earlier phase starts adding to it.
+      inputTracker.add(partId);
       // Check that the part is readable, including generating it if it's
       // an output from an earlier phase.
       if (!await _builderFilesystem.isReadable(
@@ -682,10 +685,12 @@ class Build {
       )) {
         continue;
       }
-      inputTracker.add(partId);
       result.add(
         _parseCompilationUnit(
-          (await _builderFilesystem.contentOf(partId)).stringValue(),
+          (await _builderFilesystem.contentOf(
+            partId,
+            phase: phaseNum,
+          )).stringValue(),
         ),
       );
     }

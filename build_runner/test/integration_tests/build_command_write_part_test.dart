@@ -327,6 +327,42 @@ class ResolvePartBuilder implements Builder {
     );
 
     tester.writePackage(
+      name: 'read_part_pkg',
+      dependencies: ['build', 'build_runner'],
+      files: {
+        'build.yaml': r'''
+builders:
+  read_part_builder:
+    import: 'package:read_part_pkg/builder.dart'
+    builder_factories: ['readPartBuilderFactory']
+    build_extensions: {'.dart': ['.copy']}
+    required_inputs: ['.dart']
+    build_to: 'source'
+''',
+        'lib/builder.dart': r'''
+import 'package:build/build.dart';
+
+Builder readPartBuilderFactory(BuilderOptions options) => ReadPartBuilder();
+
+/// Copies the shared part of its input, as written by earlier phases.
+class ReadPartBuilder implements Builder {
+  @override
+  Map<String, List<String>> get buildExtensions => {'.dart': ['.copy']};
+
+  @override
+  Future<void> build(BuildStep buildStep) async {
+    final partId = AssetId(buildStep.inputId.package, 'lib/_br_/a.part.dart');
+    await buildStep.writeAsString(
+      buildStep.inputId.changeExtension('.copy'),
+      await buildStep.readAsString(partId),
+    );
+  }
+}
+''',
+      },
+    );
+
+    tester.writePackage(
       name: 'root_pkg',
       dependencies: ['build_runner'],
       pathDependencies: [
@@ -334,6 +370,7 @@ class ResolvePartBuilder implements Builder {
         'generate_library_pkg',
         'multi_part_pkg',
         'phase_part_pkg',
+        'read_part_pkg',
         'write_part_imports_pkg',
         'write_part_pkg',
       ],
@@ -682,6 +719,36 @@ class Class3 {
 }
 
 ''');
+
+    // A builder that reads `.dart` files runs after the builders that add to
+    // libraries, and reads the shared part they wrote through its `BuildStep`.
+    tester.write('root_pkg/build.yaml', r'''
+targets:
+  $default:
+    builders:
+      write_part_pkg|write_part_builder:
+        enabled: true
+      read_part_pkg|read_part_builder:
+        enabled: true
+        generate_for: ['lib/a.dart']
+''');
+    tester.write('root_pkg/lib/a.dart', r'''
+part '_br_/a.part.dart';
+
+class A {}
+''');
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+    );
+    expect(output, contains(BuildLog.successPattern));
+    expect(
+      tester.read('root_pkg/lib/a.copy'),
+      contains(
+        '// === write_part_pkg:write_part_builder contribution.\n'
+        '// part content\n',
+      ),
+    );
 
     // Deleting a source file deletes its generated part, and leaves other
     // generated parts alone.

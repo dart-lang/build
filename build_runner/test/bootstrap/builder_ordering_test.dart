@@ -163,6 +163,71 @@ void main() {
       expect(orderedKeys, ['a:runs_first', 'a:runs_second']);
     });
 
+    test('orders `adds_to_library` builders before `.dart` readers', () {
+      final buildConfigs = parseBuildConfigs({
+        'a': {
+          'builders': {
+            'b_reads_dart': {
+              'builder_factories': ['createBuilder'],
+              'build_extensions': {
+                '.dart': ['.module'],
+              },
+              'target': '',
+              'import': '',
+              'required_inputs': ['.dart'],
+            },
+            'a_adds_to_library': {
+              'builder_factories': ['createBuilder'],
+              'build_extensions': {'.dart': <String>[]},
+              'target': '',
+              'import': '',
+              'adds_to_library': true,
+              'build_to': 'source',
+            },
+          },
+        },
+      });
+      final orderedBuilders = findBuilderOrder(
+        buildConfigs.values.expand((v) => v.builderDefinitions.values),
+        {},
+      );
+      final orderedKeys = orderedBuilders.map((b) => b.key);
+      expect(orderedKeys, ['a:a_adds_to_library', 'a:b_reads_dart']);
+    });
+
+    test('does not order `adds_to_library` builders among themselves', () {
+      final buildConfigs = parseBuildConfigs({
+        'a': {
+          'builders': {
+            'a_adds_to_library': {
+              'builder_factories': ['createBuilder'],
+              'build_extensions': {'.dart': <String>[]},
+              'target': '',
+              'import': '',
+              'adds_to_library': true,
+              'build_to': 'source',
+              'required_inputs': ['.dart'],
+            },
+            'b_adds_to_library': {
+              'builder_factories': ['createBuilder'],
+              'build_extensions': {'.dart': <String>[]},
+              'target': '',
+              'import': '',
+              'adds_to_library': true,
+              'build_to': 'source',
+              'required_inputs': ['.dart'],
+            },
+          },
+        },
+      });
+      final orderedBuilders = findBuilderOrder(
+        buildConfigs.values.expand((v) => v.builderDefinitions.values),
+        {},
+      );
+      final orderedKeys = orderedBuilders.map((b) => b.key);
+      expect(orderedKeys, ['a:b_adds_to_library', 'a:a_adds_to_library']);
+    });
+
     test('disallows cycles', () async {
       final buildConfigs = parseBuildConfigs({
         'a': {
