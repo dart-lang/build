@@ -45,8 +45,14 @@ Iterable<BuilderDefinition> findBuilderOrder(
 
 /// Whether [parent] has a `required_input` that wants to read outputs produced
 /// by [child].
+///
+/// An `adds_to_library` builder counts as producing `.part.dart`, so builders
+/// that require `.dart` run after it, except other `adds_to_library` builders.
 bool _hasInputDependency(BuilderDefinition parent, BuilderDefinition child) {
-  final childOutputs = child.buildExtensions.values.expand((v) => v).toSet();
+  final childOutputs = {
+    ...child.buildExtensions.values.expand((v) => v),
+    if (child.addsToLibrary && !parent.addsToLibrary) '.part.dart',
+  };
   return parent.requiredInputs.any(
     (input) => childOutputs.any((output) => output.endsWith(input)),
   );

@@ -4,7 +4,6 @@ import 'package:build_runner/src/build/build_result.dart';
 import 'package:build_runner/src/build_plan/builder_definition.dart';
 import 'package:build_runner/src/build_plan/builder_factories.dart';
 import 'package:build_runner/src/constants.dart';
-import 'package:glob/glob.dart';
 import 'package:test/test.dart';
 
 import '../common/common.dart';
@@ -212,7 +211,8 @@ class LibraryGeneratingBuilder implements Builder {
   }
 }
 
-class PartVerifyingInvisibilityBuilder implements Builder {
+/// Reads the shared part of `a.dart` as earlier phases wrote it.
+class PartReadingBuilder implements Builder {
   @override
   Map<String, List<String>> get buildExtensions => {
     '.dart': ['.check.dart'],
@@ -221,15 +221,10 @@ class PartVerifyingInvisibilityBuilder implements Builder {
   @override
   Future<void> build(BuildStep buildStep) async {
     final brId = AssetId('a', 'lib/_br_/a.part.dart');
-    expect(await buildStep.canRead(brId), isFalse);
-    expect(
-      buildStep.readAsString(brId),
-      throwsA(isA<AssetNotFoundException>()),
-    );
-    expect(buildStep.readAsBytes(brId), throwsA(isA<AssetNotFoundException>()));
-    expect(buildStep.digest(brId), throwsA(isA<AssetNotFoundException>()));
-    final found = await buildStep.findAssets(Glob('lib/_br_/*')).toList();
-    expect(found, isEmpty);
+    expect(await buildStep.canRead(brId), isTrue);
+    expect(await buildStep.readAsString(brId), contains('var content = 1;'));
+    expect(await buildStep.readAsBytes(brId), isNotEmpty);
+    await buildStep.digest(brId);
   }
 }
 
@@ -1079,12 +1074,12 @@ class Class2 {}
       },
     );
 
-    partsTest('_br_ assets are invisible to asset reader calls', () async {
+    partsTest('_br_ assets are readable by later phases', () async {
       final builderFactories = BuilderFactories({
         'a:builder1': [
           (_) => PartWritingBuilder('var content = 1;', 'lib/b.txt', '.b.dart'),
         ],
-        'a:builder2': [(_) => PartVerifyingInvisibilityBuilder()],
+        'a:builder2': [(_) => PartReadingBuilder()],
       });
       final builderDefinitions = [
         BuilderDefinition(

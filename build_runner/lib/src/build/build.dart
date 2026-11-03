@@ -685,7 +685,10 @@ class Build {
       inputTracker.add(partId);
       result.add(
         _parseCompilationUnit(
-          (await _builderFilesystem.contentOf(partId)).stringValue(),
+          (await _builderFilesystem.contentOf(
+            partId,
+            phase: phaseNum,
+          )).stringValue(),
         ),
       );
     }
