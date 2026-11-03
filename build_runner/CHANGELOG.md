@@ -1,5 +1,8 @@
 ## 2.17.2-wip
 
+- Performance: don't format the generated build script. This makes a no-op
+  build about 15% faster. The script is marked
+  `// dart format off` so that formatting it explicitly leaves it unchanged.
 - Warn when `runs_before` in a builder definition names an unknown builder in
   a package that has builders in the build.
   [#2123](https://github.com/dart-lang/build/issues/2123)
