@@ -654,7 +654,7 @@ window.$dartCreateScript = (function() {
 //
 // If not specified, [root] defaults to the directory serving the main app.
 var forceLoadModule = function (relativeUrl, root) {
-  var actualRoot = root ?? _currentDirectory;
+  var resolvedUrl = (root ?? _currentDirectory) + relativeUrl;
   return new Promise(function(resolve, reject) {
     var script = self.$dartCreateScript();
     let policy = {
@@ -664,8 +664,10 @@ var forceLoadModule = function (relativeUrl, root) {
       policy = self.trustedTypes.createPolicy('dartDdcModuleUrl', policy);
     }
     script.onload = resolve;
-    script.onerror = reject;
-    script.src = policy.createScriptURL(actualRoot + relativeUrl);
+    script.onerror = function() {
+      reject(new Error(`Failed to load script from "${resolvedUrl}".`));
+    };
+    script.src = policy.createScriptURL(resolvedUrl);
     document.head.appendChild(script);
   });
 };
@@ -790,7 +792,7 @@ $_simpleLoaderScript
 
     if (!window.\$dartReloadModifiedModules) {
       window.\$dartReloadModifiedModules = (function(filesToReload, appName) {
-        return new Promise(function(resolve) {
+        return new Promise(function(resolve, reject) {
           function callback() {
             resolve(filesToReload);
           }
@@ -822,6 +824,10 @@ $_simpleLoaderScript
             el.onload = function() {
               numLoaded++;
               if (numToLoad == numLoaded) callback();
+            };
+            el.onerror = function() {
+              reject(new Error(
+                  `Failed to load module "\${module}" from "\${src}".`));
             };
             document.head.appendChild(el);
           }

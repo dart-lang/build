@@ -12,6 +12,11 @@
   code, stdout and stderr.
 - Log kernel worker arguments at the fine level instead of including them in
   kernel compilation errors.
+- When a module fails to load during a DDC hot restart,
+  reject the restart promise with the module and URL
+  instead of leaving it pending.
+- Reject failed DDC bootstrap prerequisite loads with an
+  error that names the URL instead of a raw JS event.
 
 ## 4.8.12
 
