@@ -66,6 +66,42 @@ global_options:
       contains('Ignoring options overrides for unknown builder `bad:key`.'),
     );
 
+    tester.write('root_pkg/build.yaml', r'''
+builders:
+  test_builder:
+    import: 'tool/builder.dart'
+    builder_factories: ['testFactory']
+    build_extensions: {'.txt': ['.txt.copy']}
+    auto_apply: root_package
+    build_to: source
+    runs_before: ['root_pkg:bad_builder', 'optional_pkg:builder']
+''');
+    tester.write('root_pkg/tool/builder.dart', r'''
+import 'package:build/build.dart';
+Builder testFactory(BuilderOptions options) => TestBuilder();
+class TestBuilder implements Builder {
+  @override
+  final buildExtensions = const {'.txt': ['.txt.copy']};
+  @override
+  Future<void> build(BuildStep buildStep) async {}
+}
+''');
+    output = await tester.run(
+      'root_pkg',
+      'dart run build_runner build --force-jit',
+    );
+    expect(
+      output,
+      contains(
+        'Ignoring `runs_before` in builder `root_pkg:test_builder` '
+        'referencing unknown builder `root_pkg:bad_builder`.',
+      ),
+    );
+    // A builder in a package that is not in the build may be an optional
+    // peer, so it is not warned about.
+    expect(output, isNot(contains('optional_pkg:builder')));
+    tester.delete('root_pkg/tool/builder.dart');
+
     // Compile errors caused by config errors.
     tester.write('root_pkg/build.yaml', r'''
 builders:
