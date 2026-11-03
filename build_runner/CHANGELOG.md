@@ -1,5 +1,9 @@
 ## 2.17.2-wip
 
+- Warn when `runs_before` in a builder definition names an unknown builder in
+  a package that has builders in the build.
+  [#2123](https://github.com/dart-lang/build/issues/2123)
+
 ## 2.17.1
 
 - Require `build` 5.0.0, which is the retracted `build` 4.1.0 republished as a
