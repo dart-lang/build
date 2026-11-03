@@ -137,9 +137,9 @@ class SimpleValueBuilder implements Builder<SimpleValue, SimpleValueBuilder> {
   SimpleValue build() => _build();
 
   _$SimpleValue _build() {
-    _$SimpleValue _$result;
+    _$SimpleValue __$result;
     try {
-      _$result = _$v ??
+      __$result = _$v ??
           _$SimpleValue._(
             anInt: BuiltValueNullFieldError.checkNotNull(
                 anInt, r'SimpleValue', 'anInt'),
@@ -150,26 +150,26 @@ class SimpleValueBuilder implements Builder<SimpleValue, SimpleValueBuilder> {
             setMultimap: setMultimap.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'list';
+        __$failedField = 'list';
         list.build();
-        _$failedField = 'multimap';
+        __$failedField = 'multimap';
         multimap.build();
-        _$failedField = 'map';
+        __$failedField = 'map';
         map.build();
-        _$failedField = 'aSet';
+        __$failedField = 'aSet';
         aSet.build();
-        _$failedField = 'setMultimap';
+        __$failedField = 'setMultimap';
         setMultimap.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'SimpleValue', _$failedField, e.toString());
+            r'SimpleValue', __$failedField, e.toString());
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -256,26 +256,26 @@ class CompoundValueBuilder
   CompoundValue build() => _build();
 
   _$CompoundValue _build() {
-    _$CompoundValue _$result;
+    _$CompoundValue __$result;
     try {
-      _$result = _$v ??
+      __$result = _$v ??
           _$CompoundValue._(
             simpleValue: simpleValue.build(),
             string: string,
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'simpleValue';
+        __$failedField = 'simpleValue';
         simpleValue.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'CompoundValue', _$failedField, e.toString());
+            r'CompoundValue', __$failedField, e.toString());
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -357,15 +357,15 @@ class ComparedValueBuilder
   ComparedValue build() => _build();
 
   _$ComparedValue _build() {
-    final _$result = _$v ??
+    final __$result = _$v ??
         _$ComparedValue._(
           name: BuiltValueNullFieldError.checkNotNull(
               name, r'ComparedValue', 'name'),
           onChanged: BuiltValueNullFieldError.checkNotNull(
               onChanged, r'ComparedValue', 'onChanged'),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

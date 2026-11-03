@@ -107,9 +107,9 @@ class MemberContractBuilder
   MemberContract build() => _build();
 
   _$MemberContract _build() {
-    _$MemberContract _$result;
+    _$MemberContract __$result;
     try {
-      _$result =
+      __$result =
           _$v ??
           _$MemberContract._(
             preconditions: preconditions.build(),
@@ -117,25 +117,25 @@ class MemberContractBuilder
             throwClauses: throwClauses.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'preconditions';
+        __$failedField = 'preconditions';
         preconditions.build();
-        _$failedField = 'postconditions';
+        __$failedField = 'postconditions';
         postconditions.build();
-        _$failedField = 'throwClauses';
+        __$failedField = 'throwClauses';
         throwClauses.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'MemberContract',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

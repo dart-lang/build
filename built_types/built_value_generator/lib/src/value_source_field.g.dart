@@ -210,7 +210,7 @@ class ValueSourceFieldBuilder
   ValueSourceField build() => _build();
 
   _$ValueSourceField _build() {
-    final _$result = _$v ??
+    final __$result = _$v ??
         _$ValueSourceField._(
           parsedLibraryResults: BuiltValueNullFieldError.checkNotNull(
               parsedLibraryResults,
@@ -224,8 +224,8 @@ class ValueSourceFieldBuilder
               element, r'ValueSourceField', 'element'),
           builderElement: builderElement,
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

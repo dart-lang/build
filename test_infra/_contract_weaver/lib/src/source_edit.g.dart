@@ -100,7 +100,7 @@ class SourceEditBuilder implements Builder<SourceEdit, SourceEditBuilder> {
   SourceEdit build() => _build();
 
   _$SourceEdit _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$SourceEdit._(
           offset: BuiltValueNullFieldError.checkNotNull(
@@ -119,8 +119,8 @@ class SourceEditBuilder implements Builder<SourceEdit, SourceEditBuilder> {
             'text',
           ),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

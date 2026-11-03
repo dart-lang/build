@@ -87,9 +87,9 @@ class ThrowClausesBuilder
   ThrowClauses build() => _build();
 
   _$ThrowClauses _build() {
-    _$ThrowClauses _$result;
+    _$ThrowClauses __$result;
     try {
-      _$result =
+      __$result =
           _$v ??
           _$ThrowClauses._(
             type: BuiltValueNullFieldError.checkNotNull(
@@ -100,21 +100,21 @@ class ThrowClausesBuilder
             clauses: clauses.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'clauses';
+        __$failedField = 'clauses';
         clauses.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'ThrowClauses',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

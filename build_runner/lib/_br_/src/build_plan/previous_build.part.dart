@@ -172,9 +172,9 @@ class PreviousBuildBuilder
   PreviousBuild build() => _build();
 
   _$PreviousBuild _build() {
-    _$PreviousBuild _$result;
+    _$PreviousBuild __$result;
     try {
-      _$result =
+      __$result =
           _$v ??
           _$PreviousBuild._(
             incrementalState: _incrementalState?.build(),
@@ -191,32 +191,32 @@ class PreviousBuildBuilder
                 .build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'incrementalState';
+        __$failedField = 'incrementalState';
         _incrementalState?.build();
-        _$failedField = 'buildStepPlan';
+        __$failedField = 'buildStepPlan';
         _buildStepPlan?.build();
-        _$failedField = 'phasedAssetDeps';
+        __$failedField = 'phasedAssetDeps';
         _phasedAssetDeps?.build();
 
-        _$failedField = 'phaseOptionsChangedList';
+        __$failedField = 'phaseOptionsChangedList';
         phaseOptionsChangedList.build();
-        _$failedField = 'postBuildOptionsChangedList';
+        __$failedField = 'postBuildOptionsChangedList';
         postBuildOptionsChangedList.build();
-        _$failedField = 'incompatibleBuildOutputsToDelete';
+        __$failedField = 'incompatibleBuildOutputsToDelete';
         incompatibleBuildOutputsToDelete.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'PreviousBuild',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

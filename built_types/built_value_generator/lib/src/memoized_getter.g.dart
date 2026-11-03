@@ -102,7 +102,7 @@ class MemoizedGetterBuilder
   MemoizedGetter build() => _build();
 
   _$MemoizedGetter _build() {
-    final _$result = _$v ??
+    final __$result = _$v ??
         _$MemoizedGetter._(
           returnType: BuiltValueNullFieldError.checkNotNull(
               returnType, r'MemoizedGetter', 'returnType'),
@@ -111,8 +111,8 @@ class MemoizedGetterBuilder
           name: BuiltValueNullFieldError.checkNotNull(
               name, r'MemoizedGetter', 'name'),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

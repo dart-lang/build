@@ -150,15 +150,15 @@ class EnumSourceClassBuilder
   EnumSourceClass build() => _build();
 
   _$EnumSourceClass _build() {
-    final _$result = _$v ??
+    final __$result = _$v ??
         _$EnumSourceClass._(
           parsedLibraryResults: BuiltValueNullFieldError.checkNotNull(
               parsedLibraryResults, r'EnumSourceClass', 'parsedLibraryResults'),
           element: BuiltValueNullFieldError.checkNotNull(
               element, r'EnumSourceClass', 'element'),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

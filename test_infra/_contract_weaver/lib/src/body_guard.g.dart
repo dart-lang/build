@@ -90,9 +90,9 @@ class BodyGuardBuilder implements Builder<BodyGuard, BodyGuardBuilder> {
   BodyGuard build() => _build();
 
   _$BodyGuard _build() {
-    _$BodyGuard _$result;
+    _$BodyGuard __$result;
     try {
-      _$result =
+      __$result =
           _$v ??
           _$BodyGuard._(
             checksInvariant: BuiltValueNullFieldError.checkNotNull(
@@ -103,21 +103,21 @@ class BodyGuardBuilder implements Builder<BodyGuard, BodyGuardBuilder> {
             throwClauses: throwClauses.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'throwClauses';
+        __$failedField = 'throwClauses';
         throwClauses.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'BodyGuard',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

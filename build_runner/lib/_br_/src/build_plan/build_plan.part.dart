@@ -152,9 +152,9 @@ class BuildPlanBuilder implements Builder<BuildPlan, BuildPlanBuilder> {
   BuildPlan build() => _build();
 
   _$BuildPlan _build() {
-    _$BuildPlan _$result;
+    _$BuildPlan __$result;
     try {
-      _$result =
+      __$result =
           _$v ??
           _$BuildPlan._(
             buildSpec: buildSpec.build(),
@@ -166,33 +166,33 @@ class BuildPlanBuilder implements Builder<BuildPlan, BuildPlanBuilder> {
             buildFilters: buildFilters.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'buildSpec';
+        __$failedField = 'buildSpec';
         buildSpec.build();
-        _$failedField = 'previousBuild';
+        __$failedField = 'previousBuild';
         previousBuild.build();
-        _$failedField = 'buildStepPlan';
+        __$failedField = 'buildStepPlan';
         buildStepPlan.build();
-        _$failedField = 'conflictingOutputs';
+        __$failedField = 'conflictingOutputs';
         conflictingOutputs.build();
-        _$failedField = 'buildInputs';
+        __$failedField = 'buildInputs';
         buildInputs.build();
-        _$failedField = 'buildDirs';
+        __$failedField = 'buildDirs';
         buildDirs.build();
-        _$failedField = 'buildFilters';
+        __$failedField = 'buildFilters';
         buildFilters.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'BuildPlan',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

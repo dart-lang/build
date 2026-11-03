@@ -103,9 +103,9 @@ class StageResultBuilder implements Builder<StageResult, StageResultBuilder> {
   StageResult build() => _build();
 
   _$StageResult _build() {
-    _$StageResult _$result;
+    _$StageResult __$result;
     try {
-      _$result =
+      __$result =
           _$v ??
           _$StageResult._(
             transformedCount: BuiltValueNullFieldError.checkNotNull(
@@ -121,21 +121,21 @@ class StageResultBuilder implements Builder<StageResult, StageResultBuilder> {
             clauseCounts: clauseCounts.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'clauseCounts';
+        __$failedField = 'clauseCounts';
         clauseCounts.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'StageResult',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

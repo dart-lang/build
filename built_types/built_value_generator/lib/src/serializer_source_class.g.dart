@@ -204,7 +204,7 @@ class SerializerSourceClassBuilder
   SerializerSourceClass build() => _build();
 
   _$SerializerSourceClass _build() {
-    final _$result = _$v ??
+    final __$result = _$v ??
         _$SerializerSourceClass._(
           parsedLibraryResults: BuiltValueNullFieldError.checkNotNull(
               parsedLibraryResults,
@@ -214,8 +214,8 @@ class SerializerSourceClassBuilder
               element, r'SerializerSourceClass', 'element'),
           builderElement: builderElement,
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

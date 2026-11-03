@@ -164,9 +164,9 @@ class BuildInputsBuilder implements Builder<BuildInputs, BuildInputsBuilder> {
   BuildInputs build() => _build();
 
   _$BuildInputs _build() {
-    _$BuildInputs _$result;
+    _$BuildInputs __$result;
     try {
-      _$result =
+      __$result =
           _$v ??
           _$BuildInputs._(
             cleanBuild: BuiltValueNullFieldError.checkNotNull(
@@ -183,33 +183,33 @@ class BuildInputsBuilder implements Builder<BuildInputs, BuildInputsBuilder> {
             sharedParts: sharedParts.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'sources';
+        __$failedField = 'sources';
         sources.build();
-        _$failedField = 'sourceContents';
+        __$failedField = 'sourceContents';
         sourceContents.build();
-        _$failedField = 'retainedOutputContents';
+        __$failedField = 'retainedOutputContents';
         retainedOutputContents.build();
-        _$failedField = 'updatedSources';
+        __$failedField = 'updatedSources';
         updatedSources.build();
-        _$failedField = 'deletedSources';
+        __$failedField = 'deletedSources';
         deletedSources.build();
-        _$failedField = 'invalidOutputs';
+        __$failedField = 'invalidOutputs';
         invalidOutputs.build();
-        _$failedField = 'sharedParts';
+        __$failedField = 'sharedParts';
         sharedParts.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'BuildInputs',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

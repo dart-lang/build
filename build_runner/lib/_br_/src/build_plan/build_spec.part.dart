@@ -184,9 +184,9 @@ class BuildSpecBuilder implements Builder<BuildSpec, BuildSpecBuilder> {
   BuildSpec build() => _build();
 
   _$BuildSpec _build() {
-    _$BuildSpec _$result;
+    _$BuildSpec __$result;
     try {
-      _$result =
+      __$result =
           _$v ??
           _$BuildSpec._(
             buildPlanDigest: buildPlanDigest.build(),
@@ -237,21 +237,21 @@ class BuildSpecBuilder implements Builder<BuildSpec, BuildSpecBuilder> {
             ),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'buildPlanDigest';
+        __$failedField = 'buildPlanDigest';
         buildPlanDigest.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'BuildSpec',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

@@ -163,29 +163,29 @@ class LibraryCycleGraphBuilder
   LibraryCycleGraph build() => _build();
 
   _$LibraryCycleGraph _build() {
-    _$LibraryCycleGraph _$result;
+    _$LibraryCycleGraph __$result;
     try {
-      _$result =
+      __$result =
           _$v ??
           _$LibraryCycleGraph._(root: root.build(), children: children.build());
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'root';
+        __$failedField = 'root';
         root.build();
-        _$failedField = 'children';
+        __$failedField = 'children';
         children.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'LibraryCycleGraph',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

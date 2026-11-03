@@ -118,7 +118,7 @@ class MessageBuilder implements Builder<Message, MessageBuilder> {
   Message build() => _build();
 
   _$Message _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$Message._(
           phaseName: phaseName,
@@ -131,8 +131,8 @@ class MessageBuilder implements Builder<Message, MessageBuilder> {
           ),
           text: BuiltValueNullFieldError.checkNotNull(text, r'Message', 'text'),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -230,15 +230,15 @@ class _MessageCategoryBuilder
   _MessageCategory build() => _build();
 
   _$MessageCategory _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$MessageCategory._(
           phaseName: phaseName,
           context: context,
           contextId: contextId,
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

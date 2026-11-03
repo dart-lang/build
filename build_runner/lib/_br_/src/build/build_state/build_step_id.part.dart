@@ -151,7 +151,7 @@ class BuildStepIdBuilder implements Builder<BuildStepId, BuildStepIdBuilder> {
   BuildStepId build() => _build();
 
   _$BuildStepId _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$BuildStepId._(
           primaryInput: BuiltValueNullFieldError.checkNotNull(
@@ -165,8 +165,8 @@ class BuildStepIdBuilder implements Builder<BuildStepId, BuildStepIdBuilder> {
             'phaseNumber',
           ),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

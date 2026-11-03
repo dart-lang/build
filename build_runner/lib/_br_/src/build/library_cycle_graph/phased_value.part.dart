@@ -229,25 +229,25 @@ class PhasedValueBuilder<T>
   PhasedValue<T> build() => _build();
 
   _$PhasedValue<T> _build() {
-    _$PhasedValue<T> _$result;
+    _$PhasedValue<T> __$result;
     try {
-      _$result = _$v ?? _$PhasedValue<T>._(values: values.build());
+      __$result = _$v ?? _$PhasedValue<T>._(values: values.build());
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'values';
+        __$failedField = 'values';
         values.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'PhasedValue',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -333,7 +333,7 @@ class ExpiringValueBuilder<T>
   ExpiringValue<T> build() => _build();
 
   _$ExpiringValue<T> _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$ExpiringValue<T>._(
           value: BuiltValueNullFieldError.checkNotNull(
@@ -343,8 +343,8 @@ class ExpiringValueBuilder<T>
           ),
           expiresAfter: expiresAfter,
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

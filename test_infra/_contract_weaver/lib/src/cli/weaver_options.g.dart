@@ -135,9 +135,9 @@ class WeaverOptionsBuilder
   WeaverOptions build() => _build();
 
   _$WeaverOptions _build() {
-    _$WeaverOptions _$result;
+    _$WeaverOptions __$result;
     try {
-      _$result =
+      __$result =
           _$v ??
           _$WeaverOptions._(
             help: BuiltValueNullFieldError.checkNotNull(
@@ -160,21 +160,21 @@ class WeaverOptionsBuilder
             testArgs: testArgs.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'testArgs';
+        __$failedField = 'testArgs';
         testArgs.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'WeaverOptions',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

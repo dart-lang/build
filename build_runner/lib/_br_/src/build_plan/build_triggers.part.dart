@@ -79,7 +79,7 @@ class ImportBuildTriggerBuilder
   ImportBuildTrigger build() => _build();
 
   _$ImportBuildTrigger _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$ImportBuildTrigger._(
           import: BuiltValueNullFieldError.checkNotNull(
@@ -88,8 +88,8 @@ class ImportBuildTriggerBuilder
             'import',
           ),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -166,7 +166,7 @@ class AnnotationBuildTriggerBuilder
   AnnotationBuildTrigger build() => _build();
 
   _$AnnotationBuildTrigger _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$AnnotationBuildTrigger._(
           annotation: BuiltValueNullFieldError.checkNotNull(
@@ -175,8 +175,8 @@ class AnnotationBuildTriggerBuilder
             'annotation',
           ),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

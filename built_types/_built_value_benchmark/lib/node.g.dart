@@ -96,28 +96,28 @@ class NodeBuilder implements Builder<Node, NodeBuilder> {
   Node build() => _build();
 
   _$Node _build() {
-    _$Node _$result;
+    _$Node __$result;
     try {
-      _$result = _$v ??
+      __$result = _$v ??
           _$Node._(
             label: label,
             left: _left?.build(),
             right: _right?.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'left';
+        __$failedField = 'left';
         _left?.build();
-        _$failedField = 'right';
+        __$failedField = 'right';
         _right?.build();
       } catch (e) {
-        throw BuiltValueNestedFieldError(r'Node', _$failedField, e.toString());
+        throw BuiltValueNestedFieldError(r'Node', __$failedField, e.toString());
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

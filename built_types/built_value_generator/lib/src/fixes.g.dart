@@ -109,7 +109,7 @@ class GeneratorErrorBuilder
   GeneratorError build() => _build();
 
   _$GeneratorError _build() {
-    final _$result = _$v ??
+    final __$result = _$v ??
         _$GeneratorError._(
           message: BuiltValueNullFieldError.checkNotNull(
               message, r'GeneratorError', 'message'),
@@ -117,8 +117,8 @@ class GeneratorErrorBuilder
           length: length,
           fix: fix,
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

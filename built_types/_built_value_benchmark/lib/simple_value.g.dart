@@ -86,15 +86,15 @@ class SimpleValueBuilder implements Builder<SimpleValue, SimpleValueBuilder> {
   SimpleValue build() => _build();
 
   _$SimpleValue _build() {
-    final _$result = _$v ??
+    final __$result = _$v ??
         _$SimpleValue._(
           anInt: BuiltValueNullFieldError.checkNotNull(
               anInt, r'SimpleValue', 'anInt'),
           aString: BuiltValueNullFieldError.checkNotNull(
               aString, r'SimpleValue', 'aString'),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

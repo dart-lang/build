@@ -99,9 +99,9 @@ class PartContributionBuilder
   PartContribution build() => _build();
 
   _$PartContribution _build() {
-    _$PartContribution _$result;
+    _$PartContribution __$result;
     try {
-      _$result =
+      __$result =
           _$v ??
           _$PartContribution._(
             builderKey: BuiltValueNullFieldError.checkNotNull(
@@ -117,21 +117,21 @@ class PartContributionBuilder
             ),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'imports';
+        __$failedField = 'imports';
         imports.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'PartContribution',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

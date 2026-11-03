@@ -121,15 +121,15 @@ class EnumSourceFieldBuilder
   EnumSourceField build() => _build();
 
   _$EnumSourceField _build() {
-    final _$result = _$v ??
+    final __$result = _$v ??
         _$EnumSourceField._(
           parsedLibrary: BuiltValueNullFieldError.checkNotNull(
               parsedLibrary, r'EnumSourceField', 'parsedLibrary'),
           element: BuiltValueNullFieldError.checkNotNull(
               element, r'EnumSourceField', 'element'),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

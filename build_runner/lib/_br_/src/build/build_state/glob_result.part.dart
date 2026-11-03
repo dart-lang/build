@@ -186,9 +186,9 @@ class GlobResultBuilder implements Builder<GlobResult, GlobResultBuilder> {
   GlobResult build() => _build();
 
   _$GlobResult _build() {
-    _$GlobResult _$result;
+    _$GlobResult __$result;
     try {
-      _$result =
+      __$result =
           _$v ??
           _$GlobResult._(
             results: results.build(),
@@ -200,23 +200,23 @@ class GlobResultBuilder implements Builder<GlobResult, GlobResultBuilder> {
             ),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'results';
+        __$failedField = 'results';
         results.build();
-        _$failedField = 'inputs';
+        __$failedField = 'inputs';
         inputs.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'GlobResult',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

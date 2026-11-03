@@ -130,25 +130,25 @@ class AssetDepsBuilder implements Builder<AssetDeps, AssetDepsBuilder> {
   AssetDeps build() => _build();
 
   _$AssetDeps _build() {
-    _$AssetDeps _$result;
+    _$AssetDeps __$result;
     try {
-      _$result = _$v ?? _$AssetDeps._(deps: deps.build());
+      __$result = _$v ?? _$AssetDeps._(deps: deps.build());
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'deps';
+        __$failedField = 'deps';
         deps.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'AssetDeps',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

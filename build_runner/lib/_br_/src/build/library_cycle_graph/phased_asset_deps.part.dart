@@ -136,25 +136,25 @@ class PhasedAssetDepsBuilder
   PhasedAssetDeps build() => _build();
 
   _$PhasedAssetDeps _build() {
-    _$PhasedAssetDeps _$result;
+    _$PhasedAssetDeps __$result;
     try {
-      _$result = _$v ?? _$PhasedAssetDeps._(assetDeps: assetDeps.build());
+      __$result = _$v ?? _$PhasedAssetDeps._(assetDeps: assetDeps.build());
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'assetDeps';
+        __$failedField = 'assetDeps';
         assetDeps.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'PhasedAssetDeps',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

@@ -72,25 +72,25 @@ class LibraryCycleBuilder
   LibraryCycle build() => _build();
 
   _$LibraryCycle _build() {
-    _$LibraryCycle _$result;
+    _$LibraryCycle __$result;
     try {
-      _$result = _$v ?? _$LibraryCycle._(ids: ids.build());
+      __$result = _$v ?? _$LibraryCycle._(ids: ids.build());
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'ids';
+        __$failedField = 'ids';
         ids.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'LibraryCycle',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

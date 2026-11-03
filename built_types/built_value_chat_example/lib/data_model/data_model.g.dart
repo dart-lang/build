@@ -510,25 +510,25 @@ class ChatBuilder implements Builder<Chat, ChatBuilder> {
   Chat build() => _build();
 
   _$Chat _build() {
-    _$Chat _$result;
+    _$Chat __$result;
     try {
-      _$result = _$v ??
+      __$result = _$v ??
           _$Chat._(
             text: BuiltValueNullFieldError.checkNotNull(text, r'Chat', 'text'),
             targets: targets.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'targets';
+        __$failedField = 'targets';
         targets.build();
       } catch (e) {
-        throw BuiltValueNestedFieldError(r'Chat', _$failedField, e.toString());
+        throw BuiltValueNestedFieldError(r'Chat', __$failedField, e.toString());
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -612,15 +612,15 @@ class LoginBuilder implements Builder<Login, LoginBuilder> {
   Login build() => _build();
 
   _$Login _build() {
-    final _$result = _$v ??
+    final __$result = _$v ??
         _$Login._(
           username: BuiltValueNullFieldError.checkNotNull(
               username, r'Login', 'username'),
           password: BuiltValueNullFieldError.checkNotNull(
               password, r'Login', 'password'),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -702,14 +702,14 @@ class StatusBuilder implements Builder<Status, StatusBuilder> {
   Status build() => _build();
 
   _$Status _build() {
-    final _$result = _$v ??
+    final __$result = _$v ??
         _$Status._(
           message: BuiltValueNullFieldError.checkNotNull(
               message, r'Status', 'message'),
           type: BuiltValueNullFieldError.checkNotNull(type, r'Status', 'type'),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -784,25 +784,25 @@ class ListUsersBuilder implements Builder<ListUsers, ListUsersBuilder> {
   ListUsers build() => _build();
 
   _$ListUsers _build() {
-    _$ListUsers _$result;
+    _$ListUsers __$result;
     try {
-      _$result = _$v ??
+      __$result = _$v ??
           _$ListUsers._(
             statusTypes: statusTypes.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'statusTypes';
+        __$failedField = 'statusTypes';
         statusTypes.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'ListUsers', _$failedField, e.toString());
+            r'ListUsers', __$failedField, e.toString());
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -898,7 +898,7 @@ class ShowChatBuilder implements Builder<ShowChat, ShowChatBuilder> {
   ShowChat build() => _build();
 
   _$ShowChat _build() {
-    final _$result = _$v ??
+    final __$result = _$v ??
         _$ShowChat._(
           username: BuiltValueNullFieldError.checkNotNull(
               username, r'ShowChat', 'username'),
@@ -907,8 +907,8 @@ class ShowChatBuilder implements Builder<ShowChat, ShowChatBuilder> {
           text:
               BuiltValueNullFieldError.checkNotNull(text, r'ShowChat', 'text'),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -990,27 +990,27 @@ class WelcomeBuilder implements Builder<Welcome, WelcomeBuilder> {
   Welcome build() => _build();
 
   _$Welcome _build() {
-    _$Welcome _$result;
+    _$Welcome __$result;
     try {
-      _$result = _$v ??
+      __$result = _$v ??
           _$Welcome._(
             log: log.build(),
             message: BuiltValueNullFieldError.checkNotNull(
                 message, r'Welcome', 'message'),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'log';
+        __$failedField = 'log';
         log.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'Welcome', _$failedField, e.toString());
+            r'Welcome', __$failedField, e.toString());
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
@@ -1088,25 +1088,25 @@ class ListUsersResponseBuilder
   ListUsersResponse build() => _build();
 
   _$ListUsersResponse _build() {
-    _$ListUsersResponse _$result;
+    _$ListUsersResponse __$result;
     try {
-      _$result = _$v ??
+      __$result = _$v ??
           _$ListUsersResponse._(
             statuses: statuses.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'statuses';
+        __$failedField = 'statuses';
         statuses.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'ListUsersResponse', _$failedField, e.toString());
+            r'ListUsersResponse', __$failedField, e.toString());
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

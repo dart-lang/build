@@ -114,7 +114,7 @@ class EnumSourceLibraryBuilder
   EnumSourceLibrary build() => _build();
 
   _$EnumSourceLibrary _build() {
-    final _$result = _$v ??
+    final __$result = _$v ??
         _$EnumSourceLibrary._(
           parsedLibraryResults: BuiltValueNullFieldError.checkNotNull(
               parsedLibraryResults,
@@ -123,8 +123,8 @@ class EnumSourceLibraryBuilder
           element: BuiltValueNullFieldError.checkNotNull(
               element, r'EnumSourceLibrary', 'element'),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

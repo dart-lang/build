@@ -172,7 +172,7 @@ class BuildLogConfigurationBuilder
   BuildLogConfiguration build() => _build();
 
   _$BuildLogConfiguration _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$BuildLogConfiguration._(
           mode: BuiltValueNullFieldError.checkNotNull(
@@ -201,8 +201,8 @@ class BuildLogConfigurationBuilder
           forceAnsiConsoleForTesting: forceAnsiConsoleForTesting,
           forceConsoleWidthForTesting: forceConsoleWidthForTesting,
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

@@ -87,7 +87,7 @@ class PackageLayoutBuilder
   PackageLayout build() => _build();
 
   _$PackageLayout _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$PackageLayout._(
           root: BuiltValueNullFieldError.checkNotNull(
@@ -97,8 +97,8 @@ class PackageLayoutBuilder
           ),
           member: member,
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

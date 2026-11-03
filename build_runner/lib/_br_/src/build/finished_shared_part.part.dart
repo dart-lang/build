@@ -103,9 +103,9 @@ class FinishedSharedPartBuilder
   FinishedSharedPart build() => _build();
 
   _$FinishedSharedPart _build() {
-    _$FinishedSharedPart _$result;
+    _$FinishedSharedPart __$result;
     try {
-      _$result =
+      __$result =
           _$v ??
           _$FinishedSharedPart._(
             libraryId: BuiltValueNullFieldError.checkNotNull(
@@ -117,21 +117,21 @@ class FinishedSharedPartBuilder
             contributions: contributions.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'contributions';
+        __$failedField = 'contributions';
         contributions.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'FinishedSharedPart',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

@@ -330,9 +330,9 @@ class BuildStepResultBuilder
   BuildStepResult build() => _build();
 
   _$BuildStepResult _build() {
-    _$BuildStepResult _$result;
+    _$BuildStepResult __$result;
     try {
-      _$result =
+      __$result =
           _$v ??
           _$BuildStepResult._(
             result: result,
@@ -349,30 +349,30 @@ class BuildStepResultBuilder
             errors: errors.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'outputs';
+        __$failedField = 'outputs';
         outputs.build();
 
-        _$failedField = 'inputs';
+        __$failedField = 'inputs';
         inputs.build();
-        _$failedField = 'globsEvaluated';
+        __$failedField = 'globsEvaluated';
         globsEvaluated.build();
-        _$failedField = 'resolverEntrypoints';
+        __$failedField = 'resolverEntrypoints';
         resolverEntrypoints.build();
-        _$failedField = 'errors';
+        __$failedField = 'errors';
         errors.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'BuildStepResult',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

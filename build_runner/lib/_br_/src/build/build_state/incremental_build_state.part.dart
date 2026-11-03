@@ -276,9 +276,9 @@ class IncrementalBuildStateBuilder
   IncrementalBuildState build() => _build();
 
   _$IncrementalBuildState _build() {
-    _$IncrementalBuildState _$result;
+    _$IncrementalBuildState __$result;
     try {
-      _$result =
+      __$result =
           _$v ??
           _$IncrementalBuildState._(
             sources: sources.build(),
@@ -288,29 +288,29 @@ class IncrementalBuildStateBuilder
             globResults: globResults.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'sources';
+        __$failedField = 'sources';
         sources.build();
-        _$failedField = 'digests';
+        __$failedField = 'digests';
         digests.build();
-        _$failedField = 'buildStepResults';
+        __$failedField = 'buildStepResults';
         buildStepResults.build();
-        _$failedField = 'postProcessResults';
+        __$failedField = 'postProcessResults';
         postProcessResults.build();
-        _$failedField = 'globResults';
+        __$failedField = 'globResults';
         globResults.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'IncrementalBuildState',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

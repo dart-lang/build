@@ -222,9 +222,9 @@ class PostProcessBuildStepResultBuilder
   PostProcessBuildStepResult build() => _build();
 
   _$PostProcessBuildStepResult _build() {
-    _$PostProcessBuildStepResult _$result;
+    _$PostProcessBuildStepResult __$result;
     try {
-      _$result =
+      __$result =
           _$v ??
           _$PostProcessBuildStepResult._(
             inArtifactTree: BuiltValueNullFieldError.checkNotNull(
@@ -241,23 +241,23 @@ class PostProcessBuildStepResultBuilder
             errors: errors.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'outputs';
+        __$failedField = 'outputs';
         outputs.build();
-        _$failedField = 'errors';
+        __$failedField = 'errors';
         errors.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'PostProcessBuildStepResult',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

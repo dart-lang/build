@@ -173,7 +173,7 @@ class GlobIdBuilder implements Builder<GlobId, GlobIdBuilder> {
   GlobId build() => _build();
 
   _$GlobId _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$GlobId._(
           package: BuiltValueNullFieldError.checkNotNull(
@@ -188,8 +188,8 @@ class GlobIdBuilder implements Builder<GlobId, GlobIdBuilder> {
             'phaseNumber',
           ),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

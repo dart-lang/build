@@ -339,9 +339,9 @@ class BuildSpecDigestBuilder
   BuildSpecDigest build() => _build();
 
   _$BuildSpecDigest _build() {
-    _$BuildSpecDigest _$result;
+    _$BuildSpecDigest __$result;
     try {
-      _$result =
+      __$result =
           _$v ??
           _$BuildSpecDigest._(
             compileDigest: compileDigest,
@@ -367,27 +367,27 @@ class BuildSpecDigestBuilder
                 .build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'enabledExperiments';
+        __$failedField = 'enabledExperiments';
         enabledExperiments.build();
-        _$failedField = 'packageLanguageVersions';
+        __$failedField = 'packageLanguageVersions';
         packageLanguageVersions.build();
-        _$failedField = 'inBuildPhasesOptionsDigests';
+        __$failedField = 'inBuildPhasesOptionsDigests';
         inBuildPhasesOptionsDigests.build();
-        _$failedField = 'postBuildActionsOptionsDigests';
+        __$failedField = 'postBuildActionsOptionsDigests';
         postBuildActionsOptionsDigests.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'BuildSpecDigest',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

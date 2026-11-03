@@ -135,9 +135,9 @@ class BuildStepPlanBuilder
   BuildStepPlan build() => _build();
 
   _$BuildStepPlan _build() {
-    _$BuildStepPlan _$result;
+    _$BuildStepPlan __$result;
     try {
-      _$result =
+      __$result =
           _$v ??
           _$BuildStepPlan._(
             buildPhases: BuiltValueNullFieldError.checkNotNull(
@@ -152,27 +152,27 @@ class BuildStepPlanBuilder
             buildStepsByPhase: buildStepsByPhase.build(),
           );
     } catch (_) {
-      late String _$failedField;
+      late String __$failedField;
       try {
-        _$failedField = 'buildStepsByDeclaredOutput';
+        __$failedField = 'buildStepsByDeclaredOutput';
         buildStepsByDeclaredOutput.build();
-        _$failedField = 'declaredOutputsByPrimaryInput';
+        __$failedField = 'declaredOutputsByPrimaryInput';
         declaredOutputsByPrimaryInput.build();
-        _$failedField = 'declaredOutputsByStep';
+        __$failedField = 'declaredOutputsByStep';
         declaredOutputsByStep.build();
-        _$failedField = 'buildStepsByPhase';
+        __$failedField = 'buildStepsByPhase';
         buildStepsByPhase.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'BuildStepPlan',
-          _$failedField,
+          __$failedField,
           e.toString(),
         );
       }
       rethrow;
     }
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

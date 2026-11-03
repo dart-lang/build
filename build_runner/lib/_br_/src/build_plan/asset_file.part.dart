@@ -83,7 +83,7 @@ class AssetFileBuilder implements Builder<AssetFile, AssetFileBuilder> {
   AssetFile build() => _build();
 
   _$AssetFile _build() {
-    final _$result =
+    final __$result =
         _$v ??
         _$AssetFile._(
           id: BuiltValueNullFieldError.checkNotNull(id, r'AssetFile', 'id'),
@@ -93,8 +93,8 @@ class AssetFileBuilder implements Builder<AssetFile, AssetFileBuilder> {
             'inArtifactTree',
           ),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 

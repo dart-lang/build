@@ -285,7 +285,7 @@ class ValueSourceClassBuilder
   ValueSourceClass build() => _build();
 
   _$ValueSourceClass _build() {
-    final _$result = _$v ??
+    final __$result = _$v ??
         _$ValueSourceClass._(
           parsedLibraryResults: BuiltValueNullFieldError.checkNotNull(
               parsedLibraryResults,
@@ -294,8 +294,8 @@ class ValueSourceClassBuilder
           element: BuiltValueNullFieldError.checkNotNull(
               element, r'ValueSourceClass', 'element'),
         );
-    replace(_$result);
-    return _$result;
+    replace(__$result);
+    return __$result;
   }
 }
 
