@@ -212,7 +212,8 @@ class LibraryGeneratingBuilder implements Builder {
   }
 }
 
-class PartVerifyingInvisibilityBuilder implements Builder {
+/// Reads the shared part of `a.dart` as earlier phases wrote it.
+class PartReadingBuilder implements Builder {
   @override
   Map<String, List<String>> get buildExtensions => {
     '.dart': ['.check.dart'],
@@ -221,15 +222,44 @@ class PartVerifyingInvisibilityBuilder implements Builder {
   @override
   Future<void> build(BuildStep buildStep) async {
     final brId = AssetId('a', 'lib/_br_/a.part.dart');
-    expect(await buildStep.canRead(brId), isFalse);
-    expect(
-      buildStep.readAsString(brId),
-      throwsA(isA<AssetNotFoundException>()),
+    expect(await buildStep.canRead(brId), isTrue);
+    expect(await buildStep.readAsString(brId), contains('var content = 1;'));
+    expect(await buildStep.readAsBytes(brId), isNotEmpty);
+    await buildStep.digest(brId);
+    expect(await buildStep.findAssets(Glob('lib/_br_/*')).toList(), isEmpty);
+  }
+}
+
+/// Adds [_content] to the library's shared part unless [_readFile] is `skip`.
+class ConditionalPartWritingBuilder implements Builder {
+  final String _content;
+  final String _readFile;
+
+  ConditionalPartWritingBuilder(this._content, this._readFile);
+
+  @override
+  Map<String, List<String>> get buildExtensions => {'.dart': []};
+
+  @override
+  Future<void> build(BuildStep buildStep) async {
+    final text = await buildStep.readAsString(AssetId('a', _readFile));
+    if (text == 'skip') return;
+    (await buildStep.librarySourceSink)?.add(_content);
+  }
+}
+
+class TriggeredOutputBuilder implements Builder {
+  @override
+  Map<String, List<String>> get buildExtensions => {
+    '.dart': ['.triggered.txt'],
+  };
+
+  @override
+  Future<void> build(BuildStep buildStep) async {
+    await buildStep.writeAsString(
+      buildStep.inputId.changeExtension('.triggered.txt'),
+      'triggered',
     );
-    expect(buildStep.readAsBytes(brId), throwsA(isA<AssetNotFoundException>()));
-    expect(buildStep.digest(brId), throwsA(isA<AssetNotFoundException>()));
-    final found = await buildStep.findAssets(Glob('lib/_br_/*')).toList();
-    expect(found, isEmpty);
   }
 }
 
@@ -1079,12 +1109,12 @@ class Class2 {}
       },
     );
 
-    partsTest('_br_ assets are invisible to asset reader calls', () async {
+    partsTest('_br_ assets are readable by later phases', () async {
       final builderFactories = BuilderFactories({
         'a:builder1': [
           (_) => PartWritingBuilder('var content = 1;', 'lib/b.txt', '.b.dart'),
         ],
-        'a:builder2': [(_) => PartVerifyingInvisibilityBuilder()],
+        'a:builder2': [(_) => PartReadingBuilder()],
       });
       final builderDefinitions = [
         BuilderDefinition(
@@ -1399,6 +1429,86 @@ class Class1 {
           resumeFrom: result,
         );
         expect(builder2Runs, 1);
+      },
+    );
+
+    partsTest(
+      'a triggered builder sees an earlier phase start adding to the part',
+      () async {
+        final builderFactories = BuilderFactories({
+          'a:part1': [
+            (_) => ConditionalPartWritingBuilder(
+              '@someAnnotation\nclass B {}\n',
+              'lib/b.txt',
+            ),
+          ],
+          'a:triggered': [(_) => TriggeredOutputBuilder()],
+          'a:part2': [
+            (_) => ConditionalPartWritingBuilder('class C {}\n', 'lib/c.txt'),
+          ],
+        });
+        final builderDefinitions = [
+          BuilderDefinition(
+            'a:part1',
+            outputsToArtifactTree: false,
+            autoApply: AutoApply.allPackages,
+            addsToLibrary: true,
+          ),
+          BuilderDefinition(
+            'a:triggered',
+            outputsToArtifactTree: false,
+            autoApply: AutoApply.allPackages,
+          ),
+          BuilderDefinition(
+            'a:part2',
+            outputsToArtifactTree: false,
+            autoApply: AutoApply.allPackages,
+            addsToLibrary: true,
+          ),
+        ];
+        const buildYaml = '''
+targets:
+  \$default:
+    builders:
+      a:triggered:
+        options:
+          run_only_if_triggered: true
+triggers:
+  a:triggered:
+    - annotation someAnnotation
+''';
+        const aDart = "part '_br_/a.part.dart';\nconst someAnnotation = 1;\n";
+
+        // When `a:triggered` runs, no earlier phase has added to the part, so
+        // it can't read it.
+        final result = await testPhases(
+          builderFactories,
+          builderDefinitions,
+          {
+            'a|build.yaml': buildYaml,
+            'a|lib/a.dart': aDart,
+            'a|lib/b.txt': 'skip',
+            'a|lib/c.txt': 'write',
+          },
+          outputs: {'a|lib/_br_/a.part.dart': isNotEmpty},
+        );
+
+        // Now the earlier phase adds the annotated class.
+        await testPhases(
+          builderFactories,
+          builderDefinitions,
+          {
+            'a|build.yaml': buildYaml,
+            'a|lib/a.dart': aDart,
+            'a|lib/b.txt': 'write',
+            'a|lib/c.txt': 'write',
+          },
+          outputs: {
+            'a|lib/_br_/a.part.dart': isNotEmpty,
+            'a|lib/a.triggered.txt': 'triggered',
+          },
+          resumeFrom: result,
+        );
       },
     );
   });
