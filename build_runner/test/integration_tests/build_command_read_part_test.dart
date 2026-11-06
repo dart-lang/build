@@ -21,18 +21,18 @@ void main() {
       files: {
         'build.yaml': r'''
 builders:
-  write_part_builder:
+  add_part_builder:
     import: 'tool/builder.dart'
     builder_factories: ['writePartBuilderFactory']
     build_extensions: {'.dart': []}
     auto_apply: root_package
     build_to: source
     adds_to_library: true
-    runs_before: ['root_pkg:read_part_builder']
   read_part_builder:
     import: 'tool/builder.dart'
     builder_factories: ['readPartBuilderFactory']
     build_extensions: {'.dart': ['.copy']}
+    required_inputs: ['.dart']
     auto_apply: root_package
     build_to: source
 targets:
@@ -84,7 +84,7 @@ class ReadPartBuilder implements Builder {
     expect(
       tester.read('root_pkg/lib/a.copy'),
       contains(
-        '// === root_pkg:write_part_builder contribution.\n'
+        '// === root_pkg:add_part_builder contribution.\n'
         '// part content\n',
       ),
     );
