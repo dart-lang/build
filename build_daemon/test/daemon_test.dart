@@ -305,7 +305,77 @@ void _testGroup({required bool useSharedPath}) {
         isFalse,
       );
     });
+    test('deletes port file before awaiting slow builder.stop()', () async {
+      final workspace = createWorkspace();
+      final daemon = Daemon(workspace, daemonSharedPath: daemonSharedPath);
+      final builderStopStarted = Completer<void>();
+      final allowBuilderStopToFinish = Completer<void>();
+      final builder = _SlowStoppingDaemonBuilder(
+        onStopStarted: builderStopStarted,
+        allowStopToFinish: allowBuilderStopToFinish.future,
+      );
+      await daemon.start(<String>{}, builder, FakeChangeProvider());
+      final portFile = File(
+        portFilePath(workspace, daemonSharedPath: daemonSharedPath),
+      );
+      expect(portFile.existsSync(), isTrue);
+
+      final stopFuture = daemon.stop();
+      await builderStopStarted.future;
+
+      // Port file must already be deleted while builder.stop() is still running
+      // so concurrent clients/daemons do not see a stale port file.
+      expect(portFile.existsSync(), isFalse);
+
+      allowBuilderStopToFinish.complete();
+      await stopFuture;
+      await expectLater(daemon.onDone, completes);
+    });
+    test('tryGetLock acquires lock after running daemon stops', () async {
+      final workspace = createWorkspace();
+      final daemonOne = await _runDaemon(
+        workspace,
+        daemonSharedPath: daemonSharedPath,
+      );
+      testDaemons.add(daemonOne);
+      expect(await _statusOf(daemonOne), 'RUNNING');
+
+      final daemonTwo = Daemon(workspace, daemonSharedPath: daemonSharedPath);
+      expect(daemonTwo.hasLock, isFalse);
+      expect(daemonTwo.tryGetLock(), isFalse);
+
+      daemonOne.kill(ProcessSignal.sigint);
+      await daemonOne.exitCode;
+
+      expect(daemonTwo.tryGetLock(), isTrue);
+      expect(daemonTwo.hasLock, isTrue);
+      await daemonTwo.start(
+        <String>{},
+        FakeDaemonBuilder(),
+        FakeChangeProvider(),
+      );
+      await daemonTwo.stop();
+      await expectLater(daemonTwo.onDone, completes);
+    });
   });
+}
+
+class _SlowStoppingDaemonBuilder extends FakeDaemonBuilder {
+  final Completer<void> onStopStarted;
+  final Future<void> allowStopToFinish;
+
+  _SlowStoppingDaemonBuilder({
+    required this.onStopStarted,
+    required this.allowStopToFinish,
+  });
+
+  @override
+  Future<void> stop() async {
+    if (!onStopStarted.isCompleted) {
+      onStopStarted.complete();
+    }
+    await allowStopToFinish;
+  }
 }
 
 /// Returns the daemon status.

@@ -6,6 +6,9 @@
 - Warn when `runs_before` in a builder definition names an unknown builder in
   a package that has builders in the build.
   [#2123](https://github.com/dart-lang/build/issues/2123)
+- Bug fix: when starting `build_runner daemon` while another daemon holds the
+  lock, wait for `.dart_build_daemon_port` to exist or for the lock to be
+  released before reporting `READY TO CONNECT`.
 
 ## 2.17.1
 

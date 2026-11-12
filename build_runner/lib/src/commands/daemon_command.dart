@@ -28,6 +28,8 @@ import 'daemon/asset_server.dart';
 import 'daemon/daemon_builder.dart';
 import 'daemon_options.dart';
 
+const _daemonLockPollInterval = Duration(milliseconds: 100);
+
 class DaemonCommand implements BuildRunnerCommand {
   final BuilderFactories builderFactories;
   final BuiltList<String> arguments;
@@ -47,6 +49,42 @@ class DaemonCommand implements BuildRunnerCommand {
   Future<int> run() =>
       withEnabledExperiments(_run, buildOptions.enableExperiments.asList());
 
+  Future<int?> _waitForExistingDaemon(
+    Daemon daemon,
+    String workingDirectory,
+    Set<String> requestedOptions,
+  ) async {
+    final portFile = File(portFilePath(workingDirectory));
+    while (!daemon.tryGetLock()) {
+      if (portFile.existsSync()) {
+        final runningOptions = await daemon.currentOptions();
+        final version = await daemon.runningVersion();
+        if (portFile.existsSync()) {
+          if (version != currentVersion) {
+            stdout
+              ..writeln('Running Version: $version')
+              ..writeln('Current Version: $currentVersion')
+              ..writeln(versionSkew);
+            return 1;
+          } else if (!(runningOptions.length == requestedOptions.length &&
+              runningOptions.containsAll(requestedOptions))) {
+            stdout
+              ..writeln('Running Options: $runningOptions')
+              ..writeln('Requested Options: $requestedOptions')
+              ..writeln(optionsSkew);
+            return 1;
+          } else {
+            stdout.writeln('Daemon is already running.');
+            print(readyToConnectLog);
+            return 0;
+          }
+        }
+      }
+      await Future<void>.delayed(_daemonLockPollInterval);
+    }
+    return null;
+  }
+
   Future<int> _run() async {
     buildLog.configuration = buildLog.configuration.rebuild((b) {
       b.mode = BuildLogMode.daemon;
@@ -57,101 +95,86 @@ class DaemonCommand implements BuildRunnerCommand {
     final daemon = Daemon(workingDirectory);
     final requestedOptions = arguments.toSet();
     if (!daemon.hasLock) {
-      final runningOptions = await daemon.currentOptions();
-      final version = await daemon.runningVersion();
-      if (version != currentVersion) {
-        stdout
-          ..writeln('Running Version: $version')
-          ..writeln('Current Version: $currentVersion')
-          ..writeln(versionSkew);
-        return 1;
-      } else if (!(runningOptions.length == requestedOptions.length &&
-          runningOptions.containsAll(requestedOptions))) {
-        stdout
-          ..writeln('Running Options: $runningOptions')
-          ..writeln('Requested Options: $requestedOptions')
-          ..writeln(optionsSkew);
-        return 1;
-      } else {
-        stdout.writeln('Daemon is already running.');
-        print(readyToConnectLog);
-        return 0;
-      }
-    } else {
-      stdout.writeln('Starting daemon...');
-      // Ensure we capture any logs that happen during startup.
-      //
-      // These are serialized between special `<log-record>` and `</log-record>`
-      // tags to make parsing them on stdout easier. They can have multiline
-      // strings so we can't just serialize the json on a single line.
-      //
-      // `BuildRunnerDaemonBuilder` sets its own `onLog` replacing this one.
-      buildLog.configuration = buildLog.configuration.rebuild((b) {
-        b.onLog = (record) => stdout.writeln('''
+      final exitCode = await _waitForExistingDaemon(
+        daemon,
+        workingDirectory,
+        requestedOptions,
+      );
+      if (exitCode != null) return exitCode;
+    }
+    stdout.writeln('Starting daemon...');
+    // Ensure we capture any logs that happen during startup.
+    //
+    // These are serialized between special `<log-record>` and `</log-record>`
+    // tags to make parsing them on stdout easier. They can have multiline
+    // strings so we can't just serialize the json on a single line.
+    //
+    // `BuildRunnerDaemonBuilder` sets its own `onLog` replacing this one.
+    buildLog.configuration = buildLog.configuration.rebuild((b) {
+      b.onLog = (record) => stdout.writeln('''
 $logStartMarker
 ${jsonEncode(serializers.serialize(ServerLog.fromLogRecord(record)))}
 $logEndMarker''');
-      });
+    });
 
-      final buildSpec = await BuildSpec.load(
-        builderFactories: builderFactories,
-        buildOptions: buildOptions,
-        testingOverrides: testingOverrides,
-      );
-      final buildPlan = await BuildPlan.load(buildSpec);
-      if (buildSpec.restartIsNeeded) {
-        return ChildProcess.recompileBuildersExitCode;
-      }
-
-      final builder = await BuildRunnerDaemonBuilder.create(
-        buildPlan: buildPlan,
-        daemonOptions: daemonOptions,
-      );
-
-      // Forward server logs to daemon command STDIO.
-      final logSub = builder.logs.listen((log) {
-        if (log.level > Level.INFO || buildOptions.verbose) {
-          final buffer = StringBuffer(log.message);
-          if (log.error != null) buffer.writeln(log.error);
-          if (log.stackTrace != null) buffer.writeln(log.stackTrace);
-          stderr.writeln(buffer);
-        } else {
-          stdout.writeln(log.message);
-        }
-      });
-      final server = await AssetServer.run(
-        daemonOptions,
-        builder,
-        buildPlan.buildSpec.buildPackages.outputRoot,
-      );
-      File(
-        assetServerPortFilePath(workingDirectory),
-      ).writeAsStringSync('${server.port}');
-      unawaited(
-        builder.buildScriptUpdated.then((_) async {
-          await daemon.stop(
-            message: 'Build script updated. Shutting down the Build Daemon.',
-            failureType: 75,
-          );
-        }),
-      );
-      await daemon.start(
-        requestedOptions,
-        builder,
-        builder.changeProvider,
-        timeout: const Duration(seconds: 60),
-      );
-      stdout.writeln(readyToConnectLog);
-      await logSub.cancel();
-      await daemon.onDone.whenComplete(() async {
-        await server.stop();
-      });
-      // Clients can disconnect from the daemon mid build.
-      // As a result we try to relinquish resources which can
-      // cause the build to hang. To ensure there are no ghost processes
-      // fast exit.
-      exit(0);
+    final buildSpec = await BuildSpec.load(
+      builderFactories: builderFactories,
+      buildOptions: buildOptions,
+      testingOverrides: testingOverrides,
+    );
+    final buildPlan = await BuildPlan.load(buildSpec);
+    if (buildSpec.restartIsNeeded) {
+      return ChildProcess.recompileBuildersExitCode;
     }
+
+    final builder = await BuildRunnerDaemonBuilder.create(
+      buildPlan: buildPlan,
+      daemonOptions: daemonOptions,
+    );
+
+    // Forward server logs to daemon command STDIO.
+    final logSub = builder.logs.listen((log) {
+      if (log.level > Level.INFO || buildOptions.verbose) {
+        final buffer = StringBuffer(log.message);
+        if (log.error != null) buffer.writeln(log.error);
+        if (log.stackTrace != null) buffer.writeln(log.stackTrace);
+        stderr.writeln(buffer);
+      } else {
+        stdout.writeln(log.message);
+      }
+    });
+    final server = await AssetServer.run(
+      daemonOptions,
+      builder,
+      buildPlan.buildSpec.buildPackages.outputRoot,
+    );
+    File(
+      assetServerPortFilePath(workingDirectory),
+    ).writeAsStringSync('${server.port}');
+    unawaited(
+      builder.buildScriptUpdated.then((_) async {
+        await daemon.stop(
+          message: 'Build script updated. Shutting down the Build Daemon.',
+          failureType: 75,
+        );
+      }),
+    );
+    await daemon.start(
+      requestedOptions,
+      builder,
+      builder.changeProvider,
+      timeout: const Duration(seconds: 60),
+    );
+    stdout.writeln(readyToConnectLog);
+    await logSub.cancel();
+    await daemon.onDone.whenComplete(() async {
+      await server.stop();
+    });
+    // Clients can disconnect from the daemon mid build.
+    // As a result we try to relinquish resources which can
+    // cause the build to hang. To ensure there are no ghost processes
+    // fast exit.
+    exit(0);
   }
 }
 

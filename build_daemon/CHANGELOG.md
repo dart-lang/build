@@ -1,3 +1,12 @@
+## 4.1.8-wip
+
+- Add `Daemon.tryGetLock` and close the lock file handle when lock acquisition
+  fails.
+- Delete `.dart_build_daemon_port` at the start of `Server.stop()` before
+  closing the server or awaiting `DaemonBuilder.stop()`.
+- In `checkProjectBuildDaemonVersion`, resolve the enclosing package root and
+  fall back to `pubspec.lock` when `package_config.json` is not present.
+
 ## 4.1.7
 
 - Allow `built_collection` 6.x.

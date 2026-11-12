@@ -43,12 +43,28 @@ void main() {
 ''');
     }
 
+    void writePubspecLock(String version) {
+      File(p.join(workspace.path, 'pubspec.lock')).writeAsStringSync('''
+packages:
+  build_daemon:
+    dependency: "direct main"
+    description:
+      name: build_daemon
+      sha256: "00"
+      url: "https://pub.dev"
+    source: hosted
+    version: "$version"
+sdks:
+  dart: ">=3.11.0 <4.0.0"
+''');
+    }
+
     test(
       'throws VersionSkew when project resolved older build_daemon',
       () async {
         writePackageConfig('4.1.2');
-        expect(
-          () => checkProjectBuildDaemonVersion(workspace.path),
+        await expectLater(
+          checkProjectBuildDaemonVersion(workspace.path),
           throwsA(isA<VersionSkew>()),
         );
       },
@@ -56,7 +72,10 @@ void main() {
 
     test('does not throw VersionSkew for compatible build_daemon', () async {
       writePackageConfig('4.1.3');
-      expect(checkProjectBuildDaemonVersion(workspace.path), completes);
+      await expectLater(
+        checkProjectBuildDaemonVersion(workspace.path),
+        completes,
+      );
     });
 
     test(
@@ -70,9 +89,82 @@ void main() {
         File(
           p.join(subPub.path, 'workspace_ref.json'),
         ).writeAsStringSync('{"workspaceRoot": "../../.."}');
-        expect(
-          () => checkProjectBuildDaemonVersion(subPkg.path),
+        await expectLater(
+          checkProjectBuildDaemonVersion(subPkg.path),
           throwsA(isA<VersionSkew>()),
+        );
+      },
+    );
+
+    test(
+      'resolves package_config.json from package root in subdirectory',
+      () async {
+        File(
+          p.join(workspace.path, 'pubspec.yaml'),
+        ).writeAsStringSync('name: root_pkg\n');
+        writePackageConfig('4.1.2');
+        final subDir = Directory(p.join(workspace.path, 'web'))
+          ..createSync(recursive: true);
+        await expectLater(
+          checkProjectBuildDaemonVersion(subDir.path),
+          throwsA(isA<VersionSkew>()),
+        );
+      },
+    );
+
+    test(
+      'resolves workspace root from resolution: workspace in pubspec.yaml',
+      () async {
+        File(
+          p.join(workspace.path, 'pubspec.yaml'),
+        ).writeAsStringSync('name: ws_root\nworkspace:\n  - sub_pkg\n');
+        writePubspecLock('4.1.2');
+        final subPkg = Directory(p.join(workspace.path, 'sub_pkg'))
+          ..createSync();
+        File(
+          p.join(subPkg.path, 'pubspec.yaml'),
+        ).writeAsStringSync('name: sub_pkg\nresolution: workspace\n');
+        await expectLater(
+          checkProjectBuildDaemonVersion(subPkg.path),
+          throwsA(isA<VersionSkew>()),
+        );
+      },
+    );
+
+    test('does not walk past standalone nested package boundary', () async {
+      File(
+        p.join(workspace.path, 'pubspec.yaml'),
+      ).writeAsStringSync('name: outer_pkg\n');
+      writePackageConfig('4.1.2');
+      final nestedPkg = Directory(p.join(workspace.path, 'nested_pkg'))
+        ..createSync();
+      File(
+        p.join(nestedPkg.path, 'pubspec.yaml'),
+      ).writeAsStringSync('name: nested_pkg\n');
+      await expectLater(
+        checkProjectBuildDaemonVersion(nestedPkg.path),
+        completes,
+      );
+    });
+
+    test(
+      'throws VersionSkew from pubspec.lock when package_config.json is absent',
+      () async {
+        writePubspecLock('4.1.2');
+        await expectLater(
+          checkProjectBuildDaemonVersion(workspace.path),
+          throwsA(isA<VersionSkew>()),
+        );
+      },
+    );
+
+    test(
+      'does not throw VersionSkew from pubspec.lock for compatible version',
+      () async {
+        writePubspecLock('4.1.3');
+        await expectLater(
+          checkProjectBuildDaemonVersion(workspace.path),
+          completes,
         );
       },
     );
