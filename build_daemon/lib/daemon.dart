@@ -27,7 +27,7 @@ import 'src/server_info.dart';
 class Daemon {
   final String _workingDirectory;
   final String? _daemonSharedPath;
-  final RandomAccessFile? _lock;
+  RandomAccessFile? _lock;
   final _doneCompleter = Completer<int>();
 
   Server? _server;
@@ -49,6 +49,17 @@ class Daemon {
       _server!.stop(message: message, failureType: failureType);
 
   bool get hasLock => _lock != null;
+
+  /// Attempts to acquire the daemon lock if not already held.
+  ///
+  /// Returns whether the lock is now held.
+  bool tryGetLock() {
+    _lock ??= _tryGetLock(
+      _workingDirectory,
+      daemonSharedPath: _daemonSharedPath,
+    );
+    return hasLock;
+  }
 
   /// Returns the current version of the running build daemon.
   ///
@@ -83,17 +94,17 @@ class Daemon {
     if (_server != null || _lock == null) return;
     _handleGracefulExit();
 
-    _createVersionFile();
-    _createOptionsFile(options);
-
     final server = _server = Server(
       builder,
       timeout,
       changeProvider,
+      onStopListening: _deletePortFile,
       serializersOverride: serializersOverride,
       shouldBuild: shouldBuild,
     );
     final port = await server.listen();
+    _createVersionFile();
+    _createOptionsFile(options);
     _createPortFile(port);
 
     unawaited(
@@ -121,6 +132,7 @@ class Daemon {
 
     // Close the lock.
     _lock?.closeSync();
+    _lock = null;
 
     // Leave the directory and lock file: there's not much value in cleaning up
     // further and it avoids a race if a new daemon starts up immediately.
@@ -133,6 +145,16 @@ class Daemon {
       portFilePath(_workingDirectory, daemonSharedPath: _daemonSharedPath),
     );
     ServerInfo(port, _server!.token).writeToFile(portFile);
+  }
+
+  void _deletePortFile() {
+    try {
+      File(
+        portFilePath(_workingDirectory, daemonSharedPath: _daemonSharedPath),
+      ).deleteSync();
+    } on FileSystemException {
+      // Ignore if already deleted.
+    }
   }
 
   void _createVersionFile() => File(
@@ -159,16 +181,23 @@ RandomAccessFile? _tryGetLock(
   String workingDirectory, {
   required String? daemonSharedPath,
 }) {
+  RandomAccessFile? lock;
   try {
     _createDaemonWorkspace(
       workingDirectory,
       daemonSharedPath: daemonSharedPath,
     );
-    final lock = File(
+    lock = File(
       lockFilePath(workingDirectory, daemonSharedPath: daemonSharedPath),
-    ).openSync(mode: FileMode.write)..lockSync();
+    ).openSync(mode: FileMode.write);
+    lock.lockSync();
     return lock;
   } on FileSystemException {
+    try {
+      lock?.closeSync();
+    } on FileSystemException {
+      // Ignore error closing file handle.
+    }
     return null;
   }
 }

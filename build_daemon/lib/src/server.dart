@@ -48,15 +48,18 @@ class Server {
   final _subs = <StreamSubscription>[];
   final _outputStreamController = StreamController<ServerLog>();
   late final Stream<ServerLog> _logs;
+  final void Function()? _onStopListening;
   final String token;
 
   Server(
     this._builder,
     Duration timeout,
     ChangeProvider changeProvider, {
+    void Function()? onStopListening,
     Serializers? serializersOverride,
     bool Function(BuildTarget, Iterable<WatchEvent>)? shouldBuild,
   }) : _changeProvider = changeProvider,
+       _onStopListening = onStopListening,
        _serializers = serializersOverride ?? serializers,
        _buildTargetManager = BuildTargetManager(
          shouldBuildOverride: shouldBuild,
@@ -157,6 +160,7 @@ class Server {
       }
     }
     _timeout.cancel();
+    _onStopListening?.call();
     await _server?.close(force: true);
     await _builder.stop();
     for (final sub in _subs) {
