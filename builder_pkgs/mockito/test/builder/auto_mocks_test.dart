@@ -3407,6 +3407,111 @@ void main() {
     );
   });
 
+  test('generates a fake of a subclass for a sealed return type', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Bar m1() => Baz();
+      }
+      sealed class Bar {}
+      class Baz extends Bar {}
+      '''),
+      _containsAllOf(
+        'class _FakeBaz_0 extends _i1.SmartFake implements _i2.Baz',
+        'returnValue: _FakeBaz_0(',
+      ),
+    );
+  });
+
+  test(
+    'generates a fake of a subclass for a sealed getter return type',
+    () async {
+      await expectSingleNonNullableOutput(
+        dedent(r'''
+        class Foo {
+          Bar get g => Baz();
+        }
+        sealed class Bar {}
+        class Baz implements Bar {}
+        '''),
+        _containsAllOf(
+          'class _FakeBaz_0 extends _i1.SmartFake implements _i2.Baz',
+          'returnValue: _FakeBaz_0(',
+        ),
+      );
+    },
+  );
+
+  test(
+    'generates a fake of a subclass for a Future of a sealed return type',
+    () async {
+      await expectSingleNonNullableOutput(
+        dedent(r'''
+        class Foo {
+          Future<Bar> m1() async => Baz();
+        }
+        sealed class Bar {}
+        class Baz extends Bar {}
+        '''),
+        _containsAllOf('_i3.Future<_i2.Bar>.value(_FakeBaz_0('),
+      );
+    },
+  );
+
+  test('generates a fake of a subclass of a nested sealed class', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Bar m1() => Qux();
+      }
+      sealed class Bar {}
+      sealed class Baz extends Bar {}
+      class Qux extends Baz {}
+      '''),
+      _containsAllOf(
+        'class _FakeQux_0 extends _i1.SmartFake implements _i2.Qux',
+        'returnValue: _FakeQux_0(',
+      ),
+    );
+  });
+
+  test('skips subclasses of a sealed class which cannot be faked', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Bar m1() => Baz5();
+      }
+      sealed class Bar {}
+      final class Baz1 extends Bar {}
+      base class Baz2 extends Bar {}
+      class _Baz3 extends Bar {}
+      class Baz4<T> extends Bar {}
+      class Baz5 extends Bar {}
+      '''),
+      _containsAllOf(
+        'class _FakeBaz5_0 extends _i1.SmartFake implements _i2.Baz5',
+        'returnValue: _FakeBaz5_0(',
+      ),
+    );
+  });
+
+  test('does not try to generate a fake for a sealed class without a '
+      'subclass which can be faked', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Bar m1() => Baz1();
+      }
+      sealed class Bar {}
+      final class Baz1 extends Bar {}
+      base class Baz2 extends Bar {}
+      class _Baz3 extends Bar {}
+      class Baz4<T> extends Bar {}
+      '''),
+      _containsAllOf('dummyValue<_i2.Bar>('),
+    );
+  });
+
   test('throws when GenerateMocks is given a class multiple times', () async {
     await _expectBuilderThrows(
       assets: {
