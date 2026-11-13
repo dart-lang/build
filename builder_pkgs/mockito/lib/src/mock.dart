@@ -1039,7 +1039,14 @@ class VerificationResult {
   /// The number of calls matched in this verification.
   int callCount;
 
-  VerificationResult._(this.callCount, this._captured);
+  /// The calls matched in this verification, used to explain failures.
+  final List<RealCall> _matchingCalls;
+
+  VerificationResult._(
+    this.callCount,
+    this._captured, [
+    this._matchingCalls = const [],
+  ]);
 
   /// Assert that the number of calls matches [matcher].
   ///
@@ -1051,11 +1058,16 @@ class VerificationResult {
   ///
   /// To assert that a method was called zero times, use [verifyNever].
   void called(dynamic matcher) {
-    expect(
-      callCount,
-      wrapMatcher(matcher),
-      reason: 'Unexpected number of calls',
-    );
+    expect(callCount, wrapMatcher(matcher), reason: _unexpectedCallsReason());
+  }
+
+  String _unexpectedCallsReason() {
+    const reason = 'Unexpected number of calls';
+    if (_matchingCalls.isEmpty) return reason;
+    final calls = _matchingCalls
+        .map((call) => '  ${call.mock}.${call.invocation.toPrettyString()}')
+        .join('\n');
+    return '$reason. Matching calls:\n$calls';
   }
 }
 
@@ -1133,6 +1145,7 @@ Verification _makeVerify(bool never) {
       final result = VerificationResult._(
         verifyCall.matchingInvocations.length,
         verifyCall.matchingCapturedArgs,
+        [for (final call in verifyCall.matchingInvocations) call.realCall],
       );
       verifyCall._checkWith(never);
       return result;
