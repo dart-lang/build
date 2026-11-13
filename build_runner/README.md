@@ -227,10 +227,12 @@ For advanced use cases it's possible to write your own builder:
 
 To debug the build process, note that `build_runner` spawns a child process to
 run the build. So, the args that turn on debugging must be passed through
-`build_runner` to the child process using `--dart-jit-vm-arg`, for example:
+`build_runner` to the child process using `--dart-jit-vm-arg`. Debugging is
+only supported in JIT mode, and `build_runner` compiles builders ahead of
+time (AOT) when it can, so also pass `--force-jit`. For example:
 
 ```shell
-dart run build_runner build --dart-jit-vm-arg=--observe --dart-jit-vm-arg=--pause-isolates-on-start
+dart run build_runner build --force-jit --dart-jit-vm-arg=--observe --dart-jit-vm-arg=--pause-isolates-on-start
 ```
 
 The args in the example will cause the child process to output a URL for debugging:
