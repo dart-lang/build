@@ -195,6 +195,102 @@ void main() {
       expect(results[1]!.errorCount, 0);
     });
 
+    // A rejected recompile reverts the Frontend Server to the last accepted
+    // state, which also drops the files it invalidated. The driver has to send
+    // them again, or the next recompile keeps compiling against their old
+    // content.
+    group('resends files invalidated by a rejected recompile', () {
+      late Uri entrypoint;
+      late Uri dep;
+
+      setUp(() async {
+        entrypoint = tempDir.uri.resolve('entrypoint.dart');
+        dep = tempDir.uri.resolve('dep.dart');
+        File(dep.toFilePath()).writeAsStringSync("String get a => 'a';");
+        File(entrypoint.toFilePath())
+            .writeAsStringSync("import 'dep.dart'; void main() { print(a); }");
+        final output = await driver.recompile(entrypoint.toString(), []);
+        expect(output!.errorCount, 0);
+
+        // `dep.dart` gains a getter that the entrypoint uses, but the
+        // entrypoint also has an unrelated error, so the recompile is
+        // rejected.
+        File(dep.toFilePath())
+            .writeAsStringSync("String get a => 'a'; String get b => 'b';");
+        File(entrypoint.toFilePath()).writeAsStringSync(
+          "import 'dep.dart'; void main() { print(a + b + typo); }",
+        );
+        final rejected = await driver.recompile(entrypoint.toString(), [
+          entrypoint,
+          dep,
+        ]);
+        expect(rejected!.errorMessage, contains("Undefined name 'typo'"));
+
+        // Only the entrypoint changes after that.
+        File(
+          entrypoint.toFilePath(),
+        ).writeAsStringSync("import 'dep.dart'; void main() { print(a + b); }");
+      });
+
+      test('on recompile', () async {
+        final output = await driver.recompile(entrypoint.toString(), [
+          entrypoint,
+        ]);
+        expect(output!.errorMessage, isNull);
+        expect(output.errorCount, 0);
+      });
+
+      test('on recompile-restart', () async {
+        final output = await driver.recompileRestart(entrypoint.toString(), [
+          entrypoint,
+        ]);
+        expect(output!.errorMessage, isNull);
+        expect(output.errorCount, 0);
+      });
+    });
+
+    test(
+      'recompileAndRecord resends files invalidated by a rejected recompile',
+      () async {
+        final entrypoint = tempDir.uri.resolve('entrypoint.dart');
+        final dep = tempDir.uri.resolve('dep.dart');
+        const entrypointArg = '$multiRootScheme:///entrypoint.dart';
+        // The builder invalidates files with the same scheme it compiles with.
+        final entrypointUri = Uri.parse(entrypointArg);
+        final depUri = Uri.parse('$multiRootScheme:///dep.dart');
+        File(dep.toFilePath()).writeAsStringSync("String get a => 'a';");
+        File(entrypoint.toFilePath())
+            .writeAsStringSync("import 'dep.dart'; void main() { print(a); }");
+        var output = await driver.recompileAndRecord(entrypointArg, [], []);
+        expect(output!.errorCount, 0);
+
+        File(dep.toFilePath())
+            .writeAsStringSync("String get a => 'a'; String get b => 'b';");
+        File(entrypoint.toFilePath()).writeAsStringSync(
+          "import 'dep.dart'; void main() { print(a + b + typo); }",
+        );
+        output = await driver.recompileAndRecord(entrypointArg, [
+          entrypointUri,
+          depUri,
+        ], []);
+        expect(output!.errorMessage, contains("Undefined name 'typo'"));
+
+        // The builder recompiles with a restart after a failed build, and only
+        // passes the files that changed in that build.
+        File(
+          entrypoint.toFilePath(),
+        ).writeAsStringSync("import 'dep.dart'; void main() { print(a + b); }");
+        output = await driver.recompileAndRecord(
+          entrypointArg,
+          [entrypointUri],
+          [],
+          recompileRestart: true,
+        );
+        expect(output!.errorMessage, isNull);
+        expect(output.errorCount, 0);
+      },
+    );
+
     test('recompileAndRecord successfully records and writes files', () async {
       final entrypoint = tempDir.uri.resolve('entrypoint.dart');
       File(entrypoint.toFilePath()).writeAsStringSync('void main() {}');

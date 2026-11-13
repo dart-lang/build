@@ -12,6 +12,10 @@
   code, stdout and stderr.
 - Log kernel worker arguments at the fine level instead of including them in
   kernel compilation errors.
+- Fix the Frontend Server builders compiling against outdated sources after a
+  failed build. Files invalidated by a rejected recompile are now sent again
+  until a recompile is accepted, instead of only the files that changed in the
+  current build.
 
 ## 4.8.12
 

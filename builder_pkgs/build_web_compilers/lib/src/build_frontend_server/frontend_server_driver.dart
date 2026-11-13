@@ -1151,6 +1151,15 @@ class StdioFrontendServerClient implements FrontendServerClient {
   final _StdinWriterQueue _stdinWriterQueue;
   CompilerOutput? _cachedOutput;
 
+  /// Files invalidated since the last `accept`.
+  ///
+  /// A `reject` reverts the Frontend Server to the last accepted state, which
+  /// also forgets the files the rejected recompile invalidated. They are sent
+  /// again with every recompile until one is accepted. Otherwise a change that
+  /// arrived together with an error elsewhere would never be compiled, and the
+  /// next recompiles would keep using the file's old content.
+  final _invalidatedSinceAccept = <Uri>{};
+
   StdioFrontendServerClient(
     this._server,
     this._stdoutHandler,
@@ -1177,7 +1186,8 @@ class StdioFrontendServerClient implements FrontendServerClient {
     _stdoutHandler.reset();
     final inputKey = const Uuid().v4();
     await _send('recompile $entrypoint $inputKey');
-    for (final file in invalidatedFiles) {
+    _invalidatedSinceAccept.addAll(invalidatedFiles);
+    for (final file in _invalidatedSinceAccept) {
       await _send(file.toString());
     }
     await _send(inputKey);
@@ -1192,7 +1202,8 @@ class StdioFrontendServerClient implements FrontendServerClient {
     _stdoutHandler.reset();
     final inputKey = const Uuid().v4();
     await _send('recompile-restart $entrypoint $inputKey');
-    for (final file in invalidatedFiles) {
+    _invalidatedSinceAccept.addAll(invalidatedFiles);
+    for (final file in _invalidatedSinceAccept) {
       await _send(file.toString());
     }
     await _send(inputKey);
@@ -1262,6 +1273,7 @@ class StdioFrontendServerClient implements FrontendServerClient {
   @override
   Future<void> accept() async {
     await _send('accept');
+    _invalidatedSinceAccept.clear();
   }
 
   @override
