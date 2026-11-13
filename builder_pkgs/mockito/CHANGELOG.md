@@ -1,5 +1,10 @@
 ## 5.8.2-wip
 
+* When a mocked method or getter returns a `sealed` class, use a fake of one of
+  its subclasses as the value returned while stubbing or verifying, so that
+  mocks generated with `@GenerateMocks` no longer need `provideDummy` for it.
+  Nice mocks still need `provideDummy` for their default return value.
+  [#4462](https://github.com/dart-lang/build/issues/4462)
 * Allow `build` 5.0.0.
 * Emit `// dart format off` in generated mock files to prevent reformatting.
   [#4597](https://github.com/dart-lang/build/issues/4597)
