@@ -314,12 +314,27 @@ void main() {
       test('more than one actual call fails', () {
         mock.methodWithoutArgs();
         mock.methodWithoutArgs();
-        expectFail(
-          'Expected: <1>\n  Actual: <2>\nUnexpected number of calls\n',
-          () {
-            verify(mock.methodWithoutArgs()).called(1);
-          },
-        );
+        expectFail('Expected: <1>\n'
+            '  Actual: <2>\n'
+            'Unexpected number of calls. Matching calls:\n'
+            '  _MockedClass.methodWithoutArgs()\n'
+            '  _MockedClass.methodWithoutArgs()\n', () {
+          verify(mock.methodWithoutArgs()).called(1);
+        });
+      });
+    });
+
+    test('lists matching calls with their arguments', () {
+      mock.methodWithNormalArgs(1);
+      mock.methodWithNormalArgs(2);
+      mock.methodWithNormalArgs(3);
+      expectFail('Expected: <2>\n'
+          '  Actual: <3>\n'
+          'Unexpected number of calls. Matching calls:\n'
+          '  _MockedClass.methodWithNormalArgs(1)\n'
+          '  _MockedClass.methodWithNormalArgs(2)\n'
+          '  _MockedClass.methodWithNormalArgs(3)\n', () {
+        verify(mock.methodWithNormalArgs(any)).called(2);
       });
     });
 
@@ -336,7 +351,8 @@ void main() {
         expectFail('Expected: a value greater than <2>\n'
             '  Actual: <1>\n'
             '   Which: is not a value greater than <2>\n'
-            'Unexpected number of calls\n', () {
+            'Unexpected number of calls. Matching calls:\n'
+            '  _MockedClass.methodWithoutArgs()\n', () {
           verify(mock.methodWithoutArgs()).called(greaterThan(2));
         });
       });
@@ -361,7 +377,8 @@ void main() {
         mock.methodWithoutArgs();
         expectFail('Expected: <0>\n'
             '  Actual: <1>\n'
-            'Unexpected number of calls\n', () {
+            'Unexpected number of calls. Matching calls:\n'
+            '  _MockedClass.methodWithoutArgs()\n', () {
           verify(mock.methodWithoutArgs()).called(0);
         });
       });

@@ -1,5 +1,8 @@
 ## 5.8.2-wip
 
+* List the matching calls when `verify(...).called(...)` fails because of an
+  unexpected number of calls.
+  [#4710](https://github.com/dart-lang/build/issues/4710)
 * Allow `build` 5.0.0.
 * Emit `// dart format off` in generated mock files to prevent reformatting.
   [#4597](https://github.com/dart-lang/build/issues/4597)
