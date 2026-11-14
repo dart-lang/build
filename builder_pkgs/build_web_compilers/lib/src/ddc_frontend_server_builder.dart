@@ -57,6 +57,14 @@ class DdcFrontendServerBuilder implements Builder {
     final transitiveSources = [
       for (final dep in transitiveDeps) ...dep.sources,
     ];
+    if (isEntrypoint) {
+      // The entrypoint's module depends on every library of the app.
+      frontendServerState.appSources = [
+        entrypointAssetId,
+        ...module.sources,
+        ...transitiveSources,
+      ];
+    }
     final scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
     // The entrypoint always has to be in the scratch space: any module can
     // trigger a compilation of the main app, including a deferred one.
@@ -98,13 +106,12 @@ class DdcFrontendServerBuilder implements Builder {
         : 'packages/${id.package}/${id.path.replaceFirst('lib/', '')}';
     try {
       final changedAssetUris = <Uri>[];
-      frontendServerState.triggerSharedCompilation(entrypointAssetId, () async {
-        await scratchSpace.ensureAssets([
-          if (stageEntrypoint) entrypointAssetId,
-          ...module.sources,
-          ...transitiveSources,
-        ], buildStep);
-        changedAssetUris.addAll([
+
+      // Stages [assets] in the scratch space and records the ones that changed
+      // as the URIs the Frontend Server knows them by.
+      Future<bool> stage(Iterable<AssetId> assets) async {
+        await scratchSpace.ensureAssets(assets, buildStep);
+        final changed = [
           for (final asset in scratchSpace.changedFilesInBuild)
             asset.path.startsWith('lib/')
                 ? Uri(
@@ -117,12 +124,15 @@ class DdcFrontendServerBuilder implements Builder {
                     host: '',
                     path: '/${assetPath(asset)}',
                   ),
-        ]);
+        ];
         scratchSpace.dispose();
-        final shouldCompile =
-            changedAssetUris.isNotEmpty ||
-            frontendServerState.needsRecompileRestart;
-        if (shouldCompile) {
+        changedAssetUris.addAll(changed);
+        return changed.isNotEmpty;
+      }
+
+      // Compiles the app and records whether that failed.
+      Future<void> compile() async {
+        try {
           final compilerOutput = await driver.recompileAndRecord(
             entrypointArg,
             changedAssetUris,
@@ -141,9 +151,48 @@ class DdcFrontendServerBuilder implements Builder {
               compilerOutput.errorMessage ?? 'Unknown error',
             );
           }
+          frontendServerState.lastCompilationFailure = null;
+        } on FrontendServerCompilationException catch (e) {
+          frontendServerState.lastCompilationFailure = e;
+          frontendServerState.needsRecompileRestart = true;
         }
-      });
-      await frontendServerState.waitForCompilation(entrypointAssetId);
+      }
+
+      await frontendServerState.runSharedCompilation(
+        entrypointAssetId,
+        () async {
+          final changed = await stage([
+            if (stageEntrypoint) entrypointAssetId,
+            ...module.sources,
+            ...transitiveSources,
+          ]);
+          // After a failure, only compile again if there is something new to
+          // compile. Otherwise every remaining step of the build would repeat
+          // the failing compile.
+          if (changed ||
+              (frontendServerState.lastCompilationFailure == null &&
+                  frontendServerState.needsRecompileRestart)) {
+            await compile();
+          }
+          if (frontendServerState.lastCompilationFailure != null) {
+            // Every step compiles the whole app, so the failure can come from a
+            // library that isn't a dependency of this module, and it can be out
+            // of date: another step may have compiled before the step that
+            // owns a changed library staged it. Stage the whole app and compile
+            // again if that changed anything.
+            //
+            // Reading the whole app also makes it an input of this step. A step
+            // that fails is then rerun when any library of the app changes, not
+            // only when its own dependencies do.
+            if (await stage(await _appSources(buildStep, entrypointAssetId))) {
+              await compile();
+            }
+          }
+          if (frontendServerState.lastCompilationFailure case final failure?) {
+            throw failure;
+          }
+        },
+      );
 
       // Reads the compiled asset with [extension] from the Frontend Server's
       // filesystem and writes it to the build runner's output.
@@ -173,5 +222,42 @@ class DdcFrontendServerBuilder implements Builder {
       frontendServerState.needsRecompileRestart = true;
       rethrow;
     }
+  }
+
+  /// The sources of all modules of the app that this step can read.
+  ///
+  /// They come from the entrypoint's module. A step in another package can't
+  /// read that module, and uses the sources its step recorded instead. There
+  /// are none if that step hasn't run in this process yet.
+  Future<List<AssetId>> _appSources(
+    BuildStep buildStep,
+    AssetId entrypointAssetId,
+  ) async {
+    var sources = frontendServerState.appSources;
+    final moduleId = entrypointAssetId.changeExtension(
+      moduleExtension(ddcPlatform),
+    );
+    if (await buildStep.canRead(moduleId)) {
+      final module = Module.fromJson(
+        json.decode(await buildStep.readAsString(moduleId))
+            as Map<String, dynamic>,
+      );
+      try {
+        sources = [
+          entrypointAssetId,
+          ...module.sources,
+          for (final dep in await module.computeTransitiveDependencies(
+            buildStep,
+          ))
+            ...dep.sources,
+        ];
+      } on MissingModulesException {
+        // Fall back to the recorded sources.
+      }
+    }
+    return [
+      for (final source in sources)
+        if (await buildStep.canRead(source)) source,
+    ];
   }
 }

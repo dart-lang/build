@@ -8,6 +8,8 @@ import 'dart:convert';
 import 'package:build/build.dart';
 import 'package:scratch_space/scratch_space.dart';
 
+import '../errors.dart';
+
 /// A persistent shared [FrontendServerState] for DDC workers that interact with
 /// the Frontend Server.
 final frontendServerState = FrontendServerState();
@@ -78,46 +80,44 @@ class FrontendServerState {
     return false;
   }
 
-  /// The active background compilation future.
+  /// The sources of all modules of the app, as of the last time the
+  /// entrypoint's module was built in this process.
+  List<AssetId> appSources = const [];
+
+  /// The failure of the most recent compilation, or `null` if it succeeded.
   ///
-  /// Allows arbitrary DDC builders to share a single compiler execution run for
-  /// the entrypoint. Sequential calls chain onto the previous compilation.
+  /// A step that has nothing new to compile reports this failure instead of
+  /// compiling the same sources again.
+  FrontendServerCompilationException? lastCompilationFailure;
+
+  /// Completes when the compilations started so far are done.
+  ///
+  /// It never completes with an error. Build steps run in separate error zones,
+  /// and a future's error doesn't cross error zones: a step awaiting the failed
+  /// compilation of another step would never complete.
   Future<void> _activeCompilation = Future.value();
 
-  /// Returns a future that completes when the active compilation is complete.
-  Future<void> waitForCompilation(AssetId entrypointId) {
-    _verifyEntrypoint(entrypointId);
-    return _activeCompilation;
-  }
-
-  /// Initiates the compilation of [entrypointId] using [compileFn].
+  /// Runs [compileFn] for [entrypointId] once the compilations started before
+  /// it are done, so that only one runs at a time.
   ///
-  /// Sequential calls for the same entrypoint will subscribe to and share
-  /// the same compilation future chain.
-  void triggerSharedCompilation(
+  /// A failure of an earlier compilation doesn't skip [compileFn]. The earlier
+  /// step may have compiled before this step staged its sources.
+  Future<void> runSharedCompilation(
     AssetId entrypointId,
     Future<void> Function() compileFn,
-  ) {
+  ) async {
     _verifyEntrypoint(entrypointId);
     entrypointAssetId ??= entrypointId;
 
     final previous = _activeCompilation;
     final completer = Completer<void>();
     _activeCompilation = completer.future;
-
-    () async {
-      try {
-        await previous;
-        await compileFn();
-        completer.complete();
-      } catch (e, s) {
-        completer.completeError(e, s);
-      } finally {
-        if (_activeCompilation == completer.future) {
-          _activeCompilation = Future.value();
-        }
-      }
-    }();
+    try {
+      await previous;
+      await compileFn();
+    } finally {
+      completer.complete();
+    }
   }
 
   void _verifyEntrypoint(AssetId entrypointId) {
