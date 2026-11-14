@@ -12,10 +12,18 @@
   code, stdout and stderr.
 - Log kernel worker arguments at the fine level instead of including them in
   kernel compilation errors.
-- Fix the Frontend Server builders compiling against outdated sources after a
-  failed build. Files invalidated by a rejected recompile are now sent again
-  until a recompile is accepted, instead of only the files that changed in the
-  current build.
+- Fix builds with the Frontend Server builders not recovering from a failed
+  compile. They could keep failing for code that is correct, with errors like
+  `Undefined name` or `Could not find summary for library`, or hang, until the
+  build cache was deleted:
+  - Files invalidated by a rejected recompile are sent again until a recompile
+    is accepted, instead of only the files that changed in the current build.
+  - A build step no longer waits forever for the failed compile of another
+    step.
+  - A build step that fails stages and depends on the whole app, so it is not
+    left with the error of a library it does not depend on.
+  - A failed first compile of a process is followed by a full recompile
+    instead of repeating `compile`.
 
 ## 4.8.12
 

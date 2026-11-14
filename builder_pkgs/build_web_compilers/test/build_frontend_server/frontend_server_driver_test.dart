@@ -291,6 +291,35 @@ void main() {
       },
     );
 
+    test('recompileAndRecord recovers when the first compile fails', () async {
+      final entrypoint = tempDir.uri.resolve('entrypoint.dart');
+      final dep = tempDir.uri.resolve('dep.dart');
+      const entrypointArg = '$multiRootScheme:///entrypoint.dart';
+      final entrypointUri = Uri.parse(entrypointArg);
+      File(dep.toFilePath()).writeAsStringSync("String get a => 'a';");
+      File(entrypoint.toFilePath()).writeAsStringSync(
+        "import 'dep.dart'; void main() { print(a + typo); }",
+      );
+      var output = await driver.recompileAndRecord(entrypointArg, [], []);
+      expect(output!.errorMessage, contains("Undefined name 'typo'"));
+
+      File(entrypoint.toFilePath())
+          .writeAsStringSync("import 'dep.dart'; void main() { print(a); }");
+      output = await driver.recompileAndRecord(
+        entrypointArg,
+        [entrypointUri],
+        [],
+        recompileRestart: true,
+      );
+      expect(output!.errorMessage, isNull);
+      expect(output.errorCount, 0);
+
+      // The libraries that didn't change after the failure are compiled too.
+      final depJs = File(p.join(tempDir.path, 'dep.ddc.js'));
+      expect(depJs.existsSync(), isTrue);
+      expect(depJs.readAsStringSync(), contains('get a'));
+    });
+
     test('recompileAndRecord successfully records and writes files', () async {
       final entrypoint = tempDir.uri.resolve('entrypoint.dart');
       File(entrypoint.toFilePath()).writeAsStringSync('void main() {}');

@@ -1149,7 +1149,6 @@ class StdioFrontendServerClient implements FrontendServerClient {
   final WebMemoryFilesystem _fileSystem;
   final Uri _outputDillUri;
   final _StdinWriterQueue _stdinWriterQueue;
-  CompilerOutput? _cachedOutput;
 
   /// Files invalidated since the last `accept`.
   ///
@@ -1159,6 +1158,12 @@ class StdioFrontendServerClient implements FrontendServerClient {
   /// arrived together with an error elsewhere would never be compiled, and the
   /// next recompiles would keep using the file's old content.
   final _invalidatedSinceAccept = <Uri>{};
+
+  /// Whether [recompileAndRecord] has sent its initial `compile` request.
+  var _compileRequested = false;
+
+  /// Whether a compile has been accepted yet.
+  var _accepted = false;
 
   StdioFrontendServerClient(
     this._server,
@@ -1274,6 +1279,7 @@ class StdioFrontendServerClient implements FrontendServerClient {
   Future<void> accept() async {
     await _send('accept');
     _invalidatedSinceAccept.clear();
+    _accepted = true;
   }
 
   @override
@@ -1339,7 +1345,15 @@ class StdioFrontendServerClient implements FrontendServerClient {
     Iterable<String> filesToWrite, {
     bool recompileRestart = false,
   }) async {
-    final isFirstRequest = _cachedOutput == null;
+    // Only the very first request is a `compile`, even if it fails. The
+    // Frontend Server doesn't reset its errors between `compile` requests, so
+    // repeating it after a failure would keep reporting the old errors.
+    final isFirstRequest = !_compileRequested;
+    _compileRequested = true;
+    // Until a compile has been accepted there is no state to compile a delta
+    // against. Ask for the full component again, or the libraries that are not
+    // invalidated would be missing from it.
+    if (!isFirstRequest && !_accepted) await reset();
     final compilerOutput = await (switch ((isFirstRequest, recompileRestart)) {
       (true, _) => compile(entrypoint),
       (false, true) => this.recompileRestart(entrypoint, invalidatedFiles),
@@ -1352,7 +1366,6 @@ class StdioFrontendServerClient implements FrontendServerClient {
       return compilerOutput;
     }
     await accept();
-    _cachedOutput = compilerOutput;
     recordFiles();
     writeAllFiles();
     return compilerOutput;
