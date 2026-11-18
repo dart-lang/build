@@ -1,4 +1,4 @@
-## 4.9.0-wip
+## 4.9.0
 
 - Allow `build` 5.0.0.
 - Add a `deprecated-js-interop` option for the `ddc`, `ddc_modules`,
