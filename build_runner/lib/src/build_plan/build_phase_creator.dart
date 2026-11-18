@@ -346,6 +346,7 @@ void warnForUnknownBuilders(
   BuiltMap<String, BuiltMap<String, dynamic>> builderConfigOverrides,
 ) {
   final builderKeys = builders.map((b) => b.key).toSet();
+  final builderPackages = builderKeys.map((k) => k.split(':').first).toSet();
   for (final key in builderConfigOverrides.keys) {
     if (!builderKeys.contains(key)) {
       buildLog.warning(
@@ -355,6 +356,19 @@ void warnForUnknownBuilders(
     }
   }
   for (final buildConfig in buildConfigs) {
+    for (final definition in buildConfig.builderDefinitions.values) {
+      for (final key in definition.runsBefore) {
+        // A key in a package with no builders in this build may name an
+        // optional peer builder, so only keys in known packages are checked.
+        if (!builderKeys.contains(key) &&
+            builderPackages.contains(key.split(':').first)) {
+          buildLog.warning(
+            'Ignoring `runs_before` in builder `${definition.key}` '
+            'referencing unknown builder `$key`.',
+          );
+        }
+      }
+    }
     for (final target in buildConfig.buildTargets.values) {
       for (final key in target.builders.keys) {
         if (!builderKeys.contains(key)) {

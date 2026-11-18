@@ -31,6 +31,9 @@ const _suggestedTypes = <String, String>{
 /// Methods on generated builders, which fields can't share names with.
 const _builderMethodNames = {'build', 'replace', 'update'};
 
+/// Field names whose builder field `_$name` is already a generated member.
+const _builderFieldNames = {r'$v', r'$this'};
+
 abstract class ValueSourceField
     with FieldMixin
     implements Built<ValueSourceField, ValueSourceFieldBuilder> {
@@ -191,13 +194,7 @@ abstract class ValueSourceField
     if (result == null || result == 'dynamic') {
       // Go via AST to allow use of unresolvable types not yet generated;
       // this includes generated Builder types.
-      result = parsedLibrary
-          .getFragmentDeclaration(builderElement!.firstFragment)
-          ?.node
-          .parent
-          ?.childEntities
-          .first
-          .toString();
+      result = builderFieldDeclaredType;
     }
 
     if (result == null || result == 'dynamic') {
@@ -360,6 +357,16 @@ abstract class ValueSourceField
           (b) => b
             ..message = 'Rename field $name; '
                 'it clashes with the generated builder method $name.',
+        ),
+      );
+    }
+
+    if (_builderFieldNames.contains(name)) {
+      result.add(
+        GeneratorError(
+          (b) => b
+            ..message = 'Rename field $name; '
+                'it clashes with the generated builder field _$name.',
         ),
       );
     }

@@ -11,6 +11,19 @@ mixin FieldMixin {
 
   bool get builderFieldExists => builderElement != null;
 
+  /// The type written in the declaration of the manual builder field, read
+  /// from the AST, or null if the field is not declared with a type.
+  ///
+  /// The type follows any `late`, `final` or `covariant` keyword.
+  String? get builderFieldDeclaredType {
+    final declarationList = parsedLibrary
+        .getFragmentDeclaration(builderElement!.firstFragment)
+        ?.node
+        .parent;
+    if (declarationList is! VariableDeclarationList) return null;
+    return declarationList.type?.toSource();
+  }
+
   /// Gets the type of the field in a manually written builder.
   ///
   /// Returns `dynamic` if there is no such field.
@@ -31,13 +44,7 @@ mixin FieldMixin {
     if (result != null && result != 'dynamic') return result;
     // Go via AST to allow use of unresolvable types not yet generated;
     // this includes generated Builder types.
-    result = parsedLibrary
-        .getFragmentDeclaration(builderElement!.firstFragment)
-        ?.node
-        .parent
-        ?.childEntities
-        .first
-        .toString();
+    result = builderFieldDeclaredType;
 
     if (result != null) return result;
 
