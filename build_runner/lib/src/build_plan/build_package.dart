@@ -7,13 +7,7 @@ import 'package:meta/meta.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 
-import '../contracts.dart';
-
 /// A Dart package in the build.
-@Invariant('name.isNotEmpty')
-@Invariant('path.isNotEmpty')
-@Invariant('!dependencies.contains(name)')
-@Invariant('dependencies.every((d) => d.isNotEmpty)')
 class BuildPackage {
   /// The name of the package as listed in `pubspec.yaml`.
   final String name;
@@ -44,8 +38,13 @@ class BuildPackage {
     this.isOutput = false,
     this.languageVersion,
     Iterable<String> dependencies = const [],
-  }) : path = p.canonicalize(path),
-       dependencies = dependencies.toBuiltSet();
+  }) : assert(name.isNotEmpty),
+       path = p.canonicalize(path),
+       dependencies = dependencies.toBuiltSet() {
+    assert(this.path.isNotEmpty);
+    assert(!this.dependencies.contains(name));
+    assert(this.dependencies.every((d) => d.isNotEmpty));
+  }
 
   /// Creates with a default [path] for testing.
   @visibleForTesting

@@ -42,9 +42,6 @@ import 'post_process_build_step_result.dart';
   '.isEmpty)',
 )
 @Invariant('actualOutputs.every((id) => buildStepPlan.isDeclaredOutput(id))')
-@Invariant(
-  'sharedParts.keys.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)',
-)
 @Invariant('sharedParts.keys.every((id) => id.sharedPartId != null)')
 @Invariant(
   'sharedParts.keys.every((id) => contents.containsKey(id.sharedPartId!))',

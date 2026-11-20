@@ -26,13 +26,9 @@ part '../../_br_/src/build_plan/build_inputs.part.dart';
 @Invariant(
   'invalidOutputs.every((id) => !retainedOutputContents.containsKey(id))',
 )
-@Invariant('sources.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)')
 @Invariant(
   'sources.every((id) => '
   '!id.isBrOutput || !sharedParts.containsKey(id.sharedPartLibraryId ?? id))',
-)
-@Invariant(
-  'sharedParts.keys.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)',
 )
 @Invariant('sharedParts.keys.every((id) => id.sharedPartId != null)')
 abstract class BuildInputs implements Built<BuildInputs, BuildInputsBuilder> {

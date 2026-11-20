@@ -38,8 +38,9 @@ void main() {
       expect(id.path, equals('path/to/asset.txt'));
     });
 
-    test('allows empty package and path', () {
-      AssetId('', '');
+    test('throws for empty package or path', () {
+      expect(() => AssetId('', 'a.txt'), throwsArgumentError);
+      expect(() => AssetId('app', ''), throwsArgumentError);
     });
 
     test('throws for absolute paths', () {

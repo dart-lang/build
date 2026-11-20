@@ -8,7 +8,6 @@ import 'package:build_config/build_config.dart' as build_config;
 import 'package:built_collection/built_collection.dart';
 import 'package:meta/meta.dart';
 
-import '../contracts.dart';
 import '../io/reader_writer.dart';
 import 'build_configs.dart';
 import 'build_package.dart';
@@ -107,7 +106,6 @@ sealed class AbstractBuilderDefinition {
 
 /// A builder definition read from `build.yaml` using
 /// [build_config.BuilderDefinition].
-@Invariant('key.isNotEmpty')
 class BuilderDefinition implements AbstractBuilderDefinition {
   @override
   final String key;
@@ -144,7 +142,8 @@ class BuilderDefinition implements AbstractBuilderDefinition {
     this.isOptional = false,
     this.addsToLibrary = false,
     this.targetBuilderConfigDefaults = const TargetBuilderConfigDefaults(),
-  }) : package = package ?? (key.contains(':') ? key.split(':').first : ''),
+  }) : assert(key.isNotEmpty),
+       package = package ?? (key.contains(':') ? key.split(':').first : ''),
        appliesBuilders = appliesBuilders.toBuiltList() {
     if (addsToLibrary && isOptional) {
       throw ArgumentError(
@@ -212,7 +211,6 @@ class BuilderDefinition implements AbstractBuilderDefinition {
 
 /// A post process builder definition read from `build.yaml` using
 /// [build_config.PostProcessBuilderDefinition]
-@Invariant('key.isNotEmpty')
 class PostProcessBuilderDefinition implements AbstractBuilderDefinition {
   @override
   final String key;
@@ -232,7 +230,8 @@ class PostProcessBuilderDefinition implements AbstractBuilderDefinition {
     String? package,
     this.outputsToArtifactTree = true,
     this.targetBuilderConfigDefaults = const TargetBuilderConfigDefaults(),
-  }) : package = package ?? (key.contains(':') ? key.split(':').first : '');
+  }) : assert(key.isNotEmpty),
+       package = package ?? (key.contains(':') ? key.split(':').first : '');
 
   PostProcessBuilderDefinition.fromConfig(
     build_config.PostProcessBuilderDefinition builderDefinition,
@@ -240,5 +239,7 @@ class PostProcessBuilderDefinition implements AbstractBuilderDefinition {
       key = builderDefinition.key,
       outputsToArtifactTree =
           builderDefinition.buildTo == build_config.BuildTo.cache,
-      targetBuilderConfigDefaults = builderDefinition.defaults;
+      targetBuilderConfigDefaults = builderDefinition.defaults {
+    assert(key.isNotEmpty);
+  }
 }

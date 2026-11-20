@@ -11,7 +11,6 @@ import 'package:path/path.dart' as p;
 
 import '../build/resolver/asset_ids.dart';
 import '../constants.dart';
-import '../contracts.dart';
 import '../io/asset_path_provider.dart';
 import 'build_package.dart';
 import 'build_packages_loader.dart';
@@ -23,12 +22,6 @@ import 'placeholders.dart';
 final _sdkPackage = BuildPackage(name: r'$sdk', path: sdkPath);
 
 /// The [BuildPackage]s in the build.
-@Invariant('currentPackage.isNotEmpty')
-@Invariant('outputRoot.isNotEmpty')
-@Invariant('packages.isNotEmpty')
-@Invariant('packages.containsKey(currentPackage)')
-@Invariant('outputPackages.isNotEmpty')
-@Invariant('outputPackages.every((p) => packages.containsKey(p))')
 class BuildPackages implements AssetPathProvider {
   /// All packages by package name.
   final BuiltMap<String, BuildPackage> packages;
@@ -95,19 +88,15 @@ class BuildPackages implements AssetPathProvider {
     required BuiltSetMultimap<String, String> transitiveDependencies,
     required BuiltSetMultimap<String, String> buildPackages,
     this.hasNewerAlternateRootBuild = false,
-  }) : _transitiveDependencies = transitiveDependencies,
+  }) : assert(currentPackage.isNotEmpty),
+       assert(outputRoot.isNotEmpty),
+       assert(packages.isNotEmpty),
+       assert(packages.containsKey(currentPackage)),
+       assert(outputPackages.isNotEmpty),
+       assert(outputPackages.every(packages.containsKey)),
+       _transitiveDependencies = transitiveDependencies,
        _peerPackages = buildPackages;
 
-  @Requires('currentPackage.isNotEmpty')
-  @Requires('outputRoot.isNotEmpty')
-  @Requires('packages.containsKey(currentPackage)')
-  @Requires(
-    'singlePackageToBuild == null || '
-    'packages.containsKey(singlePackageToBuild)',
-  )
-  @Requires(
-    'singlePackageToBuild == null || packages[singlePackageToBuild]!.isOutput',
-  )
   factory BuildPackages.compute({
     required String currentPackage,
     String? singlePackageToBuild,
@@ -115,6 +104,16 @@ class BuildPackages implements AssetPathProvider {
     bool hasNewerAlternateRootBuild = false,
     required BuiltMap<String, BuildPackage> packages,
   }) {
+    assert(currentPackage.isNotEmpty);
+    assert(outputRoot.isNotEmpty);
+    assert(packages.containsKey(currentPackage));
+    assert(
+      singlePackageToBuild == null ||
+          packages.containsKey(singlePackageToBuild),
+    );
+    assert(
+      singlePackageToBuild == null || packages[singlePackageToBuild]!.isOutput,
+    );
     for (final package in packages.values) {
       for (final dependency in package.dependencies) {
         if (!packages.containsKey(dependency)) {
@@ -167,16 +166,18 @@ class BuildPackages implements AssetPathProvider {
   /// Creates [BuildPackages] from [BuildPackage]s for a single package build
   /// of [package].
   @visibleForTesting
-  @Requires('packages.any((p) => p.name == package && p.isOutput)')
   factory BuildPackages.singlePackageBuild(
     String package,
     Iterable<BuildPackage> packages,
-  ) => BuildPackages.compute(
-    currentPackage: package,
-    singlePackageToBuild: package,
-    outputRoot: package,
-    packages: {for (final package in packages) package.name: package}.build(),
-  );
+  ) {
+    assert(packages.any((p) => p.name == package && p.isOutput));
+    return BuildPackages.compute(
+      currentPackage: package,
+      singlePackageToBuild: package,
+      outputRoot: package,
+      packages: {for (final package in packages) package.name: package}.build(),
+    );
+  }
 
   /// Creates [BuildPackages] from [BuildPackage]s for a workspace build with
   /// workspace name [workspace].

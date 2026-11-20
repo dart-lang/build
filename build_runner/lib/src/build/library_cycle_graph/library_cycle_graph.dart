@@ -7,13 +7,11 @@ import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
-import '../../contracts.dart';
 import 'library_cycle.dart';
 
 part '../../../_br_/src/build/library_cycle_graph/library_cycle_graph.part.dart';
 
 /// A directed acyclic graph of [LibraryCycle]s.
-@Invariant('children.every((c) => c.root != root)')
 abstract class LibraryCycleGraph
     implements Built<LibraryCycleGraph, LibraryCycleGraphBuilder> {
   static Serializer<LibraryCycleGraph> get serializer =>
@@ -23,7 +21,9 @@ abstract class LibraryCycleGraph
 
   factory LibraryCycleGraph([void Function(LibraryCycleGraphBuilder) updates]) =
       _$LibraryCycleGraph;
-  LibraryCycleGraph._();
+  LibraryCycleGraph._() {
+    assert(children.every((c) => c.root != root));
+  }
 
   /// All subgraphs in the graph, including the root.
   Iterable<LibraryCycleGraph> transitiveGraphs() {

@@ -43,9 +43,6 @@ class AssetTracker {
 
   /// Returns all assets found on disk: both package path files and artifact
   /// tree files.
-  @Ensures(
-    'result.every((f) => f.id.package.isNotEmpty && f.id.path.isNotEmpty)',
-  )
   Future<Set<AssetFile>> findFiles() async {
     final inputSources = await findInputSources();
     final artifactTreeFiles = await findArtifactTreeFiles();
@@ -56,12 +53,10 @@ class AssetTracker {
   }
 
   /// Returns all the assets found in the artifact tree.
-  @Ensures('result.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)')
   Future<Set<AssetId>> findArtifactTreeFiles() =>
       _listArtifactTreeAssetIds().toSet();
 
   /// Returns the set of original package inputs on disk.
-  @Ensures('result.every((id) => id.package.isNotEmpty && id.path.isNotEmpty)')
   Future<Set<AssetId>> findInputSources() {
     final targets = Stream<BuildTarget>.fromIterable(
       _buildConfigs.buildTargets.values,

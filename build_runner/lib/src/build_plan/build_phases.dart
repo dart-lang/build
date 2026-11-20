@@ -9,18 +9,12 @@ import 'package:built_collection/built_collection.dart';
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 
-import '../contracts.dart';
 import '../exceptions.dart';
 import '../logging/build_log.dart';
 import 'phase.dart';
 
 /// The [BuildPhases] defining the sequence of actions in a build, and their
 /// [Digest] and options digests.
-@Invariant('inBuildPhasesOptionsDigests.length == inBuildPhases.length')
-@Invariant(
-  'postBuildActionsOptionsDigests.length == '
-  'postBuildPhase.builderActions.length',
-)
 class BuildPhases {
   /// The sequence of actions in the main build.
   final BuiltList<InBuildPhase> inBuildPhases;
@@ -52,7 +46,13 @@ class BuildPhases {
          postBuildPhase?.builderActions ?? [],
        ),
        digest = _computeDigest([...inBuildPhases, ?postBuildPhase]),
-       lastAddsToLibraryPhase = _lastAddsToLibraryPhase(inBuildPhases);
+       lastAddsToLibraryPhase = _lastAddsToLibraryPhase(inBuildPhases) {
+    assert(inBuildPhasesOptionsDigests.length == this.inBuildPhases.length);
+    assert(
+      postBuildActionsOptionsDigests.length ==
+          this.postBuildPhase.builderActions.length,
+    );
+  }
 
   /// The phases, [inBuildPhases] followed by [postBuildPhase], by number.
   BuildPhase operator [](int index) {

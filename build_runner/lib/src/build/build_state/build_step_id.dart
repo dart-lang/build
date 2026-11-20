@@ -6,14 +6,9 @@ import 'package:build/build.dart' hide Builder;
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
-import '../../contracts.dart';
-
 part '../../../_br_/src/build/build_state/build_step_id.part.dart';
 
 /// Unique ID for a build step.
-@Invariant('primaryInput.package.isNotEmpty')
-@Invariant('primaryInput.path.isNotEmpty')
-@Invariant('phaseNumber >= 0')
 abstract class BuildStepId implements Built<BuildStepId, BuildStepIdBuilder> {
   static Serializer<BuildStepId> get serializer => _$buildStepIdSerializer;
 
@@ -24,5 +19,7 @@ abstract class BuildStepId implements Built<BuildStepId, BuildStepIdBuilder> {
     required AssetId primaryInput,
     required int phaseNumber,
   }) = _$BuildStepId._;
-  BuildStepId._();
+  BuildStepId._() {
+    assert(phaseNumber >= 0);
+  }
 }

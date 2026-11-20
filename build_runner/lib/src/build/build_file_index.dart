@@ -23,9 +23,9 @@ class BuildFileIndex {
   /// All IDs in `package` that refer to files and match.
   ///
   /// If [glob] is passed, return only IDs for which the glob matches the path.
-  @Requires('package.isNotEmpty')
   @Ensures('result.every((id) => id.package == package)')
   Iterable<AssetId> findFiles(String package, {Glob? glob}) {
+    assert(package.isNotEmpty);
     _sortedFileIdsByPackage ??= _computeSortedFileIdsByPackage();
     final list = _sortedFileIdsByPackage![package];
     if (list == null) return const [];
