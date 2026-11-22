@@ -6,6 +6,9 @@
 - Warn when `runs_before` in a builder definition names an unknown builder in
   a package that has builders in the build.
   [#2123](https://github.com/dart-lang/build/issues/2123)
+- Fix the progress display overwriting terminal lines above it when a line
+  with an input path hyperlink wraps.
+  [#5267](https://github.com/dart-lang/build/issues/5267)
 
 ## 2.17.1
 
