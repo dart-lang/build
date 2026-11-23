@@ -5,6 +5,8 @@
 - Allow `built_collection` 6.x.
 - Migrate to `package:dart_flutter_team_lints`.
 - Fix analysis issues and remove the lint suppressions that hid them.
+- Add `package:built_value_test/built_value_test.dart`, which exports
+  `matcher.dart`.
 
 ## 8.13.0
 
