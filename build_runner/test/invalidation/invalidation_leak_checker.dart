@@ -34,6 +34,11 @@ void main(List<String> arguments) async {
   // run with the arg `setup` first to make sure this has happened.
   if (arguments.contains('setup')) return;
 
+  // Memory grows over the first few thousand builds as caches fill, which is
+  // not a leak; measure only after that.
+  for (var i = 0; i != 5000; ++i) {
+    await tester.build(change: 'a.1');
+  }
   final before = ProcessInfo.currentRss;
   for (var i = 0; i != 5000; ++i) {
     await tester.build(change: 'a.1');
