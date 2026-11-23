@@ -1058,15 +1058,25 @@ class VerificationResult {
   ///
   /// To assert that a method was called zero times, use [verifyNever].
   void called(dynamic matcher) {
-    expect(callCount, wrapMatcher(matcher), reason: _unexpectedCallsReason());
+    final countMatcher = wrapMatcher(matcher);
+    // Describing the matching calls calls `toString` on every argument, so
+    // only do it when the count is wrong and the description is shown.
+    if (countMatcher.matches(callCount, {})) return;
+    expect(callCount, countMatcher, reason: _unexpectedCallsReason());
   }
+
+  /// The most matching calls listed when [called] fails.
+  static const _maxListedCalls = 10;
 
   String _unexpectedCallsReason() {
     const reason = 'Unexpected number of calls';
     if (_matchingCalls.isEmpty) return reason;
-    final calls = _matchingCalls
-        .map((call) => '  ${call.mock}.${call.invocation.toPrettyString()}')
-        .join('\n');
+    final calls = [
+      for (final call in _matchingCalls.take(_maxListedCalls))
+        '  ${call.mock}.${call.invocation.toPrettyString()}',
+      if (_matchingCalls.length > _maxListedCalls)
+        '  ... and ${_matchingCalls.length - _maxListedCalls} more',
+    ].join('\n');
     return '$reason. Matching calls:\n$calls';
   }
 }
