@@ -103,19 +103,24 @@ class AnsiBuffer {
           buffer.clear();
           buffer.write(' ' * hangingIndent);
           buffer.write(bufferString.substring(lastWhitespaceIndex));
-          // There can be no ANSI codes in the overflow.
-          lengthIgnoringAnsi = buffer.length;
+          // The overflow can contain ANSI codes that were written after the
+          // last whitespace.
+          lengthIgnoringAnsi = removeAnsi(buffer.toString()).length;
 
           // If hangingIndent > indent then the overflow from the first line
           // can fill line two and spill onto line three.
-          if (buffer.length >= width) {
+          if (lengthIgnoringAnsi >= width) {
             final bufferString = buffer.toString();
-            final overflow = bufferString.substring(width);
-            lines.add(bufferString.substring(0, width));
+            final splitIndex = _indexAfterVisibleCharacters(
+              bufferString,
+              width,
+            );
+            final overflow = bufferString.substring(splitIndex);
+            lines.add(bufferString.substring(0, splitIndex));
             buffer.clear();
             buffer.write(' ' * hangingIndent);
             buffer.write(overflow);
-            lengthIgnoringAnsi = buffer.length;
+            lengthIgnoringAnsi = removeAnsi(buffer.toString()).length;
           }
 
           lastWhitespaceIndex = null;
@@ -144,6 +149,31 @@ class AnsiBuffer {
       indent: line.indent,
       hangingIndent: line.hangingIndent,
     );
+  }
+
+  /// Returns the index in [string] after [count] characters that are not part
+  /// of ANSI codes.
+  static int _indexAfterVisibleCharacters(String string, int count) {
+    var index = 0;
+    while (count > 0) {
+      final ansiLength = _ansiPrefixLength(string, index);
+      if (ansiLength == 0) {
+        count--;
+        index++;
+      } else {
+        index += ansiLength;
+      }
+    }
+    return index;
+  }
+
+  /// Returns the length of the ANSI code at [index] in [string], or 0.
+  static int _ansiPrefixLength(String string, int index) {
+    for (final code in [reset, bold, boldRed]) {
+      if (string.startsWith(code, index)) return code.length;
+    }
+    final match = _hyperlinkPattern.matchAsPrefix(string, index);
+    return match == null ? 0 : match.end - index;
   }
 
   /// Removes all ANSI constants from [string], for testing.
