@@ -157,5 +157,40 @@ void main() {
         (' ' * 40 + '0123456789').padRight(80),
       ]);
     });
+
+    test('wraps before ANSI codes counting only visible characters', () {
+      buildLog.configuration = buildLog.configuration.rebuild((b) {
+        b.forceAnsiConsoleForTesting = true;
+      });
+      const path = 'lib/src/features/some_feature/widgets/some_widget.dart';
+      final buffer = AnsiBuffer();
+      buffer.writeLine([
+        '0s ',
+        AnsiBuffer.bold,
+        'some_builder',
+        AnsiBuffer.reset,
+        ' on 1269 inputs: 1 no-op',
+        '; ',
+        AnsiBuffer.bold,
+        AnsiBuffer.openHyperlink(
+          Uri.file('/home/someone/source/repos/my_app/$path'),
+        ),
+        path,
+        AnsiBuffer.closeHyperlink,
+        AnsiBuffer.reset,
+      ], hangingIndent: 3);
+
+      for (final line in buffer.lines) {
+        expect(AnsiBuffer.removeAnsi(line), hasLength(80));
+        expect(
+          '\x1B]8;;'.allMatches(line).length,
+          '\x1B\\'.allMatches(line).length,
+        );
+      }
+      expect(buffer.lines.map(AnsiBuffer.removeAnsi).toList(), [
+        '0s some_builder on 1269 inputs: 1 no-op;'.padRight(80),
+        '   $path'.padRight(80),
+      ]);
+    });
   });
 }
