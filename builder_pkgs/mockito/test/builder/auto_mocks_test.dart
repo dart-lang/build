@@ -3407,6 +3407,68 @@ void main() {
     );
   });
 
+  test(
+    'uses an enum value for a sealed return type implemented by an enum',
+    () async {
+      await expectSingleNonNullableOutput(
+        dedent(r'''
+        class Foo {
+          Bar m1() => E.a;
+          Future<Bar> m2() async => E.a;
+        }
+        sealed class Bar {}
+        enum E implements Bar { a, b }
+        '''),
+        _containsAllOf(
+          'returnValue: _i2.E.a)',
+          'returnValue: _i3.Future<_i2.Bar>.value(_i2.E.a))',
+        ),
+      );
+    },
+  );
+
+  test('prefers a fake of a subclass to an enum value for a sealed return '
+      'type', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Bar m1() => E.a;
+      }
+      sealed class Bar {}
+      enum E implements Bar { a }
+      class Baz extends Bar {}
+      '''),
+      _containsAllOf('returnValue: _FakeBaz_0('),
+    );
+  });
+
+  test('uses an enum value for a nested sealed return type', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Bar m1() => E.a;
+      }
+      sealed class Bar {}
+      sealed class Baz extends Bar {}
+      enum E implements Baz { a }
+      '''),
+      _containsAllOf('returnValue: _i2.E.a)'),
+    );
+  });
+
+  test('does not use a generic enum for a sealed return type', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Bar m1() => E.a;
+      }
+      sealed class Bar {}
+      enum E<T> implements Bar { a }
+      '''),
+      _containsAllOf('dummyValue<_i2.Bar>('),
+    );
+  });
+
   test('generates a fake of a subclass for a sealed return type', () async {
     await expectSingleNonNullableOutput(
       dedent(r'''
