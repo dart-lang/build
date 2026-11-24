@@ -1,5 +1,8 @@
 ## 5.8.2-wip
 
+* List the matching calls (up to 10) when `verify(...).called(...)` fails
+  because of an unexpected number of calls.
+  [#4710](https://github.com/dart-lang/build/issues/4710)
 * When a mocked method or getter returns a `sealed` class, use a fake of one of
   its subclasses as the value returned while stubbing or verifying, so that
   mocks generated with `@GenerateMocks` no longer need `provideDummy` for it.
