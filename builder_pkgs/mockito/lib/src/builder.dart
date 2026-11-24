@@ -316,6 +316,21 @@ $rawOutput
 
 /// An [Element] visitor which collects the elements of all of the
 /// [analyzer.InterfaceType]s which it encounters.
+/// Returns the classes which directly extend, implement or mix in the sealed
+/// class [element], or nothing if [element] is not a sealed class.
+///
+/// Direct subtypes of a sealed class are declared in the same library.
+Iterable<ClassElement> _directSubtypesOfSealed(InterfaceElement element) {
+  if (element is! ClassElement || !element.isSealed) return const [];
+  return element.library.classes.where(
+    (candidate) => [
+      if (candidate.supertype case final supertype?) supertype,
+      ...candidate.interfaces,
+      ...candidate.mixins,
+    ].any((type) => type.element == element),
+  );
+}
+
 class _TypeVisitor extends RecursiveElementVisitor2<void> {
   final _elements = <Element>{};
 
@@ -416,6 +431,13 @@ class _TypeVisitor extends RecursiveElementVisitor2<void> {
         // For some methods which return `FutureOr`, we need a dummy `Future`
         // subclass and value.
         _addType(_futureType);
+      }
+      if (!alreadyVisitedElement) {
+        // A sealed class can't be faked, so a fake of one of its subtypes may
+        // be generated instead; that subtype must be importable.
+        for (final subtype in _directSubtypesOfSealed(type.element)) {
+          _addType(subtype.thisType);
+        }
       }
     } else if (type is analyzer.FunctionType) {
       _addType(type.returnType);
@@ -1918,7 +1940,11 @@ class _MockClassInfo {
           if (fallbackGenerator != null)
             'returnValue': _fallbackGeneratorCode(method, fallbackGenerator)
           else if (typeSystem._returnTypeIsNonNullable(method))
-            'returnValue': _dummyValue(returnType, invocation),
+            'returnValue': _dummyValue(
+              returnType,
+              invocation,
+              forStubbing: true,
+            ),
           if (returnValueForMissingStub != null)
             'returnValueForMissingStub': returnValueForMissingStub,
         };
@@ -1968,18 +1994,28 @@ class _MockClassInfo {
     'package:mockito/src/dummies.dart',
   ).call([refer('this'), invocation], {}, [_typeReference(type)]);
 
-  Expression _dummyValue(analyzer.DartType type, Expression invocation) {
+  /// Returns a dummy value of type [type].
+  ///
+  /// If [forStubbing] is `true`, the value is only used as the `returnValue`
+  /// passed to `noSuchMethod`, which is discarded once a stub or a
+  /// verification has been recorded. In that case a `sealed` class may be
+  /// represented by a fake of one of its subclasses.
+  Expression _dummyValue(
+    analyzer.DartType type,
+    Expression invocation, {
+    bool forStubbing = false,
+  }) {
     // The type is nullable, just take a shortcut and return `null`.
     if (typeSystem.isNullable(type)) {
       return literalNull;
     }
 
     if (type is analyzer.FunctionType) {
-      return _dummyFunctionValue(type, invocation);
+      return _dummyFunctionValue(type, invocation, forStubbing: forStubbing);
     }
 
     if (type is analyzer.RecordType) {
-      return _dummyRecordValue(type, invocation);
+      return _dummyRecordValue(type, invocation, forStubbing: forStubbing);
     }
 
     if (type is! analyzer.InterfaceType) {
@@ -2041,7 +2077,13 @@ class _MockClassInfo {
         // Create a real Future with a legal value, via [Future.value].
         final futureValueArguments =
             typeArgumentIsPotentiallyNonNullable
-                ? [_dummyValue(typeArgument, invocation)]
+                ? [
+                  _dummyValue(
+                    typeArgument,
+                    invocation,
+                    forStubbing: forStubbing,
+                  ),
+                ]
                 : <Expression>[];
         return _futureReference(
           _typeReference(typeArgument),
@@ -2110,8 +2152,8 @@ class _MockClassInfo {
             ..add(_typeReference(keyType))
             ..add(_typeReference(valueType));
         }).call([
-          _dummyValue(keyType, invocation),
-          _dummyValue(valueType, invocation),
+          _dummyValue(keyType, invocation, forStubbing: forStubbing),
+          _dummyValue(valueType, invocation, forStubbing: forStubbing),
         ]);
       }
     } else if (type.element is ExtensionTypeElement &&
@@ -2130,7 +2172,7 @@ class _MockClassInfo {
 
     // This class is unknown; we must likely generate a fake class, and return
     // an instance here.
-    return _dummyValueImplementing(type, invocation);
+    return _dummyValueImplementing(type, invocation, forStubbing: forStubbing);
   }
 
   bool _isFixnumType(analyzer.DartType type) {
@@ -2156,8 +2198,9 @@ class _MockClassInfo {
 
   Expression _dummyFunctionValue(
     analyzer.FunctionType type,
-    Expression invocation,
-  ) {
+    Expression invocation, {
+    bool forStubbing = false,
+  }) {
     return Method((b) {
       _withTypeParameters(type.typeParameters, (typeParamsWithBounds, _) {
         b.types.addAll(typeParamsWithBounds);
@@ -2200,7 +2243,12 @@ class _MockClassInfo {
         if (type.returnType is analyzer.VoidType) {
           b.body = Code('');
         } else {
-          b.body = _dummyValue(type.returnType, invocation).code;
+          b.body =
+              _dummyValue(
+                type.returnType,
+                invocation,
+                forStubbing: forStubbing,
+              ).code;
         }
       });
     }).genericClosure;
@@ -2208,10 +2256,17 @@ class _MockClassInfo {
 
   Expression _dummyRecordValue(
     analyzer.RecordType type,
-    Expression invocation,
-  ) => literalRecord(
-    [for (final f in type.positionalFields) _dummyValue(f.type, invocation)],
-    {for (final f in type.namedFields) f.name: _dummyValue(f.type, invocation)},
+    Expression invocation, {
+    bool forStubbing = false,
+  }) => literalRecord(
+    [
+      for (final f in type.positionalFields)
+        _dummyValue(f.type, invocation, forStubbing: forStubbing),
+    ],
+    {
+      for (final f in type.namedFields)
+        f.name: _dummyValue(f.type, invocation, forStubbing: forStubbing),
+    },
   );
 
   Expression _dummyFakedValue(
@@ -2234,17 +2289,24 @@ class _MockClassInfo {
 
   Expression _dummyValueImplementing(
     analyzer.InterfaceType dartType,
-    Expression invocation,
-  ) => switch (dartType.element) {
+    Expression invocation, {
+    bool forStubbing = false,
+  }) => switch (dartType.element) {
     EnumElement(:final fields) => _typeReference(
       dartType,
     ).property(fields.firstWhere((f) => f.isEnumConstant).name!),
+    ClassElement(isSealed: true) when forStubbing =>
+    // A sealed class can't be faked, but one of its subclasses might be.
+    // This is only done for values which are discarded after stubbing, so
+    // that the choice of a subclass never affects the code under test.
+    switch (_implementableSubtypeOfSealed(dartType)) {
+      final subtype? => _dummyFakedValue(subtype, invocation),
+      null => _dummyValueFallbackToRuntime(dartType, invocation),
+    },
     ClassElement() && final element
         when element.isBase || element.isFinal || element.isSealed =>
       // This class can't be faked, so try to call `dummyValue` to get
       // a dummy value at run time.
-      // TODO(yanok): Consider checking subtypes, maybe some of them are
-      // implementable.
       _dummyValueFallbackToRuntime(dartType, invocation),
     ClassElement() => _dummyFakedValue(dartType, invocation),
     MixinElement() =>
@@ -2254,7 +2316,11 @@ class _MockClassInfo {
     _dummyFakedValue(dartType, invocation),
     ExtensionTypeElement(:final typeErasure)
         when !typeErasure.containsPrivateName =>
-      _dummyValue(typeErasure, invocation).asA(_typeReference(dartType)),
+      _dummyValue(
+        typeErasure,
+        invocation,
+        forStubbing: forStubbing,
+      ).asA(_typeReference(dartType)),
     ExtensionTypeElement() => _dummyValueFallbackToRuntime(
       dartType,
       invocation,
@@ -2266,6 +2332,35 @@ class _MockClassInfo {
         'unknown, please report a bug.',
       ),
   };
+
+  /// Returns a subtype of the sealed [sealedType] which can be faked, or
+  /// `null` if there is none.
+  ///
+  /// Direct subtypes of a sealed class are declared in the same library. A
+  /// subtype can be faked if it is public, has no type parameters, and is
+  /// not itself `base`, `final` or `sealed`. Sealed subtypes are searched
+  /// recursively.
+  analyzer.InterfaceType? _implementableSubtypeOfSealed(
+    analyzer.InterfaceType sealedType, [
+    Set<InterfaceElement>? visited,
+  ]) {
+    final sealedElement = sealedType.element;
+    visited = {...?visited, sealedElement};
+    for (final candidate in _directSubtypesOfSealed(sealedElement)) {
+      if (visited.contains(candidate)) continue;
+      if (candidate.isPrivate || candidate.typeParameters.isNotEmpty) continue;
+      final candidateType = candidate.thisType;
+      if (!typeSystem.isSubtypeOf(candidateType, sealedType)) continue;
+      if (candidate.isSealed) {
+        final subtype = _implementableSubtypeOfSealed(candidateType, visited);
+        if (subtype != null) return subtype;
+        continue;
+      }
+      if (candidate.isBase || candidate.isFinal) continue;
+      return candidateType;
+    }
+    return null;
+  }
 
   /// Adds a `Fake` implementation of [elementToFake], named [fakeName].
   void _addFakeClass(String fakeName, InterfaceElement elementToFake) {
@@ -2612,7 +2707,7 @@ class _MockClassInfo {
       if (fallbackGenerator != null)
         'returnValue': _fallbackGeneratorCode(getter, fallbackGenerator)
       else if (typeSystem._returnTypeIsNonNullable(getter))
-        'returnValue': _dummyValue(returnType, invocation),
+        'returnValue': _dummyValue(returnType, invocation, forStubbing: true),
       if (mockTarget.onMissingStub == OnMissingStub.returnDefault)
         'returnValueForMissingStub':
             (fallbackGenerator != null

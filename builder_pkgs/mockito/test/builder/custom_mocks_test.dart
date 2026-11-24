@@ -497,6 +497,37 @@ void main() {
     );
   });
 
+  test('does not use a fake of a subclass of a sealed class as the default '
+      'value of a nice mock', () async {
+    final mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent('''
+        class Foo {
+          Bar m() => Baz();
+        }
+        sealed class Bar {}
+        class Baz extends Bar {}
+        '''),
+      'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+
+        @GenerateNiceMocks([MockSpec<Foo>()])
+        void main() {}
+        ''',
+    });
+    expect(
+      mocksContent,
+      containsIgnoringFormatting('returnValue: _FakeBaz_0('),
+    );
+    expect(
+      mocksContent,
+      containsIgnoringFormatting(
+        'returnValueForMissingStub: _i3.dummyValue<_i2.Bar>(',
+      ),
+    );
+  });
+
   test(
     'generates mock getters with private types, given unsupportedMembers',
     () async {
