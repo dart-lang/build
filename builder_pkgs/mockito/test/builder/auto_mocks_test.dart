@@ -3456,6 +3456,52 @@ void main() {
     );
   });
 
+  test('uses an enum value for a sealed return type implemented through a '
+      'mixin', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Mixed m1() => WithMixin.a;
+      }
+      sealed class Mixed {}
+      mixin MixedM implements Mixed {}
+      enum WithMixin with MixedM { a }
+      '''),
+      _containsAllOf('returnValue: _i2.WithMixin.a)'),
+    );
+  });
+
+  test('generates a fake of a class which implements a sealed class through a '
+      'mixin', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Bar m1() => Baz();
+      }
+      sealed class Bar {}
+      mixin M implements Bar {}
+      class Baz with M {}
+      '''),
+      _containsAllOf('returnValue: _FakeBaz_0('),
+    );
+  });
+
+  test('uses an enum value for a sealed return type implemented through '
+      'nested mixins', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Bar m1() => E.a;
+      }
+      sealed class Bar {}
+      mixin M1 implements Bar {}
+      mixin M2 implements M1 {}
+      enum E with M2 { a }
+      '''),
+      _containsAllOf('returnValue: _i2.E.a)'),
+    );
+  });
+
   test('does not use a generic enum for a sealed return type', () async {
     await expectSingleNonNullableOutput(
       dedent(r'''
