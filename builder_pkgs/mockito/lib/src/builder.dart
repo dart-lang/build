@@ -314,26 +314,50 @@ $rawOutput
   }
 }
 
-/// An [Element] visitor which collects the elements of all of the
-/// [analyzer.InterfaceType]s which it encounters.
 /// Returns the classes and enums which directly extend, implement or mix in
 /// the sealed class [element], or nothing if [element] is not a sealed class.
 ///
-/// Direct subtypes of a sealed class are declared in the same library.
+/// Direct subtypes of a sealed class are declared in the same library. A mixin
+/// declared there which implements or is constrained on [element] is not
+/// returned itself, since it has no values, but the classes and enums of that
+/// library which implement or mix in the mixin are.
 Iterable<InterfaceElement> _directSubtypesOfSealed(InterfaceElement element) {
   if (element is! ClassElement || !element.isSealed) return const [];
-  return <InterfaceElement>[
-    ...element.library.classes,
-    ...element.library.enums,
-  ].where(
-    (candidate) => [
+  return _subtypesInLibrary(element, {element});
+}
+
+/// Returns the classes and enums in the library of [element] which directly
+/// extend, implement or mix in [element], or which reach it through mixins
+/// declared in that library.
+///
+/// Mixins already in [visited] are not searched again.
+Iterable<InterfaceElement> _subtypesInLibrary(
+  InterfaceElement element,
+  Set<InterfaceElement> visited,
+) sync* {
+  final library = element.library;
+  for (final candidate in <InterfaceElement>[
+    ...library.classes,
+    ...library.enums,
+    ...library.mixins,
+  ]) {
+    final isDirectSubtype = [
       if (candidate.supertype case final supertype?) supertype,
       ...candidate.interfaces,
       ...candidate.mixins,
-    ].any((type) => type.element == element),
-  );
+      if (candidate is MixinElement) ...candidate.superclassConstraints,
+    ].any((type) => type.element == element);
+    if (!isDirectSubtype || !visited.add(candidate)) continue;
+    if (candidate is MixinElement) {
+      yield* _subtypesInLibrary(candidate, visited);
+    } else {
+      yield candidate;
+    }
+  }
 }
 
+/// An [Element] visitor which collects the elements of all of the
+/// [analyzer.InterfaceType]s which it encounters.
 class _TypeVisitor extends RecursiveElementVisitor2<void> {
   final _elements = <Element>{};
 
