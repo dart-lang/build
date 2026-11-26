@@ -3486,6 +3486,22 @@ void main() {
     );
   });
 
+  test('generates a fake of a class which reaches a sealed class only through '
+      'a mixin constrained on it', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Bar m1() => C();
+      }
+      sealed class Bar {}
+      class _Impl extends Bar {}
+      mixin M on Bar {}
+      class C extends _Impl with M {}
+      '''),
+      _containsAllOf('returnValue: _FakeC_0('),
+    );
+  });
+
   test('uses an enum value for a sealed return type implemented through '
       'nested mixins', () async {
     await expectSingleNonNullableOutput(
