@@ -6,6 +6,9 @@
 - Warn when `runs_before` in a builder definition names an unknown builder in
   a package that has builders in the build.
   [#2123](https://github.com/dart-lang/build/issues/2123)
+- Bug fix: prints and throws in a builder's `buildExtensions` are now logged,
+  as for its builder factory, instead of printing directly or crashing.
+  [#4092](https://github.com/dart-lang/build/issues/4092)
 - Fix the progress display overwriting terminal lines above it when a line
   with an input path hyperlink wraps.
   [#5267](https://github.com/dart-lang/build/issues/5267)

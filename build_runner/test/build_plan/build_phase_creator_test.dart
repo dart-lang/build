@@ -16,6 +16,7 @@ import 'package:build_runner/src/build_plan/builder_factories.dart';
 import 'package:build_runner/src/build_plan/phase.dart';
 import 'package:build_runner/src/build_plan/testing_overrides.dart';
 import 'package:build_runner/src/exceptions.dart';
+import 'package:build_runner/src/logging/build_log.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:test/test.dart';
 
@@ -474,6 +475,64 @@ void main() {
       },
     );
 
+    group('buildExtensions', () {
+      final output = <String>[];
+
+      setUp(() {
+        output.clear();
+        buildLog.configuration = buildLog.configuration.rebuild(
+          (b) => b
+            ..printOnFailure = output.add
+            ..verbose = true,
+        );
+      });
+
+      Future<BuildPhases> createPhases(Builder Function() builder) async {
+        final buildConfigs = await BuildConfigs.load(
+          buildPackages: buildPackages,
+          testingOverrides: TestingOverrides(
+            defaultRootPackageSources: ['**'].build(),
+          ),
+        );
+        return BuildPhaseCreator(
+          builderFactories: BuilderFactories({
+            'b:builder': [(_) => builder()],
+          }),
+          buildPackages: buildPackages,
+          buildConfigs: buildConfigs,
+          builderDefinitions: [
+            BuilderDefinition('b:builder', autoApply: AutoApply.dependents),
+          ],
+          builderConfigOverrides: BuiltMap(),
+          isReleaseBuild: false,
+        ).createBuildPhases();
+      }
+
+      test('prints are logged against the builder', () async {
+        final phases = await createPhases(
+          () => _ExtensionsBuilder(() {
+            print('printed in buildExtensions');
+          }),
+        );
+        expect(phases.inBuildPhases.single.buildExtensions, {
+          '.txt': ['.out'],
+        });
+        expect(output, contains(contains('printed in buildExtensions')));
+      });
+
+      test('throws are logged against the builder', () async {
+        await expectLater(
+          createPhases(
+            () => _ExtensionsBuilder(() {
+              throw StateError('thrown in buildExtensions');
+            }),
+          ),
+          throwsA(isA<CannotBuildException>()),
+        );
+        expect(output, contains(contains('thrown in buildExtensions')));
+      });
+    });
+
     test('throws ArgumentError if builder definition has both addsToLibrary '
         'and isOptional', () {
       expect(
@@ -558,6 +617,23 @@ class CoolBuilder extends Builder {
   final buildExtensions = {
     '.txt': ['.out'],
   };
+
+  @override
+  Future build(BuildStep buildStep) async => throw UnimplementedError();
+}
+
+class _ExtensionsBuilder extends Builder {
+  final void Function() onBuildExtensions;
+
+  _ExtensionsBuilder(this.onBuildExtensions);
+
+  @override
+  Map<String, List<String>> get buildExtensions {
+    onBuildExtensions();
+    return {
+      '.txt': ['.out'],
+    };
+  }
 
   @override
   Future build(BuildStep buildStep) async => throw UnimplementedError();

@@ -182,16 +182,23 @@ class BuildPhaseCreator {
           isRoot: buildPackages[buildTarget.package]!.isOutput,
         );
 
-        final builder = BuildLogLogger.scopeLogSync(
-          () => builderFactory(options),
-          buildLog.loggerForOther(builderDefinition.key),
-        );
-        if (builder == null) throw const CannotBuildException();
-        _validateBuilder(builder);
+        // `buildExtensions` is user code too, so read it here, where prints
+        // and throws are logged against the builder.
+        final created = BuildLogLogger.scopeLogSync(() {
+          final builder = builderFactory(options);
+          final buildExtensions = builder.buildExtensions;
+          // `expectedOutputs` reads and caches `buildExtensions`.
+          builder.matchesInput(AssetId('a', 'a'));
+          return (builder, buildExtensions);
+        }, buildLog.loggerForOther(builderDefinition.key));
+        if (created == null) throw const CannotBuildException();
+        final (builder, buildExtensions) = created;
+        _validateBuilder(builder, buildExtensions);
 
         result.add(
           InBuildPhase(
             builder: builder,
+            buildExtensions: buildExtensions,
             key: builderDefinition.key,
             package: buildTarget.package,
             targetSources: buildTarget.sources,
@@ -397,15 +404,18 @@ void warnForUnknownBuilders(
   }
 }
 
-void _validateBuilder(Builder builder) {
-  final inputExtensions = builder.buildExtensions.keys.toSet();
+void _validateBuilder(
+  Builder builder,
+  Map<String, List<String>> buildExtensions,
+) {
+  final inputExtensions = buildExtensions.keys.toSet();
   final matching = inputExtensions.intersection(
     // https://github.com/dart-lang/linter/issues/4336
     // ignore: collection_methods_unrelated_type
-    {for (final outputs in builder.buildExtensions.values) ...outputs},
+    {for (final outputs in buildExtensions.values) ...outputs},
   );
   if (matching.isNotEmpty) {
-    final mapDescription = builder.buildExtensions.entries
+    final mapDescription = buildExtensions.entries
         .map((e) => '${e.key}: ${e.value},')
         .join('\n');
     throw ArgumentError.value(
