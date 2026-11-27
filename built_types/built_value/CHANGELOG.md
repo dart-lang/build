@@ -1,6 +1,6 @@
 # Changelog
 
-## 8.13.1-wip
+## 8.13.1
 
 - Allow `built_collection` 6.x.
 - Document how missing and `null` fields are deserialized.

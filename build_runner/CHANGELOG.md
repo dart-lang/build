@@ -11,6 +11,9 @@
   external compiler, such as DDC, see the parts. For ordering, an
   `adds_to_library` builder counts as writing `.part.dart`, so builders with
   `required_inputs: ['.dart']` run after it.
+- Bug fix: prints and throws in a builder's `buildExtensions` are now logged,
+  as for its builder factory, instead of printing directly or crashing.
+  [#4092](https://github.com/dart-lang/build/issues/4092)
 - Fix the progress display overwriting terminal lines above it when a line
   with an input path hyperlink wraps.
   [#5267](https://github.com/dart-lang/build/issues/5267)

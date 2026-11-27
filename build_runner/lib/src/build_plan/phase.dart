@@ -47,6 +47,11 @@ abstract class BuildAction {
 class InBuildPhase extends BuildPhase implements BuildAction {
   final Builder builder;
 
+  /// The `buildExtensions` of [builder], read once.
+  ///
+  /// `buildExtensions` is user code, so reading it can print or throw.
+  final Map<String, List<String>> buildExtensions;
+
   /// The key with which the builder is referred to in `build.yaml` files.
   ///
   /// It's `<package>:<name>`, for example `built_value_generator:built_value`.
@@ -78,6 +83,7 @@ class InBuildPhase extends BuildPhase implements BuildAction {
   InBuildPhase._(
     this.package,
     this.builder,
+    this.buildExtensions,
     this.options, {
     required this.targetSources,
     required this.generateFor,
@@ -88,7 +94,7 @@ class InBuildPhase extends BuildPhase implements BuildAction {
     this.addsToLibrary = false,
   }) {
     if (addsToLibrary) {
-      final nonDartInputs = builder.buildExtensions.keys.where(
+      final nonDartInputs = buildExtensions.keys.where(
         (input) => !input.endsWith('.dart'),
       );
       if (nonDartInputs.isNotEmpty) {
@@ -114,8 +120,11 @@ class InBuildPhase extends BuildPhase implements BuildAction {
   ///
   /// [addsToLibrary] specifies that the builder is capable of contributing to
   /// part files.
+  ///
+  /// [buildExtensions] defaults to the `buildExtensions` of [builder].
   InBuildPhase({
     required Builder builder,
+    Map<String, List<String>>? buildExtensions,
     required String key,
     required String package,
     InputSet targetSources = const InputSet(),
@@ -127,6 +136,7 @@ class InBuildPhase extends BuildPhase implements BuildAction {
   }) : this._(
          package,
          builder,
+         buildExtensions ?? builder.buildExtensions,
          options,
          targetSources: InputMatcher(targetSources),
          generateFor: InputMatcher(generateFor),
@@ -151,7 +161,7 @@ class InBuildPhase extends BuildPhase implements BuildAction {
   @override
   int get identity => _deepEquals.hash([
     displayName,
-    builder.buildExtensions,
+    buildExtensions,
     package,
     targetSources,
     generateFor,

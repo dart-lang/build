@@ -314,23 +314,50 @@ $rawOutput
   }
 }
 
-/// An [Element] visitor which collects the elements of all of the
-/// [analyzer.InterfaceType]s which it encounters.
-/// Returns the classes which directly extend, implement or mix in the sealed
-/// class [element], or nothing if [element] is not a sealed class.
+/// Returns the classes and enums which directly extend, implement or mix in
+/// the sealed class [element], or nothing if [element] is not a sealed class.
 ///
-/// Direct subtypes of a sealed class are declared in the same library.
-Iterable<ClassElement> _directSubtypesOfSealed(InterfaceElement element) {
+/// Direct subtypes of a sealed class are declared in the same library. A mixin
+/// declared there which implements or is constrained on [element] is not
+/// returned itself, since it has no values, but the classes and enums of that
+/// library which implement or mix in the mixin are.
+Iterable<InterfaceElement> _directSubtypesOfSealed(InterfaceElement element) {
   if (element is! ClassElement || !element.isSealed) return const [];
-  return element.library.classes.where(
-    (candidate) => [
+  return _subtypesInLibrary(element, {element});
+}
+
+/// Returns the classes and enums in the library of [element] which directly
+/// extend, implement or mix in [element], or which reach it through mixins
+/// declared in that library.
+///
+/// Mixins already in [visited] are not searched again.
+Iterable<InterfaceElement> _subtypesInLibrary(
+  InterfaceElement element,
+  Set<InterfaceElement> visited,
+) sync* {
+  final library = element.library;
+  for (final candidate in <InterfaceElement>[
+    ...library.classes,
+    ...library.enums,
+    ...library.mixins,
+  ]) {
+    final isDirectSubtype = [
       if (candidate.supertype case final supertype?) supertype,
       ...candidate.interfaces,
       ...candidate.mixins,
-    ].any((type) => type.element == element),
-  );
+      if (candidate is MixinElement) ...candidate.superclassConstraints,
+    ].any((type) => type.element == element);
+    if (!isDirectSubtype || !visited.add(candidate)) continue;
+    if (candidate is MixinElement) {
+      yield* _subtypesInLibrary(candidate, visited);
+    } else {
+      yield candidate;
+    }
+  }
 }
 
+/// An [Element] visitor which collects the elements of all of the
+/// [analyzer.InterfaceType]s which it encounters.
 class _TypeVisitor extends RecursiveElementVisitor2<void> {
   final _elements = <Element>{};
 
@@ -2296,11 +2323,13 @@ class _MockClassInfo {
       dartType,
     ).property(fields.firstWhere((f) => f.isEnumConstant).name!),
     ClassElement(isSealed: true) when forStubbing =>
-    // A sealed class can't be faked, but one of its subclasses might be.
-    // This is only done for values which are discarded after stubbing, so
-    // that the choice of a subclass never affects the code under test.
-    switch (_implementableSubtypeOfSealed(dartType)) {
-      final subtype? => _dummyFakedValue(subtype, invocation),
+    // A sealed class can't be faked, but one of its subclasses might be,
+    // and an enum implementing it has values. This is only done for values
+    // which are discarded after stubbing, so that the choice of a subtype
+    // never affects the code under test.
+    switch (_implementableSubtypeOfSealed(dartType) ??
+        _implementableSubtypeOfSealed(dartType, allowEnums: true)) {
+      final subtype? => _dummyValueImplementing(subtype, invocation),
       null => _dummyValueFallbackToRuntime(dartType, invocation),
     },
     ClassElement() && final element
@@ -2337,13 +2366,18 @@ class _MockClassInfo {
   /// `null` if there is none.
   ///
   /// Direct subtypes of a sealed class are declared in the same library. A
-  /// subtype can be faked if it is public, has no type parameters, and is
+  /// subclass can be faked if it is public, has no type parameters, and is
   /// not itself `base`, `final` or `sealed`. Sealed subtypes are searched
   /// recursively.
+  ///
+  /// If [allowEnums] is `true`, a public enum without type parameters which
+  /// implements [sealedType] is also returned; one of its values is used
+  /// instead of a fake.
   analyzer.InterfaceType? _implementableSubtypeOfSealed(
-    analyzer.InterfaceType sealedType, [
+    analyzer.InterfaceType sealedType, {
+    bool allowEnums = false,
     Set<InterfaceElement>? visited,
-  ]) {
+  }) {
     final sealedElement = sealedType.element;
     visited = {...?visited, sealedElement};
     for (final candidate in _directSubtypesOfSealed(sealedElement)) {
@@ -2351,13 +2385,19 @@ class _MockClassInfo {
       if (candidate.isPrivate || candidate.typeParameters.isNotEmpty) continue;
       final candidateType = candidate.thisType;
       if (!typeSystem.isSubtypeOf(candidateType, sealedType)) continue;
-      if (candidate.isSealed) {
-        final subtype = _implementableSubtypeOfSealed(candidateType, visited);
-        if (subtype != null) return subtype;
-        continue;
+      switch (candidate) {
+        case EnumElement() when allowEnums:
+          return candidateType;
+        case ClassElement(isSealed: true):
+          final subtype = _implementableSubtypeOfSealed(
+            candidateType,
+            allowEnums: allowEnums,
+            visited: visited,
+          );
+          if (subtype != null) return subtype;
+        case ClassElement(isBase: false, isFinal: false):
+          return candidateType;
       }
-      if (candidate.isBase || candidate.isFinal) continue;
-      return candidateType;
     }
     return null;
   }

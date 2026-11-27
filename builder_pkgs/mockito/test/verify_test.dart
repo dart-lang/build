@@ -55,6 +55,13 @@ class LongToString {
       '>';
 }
 
+class ThrowingToString extends LongToString {
+  ThrowingToString() : super(const [], const {}, '');
+
+  @override
+  String toString() => throw StateError('toString must not be called');
+}
+
 class _MockedClass extends Mock implements _RealClass {}
 
 void expectFail(Pattern expectedMessage, void Function() expectedToFail) {
@@ -314,13 +321,55 @@ void main() {
       test('more than one actual call fails', () {
         mock.methodWithoutArgs();
         mock.methodWithoutArgs();
-        expectFail(
-          'Expected: <1>\n  Actual: <2>\nUnexpected number of calls\n',
-          () {
-            verify(mock.methodWithoutArgs()).called(1);
-          },
-        );
+        expectFail('Expected: <1>\n'
+            '  Actual: <2>\n'
+            'Unexpected number of calls. Matching calls:\n'
+            '  _MockedClass.methodWithoutArgs()\n'
+            '  _MockedClass.methodWithoutArgs()\n', () {
+          verify(mock.methodWithoutArgs()).called(1);
+        });
       });
+    });
+
+    test('lists matching calls with their arguments', () {
+      mock.methodWithNormalArgs(1);
+      mock.methodWithNormalArgs(2);
+      mock.methodWithNormalArgs(3);
+      expectFail('Expected: <2>\n'
+          '  Actual: <3>\n'
+          'Unexpected number of calls. Matching calls:\n'
+          '  _MockedClass.methodWithNormalArgs(1)\n'
+          '  _MockedClass.methodWithNormalArgs(2)\n'
+          '  _MockedClass.methodWithNormalArgs(3)\n', () {
+        verify(mock.methodWithNormalArgs(any)).called(2);
+      });
+    });
+
+    test('limits the listed matching calls', () {
+      for (var i = 1; i <= 12; i++) {
+        mock.methodWithNormalArgs(i);
+      }
+      expectFail('Expected: <1>\n'
+          '  Actual: <12>\n'
+          'Unexpected number of calls. Matching calls:\n'
+          '  _MockedClass.methodWithNormalArgs(1)\n'
+          '  _MockedClass.methodWithNormalArgs(2)\n'
+          '  _MockedClass.methodWithNormalArgs(3)\n'
+          '  _MockedClass.methodWithNormalArgs(4)\n'
+          '  _MockedClass.methodWithNormalArgs(5)\n'
+          '  _MockedClass.methodWithNormalArgs(6)\n'
+          '  _MockedClass.methodWithNormalArgs(7)\n'
+          '  _MockedClass.methodWithNormalArgs(8)\n'
+          '  _MockedClass.methodWithNormalArgs(9)\n'
+          '  _MockedClass.methodWithNormalArgs(10)\n'
+          '  ... and 2 more\n', () {
+        verify(mock.methodWithNormalArgs(any)).called(1);
+      });
+    });
+
+    test('does not describe arguments when the count matches', () {
+      mock.methodWithLongArgs(ThrowingToString(), null);
+      verify(mock.methodWithLongArgs(any, any)).called(1);
     });
 
     group('expecting more than two calls', () {
@@ -336,7 +385,8 @@ void main() {
         expectFail('Expected: a value greater than <2>\n'
             '  Actual: <1>\n'
             '   Which: is not a value greater than <2>\n'
-            'Unexpected number of calls\n', () {
+            'Unexpected number of calls. Matching calls:\n'
+            '  _MockedClass.methodWithoutArgs()\n', () {
           verify(mock.methodWithoutArgs()).called(greaterThan(2));
         });
       });
@@ -361,7 +411,8 @@ void main() {
         mock.methodWithoutArgs();
         expectFail('Expected: <0>\n'
             '  Actual: <1>\n'
-            'Unexpected number of calls\n', () {
+            'Unexpected number of calls. Matching calls:\n'
+            '  _MockedClass.methodWithoutArgs()\n', () {
           verify(mock.methodWithoutArgs()).called(0);
         });
       });

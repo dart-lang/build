@@ -1,6 +1,8 @@
 ## 3.5.24-wip
 
 - Use `build_runner` 2.17.2-wip.
+- Write the `build_runner` pin as a range that allows only that version, so
+  `pub publish` doesn't warn.
 
 ## 3.5.23
 

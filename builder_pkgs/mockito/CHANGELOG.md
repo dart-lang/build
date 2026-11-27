@@ -1,7 +1,11 @@
 ## 5.8.2-wip
 
+* List the matching calls (up to 10) when `verify(...).called(...)` fails
+  because of an unexpected number of calls.
+  [#4710](https://github.com/dart-lang/build/issues/4710)
 * When a mocked method or getter returns a `sealed` class, use a fake of one of
-  its subclasses as the value returned while stubbing or verifying, so that
+  its subclasses, or else a value of an enum that implements it, directly or
+  through a mixin, as the value returned while stubbing or verifying, so that
   mocks generated with `@GenerateMocks` no longer need `provideDummy` for it.
   Nice mocks still need `provideDummy` for their default return value.
   [#4462](https://github.com/dart-lang/build/issues/4462)

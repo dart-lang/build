@@ -3407,6 +3407,130 @@ void main() {
     );
   });
 
+  test(
+    'uses an enum value for a sealed return type implemented by an enum',
+    () async {
+      await expectSingleNonNullableOutput(
+        dedent(r'''
+        class Foo {
+          Bar m1() => E.a;
+          Future<Bar> m2() async => E.a;
+        }
+        sealed class Bar {}
+        enum E implements Bar { a, b }
+        '''),
+        _containsAllOf(
+          'returnValue: _i2.E.a)',
+          'returnValue: _i3.Future<_i2.Bar>.value(_i2.E.a))',
+        ),
+      );
+    },
+  );
+
+  test('prefers a fake of a subclass to an enum value for a sealed return '
+      'type', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Bar m1() => E.a;
+      }
+      sealed class Bar {}
+      enum E implements Bar { a }
+      class Baz extends Bar {}
+      '''),
+      _containsAllOf('returnValue: _FakeBaz_0('),
+    );
+  });
+
+  test('uses an enum value for a nested sealed return type', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Bar m1() => E.a;
+      }
+      sealed class Bar {}
+      sealed class Baz extends Bar {}
+      enum E implements Baz { a }
+      '''),
+      _containsAllOf('returnValue: _i2.E.a)'),
+    );
+  });
+
+  test('uses an enum value for a sealed return type implemented through a '
+      'mixin', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Mixed m1() => WithMixin.a;
+      }
+      sealed class Mixed {}
+      mixin MixedM implements Mixed {}
+      enum WithMixin with MixedM { a }
+      '''),
+      _containsAllOf('returnValue: _i2.WithMixin.a)'),
+    );
+  });
+
+  test('generates a fake of a class which implements a sealed class through a '
+      'mixin', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Bar m1() => Baz();
+      }
+      sealed class Bar {}
+      mixin M implements Bar {}
+      class Baz with M {}
+      '''),
+      _containsAllOf('returnValue: _FakeBaz_0('),
+    );
+  });
+
+  test('generates a fake of a class which reaches a sealed class only through '
+      'a mixin constrained on it', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Bar m1() => C();
+      }
+      sealed class Bar {}
+      class _Impl extends Bar {}
+      mixin M on Bar {}
+      class C extends _Impl with M {}
+      '''),
+      _containsAllOf('returnValue: _FakeC_0('),
+    );
+  });
+
+  test('uses an enum value for a sealed return type implemented through '
+      'nested mixins', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Bar m1() => E.a;
+      }
+      sealed class Bar {}
+      mixin M1 implements Bar {}
+      mixin M2 implements M1 {}
+      enum E with M2 { a }
+      '''),
+      _containsAllOf('returnValue: _i2.E.a)'),
+    );
+  });
+
+  test('does not use a generic enum for a sealed return type', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Bar m1() => E.a;
+      }
+      sealed class Bar {}
+      enum E<T> implements Bar { a }
+      '''),
+      _containsAllOf('dummyValue<_i2.Bar>('),
+    );
+  });
+
   test('generates a fake of a subclass for a sealed return type', () async {
     await expectSingleNonNullableOutput(
       dedent(r'''
