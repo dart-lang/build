@@ -2,8 +2,8 @@
 
 # Checks for memory leaks.
 #
-# Runs many incremental builds, prints the average increase in memory usage
-# per build.
+# Runs many incremental builds to warm up, then many more, and prints the
+# average increase in memory usage per build over the second stretch.
 #
 # Exits with an error code if the hard-coded max leak size is exceeded.
 
@@ -14,7 +14,7 @@ fi
 dart test/invalidation/invalidation_leak_checker.dart setup
 
 leak_amount=$(dart test/invalidation/invalidation_leak_checker.dart)
-leak_limit=15000
+leak_limit=2000
 
 if test $((leak_amount)) -gt "$leak_limit"; then
   echo "Measured leak size $leak_amount > $leak_limit, failing!"
@@ -34,3 +34,7 @@ fi
 #
 # After `build_runner` leak fixes and analyzer 7.7.1 with 441740:
 #   13147, 12515, 13320
+#
+# Measuring after a warm-up, and with `InputTracker.inputTrackersForTesting`
+# no longer retaining every build's filesystem:
+#   -611, 974, -189, -453, -634

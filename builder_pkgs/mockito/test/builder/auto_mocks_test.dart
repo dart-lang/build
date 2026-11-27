@@ -3407,6 +3407,235 @@ void main() {
     );
   });
 
+  test(
+    'uses an enum value for a sealed return type implemented by an enum',
+    () async {
+      await expectSingleNonNullableOutput(
+        dedent(r'''
+        class Foo {
+          Bar m1() => E.a;
+          Future<Bar> m2() async => E.a;
+        }
+        sealed class Bar {}
+        enum E implements Bar { a, b }
+        '''),
+        _containsAllOf(
+          'returnValue: _i2.E.a)',
+          'returnValue: _i3.Future<_i2.Bar>.value(_i2.E.a))',
+        ),
+      );
+    },
+  );
+
+  test('prefers a fake of a subclass to an enum value for a sealed return '
+      'type', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Bar m1() => E.a;
+      }
+      sealed class Bar {}
+      enum E implements Bar { a }
+      class Baz extends Bar {}
+      '''),
+      _containsAllOf('returnValue: _FakeBaz_0('),
+    );
+  });
+
+  test('uses an enum value for a nested sealed return type', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Bar m1() => E.a;
+      }
+      sealed class Bar {}
+      sealed class Baz extends Bar {}
+      enum E implements Baz { a }
+      '''),
+      _containsAllOf('returnValue: _i2.E.a)'),
+    );
+  });
+
+  test('uses an enum value for a sealed return type implemented through a '
+      'mixin', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Mixed m1() => WithMixin.a;
+      }
+      sealed class Mixed {}
+      mixin MixedM implements Mixed {}
+      enum WithMixin with MixedM { a }
+      '''),
+      _containsAllOf('returnValue: _i2.WithMixin.a)'),
+    );
+  });
+
+  test('generates a fake of a class which implements a sealed class through a '
+      'mixin', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Bar m1() => Baz();
+      }
+      sealed class Bar {}
+      mixin M implements Bar {}
+      class Baz with M {}
+      '''),
+      _containsAllOf('returnValue: _FakeBaz_0('),
+    );
+  });
+
+  test('generates a fake of a class which reaches a sealed class only through '
+      'a mixin constrained on it', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Bar m1() => C();
+      }
+      sealed class Bar {}
+      class _Impl extends Bar {}
+      mixin M on Bar {}
+      class C extends _Impl with M {}
+      '''),
+      _containsAllOf('returnValue: _FakeC_0('),
+    );
+  });
+
+  test('uses an enum value for a sealed return type implemented through '
+      'nested mixins', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Bar m1() => E.a;
+      }
+      sealed class Bar {}
+      mixin M1 implements Bar {}
+      mixin M2 implements M1 {}
+      enum E with M2 { a }
+      '''),
+      _containsAllOf('returnValue: _i2.E.a)'),
+    );
+  });
+
+  test('does not use a generic enum for a sealed return type', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Bar m1() => E.a;
+      }
+      sealed class Bar {}
+      enum E<T> implements Bar { a }
+      '''),
+      _containsAllOf('dummyValue<_i2.Bar>('),
+    );
+  });
+
+  test('generates a fake of a subclass for a sealed return type', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Bar m1() => Baz();
+      }
+      sealed class Bar {}
+      class Baz extends Bar {}
+      '''),
+      _containsAllOf(
+        'class _FakeBaz_0 extends _i1.SmartFake implements _i2.Baz',
+        'returnValue: _FakeBaz_0(',
+      ),
+    );
+  });
+
+  test(
+    'generates a fake of a subclass for a sealed getter return type',
+    () async {
+      await expectSingleNonNullableOutput(
+        dedent(r'''
+        class Foo {
+          Bar get g => Baz();
+        }
+        sealed class Bar {}
+        class Baz implements Bar {}
+        '''),
+        _containsAllOf(
+          'class _FakeBaz_0 extends _i1.SmartFake implements _i2.Baz',
+          'returnValue: _FakeBaz_0(',
+        ),
+      );
+    },
+  );
+
+  test(
+    'generates a fake of a subclass for a Future of a sealed return type',
+    () async {
+      await expectSingleNonNullableOutput(
+        dedent(r'''
+        class Foo {
+          Future<Bar> m1() async => Baz();
+        }
+        sealed class Bar {}
+        class Baz extends Bar {}
+        '''),
+        _containsAllOf('_i3.Future<_i2.Bar>.value(_FakeBaz_0('),
+      );
+    },
+  );
+
+  test('generates a fake of a subclass of a nested sealed class', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Bar m1() => Qux();
+      }
+      sealed class Bar {}
+      sealed class Baz extends Bar {}
+      class Qux extends Baz {}
+      '''),
+      _containsAllOf(
+        'class _FakeQux_0 extends _i1.SmartFake implements _i2.Qux',
+        'returnValue: _FakeQux_0(',
+      ),
+    );
+  });
+
+  test('skips subclasses of a sealed class which cannot be faked', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Bar m1() => Baz5();
+      }
+      sealed class Bar {}
+      final class Baz1 extends Bar {}
+      base class Baz2 extends Bar {}
+      class _Baz3 extends Bar {}
+      class Baz4<T> extends Bar {}
+      class Baz5 extends Bar {}
+      '''),
+      _containsAllOf(
+        'class _FakeBaz5_0 extends _i1.SmartFake implements _i2.Baz5',
+        'returnValue: _FakeBaz5_0(',
+      ),
+    );
+  });
+
+  test('does not try to generate a fake for a sealed class without a '
+      'subclass which can be faked', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Bar m1() => Baz1();
+      }
+      sealed class Bar {}
+      final class Baz1 extends Bar {}
+      base class Baz2 extends Bar {}
+      class _Baz3 extends Bar {}
+      class Baz4<T> extends Bar {}
+      '''),
+      _containsAllOf('dummyValue<_i2.Bar>('),
+    );
+  });
+
   test('throws when GenerateMocks is given a class multiple times', () async {
     await _expectBuilderThrows(
       assets: {

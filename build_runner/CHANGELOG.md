@@ -9,6 +9,9 @@
 - Bug fix: prints and throws in a builder's `buildExtensions` are now logged,
   as for its builder factory, instead of printing directly or crashing.
   [#4092](https://github.com/dart-lang/build/issues/4092)
+- Fix the progress display overwriting terminal lines above it when a line
+  with an input path hyperlink wraps.
+  [#5267](https://github.com/dart-lang/build/issues/5267)
 
 ## 2.17.1
 

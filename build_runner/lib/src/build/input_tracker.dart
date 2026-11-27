@@ -29,9 +29,11 @@ class InputTracker {
   /// All `InputTracker`s created when `captureInputTrackersForTesting` is set,
   /// keyed by filesystem to split by test case.
   ///
+  /// An `Expando`, so that the trackers are freed with their filesystem: the
+  /// leak checker runs thousands of builds, each with a new filesystem.
+  ///
   /// TODO(davidmorgan): find a nicer way to do this.
-  static Map<Filesystem, List<InputTracker>> inputTrackersForTesting =
-      Map.identity();
+  static final Expando<List<InputTracker>> inputTrackersForTesting = Expando();
 
   final AssetId? primaryInput;
   final String? builderLabel;
@@ -46,7 +48,7 @@ class InputTracker {
   /// otherwise.
   InputTracker(Filesystem filesystem, {this.primaryInput, this.builderLabel}) {
     if (captureInputTrackersForTesting) {
-      inputTrackersForTesting.putIfAbsent(filesystem, () => []).add(this);
+      (inputTrackersForTesting[filesystem] ??= []).add(this);
     }
   }
 
