@@ -1466,9 +1466,9 @@ class Class1 {
             addsToLibrary: true,
           ),
         ];
-        const buildYaml = '''
+        const buildYaml = r'''
 targets:
-  \$default:
+  $default:
     builders:
       a:triggered:
         options:
