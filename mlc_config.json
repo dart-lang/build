@@ -12,5 +12,11 @@
         {
             "pattern": "^https://steemit.com"
         }
+    ],
+    "replacementPatterns": [
+        {
+            "pattern": "^https://github.com/dart-lang/build/(blob|tree)/master/",
+            "replacement": "{{BASEURL}}/"
+        }
     ]
 }
