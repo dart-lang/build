@@ -10,7 +10,9 @@ environment:
 dependencies:
   build: ^5.0.0
   build_config: ^1.0.0
-  build_runner: '2.17.2-wip'
+  # Pinned to one version because build_test uses internal build_runner API.
+  # Written as a range because pub publish warns about an exact version.
+  build_runner: '>=2.17.2-wip <2.17.3-0'
   built_collection: '>=5.1.1 <7.0.0'
   crypto: ^3.0.0
   glob: ^2.0.0
